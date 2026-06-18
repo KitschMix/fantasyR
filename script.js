@@ -205,6 +205,7 @@ const ONLINE_ROOM_STORAGE_KEY = "fantasyKingdom.onlineRoom.v1";
 const ONLINE_TOKEN_STORAGE_KEY = "fantasyKingdom.playerToken.v1";
 const ONLINE_ROOM_TABLE = "fantasy_multiplayer_rooms";
 const ONLINE_PLAYER_TABLE = "fantasy_multiplayer_players";
+const ONLINE_TURN_LIMIT_SECONDS = 30;
 
 const PROFILE_ASSET_ROOT = "assets/profiles/user";
 const AI_DIFFICULTY_LABELS = {
@@ -263,7 +264,10 @@ const state = {
   cursedDiscard: [],
   animating: false,
   cardActions: {},
-  confirmedActions: {}
+  confirmedActions: {},
+  skippedActions: {},
+  turnTimerKey: "",
+  turnDeadlineAt: 0
 };
 
 const onlineState = {
@@ -297,6 +301,9 @@ const els = {
   rulesButton: document.querySelector("#rulesButton"),
   rulesDialog: document.querySelector("#rulesDialog"),
   cardCatalogButton: document.querySelector("#cardCatalogButton"),
+  turnTimer: document.querySelector("#turnTimer"),
+  turnTimerNumber: document.querySelector("#turnTimerNumber"),
+  turnTimerLabel: document.querySelector("#turnTimerLabel"),
   cardCatalogDialog: document.querySelector("#cardCatalogDialog"),
   cardCatalogList: document.querySelector("#cardCatalogList"),
   cardCatalogSummary: document.querySelector("#cardCatalogSummary"),
@@ -329,6 +336,8 @@ let dialogueUsage = new Map();
 let idleDialogueTimer = null;
 let idleDialogueToken = 0;
 const speechClearTimers = new Map();
+let turnTimerInterval = null;
+let turnTimerHandledKey = "";
 
 function shuffle(items) {
   const result = [...items];
@@ -537,6 +546,8 @@ function startGame() {
   state.animating = false;
   state.cardActions = {};
   state.confirmedActions = {};
+  state.skippedActions = {};
+  resetTurnTimerState();
   els.setupPanel.classList.add("hidden");
   els.gameBoard.classList.remove("hidden");
   clearLog();
@@ -851,6 +862,7 @@ async function leaveOnlineRoom() {
     onlineState.room = null;
     onlineState.players = [];
     clearOnlineRoomSnapshot();
+    resetTurnTimerState();
     setOnlineStatus("연결 대기");
   } catch (error) {
     setOnlineStatus(error.message || "나가기 실패", true);
@@ -888,6 +900,169 @@ async function restoreOnlineRoom() {
     clearOnlineRoomSnapshot();
   }
   renderOnlinePanel();
+}
+
+function resetTurnTimerState() {
+  stopTurnTimer();
+  state.turnTimerKey = "";
+  state.turnDeadlineAt = 0;
+  turnTimerHandledKey = "";
+  setTurnTimerVisible(false);
+}
+
+function isOnlineMultiplayerGame() {
+  return Boolean(onlineState.room) && els.gameBoard && !els.gameBoard.classList.contains("hidden");
+}
+
+function isTurnTimerPhase() {
+  return isOnlineMultiplayerGame()
+    && !state.finished
+    && !state.animating
+    && currentPlayer()
+    && ["draw", "discard", "finalActions"].includes(state.phase);
+}
+
+function buildTurnTimerKey() {
+  const player = currentPlayer();
+  return [
+    onlineState.room?.id || "local-online",
+    state.turnNumber,
+    player?.id ?? state.activePlayer,
+    state.phase,
+    state.pendingFinish ? "final" : "turn",
+    state.drawnCardId || ""
+  ].join("|");
+}
+
+function turnTimerPhaseLabel() {
+  if (state.pendingFinish || state.phase === "finalActions") return "초 / 최종 선택";
+  if (state.phase === "discard") return "초 / 버리기";
+  return "초 / 가져오기";
+}
+
+function setTurnTimerVisible(visible) {
+  if (!els.turnTimer) return;
+  els.turnTimer.classList.toggle("hidden", !visible);
+}
+
+function startTurnTimer(key) {
+  if (!els.turnTimer) return;
+  if (turnTimerInterval) window.clearInterval(turnTimerInterval);
+  state.turnTimerKey = key;
+  state.turnDeadlineAt = Date.now() + (ONLINE_TURN_LIMIT_SECONDS * 1000);
+  turnTimerHandledKey = "";
+  setTurnTimerVisible(true);
+  updateTurnTimerDisplay();
+  turnTimerInterval = window.setInterval(updateTurnTimerDisplay, 250);
+}
+
+function stopTurnTimer(options = {}) {
+  if (turnTimerInterval) {
+    window.clearInterval(turnTimerInterval);
+    turnTimerInterval = null;
+  }
+  if (options.hide !== false) setTurnTimerVisible(false);
+}
+
+function syncTurnTimer() {
+  if (!isTurnTimerPhase()) {
+    resetTurnTimerState();
+    return;
+  }
+
+  const key = buildTurnTimerKey();
+  if (state.turnTimerKey !== key || !state.turnDeadlineAt) {
+    startTurnTimer(key);
+    return;
+  }
+
+  setTurnTimerVisible(true);
+  if (!turnTimerInterval) {
+    turnTimerInterval = window.setInterval(updateTurnTimerDisplay, 250);
+  }
+  updateTurnTimerDisplay();
+}
+
+function updateTurnTimerDisplay() {
+  if (!els.turnTimer || !state.turnDeadlineAt) return;
+  const secondsLeft = Math.max(0, Math.ceil((state.turnDeadlineAt - Date.now()) / 1000));
+  if (els.turnTimerNumber) els.turnTimerNumber.textContent = String(secondsLeft);
+  if (els.turnTimerLabel) els.turnTimerLabel.textContent = turnTimerPhaseLabel();
+  els.turnTimer.classList.toggle("warning", secondsLeft <= 10);
+  els.turnTimer.classList.toggle("danger", secondsLeft <= 5);
+
+  if (secondsLeft <= 0) {
+    handleTurnTimerExpired(state.turnTimerKey);
+  }
+}
+
+function handleTurnTimerExpired(key) {
+  if (!key || turnTimerHandledKey === key || key !== state.turnTimerKey) return;
+  turnTimerHandledKey = key;
+  stopTurnTimer({ hide: false });
+  handleTimedTurnSkip();
+}
+
+function handleTimedTurnSkip() {
+  if (state.finished || state.animating) return;
+  const player = currentPlayer();
+  if (!player) return;
+
+  if (state.pendingFinish || state.phase === "finalActions") {
+    skipPendingFinalActions(player);
+    return;
+  }
+
+  if (state.phase === "discard") {
+    discardTimeoutCard(player);
+    return;
+  }
+
+  if (state.phase === "draw") {
+    log(`${player.name}: 제한 시간 초과로 턴을 넘겼습니다.`);
+    endTurn();
+  }
+}
+
+function chooseTimeoutDiscard(player) {
+  if (!player?.hand?.length) return null;
+  const drawnCard = state.drawnCardId
+    ? player.hand.find((card) => card.id === state.drawnCardId)
+    : null;
+  if (drawnCard) return drawnCard;
+  return [...player.hand].sort((a, b) => a.base - b.base || a.name.localeCompare(b.name, "ko"))[0];
+}
+
+function discardTimeoutCard(player) {
+  const card = chooseTimeoutDiscard(player);
+  if (!card) {
+    log(`${player.name}: 제한 시간 초과로 턴을 넘겼습니다.`);
+    endTurn();
+    return;
+  }
+
+  const index = player.hand.findIndex((candidate) => candidate.id === card.id);
+  if (index < 0) {
+    endTurn();
+    return;
+  }
+
+  const [discarded] = player.hand.splice(index, 1);
+  cleanupUnavailableActions(player);
+  state.discard.push(discarded);
+  state.selectedCardId = discarded.id;
+  log(`${player.name}: 제한 시간 초과로 ${discarded.name} 카드를 자동으로 버렸습니다.`);
+  endTurn();
+}
+
+function skipPendingFinalActions(player) {
+  const missing = getRequiredActionIssues(player);
+  missing.forEach((entry) => skipCardAction(cardSourceId(entry.card)));
+  if (missing.length > 0) {
+    log(`${player.name}: 제한 시간 초과로 마지막 선택을 건너뛰었습니다.`);
+  }
+  completePendingFinishIfReady();
+  if (!state.finished) render();
 }
 
 function currentPlayer() {
@@ -1170,7 +1345,9 @@ function setCardAction(cardId, values) {
 }
 
 function clearCardAction(cardId) {
-  delete state.cardActions[cardActionKey(cardId)];
+  const key = cardActionKey(cardId);
+  delete state.cardActions[key];
+  delete state.skippedActions[key];
   clearCardActionConfirmation(cardId);
 }
 
@@ -1183,7 +1360,20 @@ function cardActionSignature(cardId) {
 }
 
 function clearCardActionConfirmation(cardId) {
-  delete state.confirmedActions[cardActionKey(cardId)];
+  const key = cardActionKey(cardId);
+  delete state.confirmedActions[key];
+  delete state.skippedActions[key];
+}
+
+function skipCardAction(cardId) {
+  const key = cardActionKey(cardId);
+  delete state.cardActions[key];
+  delete state.confirmedActions[key];
+  state.skippedActions[key] = true;
+}
+
+function isCardActionSkipped(card) {
+  return Boolean(state.skippedActions[cardActionKey(cardSourceId(card))]);
 }
 
 function confirmCardAction(card, player) {
@@ -1292,6 +1482,7 @@ function getRequiredActionIssues(player) {
   return player.hand
     .filter((card) => getActionControlType(card))
     .filter((card) => doesActionRequireChoice(card, player))
+    .filter((card) => !isCardActionSkipped(card))
     .filter((card) => !isCardActionConfirmed(card, player))
     .map((card) => ({ card, type: getActionControlType(card) }));
 }
@@ -1827,6 +2018,7 @@ function handleAiCursedItem(player) {
 }
 
 function finishGame() {
+  resetTurnTimerState();
   state.pendingFinish = false;
   state.finished = true;
   state.phase = "finished";
@@ -2069,6 +2261,7 @@ function render() {
   renderTable();
   renderPlayerHand();
   renderDetail();
+  syncTurnTimer();
 }
 
 function renderStatus() {
@@ -2579,6 +2772,11 @@ function cleanupUnavailableActions(player) {
       delete state.confirmedActions[key];
     }
   });
+  Object.keys(state.skippedActions).forEach((key) => {
+    if (controlIds.has(key) && !handActionIds.has(key)) {
+      delete state.skippedActions[key];
+    }
+  });
   cleanupInvalidActionTargets(player);
 }
 
@@ -2894,12 +3092,14 @@ els.roomCodeInput?.addEventListener("keydown", (event) => {
   if (event.key === "Enter") joinOnlineRoom();
 });
 els.newGameButton.addEventListener("click", () => {
+  resetTurnTimerState();
   els.setupPanel.classList.remove("hidden");
   els.gameBoard.classList.add("hidden");
   state.phase = "setup";
   state.pendingFinish = false;
   state.finished = false;
   state.confirmedActions = {};
+  state.skippedActions = {};
   updateTitleArt();
 });
 els.expansionCheckbox?.addEventListener("change", updateTitleArt);

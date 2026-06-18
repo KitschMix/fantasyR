@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
-    <link rel="stylesheet" href="styles.css?v=20260618-separated-modes" />
+    <link rel="stylesheet" href="styles.css?v=20260618-turn-timer" />
   </head>
   <body>
     <main class="app-shell">
@@ -109,6 +109,11 @@
                 <small>덱</small>
               </button>
               <button id="cardCatalogButton" class="secondary-button catalog-button" type="button">모든 카드 보기</button>
+              <div id="turnTimer" class="turn-timer hidden" aria-live="polite">
+                <span>턴 제한</span>
+                <strong id="turnTimerNumber">30</strong>
+                <small id="turnTimerLabel">초</small>
+              </div>
             </div>
             <div class="discard-zone">
               <div class="zone-header">
@@ -196,6 +201,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
-    <script src="script.js?v=20260618-multiplayer-lobby"></script>
+    <script src="script.js?v=20260618-turn-timer"></script>
   </body>
 </html>
