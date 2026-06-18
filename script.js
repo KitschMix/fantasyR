@@ -277,7 +277,12 @@ const onlineState = {
   playerToken: "",
   subscription: null,
   loading: false,
-  activeGameKey: ""
+  activeGameKey: "",
+  lastAppliedRevision: "",
+  lastLocalRevision: "",
+  savingGame: false,
+  pendingGameSave: false,
+  applyingRemote: false
 };
 
 const els = {
@@ -658,7 +663,9 @@ function renderOnlinePanel() {
   if (els.leaveRoomButton) els.leaveRoomButton.disabled = onlineState.loading || !connected;
   if (els.startOnlineGameButton) {
     els.startOnlineGameButton.disabled = !canStart;
-    if (roomStatus === "playing") {
+    if (roomStatus === "finished") {
+      els.startOnlineGameButton.textContent = "게임 종료";
+    } else if (roomStatus === "playing") {
       els.startOnlineGameButton.textContent = "게임 진행 중";
     } else if (!isHost) {
       els.startOnlineGameButton.textContent = "방장만 시작";
@@ -718,9 +725,9 @@ async function loadOnlineRoom(roomId) {
   onlineState.room = room;
   onlineState.players = players || [];
   saveOnlineRoomSnapshot();
-  if (room.status === "playing" && room.game_state?.startedAt) {
+  if ((room.status === "playing" || room.status === "finished") && room.game_state?.startedAt) {
     hydrateOnlineGameSnapshot(room.game_state);
-    setOnlineStatus(`게임 중 ${room.code}`);
+    setOnlineStatus(`${room.status === "finished" ? "게임 종료" : "게임 중"} ${room.code}`);
   } else {
     setOnlineStatus(`방 ${room.code}`);
   }
@@ -937,9 +944,129 @@ function cardSnapshotId(card) {
   return card ? cardSourceId(card) : "";
 }
 
+function onlineGameRevision() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function currentOnlineSnapshot() {
+  return onlineState.room?.game_state || {};
+}
+
+function isOnlinePlaying() {
+  return Boolean(onlineState.room?.id && onlineState.room.status === "playing");
+}
+
+function activeSeat() {
+  const player = currentPlayer();
+  return player?.seat ?? player?.id ?? state.activePlayer;
+}
+
+function ensureOnlineTurnDeadline() {
+  if (!isTurnTimerPhase()) {
+    return { key: state.turnTimerKey || "", deadlineAt: state.turnDeadlineAt || 0 };
+  }
+
+  const key = buildTurnTimerKey();
+  const now = Date.now();
+  if (state.turnTimerKey !== key || !state.turnDeadlineAt || state.turnDeadlineAt <= now) {
+    state.turnTimerKey = key;
+    state.turnDeadlineAt = now + (ONLINE_TURN_LIMIT_SECONDS * 1000);
+  }
+  return { key: state.turnTimerKey, deadlineAt: state.turnDeadlineAt };
+}
+
+function serializeOnlineGameState() {
+  const baseSnapshot = currentOnlineSnapshot();
+  const timer = ensureOnlineTurnDeadline();
+  const sortedPlayers = [...state.players]
+    .map((player) => ({
+      seat: player.seat ?? player.id,
+      token: player.token || "",
+      name: player.baseName || String(player.name || "").replace(/\s*\(나\)\s*$/, ""),
+      hand: player.hand.map(cardSnapshotId),
+      activeCursedItem: cardSnapshotId(player.activeCursedItem),
+      usedCursedItems: (player.usedCursedItems || []).map(cardSnapshotId)
+    }))
+    .sort((a, b) => a.seat - b.seat);
+
+  return {
+    ...baseSnapshot,
+    version: 1,
+    revision: onlineGameRevision(),
+    updatedAt: new Date().toISOString(),
+    startedAt: baseSnapshot.startedAt || new Date().toISOString(),
+    playerCount: state.playerCount || sortedPlayers.length,
+    includeExpansion: state.includeExpansion,
+    includeCursedItems: state.includeCursedItems,
+    activeSeat: activeSeat(),
+    turnNumber: state.turnNumber,
+    phase: state.phase,
+    pendingFinish: state.pendingFinish,
+    finished: state.finished,
+    drawnCardId: state.drawnCardId || "",
+    selectedCardId: state.selectedCardId || "",
+    turnTimerKey: timer.key,
+    turnDeadlineAt: timer.deadlineAt,
+    deck: state.deck.map(cardSnapshotId),
+    discard: state.discard.map(cardSnapshotId),
+    cursedDeck: state.cursedDeck.map(cardSnapshotId),
+    cursedDiscard: state.cursedDiscard.map(cardSnapshotId),
+    players: sortedPlayers,
+    cardActions: { ...state.cardActions },
+    confirmedActions: { ...state.confirmedActions },
+    skippedActions: { ...state.skippedActions }
+  };
+}
+
+async function saveOnlineGameState(reason = "") {
+  if (!isOnlinePlaying() || onlineState.applyingRemote || !onlineState.room?.id) return;
+  const client = getSupabaseClient();
+  if (!client) return;
+
+  if (onlineState.savingGame) {
+    onlineState.pendingGameSave = true;
+    return;
+  }
+
+  onlineState.savingGame = true;
+  onlineState.pendingGameSave = false;
+  try {
+    const snapshot = serializeOnlineGameState();
+    onlineState.lastLocalRevision = snapshot.revision;
+    onlineState.lastAppliedRevision = snapshot.revision;
+    onlineState.room = {
+      ...onlineState.room,
+      status: state.finished ? "finished" : "playing",
+      game_state: snapshot
+    };
+
+    const { data: room, error } = await client
+      .from(ONLINE_ROOM_TABLE)
+      .update({
+        status: state.finished ? "finished" : "playing",
+        game_state: snapshot,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", onlineState.room.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    if (room) onlineState.room = room;
+  } catch (error) {
+    setOnlineStatus(error.message || "동기화 실패", true);
+  } finally {
+    onlineState.savingGame = false;
+    if (onlineState.pendingGameSave) {
+      onlineState.pendingGameSave = false;
+      saveOnlineGameState(reason);
+    }
+  }
+}
+
 function createOnlineGameSnapshot() {
   const room = onlineState.room;
   const players = sortedOnlinePlayers().slice(0, room.player_count || 2);
+  const startedAt = new Date().toISOString();
   state.playerCount = players.length;
   state.aiDifficulty = room.ai_difficulty || "normal";
   state.includeExpansion = Boolean(room.include_expansion);
@@ -966,18 +1093,29 @@ function createOnlineGameSnapshot() {
 
   return {
     version: 1,
-    startedAt: new Date().toISOString(),
+    revision: onlineGameRevision(),
+    startedAt,
+    updatedAt: startedAt,
     playerCount: roster.length,
     includeExpansion: state.includeExpansion,
     includeCursedItems: false,
     activeSeat: roster[0]?.seat ?? 0,
     turnNumber: 1,
     phase: "draw",
+    pendingFinish: false,
+    finished: false,
+    drawnCardId: "",
+    selectedCardId: "",
+    turnTimerKey: [room.id, 1, roster[0]?.seat ?? 0, "draw", "turn", ""].join("|"),
+    turnDeadlineAt: Date.now() + (ONLINE_TURN_LIMIT_SECONDS * 1000),
     deck: deckCards.map(cardSnapshotId),
     discard: [],
     cursedDeck: [],
     cursedDiscard: [],
-    players: roster
+    players: roster,
+    cardActions: {},
+    confirmedActions: {},
+    skippedActions: {}
   };
 }
 
@@ -995,11 +1133,20 @@ function hydrateCardSnapshotList(sourceIds, cursedItem = false) {
 
 function hydrateOnlineGameSnapshot(snapshot) {
   if (!snapshot?.startedAt || !Array.isArray(snapshot.players)) return false;
-  if (onlineState.activeGameKey === snapshot.startedAt && !els.gameBoard.classList.contains("hidden")) {
+  const revision = snapshot.revision || snapshot.updatedAt || snapshot.startedAt;
+  const boardHidden = els.gameBoard.classList.contains("hidden");
+  if (revision && revision === onlineState.lastAppliedRevision && !boardHidden) {
+    return true;
+  }
+  if (revision && revision === onlineState.lastLocalRevision && !boardHidden) {
+    onlineState.lastAppliedRevision = revision;
     return true;
   }
 
-  resetDialogueState();
+  const firstHydrate = onlineState.activeGameKey !== snapshot.startedAt || boardHidden;
+  onlineState.applyingRemote = true;
+
+  if (firstHydrate) resetDialogueState();
   state.playerCount = snapshot.playerCount || snapshot.players.length || 2;
   state.aiDifficulty = onlineState.room?.ai_difficulty || "normal";
   state.includeExpansion = Boolean(snapshot.includeExpansion);
@@ -1039,23 +1186,36 @@ function hydrateOnlineGameSnapshot(snapshot) {
   state.cursedDiscard = hydrateCardSnapshotList(snapshot.cursedDiscard, true);
   state.activePlayer = Math.max(0, state.players.findIndex((player) => player.seat === snapshot.activeSeat));
   state.phase = snapshot.phase || "draw";
-  state.selectedCardId = null;
-  state.drawnCardId = null;
+  state.selectedCardId = snapshot.selectedCardId || null;
+  state.drawnCardId = snapshot.drawnCardId || null;
   state.turnNumber = snapshot.turnNumber || 1;
-  state.finished = false;
-  state.pendingFinish = false;
+  state.finished = Boolean(snapshot.finished || onlineState.room?.status === "finished");
+  state.pendingFinish = Boolean(snapshot.pendingFinish);
   state.animating = false;
-  state.cardActions = {};
-  state.confirmedActions = {};
-  state.skippedActions = {};
-  resetTurnTimerState();
+  state.cardActions = { ...(snapshot.cardActions || {}) };
+  state.confirmedActions = { ...(snapshot.confirmedActions || {}) };
+  state.skippedActions = { ...(snapshot.skippedActions || {}) };
+  stopTurnTimer({ hide: false });
+  state.turnTimerKey = snapshot.turnTimerKey || "";
+  state.turnDeadlineAt = Number(snapshot.turnDeadlineAt || 0);
+  turnTimerHandledKey = "";
 
   els.setupPanel.classList.add("hidden");
   els.gameBoard.classList.remove("hidden");
-  clearLog();
-  log(`온라인 게임 시작. 방 ${onlineState.room?.code || ""}`);
+  if (firstHydrate) {
+    clearLog();
+    log(`온라인 게임 시작. 방 ${onlineState.room?.code || ""}`);
+  }
   onlineState.activeGameKey = snapshot.startedAt;
+  onlineState.lastAppliedRevision = revision;
+  onlineState.applyingRemote = false;
   render();
+  if (state.finished) {
+    const ranked = [...state.players]
+      .map((player) => ({ player, score: scorePlayer(player).total }))
+      .sort((a, b) => b.score - a.score);
+    showEndNotification(ranked);
+  }
   return true;
 }
 
@@ -1543,6 +1703,7 @@ function setCardAction(cardId, values) {
   } else {
     state.cardActions[key] = normalized;
   }
+  saveOnlineGameState("card-action");
 }
 
 function clearCardAction(cardId) {
@@ -1581,6 +1742,7 @@ function confirmCardAction(card, player) {
   if (!isCardActionComplete(card, player)) return false;
   const sourceId = cardSourceId(card);
   state.confirmedActions[cardActionKey(sourceId)] = cardActionSignature(sourceId);
+  saveOnlineGameState("confirm-action");
   return true;
 }
 
@@ -2090,6 +2252,7 @@ function drawFromDeck(eventOrElement) {
   renderWithCardMove(card, sourceElement, () => {
     state.animating = false;
     render();
+    saveOnlineGameState("draw-deck");
   });
 }
 
@@ -2107,6 +2270,7 @@ function drawFromDiscard(cardId, sourceElement) {
   renderWithCardMove(card, sourceElement, () => {
     state.animating = false;
     render();
+    saveOnlineGameState("draw-discard");
     speakSingleDialogue("takeDiscard", { excludedIds: [currentPlayer().id] });
   });
 }
@@ -2142,6 +2306,7 @@ function endTurn() {
   state.activePlayer = (state.activePlayer + 1) % state.players.length;
   if (state.activePlayer === 0) state.turnNumber += 1;
   render();
+  saveOnlineGameState("end-turn");
   syncIdleDialogueTimer();
 
   if (currentPlayer().ai) {
@@ -2161,6 +2326,7 @@ function requestFinishGame() {
     state.selectedCardId = missing[0].card.id;
     log(`게임 종료 전 ${missing.map((entry) => entry.card.name).join(", ")} 선택을 확정하세요.`);
     render();
+    saveOnlineGameState("final-actions");
     return;
   }
 
@@ -2191,6 +2357,7 @@ function useActiveCursedItem(player) {
   log(`${player.name}: ${player.activeCursedItem.name} 유물을 사용했습니다.`);
   player.activeCursedItem = null;
   render();
+  saveOnlineGameState("use-cursed-item");
 }
 
 function replaceActiveCursedItem(player) {
@@ -2201,6 +2368,7 @@ function replaceActiveCursedItem(player) {
   }
   player.activeCursedItem = drawCursedItem();
   render();
+  saveOnlineGameState("replace-cursed-item");
 }
 
 function handleAiCursedItem(player) {
@@ -2229,6 +2397,7 @@ function finishGame() {
   log(`게임 종료. 승자: ${ranked[0].player.name} (${ranked[0].score}점)`);
   stopIdleDialogueTimer();
   render();
+  saveOnlineGameState("finish");
   speakAllAiDialogue(null, {
     duration: DIALOGUE_END_DISPLAY_MS,
     eventByPlayer: (player) => ranked[0].player.id === player.id ? "win" : "lose"
