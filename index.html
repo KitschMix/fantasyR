@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
-    <link rel="stylesheet" href="styles.css?v=20260618-multiplayer-lobby" />
+    <link rel="stylesheet" href="styles.css?v=20260618-separated-modes" />
   </head>
   <body>
     <main class="app-shell">
@@ -26,32 +26,38 @@
       </header>
 
       <section id="setupPanel" class="setup-panel" aria-label="게임 설정">
-        <div class="setup-controls">
-          <label>
-            플레이어 수
-            <select id="playerCountSelect">
-              <option value="2">2명</option>
-              <option value="3">3명</option>
-              <option value="4">4명</option>
-            </select>
-          </label>
-          <label>
-            AI 난이도
-            <select id="aiDifficultySelect">
-              <option value="normal">보통</option>
-              <option value="hard">어려움</option>
-              <option value="expert">매우어려움</option>
-              <option value="random">완전랜덤</option>
-            </select>
-          </label>
-          <label class="setup-check" data-tooltip="건물, 이방인, 언데드 카드가 추가되고 일부 원본 카드가 확장판 카드로 교체됩니다. 시작 손패는 8장, 버린 카드는 12장이면 종료됩니다.">
-            <input id="expansionCheckbox" type="checkbox" />
-            <span>확장팩 포함</span>
-          </label>
-          <button id="startButton" class="primary-button" type="button">시작</button>
+        <div class="mode-panel single-panel">
+          <div class="mode-panel-head">
+            <strong>싱글플레이</strong>
+            <span>AI와 바로 시작</span>
+          </div>
+          <div class="setup-controls">
+            <label>
+              플레이어 수
+              <select id="playerCountSelect">
+                <option value="2">2명</option>
+                <option value="3">3명</option>
+                <option value="4">4명</option>
+              </select>
+            </label>
+            <label>
+              AI 난이도
+              <select id="aiDifficultySelect">
+                <option value="normal">보통</option>
+                <option value="hard">어려움</option>
+                <option value="expert">매우어려움</option>
+                <option value="random">완전랜덤</option>
+              </select>
+            </label>
+            <label class="setup-check" data-tooltip="건물, 이방인, 언데드 카드가 추가되고 일부 원본 카드가 확장판 카드로 교체됩니다. 시작 손패는 8장, 버린 카드는 12장이면 종료됩니다.">
+              <input id="expansionCheckbox" type="checkbox" />
+              <span>확장팩 포함</span>
+            </label>
+            <button id="startButton" class="primary-button" type="button">시작</button>
+          </div>
         </div>
-        <div id="onlinePanel" class="online-panel">
-          <div class="online-panel-head">
+        <div id="onlinePanel" class="mode-panel online-panel">
+          <div class="mode-panel-head online-panel-head">
             <strong>온라인 방</strong>
             <span id="onlineStatus" class="online-status">연결 대기</span>
           </div>
