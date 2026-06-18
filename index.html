@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>판타지왕국 PC버전</title>
+    <link rel="stylesheet" href="styles.css?v=20260618-clean-ui3" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-copy">
+            <div class="brand-title-art-wrap">
+              <img class="brand-title-art brand-title-base" src="assets/titles/title-base.png" alt="판타지 왕국" />
+              <img class="brand-title-art brand-title-expansion" src="assets/titles/title-expansion.png" alt="판타지 왕국 저주받은 무리" />
+              <h1 class="sr-only">판타지왕국 PC버전</h1>
+            </div>
+            <p>판타지 왕국 카드 목록으로 AI와 겨루는 PC판</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button id="rulesButton" class="icon-button" type="button" title="규칙 보기" aria-label="규칙 보기">?</button>
+          <button id="newGameButton" class="primary-button" type="button">새 게임</button>
+        </div>
+      </header>
+
+      <section id="setupPanel" class="setup-panel" aria-label="게임 설정">
+        <div class="setup-controls">
+          <label>
+            플레이어 수
+            <select id="playerCountSelect">
+              <option value="2">2명</option>
+              <option value="3">3명</option>
+              <option value="4">4명</option>
+            </select>
+          </label>
+          <label>
+            AI 난이도
+            <select id="aiDifficultySelect">
+              <option value="normal">보통</option>
+              <option value="hard">어려움</option>
+              <option value="expert">매우어려움</option>
+              <option value="random">완전랜덤</option>
+            </select>
+          </label>
+          <label class="setup-check" data-tooltip="건물, 이방인, 언데드 카드가 추가되고 일부 원본 카드가 확장판 카드로 교체됩니다. 시작 손패는 8장, 버린 카드는 12장이면 종료됩니다.">
+            <input id="expansionCheckbox" type="checkbox" />
+            <span>확장팩 포함</span>
+          </label>
+          <button id="startButton" class="primary-button" type="button">시작</button>
+        </div>
+      </section>
+
+      <section id="gameBoard" class="game-board hidden" aria-label="게임 보드">
+        <aside class="status-panel">
+          <div class="round-status">
+            <span class="label">현재 차례</span>
+            <strong id="turnLabel">-</strong>
+            <span id="phaseLabel" class="phase-pill">대기</span>
+          </div>
+          <div class="score-list" id="scoreList"></div>
+          <div class="log-panel" aria-label="게임 기록">
+            <div class="panel-title">기록</div>
+            <ol id="gameLog"></ol>
+          </div>
+        </aside>
+
+        <section class="table-area">
+          <div class="opponents-row" id="opponentsRow"></div>
+
+          <div class="center-table">
+            <div class="deck-column">
+              <button id="deckButton" class="deck-stack" type="button" title="덱에서 카드 뽑기">
+                <span class="deck-top">◆</span>
+                <span id="deckCount">0</span>
+                <small>덱</small>
+              </button>
+              <button id="cardCatalogButton" class="secondary-button catalog-button" type="button">모든 카드 보기</button>
+            </div>
+            <div class="discard-zone">
+              <div class="zone-header">
+                <div>
+                  <span class="label">공개된 버린 카드</span>
+                  <div class="discard-counter">
+                    <strong><span id="discardCount">0</span><span id="discardLimitLabel">/10</span></strong>
+                    <div class="discard-progress" aria-hidden="true">
+                      <span id="discardProgress"></span>
+                    </div>
+                  </div>
+                </div>
+                <span id="endHint">10장이 되면 종료</span>
+              </div>
+              <div id="discardArea" class="discard-area"></div>
+            </div>
+          </div>
+
+          <div class="hand-section">
+            <div class="hand-header">
+              <div>
+                <span class="label">내 손패</span>
+                <strong id="handScore">0점</strong>
+              </div>
+              <button id="sortButton" class="secondary-button" type="button">정렬</button>
+            </div>
+            <div id="playerHand" class="player-hand"></div>
+          </div>
+        </section>
+
+        <aside class="detail-panel">
+          <div class="panel-title">내 점수 내역</div>
+          <div id="scoreActions" class="score-actions"></div>
+          <div id="scoreBreakdown" class="breakdown"></div>
+        </aside>
+      </section>
+    </main>
+
+    <dialog id="rulesDialog" class="rules-dialog">
+      <form method="dialog">
+        <div class="dialog-header">
+          <h2>규칙</h2>
+          <button class="icon-button" value="close" title="닫기" aria-label="닫기">×</button>
+        </div>
+        <ul>
+          <li>각 플레이어는 카드 7장으로 시작합니다. 확장팩 포함 시 8장으로 시작합니다.</li>
+          <li>내 차례에는 덱 또는 공개된 버린 카드 1장을 가져옵니다.</li>
+          <li>카드를 가져온 뒤 손패에서 1장을 공개로 버립니다.</li>
+          <li>버린 카드가 10장, 확장팩 포함 시 12장이 되면 즉시 게임이 끝납니다.</li>
+          <li>카드마다 기본 힘, 보너스, 패널티, 무효 효과가 적용됩니다.</li>
+        </ul>
+      </form>
+    </dialog>
+
+    <dialog id="cardCatalogDialog" class="catalog-dialog">
+      <form method="dialog">
+        <div class="dialog-header">
+          <div>
+            <h2>모든 카드 보기</h2>
+            <span id="cardCatalogSummary" class="catalog-summary">-</span>
+          </div>
+          <button class="icon-button" value="close" title="닫기" aria-label="닫기">×</button>
+        </div>
+        <div id="cardCatalogList" class="catalog-list"></div>
+      </form>
+    </dialog>
+
+    <dialog id="endDialog" class="end-dialog">
+      <form method="dialog">
+        <div class="dialog-header">
+          <h2>게임 종료</h2>
+          <button class="icon-button" value="close" title="닫기" aria-label="닫기">×</button>
+        </div>
+        <div id="endSummary" class="end-summary"></div>
+        <div class="end-actions">
+          <button class="secondary-button" value="close" type="submit">결과 보기</button>
+          <button id="restartGameButton" class="primary-button" type="button">다시 하기</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="vendor/fantasy-realms-kor/deck.js?v=20260618-clean-ui3"></script>
+    <script src="vendor/fantasy-realms-kor/hand.js?v=20260618-clean-ui3"></script>
+    <script src="vendor/fantasy-realms-kor/messages-kr.js?v=20260618-clean-ui3"></script>
+    <script src="script.js?v=20260618-clean-ui3"></script>
+  </body>
+</html>

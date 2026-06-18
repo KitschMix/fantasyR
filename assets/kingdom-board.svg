@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="판타지 왕국 보드 배경">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#2f3240"/>
+      <stop offset="0.45" stop-color="#242b2b"/>
+      <stop offset="1" stop-color="#181512"/>
+    </linearGradient>
+    <linearGradient id="field" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#36422d"/>
+      <stop offset="1" stop-color="#1d261b"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <circle cx="1280" cy="190" r="92" fill="#ddbd70" opacity="0.42" filter="url(#soft)"/>
+  <circle cx="1280" cy="190" r="45" fill="#f0cd79" opacity="0.5"/>
+  <path d="M0 610 C180 560 290 612 450 570 C650 518 760 620 980 570 C1190 522 1370 570 1600 520 L1600 1000 L0 1000 Z" fill="url(#field)"/>
+  <path d="M0 676 C170 642 330 680 500 642 C700 600 900 680 1100 630 C1300 584 1450 642 1600 600 L1600 1000 L0 1000 Z" fill="#202b20" opacity="0.75"/>
+  <g opacity="0.62">
+    <path d="M690 500 L770 360 L850 500 Z" fill="#2d3139"/>
+    <path d="M770 360 L850 500 L900 515 L820 352 Z" fill="#1d2028"/>
+    <rect x="720" y="500" width="132" height="116" fill="#3c3a31"/>
+    <rect x="755" y="538" width="28" height="78" fill="#1b1918"/>
+    <rect x="790" y="538" width="28" height="78" fill="#1b1918"/>
+    <path d="M710 500 H862 L842 470 H730 Z" fill="#5a4e39"/>
+  </g>
+  <g opacity="0.42">
+    <rect x="230" y="568" width="64" height="72" fill="#39372f"/>
+    <path d="M218 568 L262 504 L306 568 Z" fill="#272b30"/>
+    <rect x="1190" y="510" width="88" height="110" fill="#39372f"/>
+    <path d="M1174 510 L1234 430 L1294 510 Z" fill="#272b30"/>
+  </g>
+  <path d="M465 1000 C542 820 687 684 802 610 C892 736 932 854 1002 1000 Z" fill="#6d5532" opacity="0.28"/>
+  <g fill="none" stroke="#d9a63c" stroke-width="2" opacity="0.12">
+    <path d="M176 770 C370 700 520 730 710 670 C914 606 1100 690 1360 612"/>
+    <path d="M124 838 C354 780 544 818 760 742 C990 660 1180 746 1514 668"/>
+  </g>
+</svg>
