@@ -198,9 +198,10 @@ const PROFILE_ASSET_ROOT = "assets/profiles/user";
 const AI_DIFFICULTY_LABELS = {
   normal: "보통",
   hard: "어려움",
-  expert: "매우어려움"
+  expert: "매우어려움",
+  boss: "최종보스"
 };
-const AI_DIFFICULTY_KEYS = Object.keys(AI_DIFFICULTY_LABELS);
+const AI_PROFILE_DIFFICULTY_KEYS = ["normal", "hard", "expert"];
 const HUMAN_PROFILE = {
   name: "나",
   avatarUrl: profileImageUrl("유저.jpg")
@@ -311,13 +312,37 @@ function aiDifficultyLabel(difficulty) {
   return AI_DIFFICULTY_LABELS[difficulty] || AI_DIFFICULTY_LABELS.normal;
 }
 
+function isBossProfile(profile) {
+  return profile?.name === "강범례";
+}
+
+function prepareAiProfile(profile, difficulty, labelOverride = null) {
+  const boss = isBossProfile(profile);
+  return {
+    ...profile,
+    boss,
+    difficulty: boss ? "boss" : difficulty,
+    difficultyLabel: boss ? AI_DIFFICULTY_LABELS.boss : (labelOverride || aiDifficultyLabel(difficulty))
+  };
+}
+
+function aiPlayerDisplayName(profile) {
+  if (profile.boss) return "강범례(최종보스)";
+  return `${profile.name} (${profile.difficultyLabel})`;
+}
+
+function randomAiDifficultyKey() {
+  return AI_PROFILE_DIFFICULTY_KEYS[Math.floor(Math.random() * AI_PROFILE_DIFFICULTY_KEYS.length)];
+}
+
 function selectAiProfiles(difficulty, count) {
   const pool = difficulty === "random"
-    ? AI_DIFFICULTY_KEYS.flatMap((key) => AI_PROFILE_GROUPS[key].map((profile) => ({ ...profile, difficulty: key })))
-    : (AI_PROFILE_GROUPS[difficulty] || AI_PROFILE_GROUPS.normal).map((profile) => ({
-      ...profile,
-      difficulty: AI_DIFFICULTY_LABELS[difficulty] ? difficulty : "normal"
-    }));
+    ? AI_PROFILE_DIFFICULTY_KEYS.flatMap((key) => AI_PROFILE_GROUPS[key]).map((profile) => (
+      prepareAiProfile(profile, randomAiDifficultyKey(), "랜덤")
+    ))
+    : (AI_PROFILE_GROUPS[difficulty] || AI_PROFILE_GROUPS.normal).map((profile) => (
+      prepareAiProfile(profile, AI_PROFILE_GROUPS[difficulty] ? difficulty : "normal")
+    ));
   return shuffle(pool).slice(0, count);
 }
 
@@ -337,14 +362,14 @@ function createPlayerRoster() {
       usedCursedItems: []
     },
     ...aiProfiles.map((profile, index) => {
-      const difficultyLabel = aiDifficultyLabel(profile.difficulty);
       return {
         id: index + 1,
-        name: `${profile.name} (${difficultyLabel})`,
+        name: aiPlayerDisplayName(profile),
         human: false,
         avatarUrl: profile.avatarUrl,
         difficulty: profile.difficulty,
-        difficultyLabel,
+        difficultyLabel: profile.difficultyLabel,
+        boss: profile.boss,
         speech: "",
         hand: [],
         activeCursedItem: null,
@@ -1393,9 +1418,17 @@ function chooseNormalAiDraw(player) {
 function chooseScoredAiDraw(player, difficulty) {
   if (state.discard.length === 0) return { source: "deck" };
 
-  const deckBias = difficulty === "expert" ? 2 : 4;
+  const deckBias = difficulty === "boss" ? 0.5 : (difficulty === "expert" ? 2 : 4);
   const currentValue = evaluateAiHandValue(player, player.hand, difficulty);
   let best = { source: "deck", value: currentValue + deckBias };
+
+  if (difficulty === "boss" && state.deck.length > 0) {
+    const topDeckCard = state.deck[state.deck.length - 1];
+    const testHand = [...player.hand, topDeckCard];
+    const discardId = chooseAiDiscard(player, testHand, difficulty);
+    const finalHand = testHand.filter((candidate) => candidate.id !== discardId);
+    best = { source: "deck", value: evaluateAiHandValue(player, finalHand, difficulty) + 0.35 };
+  }
 
   state.discard.forEach((card, index) => {
     const testHand = [...player.hand, card];
@@ -1454,13 +1487,25 @@ function chooseBestScoreDiscard(player, hand, difficulty) {
 
 function evaluateAiHandValue(player, hand, difficulty) {
   const score = scorePlayer(player, hand);
-  if (difficulty !== "expert") return score.total;
+  if (difficulty !== "expert" && difficulty !== "boss") return score.total;
 
   const typeCount = new Set(hand.map((card) => card.type)).size;
   const bonusTotal = score.rows.reduce((sum, row) => sum + Math.max(0, row.bonus), 0);
   const penaltyTotal = score.rows.reduce((sum, row) => sum + Math.min(0, row.penalty), 0);
   const blankedCount = score.rows.filter((row) => row.blanked).length;
   const penaltyClearedCount = score.rows.filter((row) => row.penaltyCleared).length;
+  if (difficulty === "boss") {
+    const deadWeightCount = score.rows.filter((row) => row.blanked || row.total <= 0).length;
+    return score.total
+      + (typeCount * 0.45)
+      + Math.min(10, bonusTotal * 0.05)
+      + (penaltyClearedCount * 2)
+      + (estimateActionPotential(hand) * 1.45)
+      - (blankedCount * 2.6)
+      - (deadWeightCount * 0.8)
+      + Math.max(-9, penaltyTotal * 0.08);
+  }
+
   return score.total
     + (typeCount * 0.25)
     + Math.min(6, bonusTotal * 0.03)
