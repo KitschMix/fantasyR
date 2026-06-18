@@ -317,6 +317,7 @@ const els = {
   endDialog: document.querySelector("#endDialog"),
   endSummary: document.querySelector("#endSummary"),
   restartGameButton: document.querySelector("#restartGameButton"),
+  leaveFinishedGameButton: document.querySelector("#leaveFinishedGameButton"),
   turnLabel: document.querySelector("#turnLabel"),
   phaseLabel: document.querySelector("#phaseLabel"),
   scoreList: document.querySelector("#scoreList"),
@@ -647,6 +648,39 @@ function clearOnlineRoomSnapshot() {
   window.localStorage?.removeItem(ONLINE_ROOM_STORAGE_KEY);
 }
 
+function resetOnlineRoomLocalState() {
+  if (onlineState.subscription && onlineState.client?.removeChannel) {
+    onlineState.client.removeChannel(onlineState.subscription);
+  }
+  onlineState.subscription = null;
+  onlineState.room = null;
+  onlineState.players = [];
+  onlineState.activeGameKey = "";
+  onlineState.lastAppliedRevision = "";
+  onlineState.lastLocalRevision = "";
+  onlineState.savingGame = false;
+  onlineState.pendingGameSave = false;
+  onlineState.applyingRemote = false;
+  clearOnlineRoomSnapshot();
+  resetTurnTimerState();
+}
+
+function returnToSetupScreen() {
+  if (els.endDialog?.open) els.endDialog.close();
+  hideCardZoom();
+  stopIdleDialogueTimer();
+  state.phase = "setup";
+  state.pendingFinish = false;
+  state.finished = false;
+  state.animating = false;
+  state.cardActions = {};
+  state.confirmedActions = {};
+  state.skippedActions = {};
+  els.setupPanel.classList.remove("hidden");
+  els.gameBoard.classList.add("hidden");
+  updateTitleArt();
+}
+
 function renderOnlinePanel() {
   const connected = Boolean(onlineState.room);
   const roomStatus = onlineState.room?.status || "lobby";
@@ -698,7 +732,7 @@ function renderOnlinePanel() {
   }
 }
 
-async function loadOnlineRoom(roomId) {
+async function loadOnlineRoom(roomId, options = {}) {
   const client = getSupabaseClient();
   if (!client || !roomId) return false;
 
@@ -709,6 +743,11 @@ async function loadOnlineRoom(roomId) {
     .maybeSingle();
   if (roomError || !room) {
     setOnlineStatus("방 없음", true);
+    return false;
+  }
+  if (options.skipFinished && room.status === "finished") {
+    clearOnlineRoomSnapshot();
+    setOnlineStatus("연결 대기");
     return false;
   }
 
@@ -877,7 +916,16 @@ async function joinOnlineRoom() {
 
 async function leaveOnlineRoom() {
   const client = getSupabaseClient();
-  if (!client || !onlineState.room || onlineState.loading) return;
+  if (onlineState.loading) return;
+  const roomId = onlineState.room?.id || "";
+  if (!client || !roomId) {
+    resetOnlineRoomLocalState();
+    returnToSetupScreen();
+    setOnlineStatus("연결 대기");
+    renderOnlinePanel();
+    return;
+  }
+
   onlineState.loading = true;
   setOnlineStatus("나가는 중");
   renderOnlinePanel();
@@ -886,21 +934,19 @@ async function leaveOnlineRoom() {
     await client
       .from(ONLINE_PLAYER_TABLE)
       .delete()
-      .eq("room_id", onlineState.room.id)
+      .eq("room_id", roomId)
       .eq("token", onlinePlayerToken());
-    if (onlineState.subscription) {
-      await client.removeChannel(onlineState.subscription);
-      onlineState.subscription = null;
-    }
-    onlineState.room = null;
-    onlineState.players = [];
-    onlineState.activeGameKey = "";
-    clearOnlineRoomSnapshot();
-    resetTurnTimerState();
     setOnlineStatus("연결 대기");
   } catch (error) {
     setOnlineStatus(error.message || "나가기 실패", true);
   } finally {
+    if (onlineState.subscription) {
+      await client.removeChannel(onlineState.subscription);
+      onlineState.subscription = null;
+    }
+    resetOnlineRoomLocalState();
+    returnToSetupScreen();
+    setOnlineStatus("연결 대기");
     onlineState.loading = false;
     renderOnlinePanel();
   }
@@ -926,7 +972,7 @@ async function restoreOnlineRoom() {
   }
 
   onlineState.playerToken = snapshot.token;
-  const restored = await loadOnlineRoom(snapshot.roomId);
+  const restored = await loadOnlineRoom(snapshot.roomId, { skipFinished: true });
   if (restored) {
     await subscribeOnlineRoom(snapshot.roomId);
     setOnlineStatus(`재접속 ${onlineState.room.code}`);
@@ -1211,6 +1257,7 @@ function hydrateOnlineGameSnapshot(snapshot) {
   onlineState.applyingRemote = false;
   render();
   if (state.finished) {
+    clearOnlineRoomSnapshot();
     const ranked = [...state.players]
       .map((player) => ({ player, score: scorePlayer(player).total }))
       .sort((a, b) => b.score - a.score);
@@ -2398,6 +2445,7 @@ function finishGame() {
   stopIdleDialogueTimer();
   render();
   saveOnlineGameState("finish");
+  clearOnlineRoomSnapshot();
   speakAllAiDialogue(null, {
     duration: DIALOGUE_END_DISPLAY_MS,
     eventByPlayer: (player) => ranked[0].player.id === player.id ? "win" : "lose"
@@ -3486,6 +3534,7 @@ els.restartGameButton.addEventListener("click", () => {
   els.endDialog.close();
   startGame();
 });
+els.leaveFinishedGameButton?.addEventListener("click", leaveOnlineRoom);
 
 updateTitleArt();
 restoreOnlineRoom();
