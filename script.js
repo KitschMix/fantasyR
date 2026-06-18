@@ -276,7 +276,8 @@ const onlineState = {
   players: [],
   playerToken: "",
   subscription: null,
-  loading: false
+  loading: false,
+  activeGameKey: ""
 };
 
 const els = {
@@ -296,6 +297,7 @@ const els = {
   onlineRoomCard: document.querySelector("#onlineRoomCard"),
   onlineRoomCode: document.querySelector("#onlineRoomCode"),
   onlinePlayerList: document.querySelector("#onlinePlayerList"),
+  startOnlineGameButton: document.querySelector("#startOnlineGameButton"),
   leaveRoomButton: document.querySelector("#leaveRoomButton"),
   newGameButton: document.querySelector("#newGameButton"),
   rulesButton: document.querySelector("#rulesButton"),
@@ -398,6 +400,7 @@ function createPlayerRoster() {
       name: HUMAN_PROFILE.name,
       baseName: HUMAN_PROFILE.name,
       human: true,
+      ai: false,
       avatarUrl: HUMAN_PROFILE.avatarUrl,
       difficulty: null,
       difficultyLabel: "",
@@ -412,6 +415,7 @@ function createPlayerRoster() {
         name: aiPlayerDisplayName(profile),
         baseName: profile.name,
         human: false,
+        ai: true,
         avatarUrl: profile.avatarUrl,
         difficulty: profile.difficulty,
         difficultyLabel: profile.difficultyLabel,
@@ -640,6 +644,11 @@ function clearOnlineRoomSnapshot() {
 
 function renderOnlinePanel() {
   const connected = Boolean(onlineState.room);
+  const roomStatus = onlineState.room?.status || "lobby";
+  const requiredCount = onlineState.room?.player_count || 2;
+  const isHost = connected && onlineState.room.host_token === onlinePlayerToken();
+  const hasEnoughPlayers = onlineState.players.length >= requiredCount;
+  const canStart = connected && roomStatus === "lobby" && isHost && hasEnoughPlayers && !onlineState.loading;
   els.onlineRoomCard?.classList.toggle("hidden", !connected);
   if (els.onlineRoomCode) els.onlineRoomCode.textContent = onlineState.room?.code || "-";
 
@@ -647,6 +656,18 @@ function renderOnlinePanel() {
   if (els.createRoomButton) els.createRoomButton.disabled = buttonsDisabled || connected;
   if (els.joinRoomButton) els.joinRoomButton.disabled = buttonsDisabled || connected;
   if (els.leaveRoomButton) els.leaveRoomButton.disabled = onlineState.loading || !connected;
+  if (els.startOnlineGameButton) {
+    els.startOnlineGameButton.disabled = !canStart;
+    if (roomStatus === "playing") {
+      els.startOnlineGameButton.textContent = "게임 진행 중";
+    } else if (!isHost) {
+      els.startOnlineGameButton.textContent = "방장만 시작";
+    } else if (!hasEnoughPlayers) {
+      els.startOnlineGameButton.textContent = `인원 대기 ${onlineState.players.length}/${requiredCount}`;
+    } else {
+      els.startOnlineGameButton.textContent = "게임 시작";
+    }
+  }
   if (els.roomCodeInput && onlineState.room?.code) els.roomCodeInput.value = onlineState.room.code;
 
   if (!els.onlinePlayerList) return;
@@ -697,7 +718,12 @@ async function loadOnlineRoom(roomId) {
   onlineState.room = room;
   onlineState.players = players || [];
   saveOnlineRoomSnapshot();
-  setOnlineStatus(`방 ${room.code}`);
+  if (room.status === "playing" && room.game_state?.startedAt) {
+    hydrateOnlineGameSnapshot(room.game_state);
+    setOnlineStatus(`게임 중 ${room.code}`);
+  } else {
+    setOnlineStatus(`방 ${room.code}`);
+  }
   renderOnlinePanel();
   return true;
 }
@@ -861,6 +887,7 @@ async function leaveOnlineRoom() {
     }
     onlineState.room = null;
     onlineState.players = [];
+    onlineState.activeGameKey = "";
     clearOnlineRoomSnapshot();
     resetTurnTimerState();
     setOnlineStatus("연결 대기");
@@ -900,6 +927,180 @@ async function restoreOnlineRoom() {
     clearOnlineRoomSnapshot();
   }
   renderOnlinePanel();
+}
+
+function sortedOnlinePlayers() {
+  return [...onlineState.players].sort((a, b) => a.seat - b.seat);
+}
+
+function cardSnapshotId(card) {
+  return card ? cardSourceId(card) : "";
+}
+
+function createOnlineGameSnapshot() {
+  const room = onlineState.room;
+  const players = sortedOnlinePlayers().slice(0, room.player_count || 2);
+  state.playerCount = players.length;
+  state.aiDifficulty = room.ai_difficulty || "normal";
+  state.includeExpansion = Boolean(room.include_expansion);
+  state.includeCursedItems = false;
+  updateTitleArt();
+  configureDeckOptions();
+
+  const deckCards = shuffle(cloneDeck());
+  const roster = players.map((player) => ({
+    seat: player.seat,
+    token: player.token,
+    name: player.name,
+    hand: [],
+    activeCursedItem: null,
+    usedCursedItems: []
+  }));
+
+  for (let round = 0; round < startingHandSize(); round += 1) {
+    roster.forEach((player) => {
+      const card = deckCards.pop();
+      if (card) player.hand.push(cardSnapshotId(card));
+    });
+  }
+
+  return {
+    version: 1,
+    startedAt: new Date().toISOString(),
+    playerCount: roster.length,
+    includeExpansion: state.includeExpansion,
+    includeCursedItems: false,
+    activeSeat: roster[0]?.seat ?? 0,
+    turnNumber: 1,
+    phase: "draw",
+    deck: deckCards.map(cardSnapshotId),
+    discard: [],
+    cursedDeck: [],
+    cursedDiscard: [],
+    players: roster
+  };
+}
+
+function findCardBySnapshotId(sourceId, cursedItem = false) {
+  const library = cursedItem ? CURSED_ITEM_LIBRARY : CARD_LIBRARY;
+  const card = library.find((entry) => cardSourceId(entry) === String(sourceId));
+  return card ? { ...card } : null;
+}
+
+function hydrateCardSnapshotList(sourceIds, cursedItem = false) {
+  return (sourceIds || [])
+    .map((sourceId) => findCardBySnapshotId(sourceId, cursedItem))
+    .filter(Boolean);
+}
+
+function hydrateOnlineGameSnapshot(snapshot) {
+  if (!snapshot?.startedAt || !Array.isArray(snapshot.players)) return false;
+  if (onlineState.activeGameKey === snapshot.startedAt && !els.gameBoard.classList.contains("hidden")) {
+    return true;
+  }
+
+  resetDialogueState();
+  state.playerCount = snapshot.playerCount || snapshot.players.length || 2;
+  state.aiDifficulty = onlineState.room?.ai_difficulty || "normal";
+  state.includeExpansion = Boolean(snapshot.includeExpansion);
+  state.includeCursedItems = Boolean(snapshot.includeCursedItems);
+  updateTitleArt();
+  configureDeckOptions();
+
+  const localToken = onlinePlayerToken();
+  const hydratedPlayers = snapshot.players.map((player) => {
+    const isLocal = player.token === localToken;
+    return {
+      id: player.seat,
+      seat: player.seat,
+      token: player.token,
+      name: isLocal ? `${player.name || "나"} (나)` : (player.name || `플레이어 ${player.seat + 1}`),
+      baseName: player.name || `플레이어 ${player.seat + 1}`,
+      human: isLocal,
+      onlineHuman: !isLocal,
+      ai: false,
+      avatarUrl: isLocal ? HUMAN_PROFILE.avatarUrl : "",
+      difficulty: null,
+      difficultyLabel: "",
+      speech: "",
+      hand: hydrateCardSnapshotList(player.hand),
+      activeCursedItem: findCardBySnapshotId(player.activeCursedItem, true),
+      usedCursedItems: hydrateCardSnapshotList(player.usedCursedItems, true)
+    };
+  });
+
+  const localIndex = hydratedPlayers.findIndex((player) => player.human);
+  state.players = localIndex > 0
+    ? [hydratedPlayers[localIndex], ...hydratedPlayers.filter((_, index) => index !== localIndex)]
+    : hydratedPlayers;
+  state.deck = hydrateCardSnapshotList(snapshot.deck);
+  state.discard = hydrateCardSnapshotList(snapshot.discard);
+  state.cursedDeck = hydrateCardSnapshotList(snapshot.cursedDeck, true);
+  state.cursedDiscard = hydrateCardSnapshotList(snapshot.cursedDiscard, true);
+  state.activePlayer = Math.max(0, state.players.findIndex((player) => player.seat === snapshot.activeSeat));
+  state.phase = snapshot.phase || "draw";
+  state.selectedCardId = null;
+  state.drawnCardId = null;
+  state.turnNumber = snapshot.turnNumber || 1;
+  state.finished = false;
+  state.pendingFinish = false;
+  state.animating = false;
+  state.cardActions = {};
+  state.confirmedActions = {};
+  state.skippedActions = {};
+  resetTurnTimerState();
+
+  els.setupPanel.classList.add("hidden");
+  els.gameBoard.classList.remove("hidden");
+  clearLog();
+  log(`온라인 게임 시작. 방 ${onlineState.room?.code || ""}`);
+  onlineState.activeGameKey = snapshot.startedAt;
+  render();
+  return true;
+}
+
+async function startOnlineGame() {
+  const client = getSupabaseClient();
+  if (!client || !onlineState.room || onlineState.loading) return;
+  if (onlineState.room.host_token !== onlinePlayerToken()) {
+    setOnlineStatus("방장만 시작할 수 있습니다.", true);
+    return;
+  }
+
+  const requiredCount = onlineState.room.player_count || 2;
+  if (onlineState.players.length < requiredCount) {
+    setOnlineStatus(`인원 대기 ${onlineState.players.length}/${requiredCount}`, true);
+    renderOnlinePanel();
+    return;
+  }
+
+  onlineState.loading = true;
+  setOnlineStatus("게임 시작 중");
+  renderOnlinePanel();
+
+  try {
+    const snapshot = createOnlineGameSnapshot();
+    const { data: room, error } = await client
+      .from(ONLINE_ROOM_TABLE)
+      .update({
+        status: "playing",
+        game_state: snapshot,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", onlineState.room.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+
+    onlineState.room = room;
+    hydrateOnlineGameSnapshot(snapshot);
+    setOnlineStatus(`게임 중 ${room.code}`);
+  } catch (error) {
+    setOnlineStatus(error.message || "시작 실패", true);
+  } finally {
+    onlineState.loading = false;
+    renderOnlinePanel();
+  }
 }
 
 function resetTurnTimerState() {
@@ -1943,7 +2144,7 @@ function endTurn() {
   render();
   syncIdleDialogueTimer();
 
-  if (!currentPlayer().human) {
+  if (currentPlayer().ai) {
     window.setTimeout(runAiTurn, 550);
   }
 }
@@ -2070,7 +2271,7 @@ function sortHand() {
 }
 
 function runAiTurn() {
-  if (state.finished || currentPlayer().human || state.animating) return;
+  if (state.finished || !currentPlayer().ai || state.animating) return;
   const player = currentPlayer();
   handleAiCursedItem(player);
   const drawChoice = chooseAiDraw(player);
@@ -2289,8 +2490,11 @@ function phaseText() {
   if (state.finished) return "점수 계산 완료";
   if (state.pendingFinish || state.phase === "finalActions") return "마지막 선택";
   if (state.animating) return "이동 중";
-  if (state.phase === "draw") return currentPlayer().human ? "가져오기" : "AI 생각 중";
-  if (state.phase === "discard") return "버리기";
+  if (state.phase === "draw") {
+    if (currentPlayer().human) return "가져오기";
+    return currentPlayer().ai ? "AI 생각 중" : "상대 차례";
+  }
+  if (state.phase === "discard") return currentPlayer().human ? "버리기" : "상대 차례";
   return "대기";
 }
 
@@ -3084,6 +3288,7 @@ function formatSigned(value) {
 els.startButton.addEventListener("click", startGame);
 els.createRoomButton?.addEventListener("click", createOnlineRoom);
 els.joinRoomButton?.addEventListener("click", joinOnlineRoom);
+els.startOnlineGameButton?.addEventListener("click", startOnlineGame);
 els.leaveRoomButton?.addEventListener("click", leaveOnlineRoom);
 els.roomCodeInput?.addEventListener("input", () => {
   els.roomCodeInput.value = normalizeRoomCode(els.roomCodeInput.value);
@@ -3100,6 +3305,7 @@ els.newGameButton.addEventListener("click", () => {
   state.finished = false;
   state.confirmedActions = {};
   state.skippedActions = {};
+  onlineState.activeGameKey = "";
   updateTitleArt();
 });
 els.expansionCheckbox?.addEventListener("change", updateTitleArt);

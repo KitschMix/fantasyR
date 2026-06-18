@@ -359,6 +359,10 @@ h1 {
   border-style: dashed;
 }
 
+.online-start-button {
+  flex: 0 0 148px;
+}
+
 .setup-check {
   position: relative;
   grid-template-columns: auto 1fr;
