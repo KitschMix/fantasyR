@@ -39,7 +39,8 @@ body.card-zoom-open {
 }
 
 button,
-select {
+select,
+input {
   font: inherit;
 }
 
@@ -189,7 +190,8 @@ h1 {
 }
 
 .setup-panel {
-  display: flex;
+  display: grid;
+  gap: 18px;
   justify-content: center;
   max-width: 1120px;
   margin: 12vh auto 0;
@@ -204,6 +206,113 @@ h1 {
   display: grid;
   gap: 6px;
   color: var(--muted);
+}
+
+.online-panel {
+  display: grid;
+  gap: 12px;
+  min-width: min(900px, calc(100vw - 84px));
+  padding: 16px;
+  border: 1px solid rgba(246, 232, 202, 0.12);
+  border-radius: 8px;
+  background: rgba(26, 23, 19, 0.72);
+}
+
+.online-panel-head,
+.online-controls,
+.online-room-card,
+.online-room-code {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.online-panel-head {
+  justify-content: space-between;
+}
+
+.online-panel-head strong {
+  font-size: 22px;
+}
+
+.online-status {
+  padding: 5px 10px;
+  border: 1px solid rgba(107, 198, 162, 0.35);
+  border-radius: 999px;
+  color: #bff2df;
+  background: rgba(107, 198, 162, 0.1);
+  font-size: 17px;
+}
+
+.online-status.error {
+  border-color: rgba(211, 107, 88, 0.42);
+  color: #ffd0c7;
+  background: rgba(211, 107, 88, 0.12);
+}
+
+.online-controls {
+  flex-wrap: wrap;
+}
+
+.online-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.online-controls input {
+  width: 176px;
+  min-height: 50px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  background: rgba(48, 42, 33, 0.86);
+}
+
+#roomCodeInput {
+  width: 134px;
+  text-transform: uppercase;
+}
+
+.online-room-card {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid rgba(246, 232, 202, 0.1);
+}
+
+.online-room-code span {
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.online-room-code strong {
+  font-size: 30px;
+  letter-spacing: 2px;
+}
+
+.online-player-list {
+  display: flex;
+  flex: 1 1 360px;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.online-player-list li {
+  padding: 8px 11px;
+  border: 1px solid rgba(246, 232, 202, 0.14);
+  border-radius: 6px;
+  background: rgba(48, 42, 33, 0.68);
+  font-size: 18px;
+}
+
+.online-player-list .empty-seat {
+  color: var(--muted);
+  border-style: dashed;
 }
 
 .setup-check {

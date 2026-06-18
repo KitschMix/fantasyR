@@ -200,6 +200,11 @@ const DIALOGUE_START_DISPLAY_MS = 8200;
 const DIALOGUE_END_DISPLAY_MS = 15000;
 const DIALOGUE_BOOKS = window.FANTASY_DIALOGUE_BOOKS || {};
 const DIALOGUE_CHARACTER_BOOKS = window.FANTASY_DIALOGUE_CHARACTER_BOOKS || {};
+const SUPABASE_CONFIG = window.FANTASY_SUPABASE_CONFIG || {};
+const ONLINE_ROOM_STORAGE_KEY = "fantasyKingdom.onlineRoom.v1";
+const ONLINE_TOKEN_STORAGE_KEY = "fantasyKingdom.playerToken.v1";
+const ONLINE_ROOM_TABLE = "fantasy_multiplayer_rooms";
+const ONLINE_PLAYER_TABLE = "fantasy_multiplayer_players";
 
 const PROFILE_ASSET_ROOT = "assets/profiles/user";
 const AI_DIFFICULTY_LABELS = {
@@ -261,6 +266,15 @@ const state = {
   confirmedActions: {}
 };
 
+const onlineState = {
+  client: null,
+  room: null,
+  players: [],
+  playerToken: "",
+  subscription: null,
+  loading: false
+};
+
 const els = {
   setupPanel: document.querySelector("#setupPanel"),
   gameBoard: document.querySelector("#gameBoard"),
@@ -269,6 +283,16 @@ const els = {
   expansionCheckbox: document.querySelector("#expansionCheckbox"),
   cursedItemsCheckbox: document.querySelector("#cursedItemsCheckbox"),
   startButton: document.querySelector("#startButton"),
+  onlinePanel: document.querySelector("#onlinePanel"),
+  onlineStatus: document.querySelector("#onlineStatus"),
+  onlineNameInput: document.querySelector("#onlineNameInput"),
+  roomCodeInput: document.querySelector("#roomCodeInput"),
+  createRoomButton: document.querySelector("#createRoomButton"),
+  joinRoomButton: document.querySelector("#joinRoomButton"),
+  onlineRoomCard: document.querySelector("#onlineRoomCard"),
+  onlineRoomCode: document.querySelector("#onlineRoomCode"),
+  onlinePlayerList: document.querySelector("#onlinePlayerList"),
+  leaveRoomButton: document.querySelector("#leaveRoomButton"),
   newGameButton: document.querySelector("#newGameButton"),
   rulesButton: document.querySelector("#rulesButton"),
   rulesDialog: document.querySelector("#rulesDialog"),
@@ -533,6 +557,337 @@ function log(message) {
   while (els.gameLog.children.length > 12) {
     els.gameLog.lastElementChild.remove();
   }
+}
+
+function setOnlineStatus(message, error = false) {
+  if (!els.onlineStatus) return;
+  els.onlineStatus.textContent = message;
+  els.onlineStatus.classList.toggle("error", error);
+}
+
+function getSupabaseClient() {
+  if (onlineState.client) return onlineState.client;
+  if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key || !window.supabase?.createClient) {
+    setOnlineStatus("설정 필요", true);
+    return null;
+  }
+  onlineState.client = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key, {
+    auth: { persistSession: false }
+  });
+  return onlineState.client;
+}
+
+function generateOnlineToken() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `player-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function onlinePlayerToken() {
+  if (onlineState.playerToken) return onlineState.playerToken;
+  const stored = window.localStorage?.getItem(ONLINE_TOKEN_STORAGE_KEY);
+  onlineState.playerToken = stored || generateOnlineToken();
+  window.localStorage?.setItem(ONLINE_TOKEN_STORAGE_KEY, onlineState.playerToken);
+  return onlineState.playerToken;
+}
+
+function onlinePlayerName() {
+  return (els.onlineNameInput?.value || "나").trim().slice(0, 12) || "나";
+}
+
+function normalizeRoomCode(value) {
+  return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+}
+
+function generateRoomCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i += 1) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return code;
+}
+
+function onlineRoomSnapshot() {
+  if (!onlineState.room) return null;
+  return {
+    roomId: onlineState.room.id,
+    roomCode: onlineState.room.code,
+    token: onlinePlayerToken()
+  };
+}
+
+function saveOnlineRoomSnapshot() {
+  const snapshot = onlineRoomSnapshot();
+  if (snapshot) {
+    window.localStorage?.setItem(ONLINE_ROOM_STORAGE_KEY, JSON.stringify(snapshot));
+  }
+}
+
+function clearOnlineRoomSnapshot() {
+  window.localStorage?.removeItem(ONLINE_ROOM_STORAGE_KEY);
+}
+
+function renderOnlinePanel() {
+  const connected = Boolean(onlineState.room);
+  els.onlineRoomCard?.classList.toggle("hidden", !connected);
+  if (els.onlineRoomCode) els.onlineRoomCode.textContent = onlineState.room?.code || "-";
+
+  const buttonsDisabled = onlineState.loading || !getSupabaseClient();
+  if (els.createRoomButton) els.createRoomButton.disabled = buttonsDisabled || connected;
+  if (els.joinRoomButton) els.joinRoomButton.disabled = buttonsDisabled || connected;
+  if (els.leaveRoomButton) els.leaveRoomButton.disabled = onlineState.loading || !connected;
+  if (els.roomCodeInput && onlineState.room?.code) els.roomCodeInput.value = onlineState.room.code;
+
+  if (!els.onlinePlayerList) return;
+  els.onlinePlayerList.innerHTML = "";
+  if (!connected) return;
+
+  const bySeat = new Map(onlineState.players.map((player) => [player.seat, player]));
+  const count = onlineState.room.player_count || 2;
+  for (let seat = 0; seat < count; seat += 1) {
+    const item = document.createElement("li");
+    const player = bySeat.get(seat);
+    if (player) {
+      const hostMark = onlineState.room.host_token === player.token ? " 방장" : "";
+      const meMark = player.token === onlinePlayerToken() ? " 나" : "";
+      item.textContent = `${seat + 1}. ${player.name}${hostMark}${meMark}`;
+    } else {
+      item.className = "empty-seat";
+      item.textContent = `${seat + 1}. 빈 자리`;
+    }
+    els.onlinePlayerList.append(item);
+  }
+}
+
+async function loadOnlineRoom(roomId) {
+  const client = getSupabaseClient();
+  if (!client || !roomId) return false;
+
+  const { data: room, error: roomError } = await client
+    .from(ONLINE_ROOM_TABLE)
+    .select("*")
+    .eq("id", roomId)
+    .maybeSingle();
+  if (roomError || !room) {
+    setOnlineStatus("방 없음", true);
+    return false;
+  }
+
+  const { data: players, error: playersError } = await client
+    .from(ONLINE_PLAYER_TABLE)
+    .select("*")
+    .eq("room_id", roomId)
+    .order("seat", { ascending: true });
+  if (playersError) {
+    setOnlineStatus("명단 오류", true);
+    return false;
+  }
+
+  onlineState.room = room;
+  onlineState.players = players || [];
+  saveOnlineRoomSnapshot();
+  setOnlineStatus(`방 ${room.code}`);
+  renderOnlinePanel();
+  return true;
+}
+
+async function subscribeOnlineRoom(roomId) {
+  const client = getSupabaseClient();
+  if (!client || !roomId) return;
+  if (onlineState.subscription) {
+    await client.removeChannel(onlineState.subscription);
+    onlineState.subscription = null;
+  }
+
+  onlineState.subscription = client
+    .channel(`fantasy-room-${roomId}`)
+    .on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: ONLINE_ROOM_TABLE,
+      filter: `id=eq.${roomId}`
+    }, () => loadOnlineRoom(roomId))
+    .on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: ONLINE_PLAYER_TABLE,
+      filter: `room_id=eq.${roomId}`
+    }, () => loadOnlineRoom(roomId))
+    .subscribe();
+}
+
+async function createOnlineRoom() {
+  const client = getSupabaseClient();
+  if (!client || onlineState.loading) return;
+  onlineState.loading = true;
+  setOnlineStatus("방 생성 중");
+  renderOnlinePanel();
+
+  try {
+    const token = onlinePlayerToken();
+    const roomPayload = {
+      code: generateRoomCode(),
+      host_token: token,
+      player_count: Number(els.playerCountSelect?.value || 2),
+      include_expansion: Boolean(els.expansionCheckbox?.checked),
+      ai_difficulty: els.aiDifficultySelect?.value || "normal",
+      status: "lobby",
+      game_state: {}
+    };
+
+    const { data: room, error: roomError } = await client
+      .from(ONLINE_ROOM_TABLE)
+      .insert(roomPayload)
+      .select("*")
+      .single();
+    if (roomError) throw roomError;
+
+    const { error: playerError } = await client
+      .from(ONLINE_PLAYER_TABLE)
+      .insert({
+        room_id: room.id,
+        seat: 0,
+        name: onlinePlayerName(),
+        token
+      });
+    if (playerError) throw playerError;
+
+    onlineState.room = room;
+    await loadOnlineRoom(room.id);
+    await subscribeOnlineRoom(room.id);
+  } catch (error) {
+    setOnlineStatus(error.message || "생성 실패", true);
+  } finally {
+    onlineState.loading = false;
+    renderOnlinePanel();
+  }
+}
+
+async function joinOnlineRoom() {
+  const client = getSupabaseClient();
+  if (!client || onlineState.loading) return;
+  const code = normalizeRoomCode(els.roomCodeInput?.value);
+  if (!code) {
+    setOnlineStatus("코드 필요", true);
+    return;
+  }
+
+  onlineState.loading = true;
+  setOnlineStatus("입장 중");
+  renderOnlinePanel();
+
+  try {
+    const token = onlinePlayerToken();
+    const { data: room, error: roomError } = await client
+      .from(ONLINE_ROOM_TABLE)
+      .select("*")
+      .eq("code", code)
+      .maybeSingle();
+    if (roomError) throw roomError;
+    if (!room) throw new Error("방을 찾을 수 없습니다.");
+
+    const { data: players, error: playersError } = await client
+      .from(ONLINE_PLAYER_TABLE)
+      .select("*")
+      .eq("room_id", room.id)
+      .order("seat", { ascending: true });
+    if (playersError) throw playersError;
+
+    const existing = (players || []).find((player) => player.token === token);
+    if (existing) {
+      await client
+        .from(ONLINE_PLAYER_TABLE)
+        .update({ name: onlinePlayerName(), connected_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    } else {
+      const occupied = new Set((players || []).map((player) => player.seat));
+      let seat = -1;
+      for (let index = 0; index < room.player_count; index += 1) {
+        if (!occupied.has(index)) {
+          seat = index;
+          break;
+        }
+      }
+      if (seat < 0) throw new Error("빈 자리가 없습니다.");
+      const { error: joinError } = await client
+        .from(ONLINE_PLAYER_TABLE)
+        .insert({
+          room_id: room.id,
+          seat,
+          name: onlinePlayerName(),
+          token
+        });
+      if (joinError) throw joinError;
+    }
+
+    onlineState.room = room;
+    await loadOnlineRoom(room.id);
+    await subscribeOnlineRoom(room.id);
+  } catch (error) {
+    setOnlineStatus(error.message || "입장 실패", true);
+  } finally {
+    onlineState.loading = false;
+    renderOnlinePanel();
+  }
+}
+
+async function leaveOnlineRoom() {
+  const client = getSupabaseClient();
+  if (!client || !onlineState.room || onlineState.loading) return;
+  onlineState.loading = true;
+  setOnlineStatus("나가는 중");
+  renderOnlinePanel();
+
+  try {
+    await client
+      .from(ONLINE_PLAYER_TABLE)
+      .delete()
+      .eq("room_id", onlineState.room.id)
+      .eq("token", onlinePlayerToken());
+    if (onlineState.subscription) {
+      await client.removeChannel(onlineState.subscription);
+      onlineState.subscription = null;
+    }
+    onlineState.room = null;
+    onlineState.players = [];
+    clearOnlineRoomSnapshot();
+    setOnlineStatus("연결 대기");
+  } catch (error) {
+    setOnlineStatus(error.message || "나가기 실패", true);
+  } finally {
+    onlineState.loading = false;
+    renderOnlinePanel();
+  }
+}
+
+async function restoreOnlineRoom() {
+  const client = getSupabaseClient();
+  if (!client) {
+    renderOnlinePanel();
+    return;
+  }
+
+  let snapshot = null;
+  try {
+    snapshot = JSON.parse(window.localStorage?.getItem(ONLINE_ROOM_STORAGE_KEY) || "null");
+  } catch {
+    snapshot = null;
+  }
+  if (!snapshot?.roomId || !snapshot?.token) {
+    setOnlineStatus("연결 대기");
+    renderOnlinePanel();
+    return;
+  }
+
+  onlineState.playerToken = snapshot.token;
+  const restored = await loadOnlineRoom(snapshot.roomId);
+  if (restored) {
+    await subscribeOnlineRoom(snapshot.roomId);
+    setOnlineStatus(`재접속 ${onlineState.room.code}`);
+  } else {
+    clearOnlineRoomSnapshot();
+  }
+  renderOnlinePanel();
 }
 
 function currentPlayer() {
@@ -2529,6 +2884,15 @@ function formatSigned(value) {
 }
 
 els.startButton.addEventListener("click", startGame);
+els.createRoomButton?.addEventListener("click", createOnlineRoom);
+els.joinRoomButton?.addEventListener("click", joinOnlineRoom);
+els.leaveRoomButton?.addEventListener("click", leaveOnlineRoom);
+els.roomCodeInput?.addEventListener("input", () => {
+  els.roomCodeInput.value = normalizeRoomCode(els.roomCodeInput.value);
+});
+els.roomCodeInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") joinOnlineRoom();
+});
 els.newGameButton.addEventListener("click", () => {
   els.setupPanel.classList.remove("hidden");
   els.gameBoard.classList.add("hidden");
@@ -2549,3 +2913,4 @@ els.restartGameButton.addEventListener("click", () => {
 });
 
 updateTitleArt();
+restoreOnlineRoom();
