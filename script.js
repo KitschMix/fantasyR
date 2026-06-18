@@ -193,6 +193,13 @@ const CARD_ART_VERSION = "small-20260618-expansion";
 const CARD_LONG_PRESS_MS = 450;
 const CARD_LONG_PRESS_MOVE_LIMIT = 12;
 const CARD_ZOOM_SCALE = 2.5;
+const DIALOGUE_CHANCE = 0.3;
+const DIALOGUE_IDLE_INTERVAL_MS = 10000;
+const DIALOGUE_DISPLAY_MS = 6200;
+const DIALOGUE_START_DISPLAY_MS = 8200;
+const DIALOGUE_END_DISPLAY_MS = 15000;
+const DIALOGUE_BOOKS = window.FANTASY_DIALOGUE_BOOKS || {};
+const DIALOGUE_CHARACTER_BOOKS = window.FANTASY_DIALOGUE_CHARACTER_BOOKS || {};
 
 const PROFILE_ASSET_ROOT = "assets/profiles/user";
 const AI_DIFFICULTY_LABELS = {
@@ -294,6 +301,10 @@ const els = {
 
 let activeCardZoom = null;
 let suppressCardClick = false;
+let dialogueUsage = new Map();
+let idleDialogueTimer = null;
+let idleDialogueToken = 0;
+const speechClearTimers = new Map();
 
 function shuffle(items) {
   const result = [...items];
@@ -352,6 +363,7 @@ function createPlayerRoster() {
     {
       id: 0,
       name: HUMAN_PROFILE.name,
+      baseName: HUMAN_PROFILE.name,
       human: true,
       avatarUrl: HUMAN_PROFILE.avatarUrl,
       difficulty: null,
@@ -365,6 +377,7 @@ function createPlayerRoster() {
       return {
         id: index + 1,
         name: aiPlayerDisplayName(profile),
+        baseName: profile.name,
         human: false,
         avatarUrl: profile.avatarUrl,
         difficulty: profile.difficulty,
@@ -465,6 +478,7 @@ function updateTitleArt() {
 }
 
 function startGame() {
+  resetDialogueState();
   state.playerCount = Number(els.playerCountSelect.value);
   state.aiDifficulty = els.aiDifficultySelect?.value || "normal";
   state.includeExpansion = Boolean(els.expansionCheckbox?.checked);
@@ -504,6 +518,8 @@ function startGame() {
   clearLog();
   log(`게임 시작. ${startingHandSize()}장 손패로 시작합니다. 덱이나 공개 버린 카드에서 1장을 가져오세요.`);
   render();
+  speakAllAiDialogue("start", { duration: DIALOGUE_START_DISPLAY_MS });
+  syncIdleDialogueTimer();
 }
 
 function clearLog() {
@@ -578,6 +594,158 @@ function playerSpeechBubbleHtml(player) {
       ${player?.speech ? escapeHtml(player.speech) : ""}
     </div>
   `;
+}
+
+function resetDialogueState() {
+  stopIdleDialogueTimer();
+  speechClearTimers.forEach((timer) => window.clearTimeout(timer));
+  speechClearTimers.clear();
+  dialogueUsage = new Map();
+}
+
+function dialoguePlayerName(player) {
+  return player?.baseName || String(player?.name || "").replace(/\s*\(.+\)\s*$/, "");
+}
+
+function dialogueBooksForPlayer(player) {
+  return DIALOGUE_CHARACTER_BOOKS[dialoguePlayerName(player)] || [];
+}
+
+function dialogueUsageSet(bookKey, eventKey) {
+  const key = `${bookKey}:${eventKey}`;
+  if (!dialogueUsage.has(key)) dialogueUsage.set(key, new Set());
+  return dialogueUsage.get(key);
+}
+
+function hasUnusedDialogue(bookKey, eventKey) {
+  const lines = DIALOGUE_BOOKS[bookKey]?.[eventKey] || [];
+  if (lines.length === 0) return false;
+  const used = dialogueUsageSet(bookKey, eventKey);
+  return lines.some((line) => !used.has(line));
+}
+
+function pickDialogueLine(player, eventKey) {
+  const books = shuffle(dialogueBooksForPlayer(player)).filter((bookKey) => hasUnusedDialogue(bookKey, eventKey));
+  for (const bookKey of books) {
+    const lines = DIALOGUE_BOOKS[bookKey]?.[eventKey] || [];
+    const used = dialogueUsageSet(bookKey, eventKey);
+    const unused = lines.filter((line) => !used.has(line));
+    if (unused.length === 0) continue;
+    const line = unused[Math.floor(Math.random() * unused.length)];
+    used.add(line);
+    return line;
+  }
+  return "";
+}
+
+function aiDialogueCandidates(eventKey, excludedIds = []) {
+  const excluded = new Set(excludedIds);
+  return state.players.filter((player) => (
+    !player.human
+    && !excluded.has(player.id)
+    && dialogueBooksForPlayer(player).some((bookKey) => hasUnusedDialogue(bookKey, eventKey))
+  ));
+}
+
+function clearPlayerSpeech(player) {
+  if (!player) return;
+  const timer = speechClearTimers.get(player.id);
+  if (timer) window.clearTimeout(timer);
+  speechClearTimers.delete(player.id);
+  player.speech = "";
+}
+
+function clearAllSpeech() {
+  state.players.forEach(clearPlayerSpeech);
+}
+
+function setPlayerSpeech(player, line, duration = DIALOGUE_DISPLAY_MS) {
+  if (!player || !line) return;
+  const timer = speechClearTimers.get(player.id);
+  if (timer) window.clearTimeout(timer);
+  player.speech = line;
+  if (duration > 0) {
+    speechClearTimers.set(player.id, window.setTimeout(() => {
+      if (player.speech === line) {
+        player.speech = "";
+        renderOpponents();
+      }
+      speechClearTimers.delete(player.id);
+    }, duration));
+  }
+}
+
+function speakSingleDialogue(eventKey, options = {}) {
+  const {
+    chance = DIALOGUE_CHANCE,
+    excludedIds = [],
+    player = null,
+    duration = DIALOGUE_DISPLAY_MS
+  } = options;
+  if (Math.random() >= chance) return false;
+
+  const candidates = player ? [player] : shuffle(aiDialogueCandidates(eventKey, excludedIds));
+  for (const candidate of candidates) {
+    if (!candidate || candidate.human) continue;
+    const line = pickDialogueLine(candidate, eventKey);
+    if (!line) continue;
+    clearAllSpeech();
+    setPlayerSpeech(candidate, line, duration);
+    renderOpponents();
+    return true;
+  }
+  return false;
+}
+
+function speakAllAiDialogue(eventKey, options = {}) {
+  const { duration = DIALOGUE_START_DISPLAY_MS, eventByPlayer = null } = options;
+  clearAllSpeech();
+  state.players.filter((player) => !player.human).forEach((player) => {
+    const playerEventKey = eventByPlayer ? eventByPlayer(player) : eventKey;
+    const line = pickDialogueLine(player, playerEventKey);
+    if (line) setPlayerSpeech(player, line, duration);
+  });
+  renderOpponents();
+}
+
+function canIdleDialogueRun() {
+  return currentPlayer()?.human
+    && !state.finished
+    && !state.pendingFinish
+    && !state.animating
+    && (state.phase === "draw" || state.phase === "discard");
+}
+
+function stopIdleDialogueTimer() {
+  idleDialogueToken += 1;
+  if (idleDialogueTimer) {
+    window.clearTimeout(idleDialogueTimer);
+    idleDialogueTimer = null;
+  }
+}
+
+function scheduleNextIdleDialogue() {
+  if (!currentPlayer()?.human || state.finished || state.pendingFinish) return;
+  const token = idleDialogueToken;
+  idleDialogueTimer = window.setTimeout(() => {
+    idleDialogueTimer = null;
+    if (token !== idleDialogueToken) return;
+    if (canIdleDialogueRun()) {
+      speakSingleDialogue("wait", { chance: 1, duration: DIALOGUE_DISPLAY_MS });
+    }
+    scheduleNextIdleDialogue();
+  }, DIALOGUE_IDLE_INTERVAL_MS);
+}
+
+function syncIdleDialogueTimer() {
+  if (currentPlayer()?.human && !state.finished && !state.pendingFinish) {
+    if (!idleDialogueTimer) {
+      idleDialogueToken += 1;
+      scheduleNextIdleDialogue();
+    }
+    return;
+  }
+  stopIdleDialogueTimer();
 }
 
 function getPenaltyClearInfo(card, scoreRow) {
@@ -1192,6 +1360,7 @@ function drawFromDiscard(cardId, sourceElement) {
   renderWithCardMove(card, sourceElement, () => {
     state.animating = false;
     render();
+    speakSingleDialogue("takeDiscard", { excludedIds: [currentPlayer().id] });
   });
 }
 
@@ -1226,6 +1395,7 @@ function endTurn() {
   state.activePlayer = (state.activePlayer + 1) % state.players.length;
   if (state.activePlayer === 0) state.turnNumber += 1;
   render();
+  syncIdleDialogueTimer();
 
   if (!currentPlayer().human) {
     window.setTimeout(runAiTurn, 550);
@@ -1233,6 +1403,7 @@ function endTurn() {
 }
 
 function requestFinishGame() {
+  stopIdleDialogueTimer();
   state.pendingFinish = true;
   state.phase = "finalActions";
   state.activePlayer = 0;
@@ -1308,7 +1479,12 @@ function finishGame() {
     .map((player) => ({ player, score: scorePlayer(player).total }))
     .sort((a, b) => b.score - a.score);
   log(`게임 종료. 승자: ${ranked[0].player.name} (${ranked[0].score}점)`);
+  stopIdleDialogueTimer();
   render();
+  speakAllAiDialogue(null, {
+    duration: DIALOGUE_END_DISPLAY_MS,
+    eventByPlayer: (player) => ranked[0].player.id === player.id ? "win" : "lose"
+  });
   showEndNotification(ranked);
 }
 
@@ -1354,8 +1530,9 @@ function runAiTurn() {
   let drawn;
   let drawSourceRect = null;
   let hiddenDraw = false;
+  const drewFromDiscard = drawChoice.source === "discard";
 
-  if (drawChoice.source === "discard") {
+  if (drewFromDiscard) {
     const sourceCard = state.discard[drawChoice.index];
     drawSourceRect = els.discardArea.querySelector(dataCardSelector(sourceCard.id))?.getBoundingClientRect?.();
     const [card] = state.discard.splice(drawChoice.index, 1);
@@ -1371,6 +1548,9 @@ function runAiTurn() {
   }
 
   state.animating = true;
+  if (drewFromDiscard) {
+    speakSingleDialogue("takeDiscard", { excludedIds: [player.id] });
+  }
   renderWithAiDrawMove(drawn, drawSourceRect, player.id, hiddenDraw, () => {
     const discardId = chooseAiDiscard(player, player.hand);
     const discardIndex = player.hand.findIndex((card) => card.id === discardId);
@@ -1379,6 +1559,7 @@ function runAiTurn() {
     state.discard.push(discarded);
     state.selectedCardId = discarded.id;
     log(`${player.name}: ${discarded.name} 카드를 버렸습니다.`);
+    speakSingleDialogue("discard", { player });
     renderWithDiscardMove(discarded, { getBoundingClientRect: () => discardSourceRect }, () => {
       state.animating = false;
       endTurn();
