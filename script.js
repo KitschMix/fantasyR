@@ -20,7 +20,7 @@ const TYPE_META = {
   "cursed-item": { label: "저주받은 유물", color: "#cdc7b5", glyph: "!" }
 };
 
-const EXCLUDED_SOURCE_IDS = new Set(["FR55", "FR55P"]);
+const EXCLUDED_SOURCE_IDS = new Set(["FR54", "FR55", "FR55P"]);
 let CARD_LIBRARY = buildSourceCardLibrary();
 let CURSED_ITEM_LIBRARY = buildCursedItemLibrary();
 
