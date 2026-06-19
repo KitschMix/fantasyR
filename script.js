@@ -177,6 +177,14 @@ const ACTION_CONTROL_ORDER = [
 
 const ACTION_EXECUTE_VALUE = "execute";
 const ACTION_EXECUTE_OPTIONS = [{ value: ACTION_EXECUTE_VALUE, label: "실행하기" }];
+const OPTIONAL_ACTION_TYPES = new Set([
+  "angel",
+  "bookOfChanges",
+  "doppelganger",
+  "island",
+  "mirage",
+  "shapeshifter"
+]);
 
 const SOURCE_SUIT_OPTIONS = [
   { value: "land", label: "땅" },
@@ -1808,10 +1816,30 @@ function isCardActionSkipped(card) {
   return Boolean(state.skippedActions[cardActionKey(cardSourceId(card))]);
 }
 
+function isOptionalActionType(type) {
+  return OPTIONAL_ACTION_TYPES.has(type);
+}
+
+function isCardActionResolved(card, player) {
+  return isCardActionSkipped(card) || isCardActionConfirmed(card, player);
+}
+
+function isOptionalActionNoSelection(card) {
+  const type = getActionControlType(card);
+  if (!isOptionalActionType(type)) return false;
+  const action = getCardAction(cardSourceId(card));
+  return !action || action.every((value) => !String(value || ""));
+}
+
 function confirmCardAction(card, player) {
   if (!isCardActionComplete(card, player)) return false;
   const sourceId = cardSourceId(card);
   if (isCardActionSignatureConfirmed(sourceId)) return true;
+  if (isOptionalActionNoSelection(card)) {
+    skipCardAction(sourceId);
+    saveOnlineGameState("skip-action");
+    return true;
+  }
   if (!executeConfirmedCardAction(card, player)) return false;
   state.confirmedActions[cardActionKey(sourceId)] = cardActionSignature(sourceId);
   cleanupUnavailableActions(player);
@@ -2010,6 +2038,7 @@ function isCardActionComplete(card, player) {
   const action = getCardAction(sourceId) || [];
 
   if (isCardActionSignatureConfirmed(sourceId)) return true;
+  if (isOptionalActionNoSelection(card)) return true;
 
   if (type === "leprechaun") {
     return action[0] === ACTION_EXECUTE_VALUE && state.deck.length > 0;
@@ -3443,7 +3472,7 @@ function createActionControl(card, player) {
   const section = document.createElement("section");
   section.className = "score-action-card";
   if (state.pendingFinish && requiresChoice) {
-    section.classList.add(isCardActionConfirmed(card, player) ? "complete" : "required");
+    section.classList.add(isCardActionResolved(card, player) ? "complete" : "required");
   }
   section.innerHTML = `
     <div class="action-card-title">
@@ -3488,17 +3517,17 @@ function createActionControl(card, player) {
     fields.append(createSelectField("복사", action[0] || "", buildGlobalTargetOptions(SHAPESHIFTER_TARGET_TYPES), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }));
+    }, { allowNone: true }));
   } else if (type === "mirage") {
     fields.append(createSelectField("복사", action[0] || "", buildGlobalTargetOptions(MIRAGE_TARGET_TYPES), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }));
+    }, { allowNone: true }));
   } else if (type === "doppelganger") {
     fields.append(createSelectField("복사", action[0] || "", buildHandTargetOptions(player.hand, sourceId), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }));
+    }, { allowNone: true }));
   } else if (type === "necromancer") {
     fields.append(createSelectField("추가", action[0] || "", buildDiscardTargetOptions(NECROMANCER_TARGET_TYPES), (value) => {
       setCardAction(sourceId, [value]);
@@ -3508,21 +3537,21 @@ function createActionControl(card, player) {
     fields.append(createSelectField("대상", action[0] || "", buildHandTargetOptions(player.hand, sourceId), (value) => {
       setCardAction(sourceId, [value, action[1] || ""]);
       render();
-    }));
+    }, { allowNone: true }));
     fields.append(createSelectField("종류", action[1] || "", getAvailableSuitOptions(), (value) => {
       setCardAction(sourceId, [action[0] || "", value]);
       render();
-    }));
+    }, { allowNone: true }));
   } else if (type === "island") {
     fields.append(createSelectField("보호", action[0] || "", getIslandTargetOptions(player.hand, sourceId), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }));
+    }, { allowNone: true }));
   } else if (type === "angel") {
     fields.append(createSelectField("보호", action[0] || "", buildHandTargetOptions(player.hand, sourceId), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }));
+    }, { allowNone: true }));
   }
 
   if (requiresChoice) {
@@ -3533,7 +3562,11 @@ function createActionControl(card, player) {
   if (state.pendingFinish && requiresChoice) {
     const note = document.createElement("div");
     note.className = "action-required-note";
-    note.textContent = isCardActionConfirmed(card, player) ? "확정 완료" : "게임 종료 전 확정 필요";
+    note.textContent = isCardActionSkipped(card)
+      ? "선택안함"
+      : isCardActionConfirmed(card, player)
+        ? "확정 완료"
+        : "게임 종료 전 확정 필요";
     section.append(note);
   }
   section.append(fields);
@@ -3543,11 +3576,12 @@ function createActionControl(card, player) {
 function createActionConfirmButton(card, player) {
   const button = document.createElement("button");
   const confirmed = isCardActionConfirmed(card, player);
+  const skipped = isCardActionSkipped(card);
   const complete = isCardActionComplete(card, player);
   button.type = "button";
   button.className = "action-confirm-button";
-  button.textContent = confirmed ? "확정됨" : "확정";
-  button.disabled = confirmed || !complete;
+  button.textContent = skipped ? "선택안함" : confirmed ? "확정됨" : "확정";
+  button.disabled = confirmed || skipped || !complete;
   button.addEventListener("click", () => {
     if (!confirmCardAction(card, player)) return;
     completePendingFinishIfReady();
@@ -3571,7 +3605,7 @@ function actionLabel(type) {
   return labels[type] || "";
 }
 
-function createSelectField(label, selectedValue, options, onChange) {
+function createSelectField(label, selectedValue, options, onChange, settings = {}) {
   const field = document.createElement("label");
   field.className = "action-field";
 
@@ -3582,7 +3616,7 @@ function createSelectField(label, selectedValue, options, onChange) {
   const hasOptions = options.length > 0;
   const defaultOption = document.createElement("option");
   defaultOption.value = "";
-  defaultOption.textContent = hasOptions ? "선택 안 함" : "대상 없음";
+  defaultOption.textContent = settings.allowNone ? "선택안함" : hasOptions ? "선택 필요" : "대상 없음";
   select.append(defaultOption);
 
   options.forEach((option) => {
