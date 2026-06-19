@@ -1435,7 +1435,13 @@ function handleTurnTimerExpired(key) {
   if (!key || turnTimerHandledKey === key || key !== state.turnTimerKey) return;
   turnTimerHandledKey = key;
   stopTurnTimer({ hide: false });
+  if (!canThisClientHandleTurnTimeout()) return;
   handleTimedTurnSkip();
+}
+
+function canThisClientHandleTurnTimeout() {
+  if (!isOnlinePlaying()) return true;
+  return onlineState.room?.host_token === onlinePlayerToken();
 }
 
 function handleTimedTurnSkip() {
@@ -1502,6 +1508,22 @@ function skipPendingFinalActions(player) {
 
 function currentPlayer() {
   return state.players[state.activePlayer];
+}
+
+function canControlActivePlayer() {
+  const player = currentPlayer();
+  if (!player?.human || state.finished || state.animating) return false;
+  if (!isOnlinePlaying()) return true;
+  return !onlineState.loading && !onlineState.savingGame && !onlineState.applyingRemote;
+}
+
+function canEditActionControlsForPlayer(player) {
+  if (!player?.human || state.finished || state.animating) return false;
+  if (state.pendingFinish || state.phase === "finalActions") {
+    return player === currentPlayer() && canControlActivePlayer();
+  }
+  if (!isOnlinePlaying()) return true;
+  return currentPlayer()?.human && !onlineState.loading && !onlineState.savingGame && !onlineState.applyingRemote;
 }
 
 function cardSourceId(card) {
@@ -1711,6 +1733,26 @@ function syncIdleDialogueTimer() {
     return;
   }
   stopIdleDialogueTimer();
+}
+
+function speakAiTurnStart(player) {
+  return speakSingleDialogue("wait", {
+    player,
+    chance: 0.16,
+    duration: DIALOGUE_DISPLAY_MS
+  });
+}
+
+function speakAiScoreReaction(player, beforeScore, afterScore) {
+  const delta = afterScore - beforeScore;
+  if (delta >= 10) {
+    return speakSingleDialogue("takeDiscard", { player, chance: 0.45, duration: DIALOGUE_DISPLAY_MS })
+      || speakSingleDialogue("wait", { player, chance: 0.3, duration: DIALOGUE_DISPLAY_MS });
+  }
+  if (delta <= -8) {
+    return speakSingleDialogue("discard", { player, chance: 0.38, duration: DIALOGUE_DISPLAY_MS });
+  }
+  return false;
 }
 
 function getPenaltyClearInfo(card, scoreRow) {
@@ -1940,7 +1982,7 @@ function getScoringHand(player) {
 }
 
 function getNecromancerExtraCard(player) {
-  if (!player?.human) return null;
+  if (!player) return null;
   const necromancerId = getPlayerSourceId(player, "necromancer");
   if (!necromancerId) return null;
 
@@ -1999,14 +2041,19 @@ function getNormalizedActionData(card, hand) {
 }
 
 function getRequiredActionIssues(player) {
-  if (!player?.human) return [];
+  if (!player) return [];
   cleanupUnavailableActions(player);
   return player.hand
-    .filter((card) => getActionControlType(card))
-    .filter((card) => doesActionRequireChoice(card, player))
-    .filter((card) => !isCardActionSkipped(card))
-    .filter((card) => !isCardActionConfirmed(card, player))
-    .map((card) => ({ card, type: getActionControlType(card) }));
+    .map((card, index) => ({ card, index, type: getActionControlType(card) }))
+    .filter((entry) => entry.type)
+    .filter((entry) => doesActionRequireChoice(entry.card, player))
+    .filter((entry) => !isCardActionSkipped(entry.card))
+    .filter((entry) => !isCardActionConfirmed(entry.card, player))
+    .sort((a, b) => (
+      ACTION_CONTROL_ORDER.indexOf(a.type) - ACTION_CONTROL_ORDER.indexOf(b.type)
+      || a.index - b.index
+    ))
+    .map(({ card, type }) => ({ card, type }));
 }
 
 function doesActionRequireChoice(card, player) {
@@ -2452,7 +2499,7 @@ function drawFromDiscard(cardId, sourceElement) {
 }
 
 function discardFromHand(cardId, sourceElement) {
-  if (!currentPlayer().human || state.phase !== "discard" || state.finished || state.animating) {
+  if (!canControlActivePlayer() || state.phase !== "discard") {
     selectCard(cardId);
     return;
   }
@@ -2469,6 +2516,52 @@ function discardFromHand(cardId, sourceElement) {
     state.animating = false;
     endTurn();
   });
+}
+
+function finalActionPlayerOrder() {
+  return [...state.players].sort((a, b) => (
+    (a.seat ?? a.id ?? 0) - (b.seat ?? b.id ?? 0)
+  ));
+}
+
+function setActivePlayerByReference(player) {
+  const index = state.players.indexOf(player);
+  state.activePlayer = index >= 0 ? index : 0;
+}
+
+function nextPendingFinalActionPlayer() {
+  const pending = finalActionPlayerOrder().flatMap((player, playerOrder) => (
+    getRequiredActionIssues(player).map((issue, issueOrder) => ({
+      player,
+      issue,
+      playerOrder,
+      issueOrder
+    }))
+  ));
+  pending.sort((a, b) => (
+    ACTION_CONTROL_ORDER.indexOf(a.issue.type) - ACTION_CONTROL_ORDER.indexOf(b.issue.type)
+    || a.playerOrder - b.playerOrder
+    || a.issueOrder - b.issueOrder
+  ));
+  const next = pending[0];
+  return next ? { player: next.player, missing: [next.issue] } : null;
+}
+
+function advanceFinalActions(reason = "final-actions") {
+  if (!state.pendingFinish || state.finished) return true;
+
+  resolveAiFinalActions();
+  const next = nextPendingFinalActionPlayer();
+  if (next) {
+    setActivePlayerByReference(next.player);
+    state.selectedCardId = next.missing[0].card.id;
+    render();
+    saveOnlineGameState(reason);
+    return false;
+  }
+
+  finishGame();
+  return true;
 }
 
 function endTurn() {
@@ -2494,34 +2587,21 @@ function requestFinishGame() {
   stopIdleDialogueTimer();
   state.pendingFinish = true;
   state.phase = "finalActions";
-  state.activePlayer = 0;
   state.drawnCardId = null;
 
-  const missing = getRequiredActionIssues(state.players[0]);
-  if (missing.length > 0) {
-    state.selectedCardId = missing[0].card.id;
-    log(`게임 종료 전 ${missing.map((entry) => entry.card.name).join(", ")} 선택을 확정하세요.`);
-    render();
-    saveOnlineGameState("final-actions");
-    return;
-  }
-
-  finishGame();
+  advanceFinalActions("final-actions");
 }
 
 function completePendingFinishIfReady() {
   if (!state.pendingFinish || state.finished) return;
-  const missing = getRequiredActionIssues(state.players[0]);
-  if (missing.length > 0) {
-    return;
-  }
-  finishGame();
+  advanceFinalActions("final-actions");
 }
 
 function canUseCursedItem(player) {
   return state.includeCursedItems
     && player?.human
     && currentPlayer() === player
+    && canControlActivePlayer()
     && state.phase === "draw"
     && !state.finished
     && !state.animating;
@@ -2562,6 +2642,154 @@ function handleAiCursedItem(player) {
   }
 }
 
+function resolveAiFinalActions() {
+  let changed = false;
+  let safety = 0;
+
+  while (safety < 80) {
+    safety += 1;
+    const next = nextPendingFinalActionPlayer();
+    if (!next || !next.player.ai) break;
+    setActivePlayerByReference(next.player);
+    if (!resolveAiFinalAction(next.player, next.missing[0])) break;
+    changed = true;
+  }
+
+  return changed;
+}
+
+function resolveAiFinalAction(player, issue) {
+  const card = issue.card;
+  const type = issue.type || getActionControlType(card);
+  const sourceId = cardSourceId(card);
+
+  if (type === "leprechaun") {
+    setCardAction(sourceId, [ACTION_EXECUTE_VALUE]);
+    if (confirmCardAction(card, player)) {
+      speakSingleDialogue("takeDiscard", { player, chance: DIALOGUE_CHANCE });
+      return true;
+    }
+    return false;
+  }
+
+  if (type === "genie") {
+    const choice = chooseAiGenieCard(player);
+    if (!choice) return false;
+    setCardAction(sourceId, [ACTION_EXECUTE_VALUE, cardSourceId(choice)]);
+    if (confirmCardAction(card, player)) {
+      speakSingleDialogue("takeDiscard", { player, chance: DIALOGUE_CHANCE });
+      return true;
+    }
+    return false;
+  }
+
+  if (type === "necromancer") {
+    const choice = chooseAiNecromancerCard(player, sourceId);
+    if (!choice) return false;
+    setCardAction(sourceId, [cardSourceId(choice)]);
+    return confirmCardAction(card, player);
+  }
+
+  const optionalChoice = chooseAiOptionalAction(player, card, type);
+  if (!optionalChoice) {
+    skipCardAction(sourceId);
+    log(`${player.name}: ${card.name} 선택 효과를 사용하지 않았습니다.`);
+    return true;
+  }
+
+  setCardAction(sourceId, optionalChoice);
+  return confirmCardAction(card, player);
+}
+
+function chooseAiGenieCard(player) {
+  if (state.deck.length === 0) return null;
+  const difficulty = aiDifficultyKey(player);
+  if (difficulty === "normal") {
+    return [...state.deck].sort((a, b) => b.base - a.base || a.name.localeCompare(b.name, "ko"))[0] || null;
+  }
+
+  let bestCard = state.deck[0];
+  let bestValue = -Infinity;
+  state.deck.forEach((card) => {
+    const value = evaluateAiHandValue(player, [...player.hand, card], difficulty);
+    if (value > bestValue) {
+      bestValue = value;
+      bestCard = card;
+    }
+  });
+  return bestCard || null;
+}
+
+function chooseAiNecromancerCard(player, sourceId) {
+  const candidates = state.discard.filter((card) => NECROMANCER_TARGET_TYPES.includes(card.type));
+  if (candidates.length === 0) return null;
+  return chooseBestAiActionCandidate(player, sourceId, candidates.map((card) => ({
+    values: [cardSourceId(card)],
+    tie: card.base
+  })))?.card || candidates[0];
+}
+
+function chooseAiOptionalAction(player, card, type) {
+  const sourceId = cardSourceId(card);
+  let candidates = [];
+
+  if (type === "shapeshifter") {
+    candidates = buildGlobalTargetOptions(SHAPESHIFTER_TARGET_TYPES).map((option) => ({ values: [option.value] }));
+  } else if (type === "mirage") {
+    candidates = buildGlobalTargetOptions(MIRAGE_TARGET_TYPES).map((option) => ({ values: [option.value] }));
+  } else if (type === "doppelganger") {
+    candidates = buildHandTargetOptions(player.hand, sourceId).map((option) => ({ values: [option.value] }));
+  } else if (type === "bookOfChanges") {
+    const targets = buildHandTargetOptions(player.hand, sourceId);
+    const suits = getAvailableSuitOptions();
+    candidates = targets.flatMap((target) => suits.map((suit) => ({ values: [target.value, suit.value] })));
+  } else if (type === "island") {
+    candidates = getIslandTargetOptions(player.hand, sourceId).map((option) => ({ values: [option.value] }));
+  } else if (type === "angel") {
+    candidates = buildHandTargetOptions(player.hand, sourceId).map((option) => ({ values: [option.value] }));
+  }
+
+  const best = chooseBestAiActionCandidate(player, sourceId, candidates);
+  if (!best || best.value <= scorePlayer(player).total) return null;
+  return best.values;
+}
+
+function chooseBestAiActionCandidate(player, sourceId, candidates) {
+  let best = null;
+  candidates.forEach((candidate) => {
+    const value = scorePlayerWithTemporaryAction(player, sourceId, candidate.values).total;
+    const tie = candidate.tie ?? 0;
+    if (!best || value > best.value || (value === best.value && tie > best.tie)) {
+      best = { ...candidate, value, tie, card: getSourceCardById(candidate.values[0]) };
+    }
+  });
+  return best;
+}
+
+function scorePlayerWithTemporaryAction(player, sourceId, values) {
+  const key = cardActionKey(sourceId);
+  const hadAction = Object.prototype.hasOwnProperty.call(state.cardActions, key);
+  const hadConfirmed = Object.prototype.hasOwnProperty.call(state.confirmedActions, key);
+  const hadSkipped = Object.prototype.hasOwnProperty.call(state.skippedActions, key);
+  const previousAction = state.cardActions[key];
+  const previousConfirmed = state.confirmedActions[key];
+  const previousSkipped = state.skippedActions[key];
+
+  state.cardActions[key] = values.map((value) => String(value || ""));
+  delete state.confirmedActions[key];
+  delete state.skippedActions[key];
+  const score = scorePlayer(player);
+
+  if (hadAction) state.cardActions[key] = previousAction;
+  else delete state.cardActions[key];
+  if (hadConfirmed) state.confirmedActions[key] = previousConfirmed;
+  else delete state.confirmedActions[key];
+  if (hadSkipped) state.skippedActions[key] = previousSkipped;
+  else delete state.skippedActions[key];
+
+  return score;
+}
+
 function finishGame() {
   resetTurnTimerState();
   state.pendingFinish = false;
@@ -2598,7 +2826,7 @@ function showEndNotification(ranked) {
 }
 
 function canHumanDraw() {
-  return !state.finished && !state.animating && currentPlayer().human && state.phase === "draw";
+  return canControlActivePlayer() && state.phase === "draw";
 }
 
 function selectCard(cardId) {
@@ -2619,6 +2847,8 @@ function sortHand() {
 function runAiTurn() {
   if (state.finished || !currentPlayer().ai || state.animating) return;
   const player = currentPlayer();
+  const scoreBeforeTurn = scorePlayer(player).total;
+  speakAiTurnStart(player);
   handleAiCursedItem(player);
   const drawChoice = chooseAiDraw(player);
   let drawn;
@@ -2644,6 +2874,7 @@ function runAiTurn() {
   state.animating = true;
   if (drewFromDiscard) {
     speakSingleDialogue("takeDiscard", { excludedIds: [player.id] });
+    speakSingleDialogue("takeDiscard", { player, chance: 0.24 });
   }
   renderWithAiDrawMove(drawn, drawSourceRect, player.id, hiddenDraw, () => {
     const discardId = chooseAiDiscard(player, player.hand);
@@ -2653,7 +2884,9 @@ function runAiTurn() {
     state.discard.push(discarded);
     state.selectedCardId = discarded.id;
     log(`${player.name}: ${discarded.name} 카드를 버렸습니다.`);
-    speakSingleDialogue("discard", { player });
+    const scoreAfterTurn = scorePlayer(player).total;
+    const spokeDiscard = speakSingleDialogue("discard", { player });
+    if (!spokeDiscard) speakAiScoreReaction(player, scoreBeforeTurn, scoreAfterTurn);
     renderWithDiscardMove(discarded, { getBoundingClientRect: () => discardSourceRect }, () => {
       state.animating = false;
       endTurn();
@@ -2820,7 +3053,7 @@ function renderStatus() {
   state.players.filter((entry) => entry.human).forEach((entry) => {
     const score = scorePlayer(entry).total;
     const card = document.createElement("div");
-    card.className = `score-card${entry.id === state.activePlayer && !state.finished ? " active" : ""}`;
+    card.className = `score-card${currentPlayer() === entry && !state.finished ? " active" : ""}`;
     card.innerHTML = `
       <div class="name-line">
         ${playerNameTagHtml(entry)}
@@ -2849,7 +3082,7 @@ function renderOpponents() {
   state.players.slice(1).forEach((player, offset) => {
     const index = offset + 1;
     const opponent = document.createElement("div");
-    opponent.className = `opponent${index === state.activePlayer && !state.finished ? " active" : ""}`;
+    opponent.className = `opponent${currentPlayer() === player && !state.finished ? " active" : ""}`;
     opponent.dataset.playerId = player.id;
     const score = scorePlayer(player).total;
     opponent.innerHTML = `
@@ -2926,9 +3159,9 @@ function renderPlayerHand() {
   player.hand.forEach((card) => {
     els.playerHand.append(createCardElement(card, {
       scoreRow: scoreRowsBySourceId.get(cardSourceId(card)) || null,
-      playable: state.phase === "discard" && currentPlayer().human && !state.finished && !state.animating,
+      playable: state.phase === "discard" && canControlActivePlayer(),
       onClick: (event) => {
-        if (state.phase === "discard" && currentPlayer().human && !state.finished && !state.animating) {
+        if (state.phase === "discard" && canControlActivePlayer()) {
           discardFromHand(card.id, event.currentTarget);
         } else {
           selectCard(card.id);
@@ -3372,7 +3605,9 @@ function createCursedItemControl(player) {
 }
 
 function cleanupUnavailableActions(player) {
-  const handActionIds = new Set(player.hand.map((card) => cardActionKey(cardSourceId(card))));
+  const handActionIds = new Set(state.players.flatMap((entry) => (
+    entry.hand.map((card) => cardActionKey(cardSourceId(card)))
+  )));
   const controlIds = new Set(Object.values(SOURCE_CARD_GROUPS).flat().map((id) => cardActionKey(id)));
   Object.keys(state.cardActions).forEach((key) => {
     if (controlIds.has(key) && !handActionIds.has(key)) {
@@ -3469,6 +3704,7 @@ function createActionControl(card, player) {
   const type = getActionControlType(card);
   const action = getCardAction(sourceId) || [];
   const requiresChoice = doesActionRequireChoice(card, player);
+  const controlsDisabled = !canEditActionControlsForPlayer(player);
   const section = document.createElement("section");
   section.className = "score-action-card";
   if (state.pendingFinish && requiresChoice) {
@@ -3488,20 +3724,20 @@ function createActionControl(card, player) {
     fields.append(createSelectField("실행", action[0] || "", ACTION_EXECUTE_OPTIONS, (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }));
+    }, { disabled: controlsDisabled }));
   } else if (type === "genie") {
     const selectedCard = getDeckCardBySourceId(action[1]);
     const waitingForLeprechaun = isLeprechaunBlockingGenie(player);
     fields.append(createSelectField("실행", action[0] || "", ACTION_EXECUTE_OPTIONS, (value) => {
       setCardAction(sourceId, [value, action[1] || ""]);
       render();
-    }));
+    }, { disabled: controlsDisabled }));
 
     const pickerButton = document.createElement("button");
     pickerButton.type = "button";
     pickerButton.className = "action-pick-button";
     pickerButton.textContent = selectedCard ? `${selectedCard.name} 선택됨` : "남은 카드 선택";
-    pickerButton.disabled = waitingForLeprechaun || action[0] !== ACTION_EXECUTE_VALUE || state.deck.length === 0;
+    pickerButton.disabled = controlsDisabled || waitingForLeprechaun || action[0] !== ACTION_EXECUTE_VALUE || state.deck.length === 0;
     pickerButton.addEventListener("click", () => openGenieDeckPicker(sourceId));
     fields.append(pickerButton);
 
@@ -3517,46 +3753,46 @@ function createActionControl(card, player) {
     fields.append(createSelectField("복사", action[0] || "", buildGlobalTargetOptions(SHAPESHIFTER_TARGET_TYPES), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }, { allowNone: true }));
+    }, { allowNone: true, disabled: controlsDisabled }));
   } else if (type === "mirage") {
     fields.append(createSelectField("복사", action[0] || "", buildGlobalTargetOptions(MIRAGE_TARGET_TYPES), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }, { allowNone: true }));
+    }, { allowNone: true, disabled: controlsDisabled }));
   } else if (type === "doppelganger") {
     fields.append(createSelectField("복사", action[0] || "", buildHandTargetOptions(player.hand, sourceId), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }, { allowNone: true }));
+    }, { allowNone: true, disabled: controlsDisabled }));
   } else if (type === "necromancer") {
     fields.append(createSelectField("추가", action[0] || "", buildDiscardTargetOptions(NECROMANCER_TARGET_TYPES), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }));
+    }, { disabled: controlsDisabled }));
   } else if (type === "bookOfChanges") {
     fields.append(createSelectField("대상", action[0] || "", buildHandTargetOptions(player.hand, sourceId), (value) => {
       setCardAction(sourceId, [value, action[1] || ""]);
       render();
-    }, { allowNone: true }));
+    }, { allowNone: true, disabled: controlsDisabled }));
     fields.append(createSelectField("종류", action[1] || "", getAvailableSuitOptions(), (value) => {
       setCardAction(sourceId, [action[0] || "", value]);
       render();
-    }, { allowNone: true }));
+    }, { allowNone: true, disabled: controlsDisabled }));
   } else if (type === "island") {
     fields.append(createSelectField("보호", action[0] || "", getIslandTargetOptions(player.hand, sourceId), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }, { allowNone: true }));
+    }, { allowNone: true, disabled: controlsDisabled }));
   } else if (type === "angel") {
     fields.append(createSelectField("보호", action[0] || "", buildHandTargetOptions(player.hand, sourceId), (value) => {
       setCardAction(sourceId, [value]);
       render();
-    }, { allowNone: true }));
+    }, { allowNone: true, disabled: controlsDisabled }));
   }
 
   if (requiresChoice) {
     fields.classList.add("with-confirm");
-    fields.append(createActionConfirmButton(card, player));
+    fields.append(createActionConfirmButton(card, player, controlsDisabled));
   }
 
   if (state.pendingFinish && requiresChoice) {
@@ -3573,7 +3809,7 @@ function createActionControl(card, player) {
   return section;
 }
 
-function createActionConfirmButton(card, player) {
+function createActionConfirmButton(card, player, forceDisabled = false) {
   const button = document.createElement("button");
   const confirmed = isCardActionConfirmed(card, player);
   const skipped = isCardActionSkipped(card);
@@ -3581,8 +3817,9 @@ function createActionConfirmButton(card, player) {
   button.type = "button";
   button.className = "action-confirm-button";
   button.textContent = skipped ? "선택안함" : confirmed ? "확정됨" : "확정";
-  button.disabled = confirmed || skipped || !complete;
+  button.disabled = forceDisabled || confirmed || skipped || !complete;
   button.addEventListener("click", () => {
+    if (button.disabled) return;
     if (!confirmCardAction(card, player)) return;
     completePendingFinishIfReady();
     if (!state.finished) render();
@@ -3627,8 +3864,9 @@ function createSelectField(label, selectedValue, options, onChange, settings = {
   });
 
   select.value = options.some((option) => String(option.value) === String(selectedValue)) ? String(selectedValue) : "";
-  select.disabled = !hasOptions;
+  select.disabled = !hasOptions || Boolean(settings.disabled);
   select.addEventListener("change", () => {
+    if (select.disabled) return;
     onChange(select.value);
     completePendingFinishIfReady();
   });
