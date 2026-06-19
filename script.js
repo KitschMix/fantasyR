@@ -325,9 +325,14 @@ const els = {
   onlineNameInput: document.querySelector("#onlineNameInput"),
   roomCodeInput: document.querySelector("#roomCodeInput"),
   createRoomButton: document.querySelector("#createRoomButton"),
+  rejoinRoomButton: document.querySelector("#rejoinRoomButton"),
   joinRoomButton: document.querySelector("#joinRoomButton"),
   onlineRoomCard: document.querySelector("#onlineRoomCard"),
   onlineRoomCode: document.querySelector("#onlineRoomCode"),
+  copyRoomCodeButton: document.querySelector("#copyRoomCodeButton"),
+  onlineRoomOccupancy: document.querySelector("#onlineRoomOccupancy"),
+  onlineRoomHost: document.querySelector("#onlineRoomHost"),
+  onlineStartRequirement: document.querySelector("#onlineStartRequirement"),
   onlinePlayerList: document.querySelector("#onlinePlayerList"),
   startOnlineGameButton: document.querySelector("#startOnlineGameButton"),
   leaveRoomButton: document.querySelector("#leaveRoomButton"),
@@ -671,6 +676,14 @@ function saveOnlineRoomSnapshot() {
   }
 }
 
+function readOnlineRoomSnapshot() {
+  try {
+    return JSON.parse(window.localStorage?.getItem(ONLINE_ROOM_STORAGE_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
 function clearOnlineRoomSnapshot() {
   window.localStorage?.removeItem(ONLINE_ROOM_STORAGE_KEY);
 }
@@ -708,20 +721,87 @@ function returnToSetupScreen() {
   updateTitleArt();
 }
 
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.append(textarea);
+  textarea.select();
+  const copied = document.execCommand("copy");
+  textarea.remove();
+  if (!copied) throw new Error("복사할 수 없습니다.");
+}
+
+async function copyOnlineRoomCode() {
+  const code = onlineState.room?.code || "";
+  if (!code) return;
+  try {
+    await copyTextToClipboard(code);
+    setOnlineStatus(`방 코드 복사 ${code}`);
+  } catch (error) {
+    setOnlineStatus(error.message || "복사 실패", true);
+  }
+}
+
 function renderOnlinePanel() {
   const connected = Boolean(onlineState.room);
   const roomStatus = onlineState.room?.status || "lobby";
   const requiredCount = onlineState.room?.player_count || 2;
   const isHost = connected && onlineState.room.host_token === onlinePlayerToken();
+  const hostPlayer = connected
+    ? onlineState.players.find((player) => player.token === onlineState.room.host_token)
+    : null;
+  const hostName = hostPlayer?.name || "-";
   const hasEnoughPlayers = onlineState.players.length >= requiredCount;
   const canStart = connected && roomStatus === "lobby" && isHost && hasEnoughPlayers && !onlineState.loading;
+  const savedSnapshot = readOnlineRoomSnapshot();
   els.onlineRoomCard?.classList.toggle("hidden", !connected);
   if (els.onlineRoomCode) els.onlineRoomCode.textContent = onlineState.room?.code || "-";
+  if (els.copyRoomCodeButton) els.copyRoomCodeButton.disabled = !connected || !onlineState.room?.code;
 
   const buttonsDisabled = onlineState.loading || !getSupabaseClient();
   if (els.createRoomButton) els.createRoomButton.disabled = buttonsDisabled || connected;
   if (els.joinRoomButton) els.joinRoomButton.disabled = buttonsDisabled || connected;
+  if (els.rejoinRoomButton) {
+    const canRejoin = !connected && Boolean(savedSnapshot?.roomId && savedSnapshot?.token);
+    els.rejoinRoomButton.classList.toggle("hidden", !canRejoin);
+    els.rejoinRoomButton.disabled = buttonsDisabled || !canRejoin;
+    els.rejoinRoomButton.textContent = savedSnapshot?.roomCode
+      ? `${savedSnapshot.roomCode} 재입장`
+      : "이전 방 재입장";
+  }
   if (els.leaveRoomButton) els.leaveRoomButton.disabled = onlineState.loading || !connected;
+  if (els.onlineRoomOccupancy) {
+    els.onlineRoomOccupancy.textContent = `${onlineState.players.length}/${requiredCount}명 접속`;
+  }
+  if (els.onlineRoomHost) {
+    els.onlineRoomHost.textContent = `방장 ${hostName}${isHost ? " (나)" : ""}`;
+  }
+  if (els.onlineStartRequirement) {
+    let requirement = "방에 들어가면 시작 조건이 표시됩니다.";
+    if (connected) {
+      if (roomStatus === "finished") {
+        requirement = "게임이 끝난 방입니다. 나가기 후 새 방을 만들 수 있습니다.";
+      } else if (roomStatus === "playing") {
+        requirement = "게임 진행 중입니다. 새로고침해도 이 방으로 재접속됩니다.";
+      } else if (!hasEnoughPlayers) {
+        requirement = `시작하려면 ${requiredCount - onlineState.players.length}명이 더 필요합니다.`;
+      } else if (!isHost) {
+        requirement = "인원은 준비됐고, 방장이 시작할 수 있습니다.";
+      } else {
+        requirement = "인원 준비 완료. 게임을 시작할 수 있습니다.";
+      }
+    }
+    els.onlineStartRequirement.textContent = requirement;
+    els.onlineStartRequirement.classList.toggle("ready", canStart);
+    els.onlineStartRequirement.classList.toggle("waiting", connected && !canStart && roomStatus === "lobby");
+  }
   if (els.startOnlineGameButton) {
     els.startOnlineGameButton.disabled = !canStart;
     if (roomStatus === "finished") {
@@ -748,12 +828,25 @@ function renderOnlinePanel() {
     const item = document.createElement("li");
     const player = bySeat.get(seat);
     if (player) {
-      const hostMark = onlineState.room.host_token === player.token ? " 방장" : "";
-      const meMark = player.token === onlinePlayerToken() ? " 나" : "";
-      item.textContent = `${seat + 1}. ${player.name}${hostMark}${meMark}`;
+      item.className = "filled-seat";
+      const badges = [];
+      if (onlineState.room.host_token === player.token) {
+        badges.push(`<span class="online-player-badge host">방장</span>`);
+      }
+      if (player.token === onlinePlayerToken()) {
+        badges.push(`<span class="online-player-badge me">나</span>`);
+      }
+      item.innerHTML = `
+        <span class="seat-number">${seat + 1}</span>
+        <span class="seat-name">${escapeHtml(player.name || "이름 없음")}</span>
+        <span class="seat-badges">${badges.join("")}</span>
+      `;
     } else {
       item.className = "empty-seat";
-      item.textContent = `${seat + 1}. 빈 자리`;
+      item.innerHTML = `
+        <span class="seat-number">${seat + 1}</span>
+        <span class="seat-name">빈 자리</span>
+      `;
     }
     els.onlinePlayerList.append(item);
   }
@@ -985,13 +1078,9 @@ async function restoreOnlineRoom() {
     renderOnlinePanel();
     return;
   }
+  if (onlineState.loading) return;
 
-  let snapshot = null;
-  try {
-    snapshot = JSON.parse(window.localStorage?.getItem(ONLINE_ROOM_STORAGE_KEY) || "null");
-  } catch {
-    snapshot = null;
-  }
+  const snapshot = readOnlineRoomSnapshot();
   if (!snapshot?.roomId || !snapshot?.token) {
     setOnlineStatus("연결 대기");
     renderOnlinePanel();
@@ -999,12 +1088,19 @@ async function restoreOnlineRoom() {
   }
 
   onlineState.playerToken = snapshot.token;
-  const restored = await loadOnlineRoom(snapshot.roomId, { skipFinished: true });
-  if (restored) {
-    await subscribeOnlineRoom(snapshot.roomId);
-    setOnlineStatus(`재접속 ${onlineState.room.code}`);
-  } else {
-    clearOnlineRoomSnapshot();
+  onlineState.loading = true;
+  setOnlineStatus("재입장 중");
+  renderOnlinePanel();
+  try {
+    const restored = await loadOnlineRoom(snapshot.roomId, { skipFinished: true });
+    if (restored) {
+      await subscribeOnlineRoom(snapshot.roomId);
+      setOnlineStatus(`재접속 ${onlineState.room.code}`);
+    } else {
+      clearOnlineRoomSnapshot();
+    }
+  } finally {
+    onlineState.loading = false;
   }
   renderOnlinePanel();
 }
@@ -3399,6 +3495,7 @@ function createCatalogCard(card, options = {}) {
   const item = document.createElement("article");
   item.className = "catalog-card";
   item.style.setProperty("--card-color", meta.color);
+  item.title = `${card.name}\n${meta.label} ${card.base}점\n${card.text || "효과 없음"}`;
   item.innerHTML = `
     <div class="catalog-art" aria-hidden="true">
       ${artUrl ? `<img src="${artUrl}" alt="" loading="lazy" />` : `<span>${meta.glyph}</span>`}
@@ -3981,7 +4078,9 @@ function formatSigned(value) {
 
 els.startButton.addEventListener("click", startGame);
 els.createRoomButton?.addEventListener("click", createOnlineRoom);
+els.rejoinRoomButton?.addEventListener("click", restoreOnlineRoom);
 els.joinRoomButton?.addEventListener("click", joinOnlineRoom);
+els.copyRoomCodeButton?.addEventListener("click", copyOnlineRoomCode);
 els.startOnlineGameButton?.addEventListener("click", startOnlineGame);
 els.leaveRoomButton?.addEventListener("click", leaveOnlineRoom);
 els.roomCodeInput?.addEventListener("input", () => {

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
-    <link rel="stylesheet" href="styles.css?v=20260619-genie-leprechaun" />
+    <link rel="stylesheet" href="styles.css?v=20260619-lobby-catalog" />
   </head>
   <body>
     <main class="app-shell">
@@ -67,6 +67,7 @@
               <input id="onlineNameInput" type="text" maxlength="12" value="나" autocomplete="nickname" />
             </label>
             <button id="createRoomButton" class="secondary-button" type="button">방 만들기</button>
+            <button id="rejoinRoomButton" class="secondary-button hidden" type="button">이전 방 재입장</button>
             <label>
               방 코드
               <input id="roomCodeInput" type="text" maxlength="6" autocomplete="off" />
@@ -77,6 +78,12 @@
             <div class="online-room-code">
               <span>방 코드</span>
               <strong id="onlineRoomCode">-</strong>
+              <button id="copyRoomCodeButton" class="secondary-button room-copy-button" type="button">복사</button>
+            </div>
+            <div class="online-room-meta" aria-live="polite">
+              <span id="onlineRoomOccupancy">0/0명 접속</span>
+              <span id="onlineRoomHost">방장 -</span>
+              <span id="onlineStartRequirement">시작 조건 확인 중</span>
             </div>
             <ol id="onlinePlayerList" class="online-player-list"></ol>
             <button id="startOnlineGameButton" class="primary-button online-start-button" type="button">게임 시작</button>
@@ -203,6 +210,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
-    <script src="script.js?v=20260619-ai-online-dialogue"></script>
+    <script src="script.js?v=20260619-lobby-catalog"></script>
   </body>
 </html>
