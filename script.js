@@ -1622,6 +1622,10 @@ function canEditActionControlsForPlayer(player) {
   return currentPlayer()?.human && !onlineState.loading && !onlineState.savingGame && !onlineState.applyingRemote;
 }
 
+function isFinalActionPhase() {
+  return state.pendingFinish || state.phase === "finalActions";
+}
+
 function cardSourceId(card) {
   return String(card.sourceId ?? card.id);
 }
@@ -2037,6 +2041,7 @@ function executeConfirmedCardAction(card, player) {
 }
 
 function executeLeprechaunAction(card, player) {
+  if (!isFinalActionPhase()) return false;
   const sourceId = cardSourceId(card);
   const action = getCardAction(sourceId) || [];
   if (action[0] !== ACTION_EXECUTE_VALUE) return false;
@@ -2171,7 +2176,7 @@ function doesActionRequireChoice(card, player) {
   const type = getActionControlType(card);
   const sourceId = cardSourceId(card);
 
-  if (type === "leprechaun") return state.deck.length > 0;
+  if (type === "leprechaun") return isFinalActionPhase() && state.deck.length > 0;
   if (type === "genie") return state.deck.length > 0 && !isLeprechaunBlockingGenie(player);
   if (type === "shapeshifter") return buildGlobalTargetOptions(SHAPESHIFTER_TARGET_TYPES).length > 0;
   if (type === "mirage") return buildGlobalTargetOptions(MIRAGE_TARGET_TYPES).length > 0;
@@ -2199,7 +2204,7 @@ function isCardActionComplete(card, player) {
   if (isOptionalActionNoSelection(card)) return true;
 
   if (type === "leprechaun") {
-    return action[0] === ACTION_EXECUTE_VALUE && state.deck.length > 0;
+    return isFinalActionPhase() && action[0] === ACTION_EXECUTE_VALUE && state.deck.length > 0;
   }
 
   if (type === "genie") {
@@ -3802,7 +3807,8 @@ function createActionControl(card, player) {
   const type = getActionControlType(card);
   const action = getCardAction(sourceId) || [];
   const requiresChoice = doesActionRequireChoice(card, player);
-  const controlsDisabled = !canEditActionControlsForPlayer(player);
+  const finalOnlyLocked = type === "leprechaun" && !isFinalActionPhase();
+  const controlsDisabled = !canEditActionControlsForPlayer(player) || finalOnlyLocked;
   const section = document.createElement("section");
   section.className = "score-action-card";
   if (state.pendingFinish && requiresChoice) {
@@ -3823,6 +3829,12 @@ function createActionControl(card, player) {
       setCardAction(sourceId, [value]);
       render();
     }, { disabled: controlsDisabled }));
+    if (finalOnlyLocked) {
+      const hint = document.createElement("span");
+      hint.className = "action-selection-note";
+      hint.textContent = "레프리콘은 게임 종료 후 최종 선택에서 사용할 수 있습니다.";
+      fields.append(hint);
+    }
   } else if (type === "genie") {
     const selectedCard = getDeckCardBySourceId(action[1]);
     const waitingForLeprechaun = isLeprechaunBlockingGenie(player);
