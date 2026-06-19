@@ -1396,6 +1396,37 @@ select {
   cursor: default;
 }
 
+.action-pick-button,
+.action-selection-note {
+  grid-column: 1;
+}
+
+.action-pick-button {
+  min-height: 45px;
+  border: 1px solid rgba(246, 232, 202, 0.22);
+  border-radius: 6px;
+  color: var(--text);
+  background: rgba(246, 232, 202, 0.1);
+  font-weight: 900;
+}
+
+.action-pick-button:not(:disabled):hover {
+  border-color: rgba(242, 207, 120, 0.52);
+  background: rgba(242, 207, 120, 0.16);
+}
+
+.action-pick-button:disabled {
+  color: rgba(247, 236, 217, 0.45);
+  cursor: default;
+}
+
+.action-selection-note {
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .breakdown {
   display: grid;
   gap: 10px;
@@ -1537,6 +1568,24 @@ select {
   background:
     linear-gradient(160deg, rgba(255, 255, 255, 0.07), transparent 42%),
     var(--card-color, #3d352a);
+}
+
+.selectable-catalog-card {
+  cursor: pointer;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, transform 0.14s ease;
+}
+
+.selectable-catalog-card:hover,
+.selectable-catalog-card:focus-visible {
+  outline: none;
+  border-color: rgba(242, 207, 120, 0.65);
+  box-shadow: 0 0 0 2px rgba(242, 207, 120, 0.16);
+  transform: translateY(-2px);
+}
+
+.selected-catalog-card {
+  border-color: rgba(107, 198, 162, 0.72);
+  box-shadow: 0 0 0 2px rgba(107, 198, 162, 0.22);
 }
 
 .catalog-art {

@@ -146,10 +146,14 @@ const SOURCE_CARD_IDS = {
   chNecromancer: typeof CH_NECROMANCER !== "undefined" ? CH_NECROMANCER : "CH20",
   chShapeshifter: typeof CH_SHAPESHIFTER !== "undefined" ? CH_SHAPESHIFTER : "CH22",
   chMirage: typeof CH_MIRAGE !== "undefined" ? CH_MIRAGE : "CH23",
-  chAngel: typeof CH_ANGEL !== "undefined" ? CH_ANGEL : "CH08"
+  chAngel: typeof CH_ANGEL !== "undefined" ? CH_ANGEL : "CH08",
+  chGenie: typeof CH_GENIE !== "undefined" ? CH_GENIE : "CH06",
+  chLeprechaun: typeof CH_LEPRECHAUN !== "undefined" ? CH_LEPRECHAUN : "CH09"
 };
 
 const SOURCE_CARD_GROUPS = {
+  leprechaun: [SOURCE_CARD_IDS.chLeprechaun],
+  genie: [SOURCE_CARD_IDS.chGenie],
   island: [SOURCE_CARD_IDS.island],
   necromancer: [SOURCE_CARD_IDS.necromancer, SOURCE_CARD_IDS.chNecromancer],
   bookOfChanges: [SOURCE_CARD_IDS.bookOfChanges],
@@ -158,6 +162,21 @@ const SOURCE_CARD_GROUPS = {
   doppelganger: [SOURCE_CARD_IDS.doppelganger],
   angel: [SOURCE_CARD_IDS.chAngel]
 };
+
+const ACTION_CONTROL_ORDER = [
+  "leprechaun",
+  "genie",
+  "necromancer",
+  "angel",
+  "island",
+  "bookOfChanges",
+  "shapeshifter",
+  "mirage",
+  "doppelganger"
+];
+
+const ACTION_EXECUTE_VALUE = "execute";
+const ACTION_EXECUTE_OPTIONS = [{ value: ACTION_EXECUTE_VALUE, label: "실행하기" }];
 
 const SOURCE_SUIT_OPTIONS = [
   { value: "land", label: "땅" },
@@ -1768,6 +1787,10 @@ function cardActionSignature(cardId) {
   return JSON.stringify((getCardAction(cardId) || []).map((value) => String(value || "")));
 }
 
+function isCardActionSignatureConfirmed(cardId) {
+  return state.confirmedActions[cardActionKey(cardId)] === cardActionSignature(cardId);
+}
+
 function clearCardActionConfirmation(cardId) {
   const key = cardActionKey(cardId);
   delete state.confirmedActions[key];
@@ -1788,15 +1811,18 @@ function isCardActionSkipped(card) {
 function confirmCardAction(card, player) {
   if (!isCardActionComplete(card, player)) return false;
   const sourceId = cardSourceId(card);
+  if (isCardActionSignatureConfirmed(sourceId)) return true;
+  if (!executeConfirmedCardAction(card, player)) return false;
   state.confirmedActions[cardActionKey(sourceId)] = cardActionSignature(sourceId);
+  cleanupUnavailableActions(player);
   saveOnlineGameState("confirm-action");
   return true;
 }
 
 function isCardActionConfirmed(card, player) {
-  if (!isCardActionComplete(card, player)) return false;
   const sourceId = cardSourceId(card);
-  return state.confirmedActions[cardActionKey(sourceId)] === cardActionSignature(sourceId);
+  if (isCardActionSignatureConfirmed(sourceId)) return true;
+  return false;
 }
 
 function hasCardSource(hand, sourceId) {
@@ -1815,6 +1841,64 @@ function getPlayerSourceId(player, group) {
   return player?.hand.find((card) => isSourceId(cardSourceId(card), group))?.sourceId || null;
 }
 
+function getPlayerSourceCard(player, group) {
+  return player?.hand.find((card) => isSourceId(cardSourceId(card), group)) || null;
+}
+
+function getDeckCardBySourceId(sourceId) {
+  return state.deck.find((card) => cardSourceId(card) === String(sourceId)) || null;
+}
+
+function removeDeckCardBySourceId(sourceId) {
+  const index = state.deck.findIndex((card) => cardSourceId(card) === String(sourceId));
+  if (index < 0) return null;
+  const [card] = state.deck.splice(index, 1);
+  return card || null;
+}
+
+function isLeprechaunBlockingGenie(player) {
+  const leprechaun = getPlayerSourceCard(player, "leprechaun");
+  if (!leprechaun) return false;
+  if (isCardActionSignatureConfirmed(cardSourceId(leprechaun))) return false;
+  return state.deck.length > 0;
+}
+
+function executeConfirmedCardAction(card, player) {
+  const type = getActionControlType(card);
+  if (type === "leprechaun") return executeLeprechaunAction(card, player);
+  if (type === "genie") return executeGenieAction(card, player);
+  return true;
+}
+
+function executeLeprechaunAction(card, player) {
+  const sourceId = cardSourceId(card);
+  const action = getCardAction(sourceId) || [];
+  if (action[0] !== ACTION_EXECUTE_VALUE) return false;
+
+  const gainedCard = state.deck.pop();
+  if (!gainedCard) return false;
+
+  player.hand.push(gainedCard);
+  state.selectedCardId = gainedCard.id;
+  log(`${player.name}: 레프리콘으로 ${gainedCard.name} 카드를 손패에 추가했습니다.`);
+  return true;
+}
+
+function executeGenieAction(card, player) {
+  const sourceId = cardSourceId(card);
+  const action = getCardAction(sourceId) || [];
+  const selectedId = String(action[1] || "");
+  if (action[0] !== ACTION_EXECUTE_VALUE || !selectedId) return false;
+
+  const gainedCard = removeDeckCardBySourceId(selectedId);
+  if (!gainedCard) return false;
+
+  player.hand.push(gainedCard);
+  state.selectedCardId = gainedCard.id;
+  log(`${player.name}: 지니로 ${gainedCard.name} 카드를 손패에 추가했습니다.`);
+  return true;
+}
+
 function isPhoenixCard(card) {
   return ["FR55", "FR55P"].includes(cardSourceId(card));
 }
@@ -1828,7 +1912,7 @@ function getScoringHand(player) {
 }
 
 function getNecromancerExtraCard(player) {
-  if (!player?.human || player.hand.length > startingHandSize()) return null;
+  if (!player?.human) return null;
   const necromancerId = getPlayerSourceId(player, "necromancer");
   if (!necromancerId) return null;
 
@@ -1901,6 +1985,8 @@ function doesActionRequireChoice(card, player) {
   const type = getActionControlType(card);
   const sourceId = cardSourceId(card);
 
+  if (type === "leprechaun") return state.deck.length > 0;
+  if (type === "genie") return state.deck.length > 0 && !isLeprechaunBlockingGenie(player);
   if (type === "shapeshifter") return buildGlobalTargetOptions(SHAPESHIFTER_TARGET_TYPES).length > 0;
   if (type === "mirage") return buildGlobalTargetOptions(MIRAGE_TARGET_TYPES).length > 0;
   if (type === "doppelganger") return buildHandTargetOptions(player.hand, sourceId).length > 0;
@@ -1921,6 +2007,20 @@ function doesActionRequireChoice(card, player) {
 function isCardActionComplete(card, player) {
   const sourceId = cardSourceId(card);
   const type = getActionControlType(card);
+  const action = getCardAction(sourceId) || [];
+
+  if (isCardActionSignatureConfirmed(sourceId)) return true;
+
+  if (type === "leprechaun") {
+    return action[0] === ACTION_EXECUTE_VALUE && state.deck.length > 0;
+  }
+
+  if (type === "genie") {
+    const selectedId = String(action[1] || "");
+    return action[0] === ACTION_EXECUTE_VALUE
+      && !isLeprechaunBlockingGenie(player)
+      && Boolean(selectedId && getDeckCardBySourceId(selectedId));
+  }
 
   if (type === "necromancer") {
     return Boolean(getNecromancerExtraCard(player));
@@ -3031,7 +3131,7 @@ function catalogCards() {
   ));
 }
 
-function createCatalogCard(card) {
+function createCatalogCard(card, options = {}) {
   const meta = TYPE_META[card.type] || TYPE_META.wild;
   const artUrl = cardArtUrl(card);
   const item = document.createElement("article");
@@ -3050,11 +3150,33 @@ function createCatalogCard(card) {
       <p class="catalog-effect">${formatCardEffectText(card.text || "효과 없음")}</p>
     </div>
   `;
+  if (options.selectable) {
+    const chooseCard = () => options.onSelect?.(card);
+    item.classList.add("selectable-catalog-card");
+    if (String(options.selectedSourceId || "") === cardSourceId(card)) {
+      item.classList.add("selected-catalog-card");
+    }
+    item.tabIndex = 0;
+    item.setAttribute("role", "button");
+    item.setAttribute("aria-label", `${card.name} 선택`);
+    item.addEventListener("click", chooseCard);
+    item.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      chooseCard();
+    });
+  }
   return item;
+}
+
+function setCardCatalogTitle(title) {
+  const heading = els.cardCatalogDialog?.querySelector("h2");
+  if (heading) heading.textContent = title;
 }
 
 function openCardCatalog() {
   if (!els.cardCatalogDialog || !els.cardCatalogList) return;
+  setCardCatalogTitle("모든 카드 보기");
   const cards = catalogCards();
   els.cardCatalogList.innerHTML = "";
   const fragment = document.createDocumentFragment();
@@ -3067,6 +3189,39 @@ function openCardCatalog() {
     const expansionText = state.includeExpansion ? "확장팩 포함" : "오리지널";
     const cursedText = state.includeCursedItems ? `저주받은 유물 ${cursedCount}장 포함` : "저주받은 유물 제외";
     els.cardCatalogSummary.textContent = `${expansionText} · ${cursedText} · 총 ${cards.length}장`;
+  }
+  if (typeof els.cardCatalogDialog.showModal === "function" && !els.cardCatalogDialog.open) {
+    els.cardCatalogDialog.showModal();
+  }
+}
+
+function openGenieDeckPicker(sourceId) {
+  if (!els.cardCatalogDialog || !els.cardCatalogList) return;
+  setCardCatalogTitle("지니 카드 선택");
+  const action = getCardAction(sourceId) || [];
+  const selectedSourceId = String(action[1] || "");
+  const cards = [...state.deck].sort((a, b) => (
+    catalogTypeOrder(a) - catalogTypeOrder(b)
+    || a.base - b.base
+    || a.name.localeCompare(b.name, "ko")
+  ));
+
+  els.cardCatalogList.innerHTML = "";
+  const fragment = document.createDocumentFragment();
+  cards.forEach((card) => {
+    fragment.append(createCatalogCard(card, {
+      selectable: true,
+      selectedSourceId,
+      onSelect: (selectedCard) => {
+        setCardAction(sourceId, [ACTION_EXECUTE_VALUE, cardSourceId(selectedCard)]);
+        if (els.cardCatalogDialog.open) els.cardCatalogDialog.close();
+        render();
+      }
+    }));
+  });
+  els.cardCatalogList.append(fragment);
+  if (els.cardCatalogSummary) {
+    els.cardCatalogSummary.textContent = `지니: 남은 덱 ${cards.length}장 중 1장을 선택하세요.`;
   }
   if (typeof els.cardCatalogDialog.showModal === "function" && !els.cardCatalogDialog.open) {
     els.cardCatalogDialog.showModal();
@@ -3125,7 +3280,14 @@ function renderScoreActions(player) {
   }
 
   cleanupUnavailableActions(player);
-  const actionCards = player.hand.filter((card) => getActionControlType(card));
+  const actionCards = player.hand
+    .map((card, index) => ({ card, index, type: getActionControlType(card) }))
+    .filter((entry) => entry.type)
+    .sort((a, b) => (
+      ACTION_CONTROL_ORDER.indexOf(a.type) - ACTION_CONTROL_ORDER.indexOf(b.type)
+      || a.index - b.index
+    ))
+    .map((entry) => entry.card);
   const missing = state.pendingFinish ? getRequiredActionIssues(player) : [];
   const cursedPanel = createCursedItemControl(player);
   els.scoreActions.classList.toggle("hidden", actionCards.length === 0 && missing.length === 0 && !cursedPanel);
@@ -3218,6 +3380,16 @@ function cleanupInvalidActionTargets(player) {
 function isActionTargetAvailable(card, player, action) {
   const sourceId = cardSourceId(card);
   const type = getActionControlType(card);
+  if (type === "leprechaun") {
+    return action[0] === ACTION_EXECUTE_VALUE && (state.deck.length > 0 || isCardActionSignatureConfirmed(sourceId));
+  }
+
+  if (type === "genie") {
+    const selectedId = String(action[1] || "");
+    if (action[0] !== ACTION_EXECUTE_VALUE) return false;
+    return !selectedId || Boolean(getDeckCardBySourceId(selectedId) || isCardActionSignatureConfirmed(sourceId));
+  }
+
   const targetId = String(action[0] || "");
   if (!targetId) return true;
 
@@ -3251,6 +3423,8 @@ function isActionTargetAvailable(card, player, action) {
 
 function getActionControlType(card) {
   const sourceId = cardSourceId(card);
+  if (isSourceId(sourceId, "leprechaun")) return "leprechaun";
+  if (isSourceId(sourceId, "genie")) return "genie";
   if (isSourceId(sourceId, "shapeshifter")) return "shapeshifter";
   if (isSourceId(sourceId, "mirage")) return "mirage";
   if (isSourceId(sourceId, "doppelganger")) return "doppelganger";
@@ -3281,7 +3455,36 @@ function createActionControl(card, player) {
   const fields = document.createElement("div");
   fields.className = "action-fields";
 
-  if (type === "shapeshifter") {
+  if (type === "leprechaun") {
+    fields.append(createSelectField("실행", action[0] || "", ACTION_EXECUTE_OPTIONS, (value) => {
+      setCardAction(sourceId, [value]);
+      render();
+    }));
+  } else if (type === "genie") {
+    const selectedCard = getDeckCardBySourceId(action[1]);
+    const waitingForLeprechaun = isLeprechaunBlockingGenie(player);
+    fields.append(createSelectField("실행", action[0] || "", ACTION_EXECUTE_OPTIONS, (value) => {
+      setCardAction(sourceId, [value, action[1] || ""]);
+      render();
+    }));
+
+    const pickerButton = document.createElement("button");
+    pickerButton.type = "button";
+    pickerButton.className = "action-pick-button";
+    pickerButton.textContent = selectedCard ? `${selectedCard.name} 선택됨` : "남은 카드 선택";
+    pickerButton.disabled = waitingForLeprechaun || action[0] !== ACTION_EXECUTE_VALUE || state.deck.length === 0;
+    pickerButton.addEventListener("click", () => openGenieDeckPicker(sourceId));
+    fields.append(pickerButton);
+
+    const hint = document.createElement("span");
+    hint.className = "action-selection-note";
+    hint.textContent = waitingForLeprechaun
+      ? "레프리콘을 먼저 확정해야 지니를 실행할 수 있습니다."
+      : selectedCard
+        ? `${selectedCard.name} 카드를 가져옵니다.`
+        : "실행하기를 고른 뒤 남은 덱에서 1장을 선택하세요.";
+    fields.append(hint);
+  } else if (type === "shapeshifter") {
     fields.append(createSelectField("복사", action[0] || "", buildGlobalTargetOptions(SHAPESHIFTER_TARGET_TYPES), (value) => {
       setCardAction(sourceId, [value]);
       render();
@@ -3355,6 +3558,8 @@ function createActionConfirmButton(card, player) {
 
 function actionLabel(type) {
   const labels = {
+    leprechaun: "덱 맨 위 획득",
+    genie: "남은 덱 선택 획득",
     shapeshifter: "이름/종류 복사",
     mirage: "이름/종류 복사",
     doppelganger: "손패 복사",
