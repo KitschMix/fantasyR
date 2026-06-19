@@ -2074,7 +2074,22 @@ function getScoringHand(player) {
   const scoringHand = [...player.hand];
   const necromancerExtra = getNecromancerExtraCard(player);
   if (necromancerExtra) scoringHand.push(necromancerExtra);
+  const genieExtra = getGenieExtraCard(player);
+  if (genieExtra) scoringHand.push(genieExtra);
   return scoringHand;
+}
+
+function getGenieExtraCard(player) {
+  if (!player || isLeprechaunBlockingGenie(player)) return null;
+  const genieId = getPlayerSourceId(player, "genie");
+  if (!genieId) return null;
+
+  const action = getCardAction(genieId);
+  const selectedId = String(action?.[1] || "");
+  if (action?.[0] !== ACTION_EXECUTE_VALUE || !selectedId) return null;
+
+  const deckCard = getDeckCardBySourceId(selectedId);
+  return deckCard ? { ...deckCard, genieExtra: true } : null;
 }
 
 function getNecromancerExtraCard(player) {

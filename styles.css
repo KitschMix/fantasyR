@@ -74,11 +74,13 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .brand-copy {
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 
 .brand-title-art-wrap {
@@ -266,15 +268,21 @@ h1 {
   gap: 14px;
 }
 
+.online-panel button,
+.online-panel input {
+  font-size: 18px;
+  white-space: nowrap;
+}
+
 .mode-panel-head,
-.online-controls,
-.online-room-code {
-  display: flex;
-  align-items: center;
+.online-controls {
+  display: grid;
   gap: 10px;
 }
 
 .mode-panel-head {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
 }
 
@@ -294,17 +302,22 @@ h1 {
 }
 
 .online-controls {
-  flex-wrap: wrap;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
 }
 
 .online-controls label {
   display: grid;
   gap: 6px;
   color: var(--muted);
+  font-size: 18px;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .online-controls input {
-  width: 176px;
+  width: 100%;
+  min-width: 0;
   min-height: 50px;
   padding: 0 12px;
   border: 1px solid var(--line);
@@ -314,17 +327,31 @@ h1 {
 }
 
 #roomCodeInput {
-  width: 134px;
   text-transform: uppercase;
 }
 
 .online-room-card {
   display: grid;
-  grid-template-columns: minmax(210px, auto) minmax(260px, 1fr) auto auto;
-  align-items: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
   gap: 12px;
+  min-width: 0;
   padding-top: 10px;
   border-top: 1px solid rgba(246, 232, 202, 0.1);
+}
+
+.online-room-code,
+.online-room-meta,
+.online-player-list {
+  grid-column: 1 / -1;
+}
+
+.online-room-code {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
 .room-copy-button {
@@ -336,24 +363,35 @@ h1 {
 .online-room-code span {
   color: var(--muted);
   font-size: 18px;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .online-room-code strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 30px;
   letter-spacing: 2px;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
 .online-room-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   min-width: 0;
 }
 
 .online-room-meta span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 34px;
+  min-width: 0;
   padding: 7px 10px;
+  overflow: hidden;
   border: 1px solid rgba(246, 232, 202, 0.12);
   border-radius: 6px;
   color: #e6dac3;
@@ -361,12 +399,16 @@ h1 {
   font-size: 17px;
   font-weight: 800;
   line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .online-room-meta #onlineStartRequirement {
-  flex: 1 1 260px;
+  grid-column: 1 / -1;
+  justify-content: flex-start;
   color: #d8cbb5;
   font-weight: 700;
+  white-space: normal;
 }
 
 .online-room-meta #onlineStartRequirement.ready {
@@ -383,7 +425,6 @@ h1 {
 
 .online-player-list {
   display: flex;
-  grid-column: 1 / 3;
   flex-wrap: wrap;
   gap: 8px;
   margin: 0;
@@ -395,6 +436,7 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  max-width: 100%;
   min-height: 39px;
   padding: 8px 11px;
   border: 1px solid rgba(246, 232, 202, 0.14);
@@ -448,8 +490,14 @@ h1 {
 }
 
 .online-start-button {
-  flex: 0 0 148px;
-  min-width: 148px;
+  min-width: 0;
+}
+
+.online-room-card > .online-start-button,
+.online-room-card > #leaveRoomButton {
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .setup-check {
@@ -1804,8 +1852,13 @@ select {
 }
 
 @media (max-width: 1120px) {
+  .setup-panel {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 720px;
+  }
+
   .online-room-card {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .online-room-code,
@@ -1826,10 +1879,23 @@ select {
 
 @media (max-width: 760px) {
   .app-shell {
+    min-width: 0;
     padding: 12px;
   }
 
-  .topbar,
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .brand-title-art-wrap {
+    width: 100%;
+    max-width: 430px;
+    height: auto;
+    aspect-ratio: 430 / 116;
+  }
+
   .setup-panel,
   .center-table,
   .status-panel,
@@ -1837,7 +1903,6 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .topbar,
   .setup-controls {
     align-items: stretch;
   }
@@ -1849,6 +1914,14 @@ select {
   .setup-panel {
     margin-top: 6vh;
     padding: 18px;
+  }
+
+  .online-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .online-controls .secondary-button {
+    width: 100%;
   }
 
   .online-room-card {
@@ -1890,5 +1963,19 @@ select {
   .card {
     height: 370px;
     min-height: 370px;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-title-art-wrap {
+    max-width: 360px;
+  }
+
+  .top-actions {
+    justify-content: flex-end;
   }
 }
