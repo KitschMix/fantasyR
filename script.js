@@ -3506,24 +3506,10 @@ function catalogCards() {
 
 function createCatalogCard(card, options = {}) {
   const meta = TYPE_META[card.type] || TYPE_META.wild;
-  const artUrl = cardArtUrl(card);
-  const item = document.createElement("article");
-  item.className = "catalog-card";
-  item.style.setProperty("--card-color", meta.color);
+  const item = buildCardElement(card, { playable: Boolean(options.selectable) });
+  item.classList.add("catalog-card");
+  item.setAttribute("aria-label", `${card.name} 카드`);
   item.title = `${card.name}\n${meta.label} ${card.base}점\n${card.text || "효과 없음"}`;
-  item.innerHTML = `
-    <div class="catalog-art" aria-hidden="true">
-      ${artUrl ? `<img src="${artUrl}" alt="" loading="lazy" />` : `<span>${meta.glyph}</span>`}
-    </div>
-    <div class="catalog-info">
-      <div class="catalog-head">
-        <strong class="catalog-name">${escapeHtml(card.name)}</strong>
-        <span class="catalog-base">${card.base}</span>
-      </div>
-      <span class="catalog-meta">${escapeHtml(meta.label)}</span>
-      <p class="catalog-effect">${formatCardEffectText(card.text || "효과 없음")}</p>
-    </div>
-  `;
   if (options.selectable) {
     const chooseCard = () => options.onSelect?.(card);
     item.classList.add("selectable-catalog-card");
