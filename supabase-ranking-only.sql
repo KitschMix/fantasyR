@@ -31,6 +31,11 @@ alter table public.fantasy_leaderboard
 alter table public.fantasy_leaderboard
   validate constraint fantasy_leaderboard_nickname_check;
 
+alter table public.fantasy_leaderboard
+  drop constraint if exists fantasy_leaderboard_player_fingerprint_mode_key;
+
+drop index if exists public.fantasy_leaderboard_player_fingerprint_mode_key;
+
 with duplicate_rows as (
   select id,
          row_number() over (
@@ -44,14 +49,9 @@ delete from public.fantasy_leaderboard leaderboard
   where leaderboard.id = duplicate_rows.id
     and duplicate_rows.row_number > 1;
 
-do $$
-begin
-  alter table public.fantasy_leaderboard
-    add constraint fantasy_leaderboard_player_fingerprint_mode_key
-    unique (player_fingerprint, include_expansion);
-exception
-  when duplicate_object then null;
-end $$;
+alter table public.fantasy_leaderboard
+  add constraint fantasy_leaderboard_player_fingerprint_mode_key
+  unique (player_fingerprint, include_expansion);
 
 create index if not exists fantasy_leaderboard_score_idx
   on public.fantasy_leaderboard(score desc, updated_at asc);
