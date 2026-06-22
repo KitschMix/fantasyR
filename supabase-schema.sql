@@ -247,6 +247,8 @@ $$;
 
 grant execute on function public.fantasy_submit_leaderboard_score(text, integer, integer, boolean, text) to anon;
 
+notify pgrst, 'reload schema';
+
 do $$
 begin
   alter publication supabase_realtime add table public.fantasy_multiplayer_rooms;

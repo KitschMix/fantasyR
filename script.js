@@ -830,6 +830,17 @@ function renderLeaderboardList(listElement, entries) {
   listElement.append(fragment);
 }
 
+function leaderboardSubmitErrorMessage(error) {
+  const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ");
+  if (error?.code === "PGRST202" || message.includes("Could not find the function")) {
+    return "랭킹 등록 실패: Supabase SQL Editor에서 최신 supabase-schema.sql을 실행해주세요.";
+  }
+  if (error?.code === "22023" || message.includes("invalid nickname")) {
+    return "랭킹 등록 실패: 닉네임은 2글자 이상이어야 하며 '나'는 사용할 수 없습니다.";
+  }
+  return `랭킹 등록 실패: ${message || "supabase-schema.sql 설정을 확인해주세요."}`;
+}
+
 async function loadLeaderboard() {
   const originalList = els.leaderboardOriginalList || els.leaderboardList;
   const expansionList = els.leaderboardExpansionList;
@@ -887,7 +898,7 @@ async function submitLeaderboardScore(ranked) {
   });
 
   if (error) {
-    setLeaderboardStatus("랭킹 등록 실패: supabase-schema.sql 설정을 확인해주세요.", true);
+    setLeaderboardStatus(leaderboardSubmitErrorMessage(error), true);
     return;
   }
 
