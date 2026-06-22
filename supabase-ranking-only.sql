@@ -91,7 +91,7 @@ declare
     v_headers->>'x-real-ip',
     'unknown'
   ), ',', 1);
-  v_fingerprint text := encode(digest('fantasyR:' || trim(coalesce(v_ip, 'unknown')), 'sha256'), 'hex');
+  v_fingerprint text := encode(extensions.digest(('fantasyR:' || trim(coalesce(v_ip, 'unknown')))::text, 'sha256'::text), 'hex');
   v_now timestamptz := now();
   v_nickname text := left(regexp_replace(trim(coalesce(p_nickname, '')), '[[:space:]]+', ' ', 'g'), 12);
   v_existing public.fantasy_leaderboard%rowtype;
