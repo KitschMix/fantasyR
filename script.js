@@ -230,15 +230,20 @@ const DIALOGUE_CHARACTER_BOOKS = window.FANTASY_DIALOGUE_CHARACTER_BOOKS || {};
 const SUPABASE_CONFIG = window.FANTASY_SUPABASE_CONFIG || {};
 const ONLINE_ROOM_STORAGE_KEY = "fantasyKingdom.onlineRoom.v1";
 const ONLINE_TOKEN_STORAGE_KEY = "fantasyKingdom.playerToken.v1";
+const HUMAN_PROFILE_STORAGE_KEY = "fantasyKingdom.humanProfile.v1";
 const ONLINE_ROOM_TABLE = "fantasy_multiplayer_rooms";
 const ONLINE_PLAYER_TABLE = "fantasy_multiplayer_players";
+const LEADERBOARD_TABLE = "fantasy_leaderboard";
 const ONLINE_TURN_LIMIT_SECONDS = 30;
+const NICKNAME_CHANGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const LEADERBOARD_LIMIT = 10;
 
 const PROFILE_ASSET_ROOT = "assets/profiles/user";
 const AI_DIFFICULTY_LABELS = {
   normal: "보통",
   hard: "어려움",
   expert: "매우어려움",
+  random: "완전랜덤",
   boss: "최종보스"
 };
 const AI_PROFILE_DIFFICULTY_KEYS = ["normal", "hard", "expert"];
@@ -293,6 +298,7 @@ const state = {
   cardActions: {},
   confirmedActions: {},
   skippedActions: {},
+  leaderboardSubmitted: false,
   turnTimerKey: "",
   turnDeadlineAt: 0
 };
@@ -317,6 +323,9 @@ const els = {
   gameBoard: document.querySelector("#gameBoard"),
   playerCountSelect: document.querySelector("#playerCountSelect"),
   aiDifficultySelect: document.querySelector("#aiDifficultySelect"),
+  humanNameInput: document.querySelector("#humanNameInput"),
+  confirmNicknameButton: document.querySelector("#confirmNicknameButton"),
+  nicknameStatus: document.querySelector("#nicknameStatus"),
   expansionCheckbox: document.querySelector("#expansionCheckbox"),
   cursedItemsCheckbox: document.querySelector("#cursedItemsCheckbox"),
   startButton: document.querySelector("#startButton"),
@@ -350,6 +359,9 @@ const els = {
   endSummary: document.querySelector("#endSummary"),
   restartGameButton: document.querySelector("#restartGameButton"),
   leaveFinishedGameButton: document.querySelector("#leaveFinishedGameButton"),
+  leaderboardList: document.querySelector("#leaderboardList"),
+  leaderboardStatus: document.querySelector("#leaderboardStatus"),
+  refreshLeaderboardButton: document.querySelector("#refreshLeaderboardButton"),
   turnLabel: document.querySelector("#turnLabel"),
   phaseLabel: document.querySelector("#phaseLabel"),
   scoreList: document.querySelector("#scoreList"),
@@ -432,11 +444,12 @@ function selectAiProfiles(difficulty, count) {
 
 function createPlayerRoster() {
   const aiProfiles = selectAiProfiles(state.aiDifficulty, state.playerCount - 1);
+  const humanName = currentHumanNickname();
   return [
     {
       id: 0,
-      name: HUMAN_PROFILE.name,
-      baseName: HUMAN_PROFILE.name,
+      name: humanName,
+      baseName: humanName,
       human: true,
       ai: false,
       avatarUrl: HUMAN_PROFILE.avatarUrl,
@@ -553,7 +566,9 @@ function updateTitleArt() {
 }
 
 function startGame() {
+  if (!confirmHumanNicknameChange(els.humanNameInput)) return;
   resetDialogueState();
+  state.leaderboardSubmitted = false;
   state.playerCount = Number(els.playerCountSelect.value);
   state.aiDifficulty = els.aiDifficultySelect?.value || "normal";
   state.includeExpansion = Boolean(els.expansionCheckbox?.checked);
@@ -630,6 +645,202 @@ function getSupabaseClient() {
   return onlineState.client;
 }
 
+function normalizeHumanNickname(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 12) || HUMAN_PROFILE.name;
+}
+
+function readHumanProfile() {
+  try {
+    const profile = JSON.parse(window.localStorage?.getItem(HUMAN_PROFILE_STORAGE_KEY) || "null");
+    if (profile?.nickname) {
+      return {
+        nickname: normalizeHumanNickname(profile.nickname),
+        lastChangedAt: profile.lastChangedAt || ""
+      };
+    }
+  } catch {
+    // ignore broken local profile data
+  }
+  return { nickname: HUMAN_PROFILE.name, lastChangedAt: "" };
+}
+
+function saveHumanProfile(profile) {
+  window.localStorage?.setItem(HUMAN_PROFILE_STORAGE_KEY, JSON.stringify({
+    nickname: normalizeHumanNickname(profile.nickname),
+    lastChangedAt: profile.lastChangedAt || ""
+  }));
+}
+
+function currentHumanNickname() {
+  return readHumanProfile().nickname;
+}
+
+function nicknameChangeRemainingText(lastChangedAt) {
+  const changedAt = Date.parse(lastChangedAt || "");
+  if (!changedAt) return "";
+  const remainingMs = Math.max(0, NICKNAME_CHANGE_INTERVAL_MS - (Date.now() - changedAt));
+  const hours = Math.floor(remainingMs / (60 * 60 * 1000));
+  const minutes = Math.ceil((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+  if (hours <= 0) return `${Math.max(1, minutes)}분 후 변경 가능`;
+  return `${hours}시간 ${minutes}분 후 변경 가능`;
+}
+
+function setNicknameStatus(message, error = false) {
+  if (!els.nicknameStatus) return;
+  els.nicknameStatus.textContent = message;
+  els.nicknameStatus.classList.toggle("error", error);
+}
+
+function syncHumanNicknameInputs(force = false) {
+  const nickname = currentHumanNickname();
+  if (els.humanNameInput && (force || document.activeElement !== els.humanNameInput)) {
+    els.humanNameInput.value = nickname;
+  }
+  if (els.onlineNameInput && (force || document.activeElement !== els.onlineNameInput)) {
+    els.onlineNameInput.value = nickname;
+  }
+}
+
+function confirmHumanNicknameChange(sourceInput = els.humanNameInput) {
+  const profile = readHumanProfile();
+  const desired = normalizeHumanNickname(sourceInput?.value || profile.nickname);
+  if (desired === profile.nickname) {
+    syncHumanNicknameInputs(true);
+    setNicknameStatus(`현재 닉네임: ${profile.nickname}`);
+    return true;
+  }
+
+  const changedAt = Date.parse(profile.lastChangedAt || "");
+  if (changedAt && Date.now() - changedAt < NICKNAME_CHANGE_INTERVAL_MS) {
+    const remaining = nicknameChangeRemainingText(profile.lastChangedAt);
+    window.alert(`닉네임은 하루에 한 번만 변경할 수 있습니다.\n${remaining}`);
+    syncHumanNicknameInputs(true);
+    setNicknameStatus(`닉네임 변경 제한 중 (${remaining})`, true);
+    return false;
+  }
+
+  const confirmed = window.confirm(
+    "닉네임은 하루에 한 번만 변경할 수 있습니다.\n"
+    + `확인하면 오늘은 '${desired}' 닉네임으로 고정됩니다.\n`
+    + "저장할까요?"
+  );
+  if (!confirmed) {
+    syncHumanNicknameInputs(true);
+    setNicknameStatus(`현재 닉네임: ${profile.nickname}`);
+    return false;
+  }
+
+  saveHumanProfile({ nickname: desired, lastChangedAt: new Date().toISOString() });
+  syncHumanNicknameInputs(true);
+  setNicknameStatus(`닉네임 저장 완료: ${desired}`);
+  return true;
+}
+
+function initializeHumanNicknameControls() {
+  syncHumanNicknameInputs();
+  setNicknameStatus(`현재 닉네임: ${currentHumanNickname()}`);
+}
+
+function setLeaderboardStatus(message, error = false) {
+  if (!els.leaderboardStatus) return;
+  els.leaderboardStatus.textContent = message;
+  els.leaderboardStatus.classList.toggle("error", error);
+}
+
+function formatLeaderboardDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" });
+}
+
+function leaderboardModeText(entry) {
+  const mode = entry.include_expansion ? "확장" : "오리지널";
+  const count = entry.player_count ? `${entry.player_count}인` : "";
+  const difficulty = entry.ai_difficulty ? aiDifficultyLabel(entry.ai_difficulty) : "";
+  return [mode, count, difficulty].filter(Boolean).join(" · ");
+}
+
+async function loadLeaderboard() {
+  if (!els.leaderboardList) return;
+  const client = getSupabaseClient();
+  if (!client) {
+    setLeaderboardStatus("Supabase 설정이 필요합니다.", true);
+    return;
+  }
+
+  setLeaderboardStatus("랭킹을 불러오는 중입니다.");
+  const { data, error } = await client
+    .from(LEADERBOARD_TABLE)
+    .select("nickname,score,player_count,include_expansion,ai_difficulty,updated_at")
+    .order("score", { ascending: false })
+    .order("updated_at", { ascending: true })
+    .limit(LEADERBOARD_LIMIT);
+
+  if (error) {
+    els.leaderboardList.innerHTML = "";
+    setLeaderboardStatus("랭킹 테이블 설정이 필요합니다. supabase-schema.sql을 실행해주세요.", true);
+    return;
+  }
+
+  els.leaderboardList.innerHTML = "";
+  if (!data?.length) {
+    setLeaderboardStatus("아직 등록된 랭킹이 없습니다.");
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  data.forEach((entry, index) => {
+    const item = document.createElement("li");
+    item.innerHTML = `
+      <span class="leaderboard-rank">${index + 1}</span>
+      <strong>${escapeHtml(entry.nickname || "익명")}</strong>
+      <b>${Number(entry.score || 0)}점</b>
+      <small>${escapeHtml(leaderboardModeText(entry))}${entry.updated_at ? ` · ${formatLeaderboardDate(entry.updated_at)}` : ""}</small>
+    `;
+    fragment.append(item);
+  });
+  els.leaderboardList.append(fragment);
+  setLeaderboardStatus("IP당 최고 점수 1개만 표시됩니다.");
+}
+
+async function submitLeaderboardScore(ranked) {
+  if (state.leaderboardSubmitted) return;
+  const humanEntry = ranked.find((entry) => entry.player.human);
+  if (!humanEntry) return;
+  state.leaderboardSubmitted = true;
+
+  const client = getSupabaseClient();
+  if (!client) {
+    setLeaderboardStatus("랭킹 등록 실패: Supabase 설정 필요", true);
+    return;
+  }
+
+  const nickname = normalizeHumanNickname(humanEntry.player.baseName || humanEntry.player.name || currentHumanNickname());
+  const { data, error } = await client.rpc("fantasy_submit_leaderboard_score", {
+    p_nickname: nickname,
+    p_score: Number(humanEntry.score || 0),
+    p_player_count: Number(state.playerCount || state.players.length || 0),
+    p_include_expansion: Boolean(state.includeExpansion),
+    p_ai_difficulty: state.aiDifficulty || onlineState.room?.ai_difficulty || "normal"
+  });
+
+  if (error) {
+    setLeaderboardStatus("랭킹 등록 실패: supabase-schema.sql 설정을 확인해주세요.", true);
+    return;
+  }
+
+  const result = Array.isArray(data) ? data[0] : data;
+  const nicknameDenied = result && result.nickname_updated === false && result.nickname !== nickname;
+  const scoreText = result?.score_updated ? "최고 점수 갱신!" : "기존 최고 점수를 유지했습니다.";
+  setLeaderboardStatus(nicknameDenied
+    ? `${scoreText} 닉네임은 서버 기준 하루 1회 제한으로 기존 이름을 유지했습니다.`
+    : scoreText);
+  loadLeaderboard();
+}
+
 function generateOnlineToken() {
   if (window.crypto?.randomUUID) return window.crypto.randomUUID();
   return `player-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -644,7 +855,7 @@ function onlinePlayerToken() {
 }
 
 function onlinePlayerName() {
-  return (els.onlineNameInput?.value || "나").trim().slice(0, 12) || "나";
+  return currentHumanNickname();
 }
 
 function normalizeRoomCode(value) {
@@ -922,6 +1133,7 @@ async function subscribeOnlineRoom(roomId) {
 async function createOnlineRoom() {
   const client = getSupabaseClient();
   if (!client || onlineState.loading) return;
+  if (!confirmHumanNicknameChange(els.onlineNameInput)) return;
   onlineState.loading = true;
   setOnlineStatus("방 생성 중");
   renderOnlinePanel();
@@ -969,6 +1181,7 @@ async function createOnlineRoom() {
 async function joinOnlineRoom() {
   const client = getSupabaseClient();
   if (!client || onlineState.loading) return;
+  if (!confirmHumanNicknameChange(els.onlineNameInput)) return;
   const code = normalizeRoomCode(els.roomCodeInput?.value);
   if (!code) {
     setOnlineStatus("코드 필요", true);
@@ -1315,7 +1528,10 @@ function hydrateOnlineGameSnapshot(snapshot) {
   const firstHydrate = onlineState.activeGameKey !== snapshot.startedAt || boardHidden;
   onlineState.applyingRemote = true;
 
-  if (firstHydrate) resetDialogueState();
+  if (firstHydrate) {
+    resetDialogueState();
+    state.leaderboardSubmitted = false;
+  }
   state.playerCount = snapshot.playerCount || snapshot.players.length || 2;
   state.aiDifficulty = onlineState.room?.ai_difficulty || "normal";
   state.includeExpansion = Boolean(snapshot.includeExpansion);
@@ -1385,6 +1601,7 @@ function hydrateOnlineGameSnapshot(snapshot) {
       .map((player) => ({ player, score: scorePlayer(player).total }))
       .sort((a, b) => b.score - a.score);
     showEndNotification(ranked);
+    submitLeaderboardScore(ranked);
   }
   return true;
 }
@@ -1409,6 +1626,7 @@ async function startOnlineGame() {
   renderOnlinePanel();
 
   try {
+    state.leaderboardSubmitted = false;
     const snapshot = createOnlineGameSnapshot();
     const { data: room, error } = await client
       .from(ONLINE_ROOM_TABLE)
@@ -2924,6 +3142,7 @@ function finishGame() {
     eventByPlayer: (player) => ranked[0].player.id === player.id ? "win" : "lose"
   });
   showEndNotification(ranked);
+  submitLeaderboardScore(ranked);
 }
 
 function showEndNotification(ranked) {
@@ -4089,6 +4308,18 @@ function formatSigned(value) {
   return value > 0 ? `+${value}` : `${value}`;
 }
 
+els.confirmNicknameButton?.addEventListener("click", () => confirmHumanNicknameChange(els.humanNameInput));
+els.humanNameInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  confirmHumanNicknameChange(els.humanNameInput);
+});
+els.onlineNameInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  confirmHumanNicknameChange(els.onlineNameInput);
+});
+els.refreshLeaderboardButton?.addEventListener("click", loadLeaderboard);
 els.startButton.addEventListener("click", startGame);
 els.createRoomButton?.addEventListener("click", createOnlineRoom);
 els.rejoinRoomButton?.addEventListener("click", restoreOnlineRoom);
@@ -4111,8 +4342,10 @@ els.newGameButton.addEventListener("click", () => {
   state.finished = false;
   state.confirmedActions = {};
   state.skippedActions = {};
+  state.leaderboardSubmitted = false;
   onlineState.activeGameKey = "";
   updateTitleArt();
+  loadLeaderboard();
 });
 els.expansionCheckbox?.addEventListener("change", updateTitleArt);
 els.deckButton.addEventListener("click", drawFromDeck);
@@ -4125,5 +4358,7 @@ els.restartGameButton.addEventListener("click", () => {
 });
 els.leaveFinishedGameButton?.addEventListener("click", leaveOnlineRoom);
 
+initializeHumanNicknameControls();
 updateTitleArt();
+loadLeaderboard();
 restoreOnlineRoom();

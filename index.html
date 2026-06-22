@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
-    <link rel="stylesheet" href="styles.css?v=20260619-catalog-card-shape" />
+    <link rel="stylesheet" href="styles.css?v=20260622-leaderboard" />
   </head>
   <body>
     <main class="app-shell">
@@ -31,6 +31,14 @@
             <span>AI와 바로 시작</span>
           </div>
           <div class="setup-controls">
+            <div class="nickname-control">
+              <label>
+                내 닉네임
+                <input id="humanNameInput" type="text" maxlength="12" autocomplete="nickname" />
+              </label>
+              <button id="confirmNicknameButton" class="secondary-button" type="button">확인</button>
+              <small id="nicknameStatus">닉네임은 하루에 한 번만 변경할 수 있습니다.</small>
+            </div>
             <label>
               플레이어 수
               <select id="playerCountSelect">
@@ -88,6 +96,14 @@
             <button id="startOnlineGameButton" class="primary-button online-start-button" type="button">게임 시작</button>
             <button id="leaveRoomButton" class="secondary-button" type="button">나가기</button>
           </div>
+        </div>
+        <div class="mode-panel leaderboard-panel">
+          <div class="mode-panel-head">
+            <strong>랭킹 게시판</strong>
+            <button id="refreshLeaderboardButton" class="secondary-button leaderboard-refresh-button" type="button">새로고침</button>
+          </div>
+          <ol id="leaderboardList" class="leaderboard-list"></ol>
+          <div id="leaderboardStatus" class="leaderboard-status">랭킹을 불러오는 중입니다.</div>
         </div>
       </section>
 
@@ -209,6 +225,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
-    <script src="script.js?v=20260619-leprechaun-final-only"></script>
+    <script src="script.js?v=20260622-leaderboard"></script>
   </body>
 </html>
