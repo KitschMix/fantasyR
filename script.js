@@ -2131,18 +2131,11 @@ function syncIdleDialogueTimer() {
 }
 
 function speakAiTurnStart(player) {
-  const spoke = speakSingleDialogue("wait", {
+  return speakSingleDialogue("wait", {
     player,
-    chance: 0.28,
+    chance: 0.16,
     duration: DIALOGUE_DISPLAY_MS
   });
-  if (!spoke && Math.random() < 0.34) {
-    clearAllSpeech();
-    setPlayerSpeech(player, pickAiFallbackLine("think"), DIALOGUE_DISPLAY_MS);
-    renderOpponents();
-    return true;
-  }
-  return spoke;
 }
 
 function speakAiScoreReaction(player, beforeScore, afterScore) {
@@ -2155,26 +2148,6 @@ function speakAiScoreReaction(player, beforeScore, afterScore) {
     return speakSingleDialogue("discard", { player, chance: 0.38, duration: DIALOGUE_DISPLAY_MS });
   }
   return false;
-}
-
-function pickAiFallbackLine(kind) {
-  const lines = {
-    think: ["조합을 한번 볼까요.", "이번 턴은 신중하게 가죠.", "흐름을 바꿀 카드가 필요하네요."],
-    takeDiscard: ["저 카드는 쓸 만하겠네요.", "공개된 카드를 가져가겠습니다.", "필요한 조각이 보이는군요."],
-    takeDeck: ["덱에서 승부를 보겠습니다.", "새 카드를 뽑아보죠.", "이번엔 모험을 해보겠습니다."],
-    discard: ["이 카드는 내려놓죠.", "손패를 조금 정리하겠습니다.", "지금은 이 카드가 가장 낫겠네요."]
-  };
-  const pool = lines[kind] || lines.think;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function speakAiAction(player, eventKey, fallbackKind, chance = 0.34) {
-  const spoke = speakSingleDialogue(eventKey, { player, chance, duration: DIALOGUE_DISPLAY_MS });
-  if (spoke || Math.random() >= chance) return spoke;
-  clearAllSpeech();
-  setPlayerSpeech(player, pickAiFallbackLine(fallbackKind), DIALOGUE_DISPLAY_MS);
-  renderOpponents();
-  return true;
 }
 
 function getPenaltyClearInfo(card, scoreRow) {
@@ -3348,7 +3321,6 @@ function runAiTurn() {
   let drawSourceRect = null;
   let hiddenDraw = false;
   const drewFromDiscard = drawChoice.source === "discard";
-  let drawSpoke = false;
 
   if (drewFromDiscard) {
     const sourceCard = state.discard[drawChoice.index];
@@ -3357,19 +3329,18 @@ function runAiTurn() {
     drawn = card;
     player.hand.push(card);
     log(`${player.name}: 공개 영역에서 ${card.name} 카드를 가져갔습니다.`);
-    drawSpoke = speakAiAction(player, "takeDiscard", "takeDiscard", 0.42);
   } else {
     drawSourceRect = els.deckButton.getBoundingClientRect();
     hiddenDraw = true;
     drawn = state.deck.pop();
     player.hand.push(drawn);
     log(`${player.name}: 덱에서 카드 1장을 가져갔습니다.`);
-    drawSpoke = speakAiAction(player, "wait", "takeDeck", 0.3);
   }
 
   state.animating = true;
-  if (drewFromDiscard && !drawSpoke) {
+  if (drewFromDiscard) {
     speakSingleDialogue("takeDiscard", { excludedIds: [player.id] });
+    speakSingleDialogue("takeDiscard", { player, chance: 0.24 });
   }
   renderWithAiDrawMove(drawn, drawSourceRect, player.id, hiddenDraw, () => {
     const discardId = chooseAiDiscard(player, player.hand);
@@ -3380,8 +3351,7 @@ function runAiTurn() {
     state.selectedCardId = discarded.id;
     log(`${player.name}: ${discarded.name} 카드를 버렸습니다.`);
     const scoreAfterTurn = scorePlayer(player).total;
-    log(`${player.name}: 손패 구성을 정리했습니다.`);
-    const spokeDiscard = speakAiAction(player, "discard", "discard", 0.38);
+    const spokeDiscard = speakSingleDialogue("discard", { player });
     if (!spokeDiscard) speakAiScoreReaction(player, scoreBeforeTurn, scoreAfterTurn);
     renderWithDiscardMove(discarded, { getBoundingClientRect: () => discardSourceRect }, () => {
       state.animating = false;
