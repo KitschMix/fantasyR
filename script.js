@@ -234,6 +234,7 @@ const HUMAN_PROFILE_STORAGE_KEY = "fantasyKingdom.humanProfile.v1";
 const ONLINE_ROOM_TABLE = "fantasy_multiplayer_rooms";
 const ONLINE_PLAYER_TABLE = "fantasy_multiplayer_players";
 const LEADERBOARD_TABLE = "fantasy_leaderboard";
+const HALL_OF_FAME_TABLE = "fantasy_beomrye_hall_of_fame";
 const ONLINE_TURN_LIMIT_SECONDS = 30;
 const NICKNAME_CHANGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const MIN_NICKNAME_LENGTH = 2;
@@ -301,6 +302,7 @@ const state = {
   confirmedActions: {},
   skippedActions: {},
   leaderboardSubmitted: false,
+  hallOfFameSubmitted: false,
   turnTimerKey: "",
   turnDeadlineAt: 0
 };
@@ -365,6 +367,8 @@ const els = {
   leaderboardOriginalList: document.querySelector("#leaderboardOriginalList"),
   leaderboardExpansionList: document.querySelector("#leaderboardExpansionList"),
   leaderboardStatus: document.querySelector("#leaderboardStatus"),
+  hallOfFameCard: document.querySelector("#hallOfFameCard"),
+  hallOfFameStatus: document.querySelector("#hallOfFameStatus"),
   refreshLeaderboardButton: document.querySelector("#refreshLeaderboardButton"),
   turnLabel: document.querySelector("#turnLabel"),
   phaseLabel: document.querySelector("#phaseLabel"),
@@ -573,6 +577,7 @@ function startGame() {
   if (!confirmHumanNicknameChange(els.humanNameInput)) return;
   resetDialogueState();
   state.leaderboardSubmitted = false;
+  state.hallOfFameSubmitted = false;
   state.playerCount = Number(els.playerCountSelect.value);
   state.aiDifficulty = els.aiDifficultySelect?.value || "normal";
   state.includeExpansion = Boolean(els.expansionCheckbox?.checked);
@@ -782,6 +787,12 @@ function setLeaderboardStatus(message, error = false) {
   els.leaderboardStatus.classList.toggle("error", error);
 }
 
+function setHallOfFameStatus(message, error = false) {
+  if (!els.hallOfFameStatus) return;
+  els.hallOfFameStatus.textContent = message;
+  els.hallOfFameStatus.classList.toggle("error", error);
+}
+
 function formatLeaderboardDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -792,6 +803,13 @@ function leaderboardMetaText(entry) {
   const count = entry.player_count ? `${entry.player_count}인` : "";
   const difficulty = entry.ai_difficulty ? aiDifficultyLabel(entry.ai_difficulty) : "";
   return [count, difficulty].filter(Boolean).join(" · ");
+}
+
+function hallOfFameMetaText(entry) {
+  const mode = entry.include_expansion ? "확장팩" : "오리지널";
+  const count = entry.player_count ? `${entry.player_count}인` : "";
+  const date = entry.defeated_at ? formatLeaderboardDate(entry.defeated_at) : "";
+  return [mode, count, date].filter(Boolean).join(" · ");
 }
 
 async function fetchLeaderboardEntries(client, includeExpansion) {
@@ -830,6 +848,55 @@ function renderLeaderboardList(listElement, entries) {
   listElement.append(fragment);
 }
 
+function renderHallOfFame(entry) {
+  if (!els.hallOfFameCard) return;
+  if (!entry) {
+    els.hallOfFameCard.classList.add("empty");
+    els.hallOfFameCard.innerHTML = `
+      <span>최종보스 격파자</span>
+      <strong>기록을 기다리는 중</strong>
+      <b></b>
+      <small>강범례가 참가한 싱글게임에서 승리하면 등록됩니다.</small>
+    `;
+    return;
+  }
+
+  els.hallOfFameCard.classList.remove("empty");
+  els.hallOfFameCard.innerHTML = `
+    <span>최종보스 격파자</span>
+    <strong>${escapeHtml(entry.nickname || "익명")}</strong>
+    <b>${Number(entry.score || 0)}점</b>
+    <small>${escapeHtml(hallOfFameMetaText(entry))}</small>
+  `;
+}
+
+async function loadHallOfFame() {
+  if (!els.hallOfFameCard) return;
+  const client = getSupabaseClient();
+  if (!client) {
+    renderHallOfFame(null);
+    setHallOfFameStatus("Supabase 설정이 필요합니다.", true);
+    return;
+  }
+
+  setHallOfFameStatus("명예의 전당을 불러오는 중입니다.");
+  const { data, error } = await client
+    .from(HALL_OF_FAME_TABLE)
+    .select("nickname,score,player_count,include_expansion,ai_difficulty,defeated_at,updated_at")
+    .eq("id", 1)
+    .limit(1);
+
+  if (error) {
+    renderHallOfFame(null);
+    setHallOfFameStatus("명예의 전당 설정이 필요합니다. supabase-ranking-only.sql을 실행해주세요.", true);
+    return;
+  }
+
+  const entry = Array.isArray(data) ? data[0] : null;
+  renderHallOfFame(entry || null);
+  setHallOfFameStatus(entry ? "범례를 쓰러뜨린 단 한 명입니다." : "아직 범례 격파자가 없습니다.");
+}
+
 function leaderboardSubmitErrorMessage(error) {
   const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ");
   if (error?.code === "PGRST202" || message.includes("Could not find the function")) {
@@ -839,6 +906,17 @@ function leaderboardSubmitErrorMessage(error) {
     return "랭킹 등록 실패: 닉네임은 2글자 이상이어야 하며 '나'는 사용할 수 없습니다.";
   }
   return `랭킹 등록 실패: ${message || "supabase-schema.sql 설정을 확인해주세요."}`;
+}
+
+function hallOfFameSubmitErrorMessage(error) {
+  const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ");
+  if (error?.code === "PGRST202" || message.includes("Could not find the function")) {
+    return "명예의 전당 등록 실패: Supabase SQL Editor에서 최신 supabase-ranking-only.sql을 실행해주세요.";
+  }
+  if (error?.code === "22023" || message.includes("invalid nickname")) {
+    return "명예의 전당 등록 실패: 닉네임은 2글자 이상이어야 하며 '나'는 사용할 수 없습니다.";
+  }
+  return `명예의 전당 등록 실패: ${message || "supabase-ranking-only.sql 설정을 확인해주세요."}`;
 }
 
 async function loadLeaderboard() {
@@ -909,6 +987,68 @@ async function submitLeaderboardScore(ranked) {
     ? `${scoreText} 닉네임은 서버 기준 하루 1회 제한으로 기존 이름을 유지했습니다.`
     : scoreText);
   loadLeaderboard();
+}
+
+function isBeomryePlayer(player) {
+  return Boolean(player && !player.human && (
+    player.boss
+    || player.baseName === "강범례"
+    || String(player.name || "").includes("강범례")
+  ));
+}
+
+function hasBeomryeOpponent(ranked) {
+  return ranked.some((entry) => isBeomryePlayer(entry.player));
+}
+
+function humanWonRanked(ranked) {
+  const humanEntry = ranked.find((entry) => entry.player.human);
+  return Boolean(humanEntry && ranked[0]?.player.id === humanEntry.player.id);
+}
+
+function qualifiesForBeomryeHallOfFame(ranked) {
+  return !state.onlineGame && humanWonRanked(ranked) && hasBeomryeOpponent(ranked);
+}
+
+async function submitBeomryeHallOfFame(ranked) {
+  if (state.hallOfFameSubmitted) return;
+  state.hallOfFameSubmitted = true;
+  if (!hasBeomryeOpponent(ranked)) return;
+  if (state.onlineGame) {
+    setHallOfFameStatus("온라인 게임은 범례 명예의 전당에 등록하지 않습니다.");
+    return;
+  }
+  if (!humanWonRanked(ranked)) {
+    setHallOfFameStatus("범례가 아직 왕좌를 지키고 있습니다.");
+    return;
+  }
+
+  const client = getSupabaseClient();
+  if (!client) {
+    setHallOfFameStatus("명예의 전당 등록 실패: Supabase 설정 필요", true);
+    return;
+  }
+
+  const humanEntry = ranked.find((entry) => entry.player.human);
+  const nickname = normalizeHumanNickname(humanEntry.player.baseName || humanEntry.player.name || currentHumanNickname());
+  const { data, error } = await client.rpc("fantasy_submit_beomrye_hall_score", {
+    p_nickname: nickname,
+    p_score: Number(humanEntry.score || 0),
+    p_player_count: Number(state.playerCount || state.players.length || 0),
+    p_include_expansion: Boolean(state.includeExpansion),
+    p_ai_difficulty: state.aiDifficulty || "expert"
+  });
+
+  if (error) {
+    setHallOfFameStatus(hallOfFameSubmitErrorMessage(error), true);
+    return;
+  }
+
+  const result = Array.isArray(data) ? data[0] : data;
+  setHallOfFameStatus(result?.score_updated
+    ? "범례 격파자 명예의 전당에 등극했습니다."
+    : "범례는 쓰러뜨렸지만 기존 명예의 전당 기록이 더 높습니다.");
+  loadHallOfFame();
 }
 
 function generateOnlineToken() {
@@ -1604,6 +1744,7 @@ function hydrateOnlineGameSnapshot(snapshot) {
   if (firstHydrate) {
     resetDialogueState();
     state.leaderboardSubmitted = false;
+    state.hallOfFameSubmitted = false;
   }
   state.playerCount = snapshot.playerCount || snapshot.players.length || 2;
   state.aiDifficulty = onlineState.room?.ai_difficulty || "normal";
@@ -1679,6 +1820,7 @@ function hydrateOnlineGameSnapshot(snapshot) {
       .sort((a, b) => b.score - a.score);
     showEndNotification(ranked);
     submitLeaderboardScore(ranked);
+    submitBeomryeHallOfFame(ranked);
   }
   return true;
 }
@@ -1704,6 +1846,7 @@ async function startOnlineGame() {
 
   try {
     state.leaderboardSubmitted = false;
+    state.hallOfFameSubmitted = false;
     const snapshot = createOnlineGameSnapshot();
     const { data: room, error } = await client
       .from(ONLINE_ROOM_TABLE)
@@ -3223,6 +3366,7 @@ function finishGame() {
   });
   showEndNotification(ranked);
   submitLeaderboardScore(ranked);
+  submitBeomryeHallOfFame(ranked);
 }
 
 function showEndNotification(ranked) {
@@ -3234,10 +3378,16 @@ function showEndNotification(ranked) {
     : humanWon
       ? "승리 기록을 랭킹에 자동 등록합니다."
       : "랭킹은 싱글플레이에서 승리했을 때만 등록됩니다.";
+  const hallText = qualifiesForBeomryeHallOfFame(ranked)
+    ? "범례 격파 기록도 명예의 전당에 도전합니다."
+    : hasBeomryeOpponent(ranked)
+      ? "범례 명예의 전당은 강범례가 참가한 싱글게임에서 승리해야 등록됩니다."
+      : "";
   els.endSummary.innerHTML = `
     <strong>${escapeHtml(ranked[0].player.name)} 승리</strong>
     <span>${ranked[0].score}점으로 게임이 끝났습니다.</span>
     <small>${leaderboardText}</small>
+    ${hallText ? `<small>${hallText}</small>` : ""}
     <div class="end-score-grid">
       ${ranked.map((entry, index) => endScoreCardHtml(entry, index)).join("")}
     </div>
@@ -4451,6 +4601,7 @@ els.onlineNameInput?.addEventListener("keydown", (event) => {
   confirmHumanNicknameChange(els.onlineNameInput);
 });
 els.refreshLeaderboardButton?.addEventListener("click", loadLeaderboard);
+els.refreshLeaderboardButton?.addEventListener("click", loadHallOfFame);
 els.startButton.addEventListener("click", startGame);
 els.createRoomButton?.addEventListener("click", createOnlineRoom);
 els.rejoinRoomButton?.addEventListener("click", restoreOnlineRoom);
@@ -4475,8 +4626,10 @@ els.newGameButton.addEventListener("click", () => {
   state.confirmedActions = {};
   state.skippedActions = {};
   state.leaderboardSubmitted = false;
+  state.hallOfFameSubmitted = false;
   onlineState.activeGameKey = "";
   updateTitleArt();
+  loadHallOfFame();
   loadLeaderboard();
 });
 els.expansionCheckbox?.addEventListener("change", updateTitleArt);
@@ -4492,5 +4645,6 @@ els.leaveFinishedGameButton?.addEventListener("click", leaveOnlineRoom);
 
 initializeHumanNicknameControls();
 updateTitleArt();
+loadHallOfFame();
 loadLeaderboard();
 restoreOnlineRoom();

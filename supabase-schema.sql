@@ -260,6 +260,131 @@ $$;
 
 grant execute on function public.fantasy_submit_leaderboard_score(text, integer, integer, boolean, text) to anon;
 
+create table if not exists public.fantasy_beomrye_hall_of_fame (
+  id integer primary key default 1 check (id = 1),
+  player_fingerprint text,
+  nickname text not null check (char_length(nickname) between 2 and 12 and nickname <> '나'),
+  score integer not null default 0 check (score >= 0),
+  player_count integer check (player_count between 1 and 4),
+  include_expansion boolean not null default false,
+  ai_difficulty text,
+  defeated_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+delete from public.fantasy_beomrye_hall_of_fame
+  where id <> 1;
+
+alter table public.fantasy_beomrye_hall_of_fame enable row level security;
+
+drop policy if exists "beomrye hall public read" on public.fantasy_beomrye_hall_of_fame;
+
+create policy "beomrye hall public read"
+  on public.fantasy_beomrye_hall_of_fame
+  for select
+  using (true);
+
+revoke insert, update, delete on public.fantasy_beomrye_hall_of_fame from anon;
+grant select on public.fantasy_beomrye_hall_of_fame to anon;
+
+create or replace function public.fantasy_submit_beomrye_hall_score(
+  p_nickname text,
+  p_score integer,
+  p_player_count integer default null,
+  p_include_expansion boolean default false,
+  p_ai_difficulty text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_headers jsonb := coalesce(nullif(current_setting('request.headers', true), '')::jsonb, '{}'::jsonb);
+  v_ip text := split_part(coalesce(
+    v_headers->>'cf-connecting-ip',
+    v_headers->>'x-forwarded-for',
+    v_headers->>'x-real-ip',
+    'unknown'
+  ), ',', 1);
+  v_fingerprint text := encode(extensions.digest(('fantasyR:beomrye:' || trim(coalesce(v_ip, 'unknown')))::text, 'sha256'::text), 'hex');
+  v_now timestamptz := now();
+  v_nickname text := left(regexp_replace(trim(coalesce(p_nickname, '')), '[[:space:]]+', ' ', 'g'), 12);
+  v_existing public.fantasy_beomrye_hall_of_fame%rowtype;
+  v_score integer := greatest(coalesce(p_score, 0), 0);
+  v_score_updated boolean := false;
+begin
+  if char_length(v_nickname) < 2 or v_nickname = '나' then
+    raise exception 'invalid nickname'
+      using errcode = '22023';
+  end if;
+
+  select *
+    into v_existing
+    from public.fantasy_beomrye_hall_of_fame
+    where id = 1
+    for update;
+
+  if not found then
+    insert into public.fantasy_beomrye_hall_of_fame (
+      id,
+      player_fingerprint,
+      nickname,
+      score,
+      player_count,
+      include_expansion,
+      ai_difficulty,
+      defeated_at,
+      updated_at
+    )
+    values (
+      1,
+      v_fingerprint,
+      v_nickname,
+      v_score,
+      p_player_count,
+      coalesce(p_include_expansion, false),
+      left(coalesce(p_ai_difficulty, ''), 32),
+      v_now,
+      v_now
+    )
+    returning * into v_existing;
+
+    return jsonb_build_object(
+      'created', true,
+      'score_updated', true,
+      'nickname', v_existing.nickname,
+      'score', v_existing.score
+    );
+  end if;
+
+  v_score_updated := v_score > v_existing.score;
+
+  if v_score_updated then
+    update public.fantasy_beomrye_hall_of_fame
+      set player_fingerprint = v_fingerprint,
+          nickname = v_nickname,
+          score = v_score,
+          player_count = p_player_count,
+          include_expansion = coalesce(p_include_expansion, false),
+          ai_difficulty = left(coalesce(p_ai_difficulty, ''), 32),
+          defeated_at = v_now,
+          updated_at = v_now
+      where id = 1
+      returning * into v_existing;
+  end if;
+
+  return jsonb_build_object(
+    'created', false,
+    'score_updated', v_score_updated,
+    'nickname', v_existing.nickname,
+    'score', v_existing.score
+  );
+end;
+$$;
+
+grant execute on function public.fantasy_submit_beomrye_hall_score(text, integer, integer, boolean, text) to anon;
+
 notify pgrst, 'reload schema';
 
 do $$

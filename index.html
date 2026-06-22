@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
-    <link rel="stylesheet" href="styles.css?v=20260622-end-ai-polish" />
+    <link rel="stylesheet" href="styles.css?v=20260622-beomrye-hall" />
   </head>
   <body>
     <main class="app-shell">
@@ -96,6 +96,18 @@
             <button id="startOnlineGameButton" class="primary-button online-start-button" type="button">게임 시작</button>
             <button id="leaveRoomButton" class="secondary-button" type="button">나가기</button>
           </div>
+        </div>
+        <div class="mode-panel hall-panel">
+          <div class="mode-panel-head">
+            <strong>범례 격파 명예의 전당</strong>
+            <span>단 한 명</span>
+          </div>
+          <div id="hallOfFameCard" class="hall-card">
+            <span>최종보스 격파자</span>
+            <strong>기록을 기다리는 중</strong>
+            <small>강범례가 참가한 싱글게임에서 승리하면 등록됩니다.</small>
+          </div>
+          <div id="hallOfFameStatus" class="hall-status">명예의 전당을 불러오는 중입니다.</div>
         </div>
         <div class="mode-panel leaderboard-panel">
           <div class="mode-panel-head">
@@ -234,6 +246,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
-    <script src="script.js?v=20260622-dialogue-book-only"></script>
+    <script src="script.js?v=20260622-beomrye-hall"></script>
   </body>
 </html>
