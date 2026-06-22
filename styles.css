@@ -1787,6 +1787,12 @@ select {
   overflow: auto;
 }
 
+.end-dialog {
+  width: min(920px, calc(100vw - 32px));
+  max-height: min(88vh, 860px);
+  overflow: auto;
+}
+
 .rules-dialog::backdrop,
 .catalog-dialog::backdrop,
 .end-dialog::backdrop {
@@ -1866,15 +1872,115 @@ select {
   font-size: 32px;
 }
 
-.end-summary ol {
-  display: grid;
-  gap: 6px;
-  margin: 4px 0 0;
-  padding-left: 20px;
+.end-summary > small {
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 800;
 }
 
-.end-summary li b {
+.end-score-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.end-score-card {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid rgba(246, 232, 202, 0.14);
+  border-radius: 7px;
+  background: rgba(28, 25, 21, 0.68);
+}
+
+.end-score-card.winner {
+  border-color: rgba(242, 207, 120, 0.46);
+  box-shadow: 0 0 0 1px rgba(242, 207, 120, 0.12);
+}
+
+.end-score-card.human {
+  background: rgba(42, 35, 24, 0.74);
+}
+
+.end-score-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.end-score-head .player-avatar {
+  width: 54px;
+  height: 54px;
+  flex-basis: 54px;
+}
+
+.end-avatar-placeholder {
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgba(242, 207, 120, 0.22);
+  border-radius: 50%;
+  background: rgba(246, 232, 202, 0.07);
+}
+
+.end-score-head div {
+  display: grid;
+  min-width: 0;
+}
+
+.end-score-head span,
+.end-score-card small {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.end-score-head strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 21px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.end-score-head b {
   color: var(--focus);
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+.end-score-parts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.end-score-parts span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid rgba(246, 232, 202, 0.09);
+  border-radius: 6px;
+  color: var(--muted);
+  background: rgba(246, 232, 202, 0.05);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.end-score-parts b {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.end-score-parts b.bonus-value {
+  color: #8be0bb;
+}
+
+.end-score-parts b.penalty-value {
+  color: #ee8f80;
 }
 
 .end-actions {
@@ -1996,6 +2102,11 @@ select {
   }
 
   .leaderboard-board {
+    grid-template-columns: 1fr;
+  }
+
+  .end-score-grid,
+  .end-score-parts {
     grid-template-columns: 1fr;
   }
 

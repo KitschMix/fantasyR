@@ -1672,7 +1672,10 @@ function hydrateOnlineGameSnapshot(snapshot) {
   if (state.finished) {
     clearOnlineRoomSnapshot();
     const ranked = [...state.players]
-      .map((player) => ({ player, score: scorePlayer(player).total }))
+      .map((player) => {
+        const score = scorePlayer(player);
+        return { player, score: score.total, scoreDetails: score };
+      })
       .sort((a, b) => b.score - a.score);
     showEndNotification(ranked);
     submitLeaderboardScore(ranked);
@@ -2128,11 +2131,18 @@ function syncIdleDialogueTimer() {
 }
 
 function speakAiTurnStart(player) {
-  return speakSingleDialogue("wait", {
+  const spoke = speakSingleDialogue("wait", {
     player,
-    chance: 0.16,
+    chance: 0.28,
     duration: DIALOGUE_DISPLAY_MS
   });
+  if (!spoke && Math.random() < 0.34) {
+    clearAllSpeech();
+    setPlayerSpeech(player, pickAiFallbackLine("think"), DIALOGUE_DISPLAY_MS);
+    renderOpponents();
+    return true;
+  }
+  return spoke;
 }
 
 function speakAiScoreReaction(player, beforeScore, afterScore) {
@@ -2145,6 +2155,26 @@ function speakAiScoreReaction(player, beforeScore, afterScore) {
     return speakSingleDialogue("discard", { player, chance: 0.38, duration: DIALOGUE_DISPLAY_MS });
   }
   return false;
+}
+
+function pickAiFallbackLine(kind) {
+  const lines = {
+    think: ["조합을 한번 볼까요.", "이번 턴은 신중하게 가죠.", "흐름을 바꿀 카드가 필요하네요."],
+    takeDiscard: ["저 카드는 쓸 만하겠네요.", "공개된 카드를 가져가겠습니다.", "필요한 조각이 보이는군요."],
+    takeDeck: ["덱에서 승부를 보겠습니다.", "새 카드를 뽑아보죠.", "이번엔 모험을 해보겠습니다."],
+    discard: ["이 카드는 내려놓죠.", "손패를 조금 정리하겠습니다.", "지금은 이 카드가 가장 낫겠네요."]
+  };
+  const pool = lines[kind] || lines.think;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function speakAiAction(player, eventKey, fallbackKind, chance = 0.34) {
+  const spoke = speakSingleDialogue(eventKey, { player, chance, duration: DIALOGUE_DISPLAY_MS });
+  if (spoke || Math.random() >= chance) return spoke;
+  clearAllSpeech();
+  setPlayerSpeech(player, pickAiFallbackLine(fallbackKind), DIALOGUE_DISPLAY_MS);
+  renderOpponents();
+  return true;
 }
 
 function getPenaltyClearInfo(card, scoreRow) {
@@ -3204,7 +3234,10 @@ function finishGame() {
   state.finished = true;
   state.phase = "finished";
   const ranked = [...state.players]
-    .map((player) => ({ player, score: scorePlayer(player).total }))
+    .map((player) => {
+      const score = scorePlayer(player);
+      return { player, score: score.total, scoreDetails: score };
+    })
     .sort((a, b) => b.score - a.score);
   log(`게임 종료. 승자: ${ranked[0].player.name} (${ranked[0].score}점)`);
   stopIdleDialogueTimer();
@@ -3221,17 +3254,67 @@ function finishGame() {
 
 function showEndNotification(ranked) {
   if (!els.endDialog || !els.endSummary) return;
+  const humanEntry = ranked.find((entry) => entry.player.human);
+  const humanWon = Boolean(humanEntry && ranked[0]?.player.id === humanEntry.player.id);
+  const leaderboardText = state.onlineGame
+    ? "온라인 게임은 랭킹에 등록하지 않습니다."
+    : humanWon
+      ? "승리 기록을 랭킹에 자동 등록합니다."
+      : "랭킹은 싱글플레이에서 승리했을 때만 등록됩니다.";
   els.endSummary.innerHTML = `
-    <strong>${ranked[0].player.name} 승리</strong>
+    <strong>${escapeHtml(ranked[0].player.name)} 승리</strong>
     <span>${ranked[0].score}점으로 게임이 끝났습니다.</span>
-    <ol>
-      ${ranked.map((entry) => `<li>${entry.player.name} <b>${entry.score}점</b></li>`).join("")}
-    </ol>
+    <small>${leaderboardText}</small>
+    <div class="end-score-grid">
+      ${ranked.map((entry, index) => endScoreCardHtml(entry, index)).join("")}
+    </div>
   `;
 
   if (typeof els.endDialog.showModal === "function" && !els.endDialog.open) {
     els.endDialog.showModal();
   }
+}
+
+function scoreSummary(score) {
+  const rows = score?.rows || [];
+  return {
+    base: rows.reduce((sum, row) => sum + row.base, 0),
+    bonus: rows.reduce((sum, row) => sum + Math.max(0, row.bonus), 0),
+    penalty: rows.reduce((sum, row) => sum + Math.min(0, row.penalty), 0),
+    blanked: rows.filter((row) => row.blanked).length,
+    cleared: rows.filter((row) => row.penaltyCleared).length
+  };
+}
+
+function endScoreCardHtml(entry, index) {
+  const score = entry.scoreDetails || scorePlayer(entry.player);
+  const summary = scoreSummary(score);
+  const rankLabel = index === 0 ? "승자" : `${index + 1}위`;
+  const name = escapeHtml(entry.player.name);
+  const avatar = playerAvatarHtml(entry.player) || '<span class="end-avatar-placeholder" aria-hidden="true"></span>';
+  const specialStats = [
+    summary.blanked ? `무효 ${summary.blanked}장` : "",
+    summary.cleared ? `패널티 제거 ${summary.cleared}장` : ""
+  ].filter(Boolean).join(" · ") || "특수 처리 없음";
+
+  return `
+    <article class="end-score-card${entry.player.human ? " human" : ""}${index === 0 ? " winner" : ""}">
+      <div class="end-score-head">
+        ${avatar}
+        <div>
+          <span>${rankLabel}</span>
+          <strong>${name}</strong>
+        </div>
+        <b>${entry.score}점</b>
+      </div>
+      <div class="end-score-parts">
+        <span>기본 <b>${summary.base}</b></span>
+        <span>보너스 <b class="bonus-value">+${summary.bonus}</b></span>
+        <span>패널티 <b class="penalty-value">${summary.penalty}</b></span>
+      </div>
+      <small>${specialStats}</small>
+    </article>
+  `;
 }
 
 function canHumanDraw() {
@@ -3258,12 +3341,14 @@ function runAiTurn() {
   const player = currentPlayer();
   const scoreBeforeTurn = scorePlayer(player).total;
   speakAiTurnStart(player);
+  log(`${player.name}: 카드를 고르는 중입니다.`);
   handleAiCursedItem(player);
   const drawChoice = chooseAiDraw(player);
   let drawn;
   let drawSourceRect = null;
   let hiddenDraw = false;
   const drewFromDiscard = drawChoice.source === "discard";
+  let drawSpoke = false;
 
   if (drewFromDiscard) {
     const sourceCard = state.discard[drawChoice.index];
@@ -3272,18 +3357,19 @@ function runAiTurn() {
     drawn = card;
     player.hand.push(card);
     log(`${player.name}: 공개 영역에서 ${card.name} 카드를 가져갔습니다.`);
+    drawSpoke = speakAiAction(player, "takeDiscard", "takeDiscard", 0.42);
   } else {
     drawSourceRect = els.deckButton.getBoundingClientRect();
     hiddenDraw = true;
     drawn = state.deck.pop();
     player.hand.push(drawn);
     log(`${player.name}: 덱에서 카드 1장을 가져갔습니다.`);
+    drawSpoke = speakAiAction(player, "wait", "takeDeck", 0.3);
   }
 
   state.animating = true;
-  if (drewFromDiscard) {
+  if (drewFromDiscard && !drawSpoke) {
     speakSingleDialogue("takeDiscard", { excludedIds: [player.id] });
-    speakSingleDialogue("takeDiscard", { player, chance: 0.24 });
   }
   renderWithAiDrawMove(drawn, drawSourceRect, player.id, hiddenDraw, () => {
     const discardId = chooseAiDiscard(player, player.hand);
@@ -3294,7 +3380,8 @@ function runAiTurn() {
     state.selectedCardId = discarded.id;
     log(`${player.name}: ${discarded.name} 카드를 버렸습니다.`);
     const scoreAfterTurn = scorePlayer(player).total;
-    const spokeDiscard = speakSingleDialogue("discard", { player });
+    log(`${player.name}: 손패 구성을 정리했습니다.`);
+    const spokeDiscard = speakAiAction(player, "discard", "discard", 0.38);
     if (!spokeDiscard) speakAiScoreReaction(player, scoreBeforeTurn, scoreAfterTurn);
     renderWithDiscardMove(discarded, { getBoundingClientRect: () => discardSourceRect }, () => {
       state.animating = false;
