@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
-    <link rel="stylesheet" href="styles.css?v=20260622-leaderboard" />
+    <link rel="stylesheet" href="styles.css?v=20260622-ranking-modes" />
   </head>
   <body>
     <main class="app-shell">
@@ -34,10 +34,10 @@
             <div class="nickname-control">
               <label>
                 내 닉네임
-                <input id="humanNameInput" type="text" maxlength="12" autocomplete="nickname" />
+                <input id="humanNameInput" type="text" minlength="2" maxlength="12" required placeholder="2글자 이상" autocomplete="nickname" />
               </label>
               <button id="confirmNicknameButton" class="secondary-button" type="button">확인</button>
-              <small id="nicknameStatus">닉네임은 하루에 한 번만 변경할 수 있습니다.</small>
+              <small id="nicknameStatus">닉네임은 2글자 이상이어야 하며, 하루에 한 번만 변경할 수 있습니다.</small>
             </div>
             <label>
               플레이어 수
@@ -71,7 +71,7 @@
           <div class="online-controls">
             <label>
               닉네임
-              <input id="onlineNameInput" type="text" maxlength="12" value="나" autocomplete="nickname" />
+              <input id="onlineNameInput" type="text" minlength="2" maxlength="12" required placeholder="2글자 이상" autocomplete="nickname" />
             </label>
             <button id="createRoomButton" class="secondary-button" type="button">방 만들기</button>
             <button id="rejoinRoomButton" class="secondary-button hidden" type="button">이전 방 재입장</button>
@@ -102,7 +102,16 @@
             <strong>랭킹 게시판</strong>
             <button id="refreshLeaderboardButton" class="secondary-button leaderboard-refresh-button" type="button">새로고침</button>
           </div>
-          <ol id="leaderboardList" class="leaderboard-list"></ol>
+          <div class="leaderboard-board">
+            <section class="leaderboard-column" aria-label="오리지널 랭킹">
+              <h3>오리지널 랭킹</h3>
+              <ol id="leaderboardOriginalList" class="leaderboard-list"></ol>
+            </section>
+            <section class="leaderboard-column" aria-label="확장팩 랭킹">
+              <h3>확장팩 랭킹</h3>
+              <ol id="leaderboardExpansionList" class="leaderboard-list"></ol>
+            </section>
+          </div>
           <div id="leaderboardStatus" class="leaderboard-status">랭킹을 불러오는 중입니다.</div>
         </div>
       </section>
@@ -225,6 +234,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
-    <script src="script.js?v=20260622-leaderboard"></script>
+    <script src="script.js?v=20260622-ranking-modes"></script>
   </body>
 </html>

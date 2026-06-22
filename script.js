@@ -236,6 +236,7 @@ const ONLINE_PLAYER_TABLE = "fantasy_multiplayer_players";
 const LEADERBOARD_TABLE = "fantasy_leaderboard";
 const ONLINE_TURN_LIMIT_SECONDS = 30;
 const NICKNAME_CHANGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const MIN_NICKNAME_LENGTH = 2;
 const LEADERBOARD_LIMIT = 10;
 
 const PROFILE_ASSET_ROOT = "assets/profiles/user";
@@ -292,6 +293,7 @@ const state = {
   aiDifficulty: "normal",
   includeExpansion: false,
   includeCursedItems: false,
+  onlineGame: false,
   cursedDeck: [],
   cursedDiscard: [],
   animating: false,
@@ -360,6 +362,8 @@ const els = {
   restartGameButton: document.querySelector("#restartGameButton"),
   leaveFinishedGameButton: document.querySelector("#leaveFinishedGameButton"),
   leaderboardList: document.querySelector("#leaderboardList"),
+  leaderboardOriginalList: document.querySelector("#leaderboardOriginalList"),
+  leaderboardExpansionList: document.querySelector("#leaderboardExpansionList"),
   leaderboardStatus: document.querySelector("#leaderboardStatus"),
   refreshLeaderboardButton: document.querySelector("#refreshLeaderboardButton"),
   turnLabel: document.querySelector("#turnLabel"),
@@ -573,6 +577,7 @@ function startGame() {
   state.aiDifficulty = els.aiDifficultySelect?.value || "normal";
   state.includeExpansion = Boolean(els.expansionCheckbox?.checked);
   state.includeCursedItems = Boolean(els.cursedItemsCheckbox?.checked);
+  state.onlineGame = false;
   updateTitleArt();
   configureDeckOptions();
   state.deck = shuffle(cloneDeck());
@@ -649,22 +654,37 @@ function normalizeHumanNickname(value) {
   return String(value || "")
     .trim()
     .replace(/\s+/g, " ")
-    .slice(0, 12) || HUMAN_PROFILE.name;
+    .slice(0, 12);
+}
+
+function nicknameValidationMessage(nickname) {
+  const normalized = normalizeHumanNickname(nickname);
+  if (normalized.length < MIN_NICKNAME_LENGTH) {
+    return `닉네임은 ${MIN_NICKNAME_LENGTH}글자 이상이어야 합니다.`;
+  }
+  if (normalized === HUMAN_PROFILE.name) {
+    return "'나'는 닉네임으로 사용할 수 없습니다.";
+  }
+  return "";
 }
 
 function readHumanProfile() {
   try {
     const profile = JSON.parse(window.localStorage?.getItem(HUMAN_PROFILE_STORAGE_KEY) || "null");
     if (profile?.nickname) {
+      const nickname = normalizeHumanNickname(profile.nickname);
+      if (nicknameValidationMessage(nickname)) {
+        return { nickname: "", lastChangedAt: "" };
+      }
       return {
-        nickname: normalizeHumanNickname(profile.nickname),
+        nickname,
         lastChangedAt: profile.lastChangedAt || ""
       };
     }
   } catch {
     // ignore broken local profile data
   }
-  return { nickname: HUMAN_PROFILE.name, lastChangedAt: "" };
+  return { nickname: "", lastChangedAt: "" };
 }
 
 function saveHumanProfile(profile) {
@@ -706,7 +726,15 @@ function syncHumanNicknameInputs(force = false) {
 
 function confirmHumanNicknameChange(sourceInput = els.humanNameInput) {
   const profile = readHumanProfile();
-  const desired = normalizeHumanNickname(sourceInput?.value || profile.nickname);
+  const desired = normalizeHumanNickname(sourceInput?.value ?? profile.nickname);
+  const validationMessage = nicknameValidationMessage(desired);
+  if (validationMessage) {
+    window.alert(validationMessage);
+    setNicknameStatus(validationMessage, true);
+    sourceInput?.focus();
+    return false;
+  }
+
   if (desired === profile.nickname) {
     syncHumanNicknameInputs(true);
     setNicknameStatus(`현재 닉네임: ${profile.nickname}`);
@@ -729,7 +757,7 @@ function confirmHumanNicknameChange(sourceInput = els.humanNameInput) {
   );
   if (!confirmed) {
     syncHumanNicknameInputs(true);
-    setNicknameStatus(`현재 닉네임: ${profile.nickname}`);
+    setNicknameStatus(profile.nickname ? `현재 닉네임: ${profile.nickname}` : "닉네임을 설정해야 시작할 수 있습니다.", !profile.nickname);
     return false;
   }
 
@@ -741,7 +769,11 @@ function confirmHumanNicknameChange(sourceInput = els.humanNameInput) {
 
 function initializeHumanNicknameControls() {
   syncHumanNicknameInputs();
-  setNicknameStatus(`현재 닉네임: ${currentHumanNickname()}`);
+  const nickname = currentHumanNickname();
+  setNicknameStatus(
+    nickname ? `현재 닉네임: ${nickname}` : "닉네임을 2글자 이상으로 설정해야 시작할 수 있습니다.",
+    !nickname
+  );
 }
 
 function setLeaderboardStatus(message, error = false) {
@@ -756,15 +788,52 @@ function formatLeaderboardDate(value) {
   return date.toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" });
 }
 
-function leaderboardModeText(entry) {
-  const mode = entry.include_expansion ? "확장" : "오리지널";
+function leaderboardMetaText(entry) {
   const count = entry.player_count ? `${entry.player_count}인` : "";
   const difficulty = entry.ai_difficulty ? aiDifficultyLabel(entry.ai_difficulty) : "";
-  return [mode, count, difficulty].filter(Boolean).join(" · ");
+  return [count, difficulty].filter(Boolean).join(" · ");
+}
+
+async function fetchLeaderboardEntries(client, includeExpansion) {
+  return client
+    .from(LEADERBOARD_TABLE)
+    .select("nickname,score,player_count,include_expansion,ai_difficulty,updated_at")
+    .eq("include_expansion", includeExpansion)
+    .order("score", { ascending: false })
+    .order("updated_at", { ascending: true })
+    .limit(LEADERBOARD_LIMIT);
+}
+
+function renderLeaderboardList(listElement, entries) {
+  if (!listElement) return;
+  listElement.innerHTML = "";
+  if (!entries?.length) {
+    const item = document.createElement("li");
+    item.className = "leaderboard-empty";
+    item.textContent = "아직 기록 없음";
+    listElement.append(item);
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  entries.forEach((entry, index) => {
+    const item = document.createElement("li");
+    const meta = leaderboardMetaText(entry);
+    item.innerHTML = `
+      <span class="leaderboard-rank">${index + 1}</span>
+      <strong>${escapeHtml(entry.nickname || "익명")}</strong>
+      <b>${Number(entry.score || 0)}점</b>
+      <small>${escapeHtml(meta)}${entry.updated_at ? `${meta ? " · " : ""}${formatLeaderboardDate(entry.updated_at)}` : ""}</small>
+    `;
+    fragment.append(item);
+  });
+  listElement.append(fragment);
 }
 
 async function loadLeaderboard() {
-  if (!els.leaderboardList) return;
+  const originalList = els.leaderboardOriginalList || els.leaderboardList;
+  const expansionList = els.leaderboardExpansionList;
+  if (!originalList && !expansionList) return;
   const client = getSupabaseClient();
   if (!client) {
     setLeaderboardStatus("Supabase 설정이 필요합니다.", true);
@@ -772,45 +841,35 @@ async function loadLeaderboard() {
   }
 
   setLeaderboardStatus("랭킹을 불러오는 중입니다.");
-  const { data, error } = await client
-    .from(LEADERBOARD_TABLE)
-    .select("nickname,score,player_count,include_expansion,ai_difficulty,updated_at")
-    .order("score", { ascending: false })
-    .order("updated_at", { ascending: true })
-    .limit(LEADERBOARD_LIMIT);
+  const [originalResult, expansionResult] = await Promise.all([
+    fetchLeaderboardEntries(client, false),
+    fetchLeaderboardEntries(client, true)
+  ]);
 
-  if (error) {
-    els.leaderboardList.innerHTML = "";
+  if (originalResult.error || expansionResult.error) {
+    if (originalList) originalList.innerHTML = "";
+    if (expansionList) expansionList.innerHTML = "";
     setLeaderboardStatus("랭킹 테이블 설정이 필요합니다. supabase-schema.sql을 실행해주세요.", true);
     return;
   }
 
-  els.leaderboardList.innerHTML = "";
-  if (!data?.length) {
-    setLeaderboardStatus("아직 등록된 랭킹이 없습니다.");
-    return;
-  }
-
-  const fragment = document.createDocumentFragment();
-  data.forEach((entry, index) => {
-    const item = document.createElement("li");
-    item.innerHTML = `
-      <span class="leaderboard-rank">${index + 1}</span>
-      <strong>${escapeHtml(entry.nickname || "익명")}</strong>
-      <b>${Number(entry.score || 0)}점</b>
-      <small>${escapeHtml(leaderboardModeText(entry))}${entry.updated_at ? ` · ${formatLeaderboardDate(entry.updated_at)}` : ""}</small>
-    `;
-    fragment.append(item);
-  });
-  els.leaderboardList.append(fragment);
-  setLeaderboardStatus("IP당 최고 점수 1개만 표시됩니다.");
+  renderLeaderboardList(originalList, originalResult.data || []);
+  renderLeaderboardList(expansionList, expansionResult.data || []);
+  setLeaderboardStatus("싱글플레이에서 승리한 기록만, IP당 오리지널/확장팩 최고 점수 1개씩 표시됩니다.");
 }
 
 async function submitLeaderboardScore(ranked) {
   if (state.leaderboardSubmitted) return;
   const humanEntry = ranked.find((entry) => entry.player.human);
-  if (!humanEntry) return;
   state.leaderboardSubmitted = true;
+  if (state.onlineGame) {
+    setLeaderboardStatus("온라인 게임은 랭킹에 등록하지 않습니다.");
+    return;
+  }
+  if (!humanEntry || ranked[0]?.player.id !== humanEntry.player.id) {
+    setLeaderboardStatus("랭킹은 싱글플레이에서 승리했을 때만 자동 등록됩니다.");
+    return;
+  }
 
   const client = getSupabaseClient();
   if (!client) {
@@ -912,6 +971,7 @@ function resetOnlineRoomLocalState() {
   onlineState.savingGame = false;
   onlineState.pendingGameSave = false;
   onlineState.applyingRemote = false;
+  state.onlineGame = false;
   clearOnlineRoomSnapshot();
   resetTurnTimerState();
 }
@@ -923,6 +983,7 @@ function returnToSetupScreen() {
   state.phase = "setup";
   state.pendingFinish = false;
   state.finished = false;
+  state.onlineGame = false;
   state.animating = false;
   state.cardActions = {};
   state.confirmedActions = {};
@@ -1449,6 +1510,7 @@ function createOnlineGameSnapshot() {
   const room = onlineState.room;
   const players = sortedOnlinePlayers().slice(0, room.player_count || 2);
   const startedAt = new Date().toISOString();
+  state.onlineGame = true;
   state.playerCount = players.length;
   state.aiDifficulty = room.ai_difficulty || "normal";
   state.includeExpansion = Boolean(room.include_expansion);
@@ -1536,6 +1598,7 @@ function hydrateOnlineGameSnapshot(snapshot) {
   state.aiDifficulty = onlineState.room?.ai_difficulty || "normal";
   state.includeExpansion = Boolean(snapshot.includeExpansion);
   state.includeCursedItems = Boolean(snapshot.includeCursedItems);
+  state.onlineGame = true;
   updateTitleArt();
   configureDeckOptions();
 
@@ -4340,6 +4403,7 @@ els.newGameButton.addEventListener("click", () => {
   state.phase = "setup";
   state.pendingFinish = false;
   state.finished = false;
+  state.onlineGame = false;
   state.confirmedActions = {};
   state.skippedActions = {};
   state.leaderboardSubmitted = false;

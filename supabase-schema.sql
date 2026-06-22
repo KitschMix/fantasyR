@@ -82,8 +82,8 @@ grant select, insert, update, delete on public.fantasy_multiplayer_players to an
 
 create table if not exists public.fantasy_leaderboard (
   id uuid primary key default gen_random_uuid(),
-  player_fingerprint text not null unique,
-  nickname text not null check (char_length(nickname) between 1 and 12),
+  player_fingerprint text not null,
+  nickname text not null check (char_length(nickname) between 2 and 12 and nickname <> '나'),
   score integer not null default 0 check (score >= 0),
   player_count integer check (player_count between 1 and 4),
   include_expansion boolean not null default false,
@@ -93,8 +93,38 @@ create table if not exists public.fantasy_leaderboard (
   updated_at timestamptz not null default now()
 );
 
+alter table public.fantasy_leaderboard
+  drop constraint if exists fantasy_leaderboard_player_fingerprint_key;
+
+alter table public.fantasy_leaderboard
+  drop constraint if exists fantasy_leaderboard_nickname_check;
+
+update public.fantasy_leaderboard
+  set nickname = '익명 플레이어'
+  where char_length(trim(coalesce(nickname, ''))) < 2
+    or trim(nickname) = '나';
+
+alter table public.fantasy_leaderboard
+  add constraint fantasy_leaderboard_nickname_check
+  check (char_length(nickname) between 2 and 12 and nickname <> '나') not valid;
+
+alter table public.fantasy_leaderboard
+  validate constraint fantasy_leaderboard_nickname_check;
+
+do $$
+begin
+  alter table public.fantasy_leaderboard
+    add constraint fantasy_leaderboard_player_fingerprint_mode_key
+    unique (player_fingerprint, include_expansion);
+exception
+  when duplicate_object then null;
+end $$;
+
 create index if not exists fantasy_leaderboard_score_idx
   on public.fantasy_leaderboard(score desc, updated_at asc);
+
+create index if not exists fantasy_leaderboard_mode_score_idx
+  on public.fantasy_leaderboard(include_expansion, score desc, updated_at asc);
 
 alter table public.fantasy_leaderboard enable row level security;
 
@@ -136,14 +166,16 @@ declare
   v_score_updated boolean := false;
   v_nickname_allowed boolean := true;
 begin
-  if v_nickname = '' then
-    v_nickname := '익명';
+  if char_length(v_nickname) < 2 or v_nickname = '나' then
+    raise exception 'invalid nickname'
+      using errcode = '22023';
   end if;
 
   select *
     into v_existing
     from public.fantasy_leaderboard
     where player_fingerprint = v_fingerprint
+      and include_expansion = coalesce(p_include_expansion, false)
     for update;
 
   if not found then
@@ -191,7 +223,6 @@ begin
     set nickname = v_nickname,
         score = case when v_score_updated then v_score else score end,
         player_count = case when v_score_updated then p_player_count else player_count end,
-        include_expansion = case when v_score_updated then coalesce(p_include_expansion, false) else include_expansion end,
         ai_difficulty = case when v_score_updated then left(coalesce(p_ai_difficulty, ''), 32) else ai_difficulty end,
         last_nickname_changed_at = case
           when v_existing.nickname is distinct from v_nickname then v_now
@@ -201,7 +232,7 @@ begin
           when v_score_updated or v_existing.nickname is distinct from v_nickname then v_now
           else updated_at
         end
-    where player_fingerprint = v_fingerprint
+    where id = v_existing.id
     returning * into v_existing;
 
   return jsonb_build_object(

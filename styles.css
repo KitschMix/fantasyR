@@ -533,6 +533,26 @@ h1 {
   border-color: rgba(242, 207, 120, 0.24);
 }
 
+.leaderboard-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.leaderboard-column {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.leaderboard-column h3 {
+  margin: 0;
+  color: var(--focus);
+  font-size: 20px;
+  line-height: 1.2;
+}
+
 .leaderboard-refresh-button {
   min-height: 42px;
   padding: 0 14px;
@@ -541,8 +561,10 @@ h1 {
 
 .leaderboard-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: 1fr;
+  align-content: start;
   gap: 8px;
+  min-height: 62px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -591,6 +613,12 @@ h1 {
   color: var(--muted);
   font-size: 15px;
   font-weight: 700;
+}
+
+.leaderboard-empty {
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 800;
 }
 
 .leaderboard-status {
@@ -1965,6 +1993,10 @@ select {
   .online-start-button,
   #leaveRoomButton {
     width: 100%;
+  }
+
+  .leaderboard-board {
+    grid-template-columns: 1fr;
   }
 
   .catalog-list {
