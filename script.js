@@ -311,6 +311,8 @@ const state = {
   turnDeadlineAt: 0
 };
 
+const pendingMotionCardIds = new Set();
+
 const onlineState = {
   client: null,
   room: null,
@@ -2936,13 +2938,18 @@ function getPenaltyClearSources(scoringHand) {
 
 function renderWithCardMove(card, sourceElement, onComplete) {
   const sourceRect = sourceElement?.getBoundingClientRect?.();
+  pendingMotionCardIds.add(card.id);
+  const completeMotion = () => {
+    pendingMotionCardIds.delete(card.id);
+    onComplete?.();
+  };
   render();
   if (!sourceRect) {
-    onComplete?.();
+    completeMotion();
     return;
   }
   scheduleFrame(() => {
-    animateCardMove(card.id, sourceRect, onComplete);
+    animateCardMove(card.id, sourceRect, completeMotion);
   });
 }
 
@@ -2969,12 +2976,17 @@ function animateCardMove(cardId, sourceRect, onComplete) {
 
 function renderWithDiscardMove(card, sourceElement, onComplete) {
   const sourceRect = sourceElement?.getBoundingClientRect?.();
+  pendingMotionCardIds.add(card.id);
+  const completeMotion = () => {
+    pendingMotionCardIds.delete(card.id);
+    onComplete?.();
+  };
   render();
   if (!sourceRect) {
-    onComplete?.();
+    completeMotion();
     return;
   }
-  scheduleFrame(() => animateCardToDiscard(card, sourceRect, onComplete));
+  scheduleFrame(() => animateCardToDiscard(card, sourceRect, completeMotion));
 }
 
 function animateCardToDiscard(card, sourceRect, onComplete) {
@@ -3032,7 +3044,7 @@ function animateCardElementToTarget(movingCard, sourceRect, targetRect, options 
   }
 
   movingCard.classList.add("moving-card");
-  movingCard.classList.remove("selected", "playable");
+  movingCard.classList.remove("selected", "playable", "motion-arriving");
   movingCard.setAttribute("aria-hidden", "true");
   Object.assign(movingCard.style, {
     position: "fixed",
@@ -4062,7 +4074,7 @@ function buildCardElement(card, options = {}) {
     : "";
   const button = document.createElement("button");
   button.type = "button";
-  button.className = `card ${options.playable ? "playable" : "disabled-card"}${artUrl ? " has-art" : ""}${blankInfo ? " blanked-card" : ""}${state.selectedCardId === card.id ? " selected" : ""}`;
+  button.className = `card ${options.playable ? "playable" : "disabled-card"}${artUrl ? " has-art" : ""}${blankInfo ? " blanked-card" : ""}${state.selectedCardId === card.id ? " selected" : ""}${pendingMotionCardIds.has(card.id) ? " motion-arriving" : ""}`;
   button.style.setProperty("--card-color", meta.color);
   button.dataset.cardId = card.id;
   button.dataset.glyph = meta.glyph;
