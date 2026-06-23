@@ -67,6 +67,11 @@ Automated checks in `tools/qa-score-check.js` currently cover:
 | Expansion Great Flood building blanking | `Expansion Great Flood blanks building cards` |
 | Angel anti-blanking protection | `Angel protects the selected magic card from blanking` |
 | Expansion Necromancer undead protection | `Expansion Necromancer protects undead from blanking` |
+| Expansion deck composition | `Expansion deck replaces original cards and excludes cursed items` |
+| Expansion buildings | `Dungeon scores undead, beast, and artifact groups`; `Castle scores leader, army, land, and another building`; `Crypt scores undead strength and blanks leaders`; `Chapel scores only when exactly two listed suits are present`; `Garden scores leaders and beasts, then blanks with undead` |
+| Expansion outsiders | `Genie scores by player count before extra-card UI selection`; `Leprechaun scores base points before extra draw UI selection`; `Judge scores uncleared penalty cards`; `Demon blanks singleton non-outsider suits` |
+| Expansion undead discard bonuses | `Undead discard-reference cards score their discard piles`; `Lich scores Necromancer and other undead` |
+| Expansion replacement cards | `Expansion replacement cards score updated suit support`; `Expansion wild cards copy newly added suits` |
 
 Manual score cases still worth checking after UI changes:
 
