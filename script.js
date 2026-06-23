@@ -313,6 +313,7 @@ const state = {
 };
 
 const pendingMotionCardIds = new Set();
+const pendingDiscardMotionCardIds = new Set();
 
 const onlineState = {
   client: null,
@@ -3005,9 +3006,9 @@ function animateCardMove(cardId, sourceRect, onComplete) {
 
 function renderWithDiscardMove(card, sourceElement, onComplete) {
   const sourceRect = sourceElement?.getBoundingClientRect?.();
-  pendingMotionCardIds.add(card.id);
+  pendingDiscardMotionCardIds.add(card.id);
   const completeMotion = () => {
-    pendingMotionCardIds.delete(card.id);
+    pendingDiscardMotionCardIds.delete(card.id);
     onComplete?.();
   };
   render();
@@ -3025,8 +3026,7 @@ function animateCardToDiscard(card, sourceRect, onComplete) {
     return;
   }
 
-  animateCardElementToTarget(target.cloneNode(true), sourceRect, target.getBoundingClientRect(), {
-    hideTarget: target,
+  animateCardElementToTarget(createCardElement(card, { playable: false }), sourceRect, target.getBoundingClientRect(), {
     onComplete
   });
 }
@@ -3926,10 +3926,15 @@ function renderTable() {
     state.discard.forEach((card) => {
       const slot = document.createElement("div");
       slot.className = "discard-card-slot";
-      slot.append(createCardElement(card, {
-        playable: canHumanDraw(),
-        onClick: (event) => canHumanDraw() ? drawFromDiscard(card.id, event.currentTarget) : selectCard(card.id)
-      }));
+      slot.dataset.cardId = card.id;
+      if (pendingDiscardMotionCardIds.has(card.id)) {
+        slot.classList.add("discard-card-slot-pending");
+      } else {
+        slot.append(createCardElement(card, {
+          playable: canHumanDraw(),
+          onClick: (event) => canHumanDraw() ? drawFromDiscard(card.id, event.currentTarget) : selectCard(card.id)
+        }));
+      }
       els.discardArea.append(slot);
     });
   }
