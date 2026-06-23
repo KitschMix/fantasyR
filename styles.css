@@ -811,7 +811,7 @@ select {
   margin: 0 auto;
   --status-row-height: 238px;
   --opponent-row-height: 252px;
-  --discard-area-height: calc((var(--discard-card-height) * 2) + 46px);
+  --discard-area-height: calc((var(--discard-card-height) * 2) + 26px);
   --center-table-min-height: 610px;
 }
 
@@ -1308,11 +1308,11 @@ select {
 
 .discard-area {
   grid-template-columns: repeat(auto-fill, var(--discard-card-width));
-  gap: 10px;
+  gap: 6px 10px;
   overflow: visible;
   min-height: var(--discard-area-height);
   max-height: var(--discard-area-height);
-  padding: 12px;
+  padding: 8px 10px;
   border: 1px dashed rgba(246, 232, 202, 0.22);
   border-radius: 8px;
   background: rgba(23, 21, 18, 0.38);
