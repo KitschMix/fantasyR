@@ -242,6 +242,7 @@ const ONLINE_TURN_LIMIT_SECONDS = 30;
 const NICKNAME_CHANGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const MIN_NICKNAME_LENGTH = 2;
 const LEADERBOARD_LIMIT = 10;
+const HALL_OF_FAME_REQUIRED_DIFFICULTY = "random";
 
 const PROFILE_ASSET_ROOT = "assets/profiles/user";
 const AI_DIFFICULTY_LABELS = {
@@ -815,8 +816,9 @@ function leaderboardMetaText(entry) {
 function hallOfFameMetaText(entry) {
   const mode = entry.include_expansion ? "확장팩" : "오리지널";
   const count = entry.player_count ? `${entry.player_count}인` : "";
+  const difficulty = entry.ai_difficulty ? aiDifficultyLabel(entry.ai_difficulty) : "";
   const date = entry.defeated_at ? formatLeaderboardDate(entry.defeated_at) : "";
-  return [mode, count, date].filter(Boolean).join(" · ");
+  return [mode, count, difficulty, date].filter(Boolean).join(" · ");
 }
 
 async function fetchLeaderboardEntries(client, includeExpansion) {
@@ -863,7 +865,7 @@ function renderHallOfFame(entry) {
       <span>최종보스 격파자</span>
       <strong>기록을 기다리는 중</strong>
       <b></b>
-      <small>강범례가 참가한 싱글게임에서 승리하면 등록됩니다.</small>
+      <small>완전랜덤에서 등장한 강범례를 이기면 등록됩니다.</small>
     `;
     return;
   }
@@ -891,6 +893,7 @@ async function loadHallOfFame() {
     .from(HALL_OF_FAME_TABLE)
     .select("nickname,score,player_count,include_expansion,ai_difficulty,defeated_at,updated_at")
     .eq("id", 1)
+    .eq("ai_difficulty", HALL_OF_FAME_REQUIRED_DIFFICULTY)
     .limit(1);
 
   if (error) {
@@ -901,7 +904,7 @@ async function loadHallOfFame() {
 
   const entry = Array.isArray(data) ? data[0] : null;
   renderHallOfFame(entry || null);
-  setHallOfFameStatus(entry ? "범례를 쓰러뜨린 단 한 명입니다." : "아직 범례 격파자가 없습니다.");
+  setHallOfFameStatus(entry ? "완전랜덤 강범례를 쓰러뜨린 단 한 명입니다." : "아직 완전랜덤 범례 격파자가 없습니다.");
 }
 
 function leaderboardSubmitErrorMessage(error) {
@@ -1008,13 +1011,30 @@ function hasBeomryeOpponent(ranked) {
   return ranked.some((entry) => isBeomryePlayer(entry.player));
 }
 
+function isRandomBeomryeHallMode() {
+  return state.aiDifficulty === HALL_OF_FAME_REQUIRED_DIFFICULTY;
+}
+
 function humanWonRanked(ranked) {
   const humanEntry = ranked.find((entry) => entry.player.human);
   return Boolean(humanEntry && ranked[0]?.player.id === humanEntry.player.id);
 }
 
 function qualifiesForBeomryeHallOfFame(ranked) {
-  return !state.onlineGame && humanWonRanked(ranked) && hasBeomryeOpponent(ranked);
+  return !state.onlineGame
+    && isRandomBeomryeHallMode()
+    && humanWonRanked(ranked)
+    && hasBeomryeOpponent(ranked);
+}
+
+function beomryeHallIneligibleText(ranked) {
+  if (!hasBeomryeOpponent(ranked)) return "";
+  if (state.onlineGame) return "온라인 게임은 범례 명예의 전당에 등록하지 않습니다.";
+  if (!isRandomBeomryeHallMode()) {
+    return "명예의 전당은 완전랜덤에서 등장한 강범례를 이겼을 때만 등록됩니다.";
+  }
+  if (!humanWonRanked(ranked)) return "완전랜덤 강범례가 아직 왕좌를 지키고 있습니다.";
+  return "";
 }
 
 async function submitBeomryeHallOfFame(ranked) {
@@ -1026,9 +1046,15 @@ async function submitBeomryeHallOfFame(ranked) {
     updateEndHallNotice("온라인 게임은 명예의 전당에 등록하지 않습니다.", "missed");
     return;
   }
+  if (!isRandomBeomryeHallMode()) {
+    const message = "명예의 전당은 완전랜덤에서 등장한 강범례를 이겼을 때만 등록됩니다.";
+    setHallOfFameStatus(message);
+    updateEndHallNotice(message, "missed");
+    return;
+  }
   if (!humanWonRanked(ranked)) {
-    setHallOfFameStatus("범례가 아직 왕좌를 지키고 있습니다.");
-    updateEndHallNotice("범례가 아직 왕좌를 지키고 있습니다.", "missed");
+    setHallOfFameStatus("완전랜덤 강범례가 아직 왕좌를 지키고 있습니다.");
+    updateEndHallNotice("완전랜덤 강범례가 아직 왕좌를 지키고 있습니다.", "missed");
     return;
   }
 
@@ -1039,7 +1065,7 @@ async function submitBeomryeHallOfFame(ranked) {
     return;
   }
 
-  updateEndHallNotice("범례 격파 기록을 명예의 전당에 새기는 중입니다.", "pending");
+  updateEndHallNotice("완전랜덤 강범례 격파 기록을 명예의 전당에 새기는 중입니다.", "pending");
   const humanEntry = ranked.find((entry) => entry.player.human);
   const nickname = normalizeHumanNickname(humanEntry.player.baseName || humanEntry.player.name || currentHumanNickname());
   const { data, error } = await client.rpc("fantasy_submit_beomrye_hall_score", {
@@ -1047,7 +1073,7 @@ async function submitBeomryeHallOfFame(ranked) {
     p_score: Number(humanEntry.score || 0),
     p_player_count: Number(state.playerCount || state.players.length || 0),
     p_include_expansion: Boolean(state.includeExpansion),
-    p_ai_difficulty: state.aiDifficulty || "expert"
+    p_ai_difficulty: HALL_OF_FAME_REQUIRED_DIFFICULTY
   });
 
   if (error) {
@@ -1058,12 +1084,12 @@ async function submitBeomryeHallOfFame(ranked) {
 
   const result = Array.isArray(data) ? data[0] : data;
   updateEndHallNotice(result?.score_updated
-    ? "범례 격파자 명예의 전당에 등극했습니다."
-    : "범례는 쓰러뜨렸지만, 기존 명예의 전당 기록이 더 높습니다.",
+    ? "완전랜덤 범례 격파자 명예의 전당에 등극했습니다."
+    : "완전랜덤 범례는 쓰러뜨렸지만, 기존 명예의 전당 기록이 더 높습니다.",
     result?.score_updated ? "success" : "missed");
   setHallOfFameStatus(result?.score_updated
-    ? "범례 격파자 명예의 전당에 등극했습니다."
-    : "범례는 쓰러뜨렸지만 기존 명예의 전당 기록이 더 높습니다.");
+    ? "완전랜덤 범례 격파자 명예의 전당에 등극했습니다."
+    : "완전랜덤 범례는 쓰러뜨렸지만 기존 명예의 전당 기록이 더 높습니다.");
   loadHallOfFame();
 }
 
@@ -3460,17 +3486,16 @@ function showEndNotification(ranked) {
     : humanWon
       ? "승리 기록을 랭킹에 자동 등록합니다."
       : "랭킹은 싱글플레이에서 승리했을 때만 등록됩니다.";
-  const hallText = qualifiesForBeomryeHallOfFame(ranked)
-    ? "범례 격파 기록도 명예의 전당에 도전합니다."
-    : hasBeomryeOpponent(ranked)
-      ? "범례 명예의 전당은 강범례가 참가한 싱글게임에서 승리해야 등록됩니다."
-      : "";
+  const hallQualified = qualifiesForBeomryeHallOfFame(ranked);
+  const hallText = hallQualified
+    ? "완전랜덤 강범례 격파 기록도 명예의 전당에 도전합니다."
+    : beomryeHallIneligibleText(ranked);
   els.endSummary.innerHTML = `
     <strong>${escapeHtml(ranked[0].player.name)} 승리</strong>
     <span>${ranked[0].score}점으로 게임이 끝났습니다.</span>
     <small>${leaderboardText}</small>
     ${hallText ? `<small>${hallText}</small>` : ""}
-    ${hallText ? endHallNoticeHtml(qualifiesForBeomryeHallOfFame(ranked), hasBeomryeOpponent(ranked)) : ""}
+    ${hallText ? endHallNoticeHtml(hallQualified, hallText) : ""}
     <div class="end-score-grid">
       ${ranked.map((entry, index) => endScoreCardHtml(entry, index)).join("")}
     </div>
@@ -3481,12 +3506,10 @@ function showEndNotification(ranked) {
   }
 }
 
-function endHallNoticeHtml(qualified, hasBoss) {
+function endHallNoticeHtml(qualified, fallbackText = "") {
   const text = qualified
-    ? "강범례를 쓰러뜨렸습니다. 명예의 전당 기록과 비교합니다."
-    : hasBoss
-      ? "강범례가 왕좌를 지켰습니다."
-      : "";
+    ? "완전랜덤 강범례를 쓰러뜨렸습니다. 명예의 전당 기록과 비교합니다."
+    : fallbackText;
   if (!text) return "";
   return `
     <div id="endHallNotice" class="end-hall-notice${qualified ? "" : " missed"}">

@@ -275,6 +275,9 @@ create table if not exists public.fantasy_beomrye_hall_of_fame (
 delete from public.fantasy_beomrye_hall_of_fame
   where id <> 1;
 
+delete from public.fantasy_beomrye_hall_of_fame
+  where coalesce(ai_difficulty, '') <> 'random';
+
 alter table public.fantasy_beomrye_hall_of_fame enable row level security;
 
 drop policy if exists "beomrye hall public read" on public.fantasy_beomrye_hall_of_fame;
@@ -317,6 +320,17 @@ begin
   if char_length(v_nickname) < 2 or v_nickname = '나' then
     raise exception 'invalid nickname'
       using errcode = '22023';
+  end if;
+
+  if coalesce(p_ai_difficulty, '') <> 'random' then
+    return jsonb_build_object(
+      'created', false,
+      'score_updated', false,
+      'nickname', v_nickname,
+      'score', 0,
+      'ignored', true,
+      'reason', 'random_only'
+    );
   end if;
 
   select *
