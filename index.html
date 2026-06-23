@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
-    <link rel="stylesheet" href="styles.css?v=20260622-beomrye-hall" />
+    <link rel="stylesheet" href="styles.css?v=20260623-polish-134" />
   </head>
   <body>
     <main class="app-shell">
@@ -47,7 +47,7 @@
                 <option value="4">4명</option>
               </select>
             </label>
-            <label>
+            <label class="setup-tooltip" data-tooltip="보통: 가벼운 점수 판단. 어려움: 가져오기/버리기 후 예상 점수 비교. 매우어려움: 보너스·패널티·특수 선택까지 더 깊게 평가. 완전랜덤: 프로필과 실제 난이도가 섞입니다. 강범례는 등장 시 최종보스 난이도로 행동합니다.">
               AI 난이도
               <select id="aiDifficultySelect">
                 <option value="normal">보통</option>
@@ -221,6 +221,16 @@
           </div>
           <button class="icon-button" value="close" title="닫기" aria-label="닫기">×</button>
         </div>
+        <div id="cardCatalogFilters" class="catalog-filters">
+          <label>
+            카드 검색
+            <input id="cardCatalogSearchInput" type="search" autocomplete="off" placeholder="카드명 또는 효과" />
+          </label>
+          <label>
+            속성
+            <select id="cardCatalogTypeSelect"></select>
+          </label>
+        </div>
         <div id="cardCatalogList" class="catalog-list"></div>
       </form>
     </dialog>
@@ -246,6 +256,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
-    <script src="script.js?v=20260622-beomrye-hall"></script>
+    <script src="script.js?v=20260623-polish-134"></script>
   </body>
 </html>

@@ -359,6 +359,9 @@ const els = {
   cardCatalogDialog: document.querySelector("#cardCatalogDialog"),
   cardCatalogList: document.querySelector("#cardCatalogList"),
   cardCatalogSummary: document.querySelector("#cardCatalogSummary"),
+  cardCatalogFilters: document.querySelector("#cardCatalogFilters"),
+  cardCatalogSearchInput: document.querySelector("#cardCatalogSearchInput"),
+  cardCatalogTypeSelect: document.querySelector("#cardCatalogTypeSelect"),
   endDialog: document.querySelector("#endDialog"),
   endSummary: document.querySelector("#endSummary"),
   restartGameButton: document.querySelector("#restartGameButton"),
@@ -392,6 +395,7 @@ const els = {
 
 let activeCardZoom = null;
 let suppressCardClick = false;
+let cardCatalogFilter = { query: "", type: "all" };
 let dialogueUsage = new Map();
 let idleDialogueTimer = null;
 let idleDialogueToken = 0;
@@ -1016,19 +1020,23 @@ async function submitBeomryeHallOfFame(ranked) {
   if (!hasBeomryeOpponent(ranked)) return;
   if (state.onlineGame) {
     setHallOfFameStatus("온라인 게임은 범례 명예의 전당에 등록하지 않습니다.");
+    updateEndHallNotice("온라인 게임은 명예의 전당에 등록하지 않습니다.", "missed");
     return;
   }
   if (!humanWonRanked(ranked)) {
     setHallOfFameStatus("범례가 아직 왕좌를 지키고 있습니다.");
+    updateEndHallNotice("범례가 아직 왕좌를 지키고 있습니다.", "missed");
     return;
   }
 
   const client = getSupabaseClient();
   if (!client) {
     setHallOfFameStatus("명예의 전당 등록 실패: Supabase 설정 필요", true);
+    updateEndHallNotice("명예의 전당 등록 실패: Supabase 설정이 필요합니다.", "missed");
     return;
   }
 
+  updateEndHallNotice("범례 격파 기록을 명예의 전당에 새기는 중입니다.", "pending");
   const humanEntry = ranked.find((entry) => entry.player.human);
   const nickname = normalizeHumanNickname(humanEntry.player.baseName || humanEntry.player.name || currentHumanNickname());
   const { data, error } = await client.rpc("fantasy_submit_beomrye_hall_score", {
@@ -1041,10 +1049,15 @@ async function submitBeomryeHallOfFame(ranked) {
 
   if (error) {
     setHallOfFameStatus(hallOfFameSubmitErrorMessage(error), true);
+    updateEndHallNotice(hallOfFameSubmitErrorMessage(error), "missed");
     return;
   }
 
   const result = Array.isArray(data) ? data[0] : data;
+  updateEndHallNotice(result?.score_updated
+    ? "범례 격파자 명예의 전당에 등극했습니다."
+    : "범례는 쓰러뜨렸지만, 기존 명예의 전당 기록이 더 높습니다.",
+    result?.score_updated ? "success" : "missed");
   setHallOfFameStatus(result?.score_updated
     ? "범례 격파자 명예의 전당에 등극했습니다."
     : "범례는 쓰러뜨렸지만 기존 명예의 전당 기록이 더 높습니다.");
@@ -3388,6 +3401,7 @@ function showEndNotification(ranked) {
     <span>${ranked[0].score}점으로 게임이 끝났습니다.</span>
     <small>${leaderboardText}</small>
     ${hallText ? `<small>${hallText}</small>` : ""}
+    ${hallText ? endHallNoticeHtml(qualifiesForBeomryeHallOfFame(ranked), hasBeomryeOpponent(ranked)) : ""}
     <div class="end-score-grid">
       ${ranked.map((entry, index) => endScoreCardHtml(entry, index)).join("")}
     </div>
@@ -3396,6 +3410,30 @@ function showEndNotification(ranked) {
   if (typeof els.endDialog.showModal === "function" && !els.endDialog.open) {
     els.endDialog.showModal();
   }
+}
+
+function endHallNoticeHtml(qualified, hasBoss) {
+  const text = qualified
+    ? "강범례를 쓰러뜨렸습니다. 명예의 전당 기록과 비교합니다."
+    : hasBoss
+      ? "강범례가 왕좌를 지켰습니다."
+      : "";
+  if (!text) return "";
+  return `
+    <div id="endHallNotice" class="end-hall-notice${qualified ? "" : " missed"}">
+      <span>범례 격파 명예의 전당</span>
+      <strong>${escapeHtml(text)}</strong>
+    </div>
+  `;
+}
+
+function updateEndHallNotice(message, status = "pending") {
+  const notice = document.querySelector("#endHallNotice");
+  if (!notice) return;
+  notice.classList.toggle("success", status === "success");
+  notice.classList.toggle("missed", status === "missed");
+  const body = notice.querySelector("strong");
+  if (body) body.textContent = message;
 }
 
 function scoreSummary(score) {
@@ -4009,6 +4047,57 @@ function catalogCards() {
   ));
 }
 
+function catalogTypeOptions(cards = catalogCards()) {
+  const usedTypes = new Set(cards.map((card) => card.type));
+  return [
+    { value: "all", label: "전체" },
+    ...SOURCE_SUIT_OPTIONS.filter((option) => usedTypes.has(option.value)),
+    ...(usedTypes.has("cursed-item") ? [{ value: "cursed-item", label: TYPE_META["cursed-item"].label }] : [])
+  ];
+}
+
+function syncCatalogFilterControls(cards = catalogCards()) {
+  if (!els.cardCatalogFilters) return;
+  els.cardCatalogFilters.classList.remove("hidden");
+
+  if (els.cardCatalogSearchInput && document.activeElement !== els.cardCatalogSearchInput) {
+    els.cardCatalogSearchInput.value = cardCatalogFilter.query;
+  }
+
+  if (els.cardCatalogTypeSelect) {
+    const options = catalogTypeOptions(cards);
+    const validType = options.some((option) => option.value === cardCatalogFilter.type);
+    if (!validType) cardCatalogFilter.type = "all";
+    els.cardCatalogTypeSelect.innerHTML = options
+      .map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`)
+      .join("");
+    els.cardCatalogTypeSelect.value = cardCatalogFilter.type;
+  }
+}
+
+function hideCatalogFilters() {
+  els.cardCatalogFilters?.classList.add("hidden");
+}
+
+function filteredCatalogCards(cards) {
+  const query = cardCatalogFilter.query.trim().toLocaleLowerCase("ko-KR");
+  return cards.filter((card) => {
+    if (cardCatalogFilter.type !== "all" && card.type !== cardCatalogFilter.type) return false;
+    if (!query) return true;
+    const meta = TYPE_META[card.type] || TYPE_META.wild;
+    const searchable = [
+      card.name,
+      card.sourceName,
+      card.text,
+      card.bonusText,
+      card.penaltyText,
+      card.actionText,
+      meta.label
+    ].filter(Boolean).join(" ").toLocaleLowerCase("ko-KR");
+    return searchable.includes(query);
+  });
+}
+
 function createCatalogCard(card, options = {}) {
   const meta = TYPE_META[card.type] || TYPE_META.wild;
   const item = buildCardElement(card, { playable: Boolean(options.selectable) });
@@ -4039,22 +4128,37 @@ function setCardCatalogTitle(title) {
   if (heading) heading.textContent = title;
 }
 
-function openCardCatalog() {
-  if (!els.cardCatalogDialog || !els.cardCatalogList) return;
-  setCardCatalogTitle("모든 카드 보기");
+function renderCardCatalog() {
+  if (!els.cardCatalogList) return;
   const cards = catalogCards();
+  const filteredCards = filteredCatalogCards(cards);
+  syncCatalogFilterControls(cards);
   els.cardCatalogList.innerHTML = "";
-  const fragment = document.createDocumentFragment();
-  cards.forEach((card) => {
-    fragment.append(createCatalogCard(card));
-  });
-  els.cardCatalogList.append(fragment);
+  if (filteredCards.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "catalog-empty";
+    empty.textContent = "조건에 맞는 카드가 없습니다.";
+    els.cardCatalogList.append(empty);
+  } else {
+    const fragment = document.createDocumentFragment();
+    filteredCards.forEach((card) => {
+      fragment.append(createCatalogCard(card));
+    });
+    els.cardCatalogList.append(fragment);
+  }
   if (els.cardCatalogSummary) {
     const cursedCount = state.includeCursedItems ? CURSED_ITEM_LIBRARY.length : 0;
     const expansionText = state.includeExpansion ? "확장팩 포함" : "오리지널";
     const cursedText = state.includeCursedItems ? `저주받은 유물 ${cursedCount}장 포함` : "저주받은 유물 제외";
-    els.cardCatalogSummary.textContent = `${expansionText} · ${cursedText} · 총 ${cards.length}장`;
+    const filterText = filteredCards.length === cards.length ? "" : ` · 표시 ${filteredCards.length}장`;
+    els.cardCatalogSummary.textContent = `${expansionText} · ${cursedText} · 총 ${cards.length}장${filterText}`;
   }
+}
+
+function openCardCatalog() {
+  if (!els.cardCatalogDialog || !els.cardCatalogList) return;
+  setCardCatalogTitle("모든 카드 보기");
+  renderCardCatalog();
   if (typeof els.cardCatalogDialog.showModal === "function" && !els.cardCatalogDialog.open) {
     els.cardCatalogDialog.showModal();
   }
@@ -4063,6 +4167,7 @@ function openCardCatalog() {
 function openGenieDeckPicker(sourceId) {
   if (!els.cardCatalogDialog || !els.cardCatalogList) return;
   setCardCatalogTitle("지니 카드 선택");
+  hideCatalogFilters();
   const action = getCardAction(sourceId) || [];
   const selectedSourceId = String(action[1] || "");
   const cards = [...state.deck].sort((a, b) => (
@@ -4635,6 +4740,14 @@ els.newGameButton.addEventListener("click", () => {
 els.expansionCheckbox?.addEventListener("change", updateTitleArt);
 els.deckButton.addEventListener("click", drawFromDeck);
 els.cardCatalogButton?.addEventListener("click", openCardCatalog);
+els.cardCatalogSearchInput?.addEventListener("input", () => {
+  cardCatalogFilter.query = els.cardCatalogSearchInput.value;
+  renderCardCatalog();
+});
+els.cardCatalogTypeSelect?.addEventListener("change", () => {
+  cardCatalogFilter.type = els.cardCatalogTypeSelect.value || "all";
+  renderCardCatalog();
+});
 els.sortButton.addEventListener("click", sortHand);
 els.rulesButton.addEventListener("click", () => els.rulesDialog.showModal());
 els.restartGameButton.addEventListener("click", () => {
