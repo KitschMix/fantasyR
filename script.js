@@ -3825,6 +3825,7 @@ function phaseText() {
 
 function renderOpponents() {
   els.opponentsRow.innerHTML = "";
+  els.opponentsRow.classList.toggle("finished-opponents", state.finished);
   state.players.slice(1).forEach((player, offset) => {
     const index = offset + 1;
     const opponent = document.createElement("div");

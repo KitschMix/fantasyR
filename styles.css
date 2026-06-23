@@ -800,7 +800,7 @@ select {
 
 .game-board {
   display: grid;
-  grid-template-columns: minmax(var(--hand-row-min-width), 1fr) minmax(330px, 380px);
+  grid-template-columns: minmax(var(--hand-row-min-width), 1fr) minmax(480px, 560px);
   grid-template-areas:
     "status status"
     "table detail";
@@ -810,10 +810,9 @@ select {
   max-width: none;
   margin: 0 auto;
   --status-row-height: 238px;
-  --opponent-row-height: 184px;
+  --opponent-row-height: 252px;
   --discard-area-height: calc((var(--discard-card-height) * 2) + 46px);
   --center-table-min-height: 610px;
-  --detail-panel-height: calc(100vh - 122px);
 }
 
 .hidden {
@@ -850,10 +849,8 @@ select {
   align-self: start;
   position: sticky;
   top: 12px;
-  grid-template-rows: minmax(170px, 0.34fr) minmax(174px, 0.36fr) minmax(300px, 1fr);
-  height: var(--detail-panel-height);
-  max-height: 920px;
-  overflow: hidden;
+  grid-template-rows: auto auto auto;
+  overflow: visible;
 }
 
 .round-status,
@@ -898,12 +895,11 @@ select {
 .score-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  grid-auto-rows: minmax(0, 1fr);
+  grid-auto-rows: minmax(108px, auto);
   gap: 8px;
   min-height: var(--status-row-height);
   max-height: var(--status-row-height);
-  overflow: auto;
-  scrollbar-gutter: stable;
+  overflow: hidden;
 }
 
 .score-card {
@@ -993,8 +989,7 @@ select {
 .log-panel {
   min-height: var(--status-row-height);
   max-height: var(--status-row-height);
-  overflow: auto;
-  scrollbar-gutter: stable;
+  overflow: hidden;
 }
 
 .panel-title {
@@ -1035,6 +1030,11 @@ select {
   overflow: hidden;
 }
 
+.opponents-row.finished-opponents {
+  grid-auto-rows: auto;
+  overflow: visible;
+}
+
 .opponent {
   display: grid;
   grid-template-rows: auto 74px minmax(38px, 1fr);
@@ -1061,8 +1061,7 @@ select {
 
 .opponent.revealed-opponent {
   align-content: start;
-  overflow: auto;
-  scrollbar-gutter: stable;
+  overflow: visible;
 }
 
 .mini-hand {
@@ -1310,14 +1309,13 @@ select {
 .discard-area {
   grid-template-columns: repeat(auto-fill, var(--discard-card-width));
   gap: 10px;
-  overflow: auto;
+  overflow: visible;
   min-height: var(--discard-area-height);
   max-height: var(--discard-area-height);
   padding: 12px;
   border: 1px dashed rgba(246, 232, 202, 0.22);
   border-radius: 8px;
   background: rgba(23, 21, 18, 0.38);
-  scrollbar-gutter: stable;
 }
 
 .hand-section {
@@ -1639,8 +1637,7 @@ select {
 
 .card-detail {
   min-height: 0;
-  overflow: auto;
-  scrollbar-gutter: stable;
+  overflow: visible;
 }
 
 .detail-meta {
@@ -1673,8 +1670,7 @@ select {
   gap: 9px;
   margin-bottom: 10px;
   min-height: 0;
-  overflow: auto;
-  scrollbar-gutter: stable;
+  overflow: visible;
 }
 
 .score-actions.hidden {
@@ -1846,10 +1842,9 @@ select {
   align-content: start;
   gap: 10px;
   min-height: 0;
-  overflow: auto;
+  overflow: visible;
   color: #d9cdb7;
   font-size: 22px;
-  scrollbar-gutter: stable;
 }
 
 .breakdown-summary {
@@ -2211,7 +2206,7 @@ select {
   gap: 10px;
 }
 
-@media (max-width: 1820px) {
+@media (max-width: 2320px) {
   .game-board {
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -2232,7 +2227,8 @@ select {
   .card-detail,
   .score-actions,
   .breakdown {
-    max-height: 420px;
+    max-height: none;
+    overflow: visible;
   }
 
   .breakdown {
@@ -2243,7 +2239,7 @@ select {
 @media (max-width: 1120px) {
   .game-board {
     --status-row-height: auto;
-    --opponent-row-height: 184px;
+    --opponent-row-height: 252px;
   }
 
   .setup-panel {
