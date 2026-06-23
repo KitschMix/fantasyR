@@ -58,6 +58,8 @@ Automated checks in `tools/qa-score-check.js` currently cover:
 | Smoke surviving with flame | `Smoke scores normally when a flame exists` |
 | Great Flood blanking and Mountain exception | `Great Flood blanks Forest but not Mountain` |
 | Island penalty removal | `Island clears the selected flood or flame penalty` |
+| Rangers army penalty removal | `Rangers removes army from all penalties` |
+| Warship flood army penalty removal | `Warship removes army from flood penalties` |
 | Book of Changes suit change | `Book of Changes changes the selected card suit before scoring` |
 | Shapeshifter copy | `Shapeshifter copies allowed deck card name and suit` |
 | Mirage copy | `Mirage copies allowed deck card name and suit` |
@@ -75,4 +77,5 @@ Manual score cases still worth checking after UI changes:
 | Genie | Cannot execute before Leprechaun when both exist; selected remaining deck card counts in preview score before final confirmation. |
 | Optional actions | `No selection` is accepted for optional cards but blocked for required Genie/Leprechaun flow. |
 | Penalty removal display | Penalty text strike-through appears when cleared, is thin enough to read, and tooltip appears immediately on card hover. |
+| Partial penalty removal display | Only `Army`/`군대` is struck through when Rangers or Warship removes army from a penalty, and card hover explains the source. |
 | Blanked cards display | Title strike-through appears on cards made invalid/blanked by rules like Smoke without flame or Wildfire/Great Flood effects. |

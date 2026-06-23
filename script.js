@@ -148,7 +148,10 @@ const SOURCE_CARD_IDS = {
   chMirage: typeof CH_MIRAGE !== "undefined" ? CH_MIRAGE : "CH23",
   chAngel: typeof CH_ANGEL !== "undefined" ? CH_ANGEL : "CH08",
   chGenie: typeof CH_GENIE !== "undefined" ? CH_GENIE : "CH06",
-  chLeprechaun: typeof CH_LEPRECHAUN !== "undefined" ? CH_LEPRECHAUN : "CH09"
+  chLeprechaun: typeof CH_LEPRECHAUN !== "undefined" ? CH_LEPRECHAUN : "CH09",
+  rangers: "FR25",
+  chRangers: "CH19",
+  warship: "FR41"
 };
 
 const SOURCE_CARD_GROUPS = {
@@ -2314,6 +2317,23 @@ function getPenaltyClearInfo(card, scoreRow) {
   };
 }
 
+function getPenaltyWordClearInfo(card, scoreRow) {
+  const clears = scoreRow?.penaltyWordClears || [];
+  if (!card.penaltyText || clears.length === 0) return null;
+
+  const terms = [...new Set(clears
+    .map((clear) => clear.term)
+    .filter((term) => term && card.penaltyText.includes(term)))];
+  if (terms.length === 0) return null;
+
+  const source = clears.find((clear) => terms.includes(clear.term))?.source;
+  const sourceName = displayNameForSource(source) || "다른 카드";
+  return {
+    title: `${sourceName} 카드로 인해 패널티에서 ${terms.join(", ")} 제외`,
+    terms
+  };
+}
+
 function getBlankInfo(card, scoreRow) {
   if (!scoreRow?.blanked) return null;
   if (scoreRow.blankedBy?.reason === "source") {
@@ -2326,18 +2346,35 @@ function getBlankInfo(card, scoreRow) {
   };
 }
 
-function formatCardEffectText(value, penaltyClearInfo = null) {
+function formatCardEffectText(value, penaltyClearInfo = null, penaltyWordClearInfo = null) {
   if (!value) return "효과 없음";
   const segments = splitEffectSegments(value);
   if (segments.length === 0) {
-    return escapeHtml(value).replace(/(보너스|패널티)(?=:)/g, "<strong>$1</strong>");
+    return applyPenaltyWordClears(escapeHtml(value), penaltyWordClearInfo)
+      .replace(/(보너스|패널티)(?=:)/g, "<strong>$1</strong>");
   }
 
   return segments.map((segment) => {
-    const text = `<strong>${escapeHtml(segment.label)}</strong>: ${escapeHtml(segment.body)}`;
+    const body = segment.type === "penalty"
+      ? applyPenaltyWordClears(escapeHtml(segment.body), penaltyWordClearInfo)
+      : escapeHtml(segment.body);
+    const text = `<strong>${escapeHtml(segment.label)}</strong>: ${body}`;
     if (segment.type !== "penalty" || !penaltyClearInfo) return text;
     return `<span class="card-effect-cleared">${text}</span>`;
   }).join(" ");
+}
+
+function applyPenaltyWordClears(html, penaltyWordClearInfo = null) {
+  if (!penaltyWordClearInfo?.terms?.length) return html;
+  return penaltyWordClearInfo.terms.reduce((result, term) => {
+    const escapedTerm = escapeHtml(term);
+    const pattern = new RegExp(escapeRegExp(escapedTerm), "g");
+    return result.replace(pattern, `<span class="card-effect-word-cleared">${escapedTerm}</span>`);
+  }, html);
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function splitEffectSegments(value) {
@@ -2734,10 +2771,12 @@ function scoreSourceHand(hand, cursedItems = []) {
         blanked: false,
         blankedBy: null,
         penaltyCleared: false,
-        penaltyClearedBy: null
+        penaltyClearedBy: null,
+        penaltyWordClears: []
       };
     }
 
+    const penaltyWordClears = getPenaltyWordClearsForCard(scored, card, scoringHand);
     return {
       card: {
         ...card,
@@ -2753,11 +2792,41 @@ function scoreSourceHand(hand, cursedItems = []) {
       blanked: scored.blanked,
       blankedBy: scored.blanked ? blankSources.get(scored.id) || null : null,
       penaltyCleared: scored.penaltyCleared,
-      penaltyClearedBy: scored.penaltyCleared ? penaltyClearSources.get(scored.id) || null : null
+      penaltyClearedBy: scored.penaltyCleared ? penaltyClearSources.get(scored.id) || null : null,
+      penaltyWordClears
     };
   });
 
   return { total, rows };
+}
+
+function getPenaltyWordClearsForCard(scoredCard, displayCard, scoringHand) {
+  if (!scoredCard || scoredCard.blanked || scoredCard.penaltyCleared) return [];
+  if (!displayCard?.penaltyText?.includes("군대")) return [];
+
+  const source = getArmyPenaltyClearSource(scoredCard, scoringHand);
+  if (!source) return [];
+
+  return [{
+    term: "군대",
+    source: {
+      id: source.id,
+      name: source.name
+    }
+  }];
+}
+
+function getArmyPenaltyClearSource(targetCard, scoringHand) {
+  const cards = scoringHand.cards();
+  const rangers = cards.find((card) => (
+    card.id === SOURCE_CARD_IDS.rangers || card.id === SOURCE_CARD_IDS.chRangers
+  ));
+  if (rangers) return rangers;
+
+  const warship = cards.find((card) => card.id === SOURCE_CARD_IDS.warship);
+  if (warship && targetCard.suit === "flood") return warship;
+
+  return null;
 }
 
 function getBlankSources(scoringHand) {
@@ -3961,8 +4030,9 @@ function buildCardElement(card, options = {}) {
   const meta = TYPE_META[card.type];
   const artUrl = cardArtUrl(card);
   const penaltyClearInfo = getPenaltyClearInfo(card, options.scoreRow);
+  const penaltyWordClearInfo = getPenaltyWordClearInfo(card, options.scoreRow);
   const blankInfo = getBlankInfo(card, options.scoreRow);
-  const statusInfo = blankInfo || penaltyClearInfo;
+  const statusInfo = blankInfo || penaltyClearInfo || penaltyWordClearInfo;
   const statusTooltip = statusInfo
     ? `<span class="card-status-tooltip">${escapeHtml(statusInfo.title)}</span>`
     : "";
@@ -3982,7 +4052,7 @@ function buildCardElement(card, options = {}) {
       ${artUrl ? `<img src="${artUrl}" alt="" loading="lazy" />` : `<span>${meta.glyph}</span>`}
     </div>
     <span class="card-type">${meta.label}</span>
-    <p class="card-effect">${formatCardEffectText(card.text, penaltyClearInfo)}</p>
+    <p class="card-effect">${formatCardEffectText(card.text, penaltyClearInfo, penaltyWordClearInfo)}</p>
   `;
   if (statusInfo) {
     const showClearTooltip = () => button.classList.add("show-clear-tooltip");

@@ -1559,6 +1559,13 @@ select {
   text-decoration-color: rgba(242, 207, 120, 0.92);
 }
 
+.card-effect-word-cleared {
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration-line: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(242, 207, 120, 0.92);
+}
+
 .card-status-tooltip,
 .card-clear-tooltip {
   position: absolute;

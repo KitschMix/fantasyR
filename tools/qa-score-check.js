@@ -138,6 +138,22 @@ check("Island clears the selected flood or flame penalty", () => {
   assert(withIslandAction.card("FR07").penaltyCleared, "Swamp penalty should be marked cleared");
 });
 
+check("Rangers removes army from all penalties", () => {
+  const withoutRangers = score(["FR07", "FR17", "FR21"]);
+  const withRangers = score(["FR07", "FR17", "FR21", "FR25"]);
+
+  assertEqual(withoutRangers.card("FR07").penaltyPoints, -6, "Swamp should count flame and army");
+  assertEqual(withRangers.card("FR07").penaltyPoints, -3, "Swamp should ignore army when Rangers is present");
+});
+
+check("Warship removes army from flood penalties", () => {
+  const withoutWarship = score(["FR08", "FR21"]);
+  const withWarship = score(["FR08", "FR21", "FR41"]);
+
+  assert(withoutWarship.card("FR21").blanked, "Great Flood should blank army without Warship");
+  assert(!withWarship.card("FR21").blanked, "Great Flood should ignore army when Warship is present");
+});
+
 check("Book of Changes changes the selected card suit before scoring", () => {
   const result = score(["FR49", "FR13"], [["FR49", "FR13", "flame"]]);
 
