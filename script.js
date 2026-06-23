@@ -4888,6 +4888,11 @@ els.cardCatalogTypeSelect?.addEventListener("change", () => {
   cardCatalogFilter.type = els.cardCatalogTypeSelect.value || "all";
   renderCardCatalog();
 });
+els.cardCatalogDialog?.addEventListener("click", (event) => {
+  if (event.target === els.cardCatalogDialog) {
+    els.cardCatalogDialog.close();
+  }
+});
 els.sortButton.addEventListener("click", sortHand);
 els.rulesButton.addEventListener("click", () => els.rulesDialog.showModal());
 els.restartGameButton.addEventListener("click", () => {
