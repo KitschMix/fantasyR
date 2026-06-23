@@ -212,13 +212,14 @@ const NECROMANCER_TARGET_TYPES = ["army", "leader", "wizard", "beast", "undead"]
 
 const CARD_ART_IDS = new Set(Array.from({ length: 53 }, (_, index) => index + 1));
 const EXPANSION_CARD_ART_IDS = new Set([
-  "CH01", "CH02", "CH03", "CH04",
+  "CH01", "CH02", "CH03", "CH04", "CH05",
   "CH06", "CH07", "CH08", "CH09", "CH10", "CH11", "CH12", "CH13", "CH14", "CH15",
   "CH24", "CH25", "CH26", "CH27", "CH28", "CH29", "CH30", "CH31", "CH32", "CH33",
   "CH34", "CH35", "CH36", "CH37", "CH38", "CH39", "CH40", "CH41", "CH42", "CH43",
   "CH44", "CH45", "CH46", "CH47"
 ]);
-const CARD_ART_VERSION = "small-20260618-expansion";
+const CARD_ART_VERSION = "small-20260623-garden";
+const preloadedCardArtUrls = new Set();
 
 const CARD_LONG_PRESS_MS = 450;
 const CARD_LONG_PRESS_MOVE_LIMIT = 12;
@@ -562,6 +563,26 @@ function configureDeckOptions() {
   CURSED_ITEM_LIBRARY = buildCursedItemLibrary();
 }
 
+function preloadImageUrl(url) {
+  if (!url || preloadedCardArtUrls.has(url) || typeof Image !== "function") return;
+  preloadedCardArtUrls.add(url);
+  const image = new Image();
+  image.decoding = "async";
+  image.src = url;
+}
+
+function preloadCardArt(cards) {
+  cards.forEach((card) => preloadImageUrl(cardArtUrl(card)));
+}
+
+function preloadActiveCardArt() {
+  preloadImageUrl("assets/deck-back.png");
+  preloadCardArt(CARD_LIBRARY);
+  if (state.includeCursedItems) {
+    preloadCardArt(CURSED_ITEM_LIBRARY);
+  }
+}
+
 function startingHandSize() {
   return state.includeExpansion ? 8 : 7;
 }
@@ -595,6 +616,7 @@ function startGame() {
   state.onlineGame = false;
   updateTitleArt();
   configureDeckOptions();
+  preloadActiveCardArt();
   state.deck = shuffle(cloneDeck());
   state.discard = [];
   state.cursedDeck = state.includeCursedItems ? shuffle(cloneCursedDeck()) : [];
@@ -917,6 +939,9 @@ function leaderboardSubmitErrorMessage(error) {
   if (error?.code === "22023" || message.includes("invalid nickname")) {
     return "랭킹 등록 실패: 닉네임은 2글자 이상이어야 하며 '나'는 사용할 수 없습니다.";
   }
+  if (error?.code === "23505" || message.includes("duplicate key")) {
+    return "랭킹 등록 실패: 예전 단일 랭킹 제약이 남아 있을 수 있습니다. 최신 supabase-schema.sql을 다시 실행해주세요.";
+  }
   return `랭킹 등록 실패: ${message || "supabase-schema.sql 설정을 확인해주세요."}`;
 }
 
@@ -962,12 +987,13 @@ async function loadLeaderboard() {
 async function submitLeaderboardScore(ranked) {
   if (state.leaderboardSubmitted) return;
   const humanEntry = ranked.find((entry) => entry.player.human);
+  const leaderboardModeLabel = state.includeExpansion ? "확장팩 랭킹" : "오리지널 랭킹";
   state.leaderboardSubmitted = true;
   if (state.onlineGame) {
     setLeaderboardStatus("온라인 게임은 랭킹에 등록하지 않습니다.");
     return;
   }
-  if (!humanEntry || ranked[0]?.player.id !== humanEntry.player.id) {
+  if (!humanEntry || humanEntry.score < (ranked[0]?.score ?? Number.POSITIVE_INFINITY)) {
     setLeaderboardStatus("랭킹은 싱글플레이에서 승리했을 때만 자동 등록됩니다.");
     return;
   }
@@ -979,6 +1005,7 @@ async function submitLeaderboardScore(ranked) {
   }
 
   const nickname = normalizeHumanNickname(humanEntry.player.baseName || humanEntry.player.name || currentHumanNickname());
+  setLeaderboardStatus(`${leaderboardModeLabel}에 기록을 등록하는 중입니다.`);
   const { data, error } = await client.rpc("fantasy_submit_leaderboard_score", {
     p_nickname: nickname,
     p_score: Number(humanEntry.score || 0),
@@ -996,8 +1023,8 @@ async function submitLeaderboardScore(ranked) {
   const nicknameDenied = result && result.nickname_updated === false && result.nickname !== nickname;
   const scoreText = result?.score_updated ? "최고 점수 갱신!" : "기존 최고 점수를 유지했습니다.";
   setLeaderboardStatus(nicknameDenied
-    ? `${scoreText} 닉네임은 서버 기준 하루 1회 제한으로 기존 이름을 유지했습니다.`
-    : scoreText);
+    ? `${leaderboardModeLabel}: ${scoreText} 닉네임은 서버 기준 하루 1회 제한으로 기존 이름을 유지했습니다.`
+    : `${leaderboardModeLabel}: ${scoreText}`);
   loadLeaderboard();
 }
 
@@ -1712,6 +1739,7 @@ function createOnlineGameSnapshot() {
   state.includeCursedItems = false;
   updateTitleArt();
   configureDeckOptions();
+  preloadActiveCardArt();
 
   const deckCards = shuffle(cloneDeck());
   const roster = players.map((player) => ({
@@ -1797,6 +1825,7 @@ function hydrateOnlineGameSnapshot(snapshot) {
   state.onlineGame = true;
   updateTitleArt();
   configureDeckOptions();
+  preloadActiveCardArt();
 
   const localToken = onlinePlayerToken();
   const hydratedPlayers = snapshot.players.map((player) => {
@@ -4085,7 +4114,7 @@ function buildCardElement(card, options = {}) {
       <span class="card-points">${card.base}</span>
     </div>
     <div class="card-art" aria-hidden="true">
-      ${artUrl ? `<img src="${artUrl}" alt="" loading="lazy" />` : `<span>${meta.glyph}</span>`}
+      ${artUrl ? `<img src="${artUrl}" alt="" loading="eager" decoding="sync" />` : `<span>${meta.glyph}</span>`}
     </div>
     <span class="card-type">${meta.label}</span>
     <p class="card-effect">${formatCardEffectText(card.text, penaltyClearInfo, penaltyWordClearInfo)}</p>
