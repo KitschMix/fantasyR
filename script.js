@@ -333,6 +333,7 @@ const onlineState = {
 const els = {
   gameLauncher: document.querySelector("#gameLauncher"),
   enterFantasyButton: document.querySelector("#enterFantasyButton"),
+  homeLogoButton: document.querySelector("#homeLogoButton"),
   setupPanel: document.querySelector("#setupPanel"),
   gameBoard: document.querySelector("#gameBoard"),
   playerCountSelect: document.querySelector("#playerCountSelect"),
@@ -609,6 +610,10 @@ function updateTitleArt() {
 
 function enterFantasyKingdom() {
   document.body.classList.remove("launcher-active");
+}
+
+function returnToGameLauncher() {
+  document.body.classList.add("launcher-active");
 }
 
 function startGame() {
@@ -4859,6 +4864,7 @@ els.onlineNameInput?.addEventListener("keydown", (event) => {
 els.refreshLeaderboardButton?.addEventListener("click", loadLeaderboard);
 els.refreshLeaderboardButton?.addEventListener("click", loadHallOfFame);
 els.enterFantasyButton?.addEventListener("click", enterFantasyKingdom);
+els.homeLogoButton?.addEventListener("click", returnToGameLauncher);
 els.startButton.addEventListener("click", startGame);
 els.createRoomButton?.addEventListener("click", createOnlineRoom);
 els.rejoinRoomButton?.addEventListener("click", restoreOnlineRoom);
