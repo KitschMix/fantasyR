@@ -61,6 +61,59 @@ button:disabled {
   padding: 14px;
 }
 
+body.launcher-active .app-shell {
+  min-width: 0;
+}
+
+body.launcher-active .topbar,
+body.launcher-active .setup-panel,
+body.launcher-active .game-board {
+  display: none !important;
+}
+
+.game-launcher {
+  display: grid;
+  min-height: calc(100vh - 28px);
+  place-items: center;
+  padding: 28px;
+}
+
+body:not(.launcher-active) .game-launcher {
+  display: none;
+}
+
+.game-launcher-card {
+  display: grid;
+  width: min(820px, 88vw);
+  min-height: 220px;
+  place-items: center;
+  padding: 30px 42px;
+  border: 1px solid rgba(242, 207, 120, 0.28);
+  border-radius: 8px;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 50% 10%, rgba(242, 207, 120, 0.18), transparent 56%),
+    rgba(36, 32, 26, 0.9);
+  box-shadow: var(--shadow), inset 0 0 0 1px rgba(246, 232, 202, 0.08);
+}
+
+.game-launcher-card:hover,
+.game-launcher-card:focus-visible {
+  border-color: rgba(242, 207, 120, 0.66);
+  background:
+    radial-gradient(circle at 50% 10%, rgba(242, 207, 120, 0.25), transparent 58%),
+    rgba(45, 38, 28, 0.94);
+  transform: translateY(-2px);
+}
+
+.game-launcher-card img {
+  display: block;
+  width: 100%;
+  max-height: 190px;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.42));
+}
+
 .topbar {
   display: flex;
   align-items: center;

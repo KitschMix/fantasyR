@@ -331,6 +331,8 @@ const onlineState = {
 };
 
 const els = {
+  gameLauncher: document.querySelector("#gameLauncher"),
+  enterFantasyButton: document.querySelector("#enterFantasyButton"),
   setupPanel: document.querySelector("#setupPanel"),
   gameBoard: document.querySelector("#gameBoard"),
   playerCountSelect: document.querySelector("#playerCountSelect"),
@@ -603,6 +605,10 @@ function drawCursedItem() {
 function updateTitleArt() {
   const showExpansionTitle = Boolean(els.expansionCheckbox?.checked || state.includeExpansion);
   document.body.classList.toggle("expansion-title-active", showExpansionTitle);
+}
+
+function enterFantasyKingdom() {
+  document.body.classList.remove("launcher-active");
 }
 
 function startGame() {
@@ -4852,6 +4858,7 @@ els.onlineNameInput?.addEventListener("keydown", (event) => {
 });
 els.refreshLeaderboardButton?.addEventListener("click", loadLeaderboard);
 els.refreshLeaderboardButton?.addEventListener("click", loadHallOfFame);
+els.enterFantasyButton?.addEventListener("click", enterFantasyKingdom);
 els.startButton.addEventListener("click", startGame);
 els.createRoomButton?.addEventListener("click", createOnlineRoom);
 els.rejoinRoomButton?.addEventListener("click", restoreOnlineRoom);
