@@ -14,8 +14,9 @@
   --hand-card-width: 220px;
   --hand-card-gap: 12px;
   --hand-row-min-width: 1844px;
-  --discard-card-width: 154px;
-  --discard-card-height: 259px;
+  --discard-card-width: 130px;
+  --discard-card-height: 219px;
+  --discard-card-scale: 0.59;
   font-family: "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
 }
 
@@ -811,9 +812,9 @@ select {
   margin: 0 auto;
   --status-row-height: 252px;
   --opponent-row-height: 252px;
-  --discard-area-height: calc((var(--discard-card-height) * 2) + 26px);
-  --discard-empty-height: 168px;
-  --center-table-min-height: 610px;
+  --discard-area-height: calc(var(--discard-card-height) + 20px);
+  --discard-empty-height: var(--discard-area-height);
+  --center-table-min-height: 0px;
 }
 
 .hidden {
@@ -1320,12 +1321,12 @@ select {
 }
 
 .discard-area {
-  grid-template-columns: repeat(auto-fill, var(--discard-card-width));
-  gap: 6px 10px;
+  grid-template-columns: repeat(12, var(--discard-card-width));
+  gap: 6px;
   overflow: visible;
   min-height: var(--discard-area-height);
   max-height: var(--discard-area-height);
-  padding: 8px 10px;
+  padding: 9px 10px;
   border: 1px dashed rgba(246, 232, 202, 0.22);
   border-radius: 8px;
   background: rgba(23, 21, 18, 0.38);
@@ -1428,7 +1429,7 @@ select {
   top: 50%;
   left: 50%;
   width: var(--hand-card-width);
-  transform: translate(-50%, -50%) scale(0.7);
+  transform: translate(-50%, -50%) scale(var(--discard-card-scale));
   transform-origin: center center;
 }
 
@@ -2330,7 +2331,7 @@ select {
 
   .game-board {
     --opponent-row-height: auto;
-    --discard-area-height: 360px;
+    --discard-area-height: calc(var(--discard-card-height) + 20px);
     --center-table-min-height: auto;
   }
 
@@ -2352,8 +2353,8 @@ select {
   }
 
   .discard-area {
-    min-height: 320px;
-    max-height: 360px;
+    min-height: var(--discard-area-height);
+    max-height: var(--discard-area-height);
   }
 
   .discard-area.discard-area-empty {
