@@ -3916,8 +3916,13 @@ function renderTable() {
   }
   els.deckButton.disabled = !canHumanDraw() || state.deck.length === 0;
 
+  const discardEmpty = state.discard.length === 0;
+  els.discardArea.classList.toggle("discard-area-empty", discardEmpty);
+  els.discardArea.closest(".discard-zone")?.classList.toggle("discard-zone-empty", discardEmpty);
+  els.discardArea.closest(".center-table")?.classList.toggle("center-table-discard-empty", discardEmpty);
+  els.discardArea.closest(".table-area")?.classList.toggle("table-area-discard-empty", discardEmpty);
   els.discardArea.innerHTML = "";
-  if (state.discard.length === 0) {
+  if (discardEmpty) {
     const empty = document.createElement("div");
     empty.className = "empty-detail";
     empty.textContent = "아직 공개된 카드가 없습니다.";

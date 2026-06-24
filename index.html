@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
-    <link rel="stylesheet" href="styles.css?v=20260623-discard-compact" />
+    <link rel="stylesheet" href="styles.css?v=20260624-status-opponents-discard-empty" />
   </head>
   <body>
     <main class="app-shell">
@@ -136,6 +136,7 @@
             <span id="phaseLabel" class="phase-pill">대기</span>
           </div>
           <div class="score-list" id="scoreList"></div>
+          <div class="opponents-row" id="opponentsRow"></div>
           <div class="log-panel" aria-label="게임 기록">
             <div class="panel-title">기록</div>
             <ol id="gameLog"></ol>
@@ -143,8 +144,6 @@
         </aside>
 
         <section class="table-area">
-          <div class="opponents-row" id="opponentsRow"></div>
-
           <div class="center-table">
             <div class="deck-column">
               <button id="deckButton" class="deck-stack" type="button" title="덱에서 카드 뽑기">
@@ -256,6 +255,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
-    <script src="script.js?v=20260623-catalog-backdrop-close"></script>
+    <script src="script.js?v=20260624-status-opponents-discard-empty"></script>
   </body>
 </html>
