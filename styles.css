@@ -115,8 +115,8 @@ body:not(.launcher-active) .game-launcher {
 .game-launcher-coming-soon {
   display: grid;
   width: min(820px, 88vw);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: 1fr;
+  gap: 16px;
   align-items: center;
 }
 
@@ -2508,11 +2508,6 @@ select {
 
   .catalog-filters {
     grid-template-columns: 1fr;
-  }
-
-  .game-launcher-coming-soon {
-    grid-template-columns: 1fr;
-    gap: 14px;
   }
 
   .game-launcher-placeholder {
