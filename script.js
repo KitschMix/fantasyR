@@ -350,6 +350,11 @@ const lobbyChatState = {
   initialized: false
 };
 
+const nicknameForceChangeState = {
+  clicks: 0,
+  lastClickAt: 0
+};
+
 const els = {
   loadingOverlay: document.querySelector("#loadingOverlay"),
   gameLauncher: document.querySelector("#gameLauncher"),
@@ -812,7 +817,8 @@ function syncHumanNicknameInputs(force = false) {
   }
 }
 
-function confirmHumanNicknameChange(sourceInput = els.humanNameInput) {
+function confirmHumanNicknameChange(sourceInput = els.humanNameInput, options = {}) {
+  const force = Boolean(options.force);
   const profile = readHumanProfile();
   const desired = normalizeHumanNickname(sourceInput?.value ?? profile.nickname);
   const validationMessage = nicknameValidationMessage(desired);
@@ -830,7 +836,7 @@ function confirmHumanNicknameChange(sourceInput = els.humanNameInput) {
   }
 
   const changedAt = Date.parse(profile.lastChangedAt || "");
-  if (changedAt && Date.now() - changedAt < NICKNAME_CHANGE_INTERVAL_MS) {
+  if (!force && changedAt && Date.now() - changedAt < NICKNAME_CHANGE_INTERVAL_MS) {
     const remaining = nicknameChangeRemainingText(profile.lastChangedAt);
     window.alert(`닉네임은 하루에 한 번만 변경할 수 있습니다.\n${remaining}`);
     syncHumanNicknameInputs(true);
@@ -838,11 +844,11 @@ function confirmHumanNicknameChange(sourceInput = els.humanNameInput) {
     return false;
   }
 
-  const confirmed = window.confirm(
-    "닉네임은 하루에 한 번만 변경할 수 있습니다.\n"
-    + `확인하면 오늘은 '${desired}' 닉네임으로 고정됩니다.\n`
-    + "저장할까요?"
-  );
+  const confirmed = window.confirm(force
+    ? `숨겨진 변경키로 '${desired}' 닉네임을 강제 저장할까요?`
+    : "닉네임은 하루에 한 번만 변경할 수 있습니다.\n"
+      + `확인하면 오늘은 '${desired}' 닉네임으로 고정됩니다.\n`
+      + "저장할까요?");
   if (!confirmed) {
     syncHumanNicknameInputs(true);
     setNicknameStatus(profile.nickname ? `현재 닉네임: ${profile.nickname}` : "닉네임을 설정해야 시작할 수 있습니다.", !profile.nickname);
@@ -851,8 +857,39 @@ function confirmHumanNicknameChange(sourceInput = els.humanNameInput) {
 
   saveHumanProfile({ nickname: desired, lastChangedAt: new Date().toISOString() });
   syncHumanNicknameInputs(true);
-  setNicknameStatus(`닉네임 저장 완료: ${desired}`);
+  setNicknameStatus(`${force ? "닉네임 강제 변경 완료" : "닉네임 저장 완료"}: ${desired}`);
   return true;
+}
+
+function consumeNicknameForceChangeClick(event) {
+  if (!event?.shiftKey) {
+    nicknameForceChangeState.clicks = 0;
+    nicknameForceChangeState.lastClickAt = 0;
+    return false;
+  }
+
+  const now = Date.now();
+  if (now - nicknameForceChangeState.lastClickAt > 5000) {
+    nicknameForceChangeState.clicks = 0;
+  }
+  nicknameForceChangeState.lastClickAt = now;
+  nicknameForceChangeState.clicks += 1;
+
+  if (nicknameForceChangeState.clicks < 5) {
+    setNicknameStatus(`숨겨진 변경키 ${nicknameForceChangeState.clicks}/5`);
+    return null;
+  }
+
+  nicknameForceChangeState.clicks = 0;
+  nicknameForceChangeState.lastClickAt = 0;
+  setNicknameStatus("숨겨진 변경키 활성화");
+  return true;
+}
+
+function handleConfirmNicknameButtonClick(event) {
+  const force = consumeNicknameForceChangeClick(event);
+  if (force === null) return;
+  confirmHumanNicknameChange(els.humanNameInput, { force });
 }
 
 function initializeHumanNicknameControls() {
@@ -5155,7 +5192,7 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden) touchOnlinePresence();
 });
 
-els.confirmNicknameButton?.addEventListener("click", () => confirmHumanNicknameChange(els.humanNameInput));
+els.confirmNicknameButton?.addEventListener("click", handleConfirmNicknameButtonClick);
 els.humanNameInput?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
   event.preventDefault();
