@@ -240,6 +240,9 @@ const ONLINE_PLAYER_TABLE = "fantasy_multiplayer_players";
 const LEADERBOARD_TABLE = "fantasy_leaderboard";
 const HALL_OF_FAME_TABLE = "fantasy_beomrye_hall_of_fame";
 const ONLINE_TURN_LIMIT_SECONDS = 30;
+const ONLINE_PRESENCE_INTERVAL_MS = 25000;
+const ONLINE_PRESENCE_STALE_MS = 70000;
+const ONLINE_PRESENCE_OFFLINE_MS = 150000;
 const NICKNAME_CHANGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const MIN_NICKNAME_LENGTH = 2;
 const LEADERBOARD_LIMIT = 10;
@@ -327,10 +330,14 @@ const onlineState = {
   lastLocalRevision: "",
   savingGame: false,
   pendingGameSave: false,
-  applyingRemote: false
+  applyingRemote: false,
+  presenceTimer: null,
+  presenceRoomId: "",
+  presenceSaving: false
 };
 
 const els = {
+  loadingOverlay: document.querySelector("#loadingOverlay"),
   gameLauncher: document.querySelector("#gameLauncher"),
   enterFantasyButton: document.querySelector("#enterFantasyButton"),
   homeLogoButton: document.querySelector("#homeLogoButton"),
@@ -1193,6 +1200,7 @@ function clearOnlineRoomSnapshot() {
 }
 
 function resetOnlineRoomLocalState() {
+  stopOnlinePresenceHeartbeat();
   if (onlineState.subscription && onlineState.client?.removeChannel) {
     onlineState.client.removeChannel(onlineState.subscription);
   }
@@ -1253,6 +1261,89 @@ async function copyOnlineRoomCode() {
   } catch (error) {
     setOnlineStatus(error.message || "복사 실패", true);
   }
+}
+
+function stopOnlinePresenceHeartbeat() {
+  if (onlineState.presenceTimer) {
+    window.clearInterval(onlineState.presenceTimer);
+  }
+  onlineState.presenceTimer = null;
+  onlineState.presenceRoomId = "";
+  onlineState.presenceSaving = false;
+}
+
+async function touchOnlinePresence() {
+  const client = getSupabaseClient();
+  const roomId = onlineState.room?.id || "";
+  const token = onlinePlayerToken();
+  if (!client || !roomId || !token || onlineState.presenceSaving) return;
+
+  onlineState.presenceSaving = true;
+  const connectedAt = new Date().toISOString();
+  try {
+    const { error } = await client
+      .from(ONLINE_PLAYER_TABLE)
+      .update({ connected_at: connectedAt })
+      .eq("room_id", roomId)
+      .eq("token", token);
+    if (!error) {
+      onlineState.players = onlineState.players.map((player) => (
+        player.token === token ? { ...player, connected_at: connectedAt } : player
+      ));
+      renderOnlinePanel();
+    }
+  } catch (error) {
+    // Presence is only a lobby hint; gameplay should not fail if the ping misses.
+  } finally {
+    onlineState.presenceSaving = false;
+  }
+}
+
+function startOnlinePresenceHeartbeat() {
+  const roomId = onlineState.room?.id || "";
+  const token = onlinePlayerToken();
+  if (!roomId || !onlineState.players.some((player) => player.token === token)) {
+    stopOnlinePresenceHeartbeat();
+    return;
+  }
+  if (onlineState.presenceTimer && onlineState.presenceRoomId === roomId) return;
+
+  stopOnlinePresenceHeartbeat();
+  onlineState.presenceRoomId = roomId;
+  touchOnlinePresence();
+  onlineState.presenceTimer = window.setInterval(touchOnlinePresence, ONLINE_PRESENCE_INTERVAL_MS);
+}
+
+function onlinePlayerPresence(player) {
+  const timestamp = Date.parse(player.connected_at || player.created_at || "");
+  if (!Number.isFinite(timestamp)) {
+    return {
+      key: "unknown",
+      label: "확인중",
+      title: "접속 상태를 확인하고 있습니다."
+    };
+  }
+
+  const age = Date.now() - timestamp;
+  if (age >= ONLINE_PRESENCE_OFFLINE_MS) {
+    return {
+      key: "offline",
+      label: "끊김",
+      title: "2분 이상 접속 신호가 없습니다."
+    };
+  }
+  if (age >= ONLINE_PRESENCE_STALE_MS) {
+    return {
+      key: "stale",
+      label: "응답없음",
+      title: "1분 이상 접속 신호가 없습니다."
+    };
+  }
+  return {
+    key: "online",
+    label: "접속중",
+    title: "최근 접속 신호가 확인되었습니다."
+  };
 }
 
 function renderOnlinePanel() {
@@ -1334,7 +1425,8 @@ function renderOnlinePanel() {
     const item = document.createElement("li");
     const player = bySeat.get(seat);
     if (player) {
-      item.className = "filled-seat";
+      const presence = onlinePlayerPresence(player);
+      item.className = `filled-seat presence-${presence.key}`;
       const badges = [];
       if (onlineState.room.host_token === player.token) {
         badges.push(`<span class="online-player-badge host">방장</span>`);
@@ -1342,6 +1434,9 @@ function renderOnlinePanel() {
       if (player.token === onlinePlayerToken()) {
         badges.push(`<span class="online-player-badge me">나</span>`);
       }
+      badges.push(
+        `<span class="online-player-badge presence presence-${presence.key}" title="${escapeHtml(presence.title)}">${escapeHtml(presence.label)}</span>`
+      );
       item.innerHTML = `
         <span class="seat-number">${seat + 1}</span>
         <span class="seat-name">${escapeHtml(player.name || "이름 없음")}</span>
@@ -1390,6 +1485,7 @@ async function loadOnlineRoom(roomId, options = {}) {
   onlineState.room = room;
   onlineState.players = players || [];
   saveOnlineRoomSnapshot();
+  startOnlinePresenceHeartbeat();
   if ((room.status === "playing" || room.status === "finished") && room.game_state?.startedAt) {
     hydrateOnlineGameSnapshot(room.game_state);
     setOnlineStatus(`${room.status === "finished" ? "게임 종료" : "게임 중"} ${room.code}`);
@@ -4765,6 +4861,10 @@ function buildHandTargetOptions(hand, sourceId) {
   return buildCardOptions(hand.filter((card) => cardSourceId(card) !== sourceId));
 }
 
+function finishInitialLoading() {
+  document.body.classList.remove("app-loading");
+}
+
 function getIslandTargetOptions(hand, sourceId) {
   return buildCardOptions(hand.filter((card) => (
     cardSourceId(card) !== sourceId && (["flood", "flame"].includes(card.type) || isPhoenixCard(card))
@@ -4849,6 +4949,12 @@ function renderBreakdownSection(title, rows, type, pointKey = "total") {
 function formatSigned(value) {
   return value > 0 ? `+${value}` : `${value}`;
 }
+
+window.addEventListener("load", finishInitialLoading, { once: true });
+window.setTimeout(finishInitialLoading, 3200);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) touchOnlinePresence();
+});
 
 els.confirmNicknameButton?.addEventListener("click", () => confirmHumanNicknameChange(els.humanNameInput));
 els.humanNameInput?.addEventListener("keydown", (event) => {

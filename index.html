@@ -4,14 +4,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
-    <link rel="stylesheet" href="styles.css?v=20260624-launcher-vertical-logos" />
+    <link rel="stylesheet" href="styles.css?v=20260625-final-polish" />
   </head>
-  <body class="launcher-active">
+  <body class="launcher-active app-loading">
+    <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
+      <div class="loading-box">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <strong>불러오는 중</strong>
+        <small>카드 이미지와 온라인 정보를 준비하고 있습니다.</small>
+      </div>
+    </div>
     <main class="app-shell">
       <section id="gameLauncher" class="game-launcher" aria-label="게임 선택">
         <button id="enterFantasyButton" class="game-launcher-card" type="button" aria-label="판타지왕국 입장">
           <img src="assets/titles/title-base.png" alt="판타지왕국" />
         </button>
+        <p class="launcher-device-note">PC 화면 권장 · 모바일은 가로 화면에서 플레이하세요.</p>
         <div class="game-launcher-coming-soon" aria-label="개발 예정 게임">
           <div class="game-launcher-placeholder" aria-disabled="true">
             <img src="assets/titles/title-splendor.png" alt="스플렌더 개발 예정" />
@@ -215,13 +223,32 @@
           <h2>규칙</h2>
           <button class="icon-button" value="close" title="닫기" aria-label="닫기">×</button>
         </div>
-        <ul>
-          <li>각 플레이어는 카드 7장으로 시작합니다. 확장팩 포함 시 8장으로 시작합니다.</li>
-          <li>내 차례에는 덱 또는 공개된 버린 카드 1장을 가져옵니다.</li>
-          <li>카드를 가져온 뒤 손패에서 1장을 공개로 버립니다.</li>
-          <li>버린 카드가 10장, 확장팩 포함 시 12장이 되면 즉시 게임이 끝납니다.</li>
-          <li>카드마다 기본 힘, 보너스, 패널티, 무효 효과가 적용됩니다.</li>
-        </ul>
+        <div class="rules-help">
+          <section class="rules-section">
+            <h3>기본 진행</h3>
+            <ul>
+              <li>오리지널은 7장, 확장팩은 8장으로 시작합니다.</li>
+              <li>차례마다 덱 또는 공개된 버린 카드 1장을 가져온 뒤 손패에서 1장을 버립니다.</li>
+              <li>버린 카드가 오리지널 10장, 확장팩 12장이 되면 게임이 끝납니다.</li>
+            </ul>
+          </section>
+          <section class="rules-section">
+            <h3>점수와 특수 선택</h3>
+            <ul>
+              <li>기본 힘에 보너스, 패널티, 무효 효과를 모두 반영합니다.</li>
+              <li>섬, 변신능력자, 신기루, 도플갱어, 천사, 강령술사, 지니, 레프리컨은 우측 선택을 확정해야 결과가 정리됩니다.</li>
+              <li>선택 안함이 가능한 카드도 있지만, 강령술사와 지니처럼 카드를 골라야 하는 효과는 선택을 끝내야 합니다.</li>
+            </ul>
+          </section>
+          <section class="rules-section">
+            <h3>온라인과 기록</h3>
+            <ul>
+              <li>온라인은 방장이 인원을 맞춘 뒤 시작합니다. 차례 제한은 30초입니다.</li>
+              <li>랭킹은 싱글플레이 승리 기록만 오리지널과 확장팩으로 나뉘어 등록됩니다.</li>
+              <li>완전랜덤에서 등장한 강범례를 이기면 명예의 전당에 기록됩니다.</li>
+            </ul>
+          </section>
+        </div>
       </form>
     </dialog>
 
@@ -269,6 +296,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
-    <script src="script.js?v=20260624-launcher-logo-clean"></script>
+    <script src="script.js?v=20260625-final-polish"></script>
   </body>
 </html>
