@@ -235,6 +235,7 @@ const SUPABASE_CONFIG = window.FANTASY_SUPABASE_CONFIG || {};
 const ONLINE_ROOM_STORAGE_KEY = "fantasyKingdom.onlineRoom.v1";
 const ONLINE_TOKEN_STORAGE_KEY = "fantasyKingdom.playerToken.v1";
 const HUMAN_PROFILE_STORAGE_KEY = "fantasyKingdom.humanProfile.v1";
+const UI_SCALE_STORAGE_KEY = "fantasyKingdom.uiScalePercent.v1";
 const ONLINE_ROOM_TABLE = "fantasy_multiplayer_rooms";
 const ONLINE_PLAYER_TABLE = "fantasy_multiplayer_players";
 const LEADERBOARD_TABLE = "fantasy_leaderboard";
@@ -251,6 +252,10 @@ const NICKNAME_CHANGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const MIN_NICKNAME_LENGTH = 2;
 const LEADERBOARD_LIMIT = 10;
 const HALL_OF_FAME_REQUIRED_DIFFICULTY = "random";
+const UI_SCALE_DEFAULT_PERCENT = 100;
+const UI_SCALE_MIN_PERCENT = 75;
+const UI_SCALE_MAX_PERCENT = 125;
+const UI_SCALE_STEP_PERCENT = 5;
 
 const PROFILE_ASSET_ROOT = "assets/profiles/user";
 const AI_DIFFICULTY_LABELS = {
@@ -360,6 +365,9 @@ const els = {
   gameLauncher: document.querySelector("#gameLauncher"),
   enterFantasyButton: document.querySelector("#enterFantasyButton"),
   homeLogoButton: document.querySelector("#homeLogoButton"),
+  uiScaleDownButton: document.querySelector("#uiScaleDownButton"),
+  uiScaleUpButton: document.querySelector("#uiScaleUpButton"),
+  uiScaleValue: document.querySelector("#uiScaleValue"),
   setupPanel: document.querySelector("#setupPanel"),
   gameBoard: document.querySelector("#gameBoard"),
   playerCountSelect: document.querySelector("#playerCountSelect"),
@@ -5158,13 +5166,49 @@ function finishInitialLoading() {
   document.body.classList.remove("app-loading");
 }
 
-function detectIPadDevice() {
-  return /iPad/i.test(navigator.userAgent)
-    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+function clampUiScalePercent(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return UI_SCALE_DEFAULT_PERCENT;
+  const stepped = Math.round(numeric / UI_SCALE_STEP_PERCENT) * UI_SCALE_STEP_PERCENT;
+  return Math.min(UI_SCALE_MAX_PERCENT, Math.max(UI_SCALE_MIN_PERCENT, stepped));
 }
 
-function updateDeviceClasses() {
-  document.body.classList.toggle("is-ipad", detectIPadDevice());
+function readUiScalePercent() {
+  try {
+    return clampUiScalePercent(window.localStorage?.getItem(UI_SCALE_STORAGE_KEY));
+  } catch {
+    return UI_SCALE_DEFAULT_PERCENT;
+  }
+}
+
+function saveUiScalePercent(value) {
+  try {
+    window.localStorage?.setItem(UI_SCALE_STORAGE_KEY, String(value));
+  } catch {
+    // localStorage can be unavailable in private or restricted browser modes.
+  }
+}
+
+function applyUiScalePercent(value, options = {}) {
+  const percent = clampUiScalePercent(value);
+  document.documentElement.style.setProperty("--ui-scale", (percent / 100).toFixed(2));
+  document.documentElement.style.setProperty("--ui-scale-width", `${(10000 / percent).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--ui-scale-min-height", `${(10000 / percent).toFixed(2)}vh`);
+  if (els.uiScaleValue) els.uiScaleValue.textContent = `${percent}%`;
+  if (els.uiScaleDownButton) els.uiScaleDownButton.disabled = percent <= UI_SCALE_MIN_PERCENT;
+  if (els.uiScaleUpButton) els.uiScaleUpButton.disabled = percent >= UI_SCALE_MAX_PERCENT;
+  if (options.save !== false) saveUiScalePercent(percent);
+  return percent;
+}
+
+function adjustUiScalePercent(delta) {
+  const currentText = Number(String(els.uiScaleValue?.textContent || "").replace(/[^0-9.-]/g, ""));
+  const current = Number.isFinite(currentText) ? currentText : readUiScalePercent();
+  applyUiScalePercent(current + delta);
+}
+
+function initializeUiScaleControls() {
+  applyUiScalePercent(readUiScalePercent(), { save: false });
 }
 
 function getIslandTargetOptions(hand, sourceId) {
@@ -5253,14 +5297,14 @@ function formatSigned(value) {
 }
 
 window.addEventListener("load", finishInitialLoading, { once: true });
-updateDeviceClasses();
-window.addEventListener("resize", updateDeviceClasses);
-window.addEventListener("orientationchange", updateDeviceClasses);
+initializeUiScaleControls();
 window.setTimeout(finishInitialLoading, 3200);
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) touchOnlinePresence();
 });
 
+els.uiScaleDownButton?.addEventListener("click", () => adjustUiScalePercent(-UI_SCALE_STEP_PERCENT));
+els.uiScaleUpButton?.addEventListener("click", () => adjustUiScalePercent(UI_SCALE_STEP_PERCENT));
 els.confirmNicknameButton?.addEventListener("click", handleConfirmNicknameButtonClick);
 els.humanNameInput?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
