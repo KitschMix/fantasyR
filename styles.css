@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "FantasyUI";
+  src: url("assets/fonts/PretendardVariable.woff2") format("woff2");
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --bg: #171512;
   --surface: #24201a;
@@ -20,7 +28,9 @@
   --ui-scale: 1;
   --ui-scale-width: 100%;
   --ui-scale-min-height: 100vh;
-  font-family: "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+  font-family: "FantasyUI", "Pretendard Variable", "Noto Sans KR", "Segoe UI", "Malgun Gothic", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 * {
@@ -1661,6 +1671,14 @@ select {
   padding: 10px;
 }
 
+.discard-empty-message {
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .hand-section {
   display: grid;
   gap: 10px;
@@ -1709,14 +1727,16 @@ select {
 }
 
 .card::after {
-  content: attr(data-glyph);
+  content: "";
   position: absolute;
   right: 9px;
-  bottom: -5px;
-  color: rgba(255, 255, 255, 0.14);
-  font-size: 69px;
-  font-weight: 900;
-  line-height: 1;
+  bottom: 9px;
+  width: 68px;
+  height: 68px;
+  background: rgba(255, 255, 255, 0.14);
+  -webkit-mask: var(--type-icon) center / contain no-repeat;
+  mask: var(--type-icon) center / contain no-repeat;
+  pointer-events: none;
 }
 
 .card.selected,
@@ -1856,9 +1876,88 @@ select {
   display: block;
 }
 
-.card-art span {
-  font-size: 38px;
-  font-weight: 900;
+.card-type-icon {
+  display: block;
+  width: 58px;
+  height: 58px;
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-mask: var(--type-icon) center / contain no-repeat;
+  mask: var(--type-icon) center / contain no-repeat;
+}
+
+.card[data-card-type="land"],
+.card-type-icon[data-card-type="land"] {
+  --type-icon: url("assets/card-icons/land.svg");
+}
+
+.card[data-card-type="flood"],
+.card-type-icon[data-card-type="flood"] {
+  --type-icon: url("assets/card-icons/flood.svg");
+}
+
+.card[data-card-type="weather"],
+.card-type-icon[data-card-type="weather"] {
+  --type-icon: url("assets/card-icons/weather.svg");
+}
+
+.card[data-card-type="flame"],
+.card-type-icon[data-card-type="flame"] {
+  --type-icon: url("assets/card-icons/flame.svg");
+}
+
+.card[data-card-type="army"],
+.card-type-icon[data-card-type="army"] {
+  --type-icon: url("assets/card-icons/army.svg");
+}
+
+.card[data-card-type="wizard"],
+.card-type-icon[data-card-type="wizard"] {
+  --type-icon: url("assets/card-icons/wizard.svg");
+}
+
+.card[data-card-type="leader"],
+.card-type-icon[data-card-type="leader"] {
+  --type-icon: url("assets/card-icons/leader.svg");
+}
+
+.card[data-card-type="beast"],
+.card-type-icon[data-card-type="beast"] {
+  --type-icon: url("assets/card-icons/beast.svg");
+}
+
+.card[data-card-type="weapon"],
+.card-type-icon[data-card-type="weapon"] {
+  --type-icon: url("assets/card-icons/weapon.svg");
+}
+
+.card[data-card-type="artifact"],
+.card-type-icon[data-card-type="artifact"] {
+  --type-icon: url("assets/card-icons/artifact.svg");
+}
+
+.card[data-card-type="wild"],
+.card-type-icon[data-card-type="wild"] {
+  --type-icon: url("assets/card-icons/wild.svg");
+}
+
+.card[data-card-type="building"],
+.card-type-icon[data-card-type="building"] {
+  --type-icon: url("assets/card-icons/building.svg");
+}
+
+.card[data-card-type="outsider"],
+.card-type-icon[data-card-type="outsider"] {
+  --type-icon: url("assets/card-icons/outsider.svg");
+}
+
+.card[data-card-type="undead"],
+.card-type-icon[data-card-type="undead"] {
+  --type-icon: url("assets/card-icons/undead.svg");
+}
+
+.card[data-card-type="cursed-item"],
+.card-type-icon[data-card-type="cursed-item"] {
+  --type-icon: url("assets/card-icons/cursed-item.svg");
 }
 
 .card-type {
