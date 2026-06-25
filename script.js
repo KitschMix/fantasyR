@@ -5158,6 +5158,15 @@ function finishInitialLoading() {
   document.body.classList.remove("app-loading");
 }
 
+function detectIPadDevice() {
+  return /iPad/i.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function updateDeviceClasses() {
+  document.body.classList.toggle("is-ipad", detectIPadDevice());
+}
+
 function getIslandTargetOptions(hand, sourceId) {
   return buildCardOptions(hand.filter((card) => (
     cardSourceId(card) !== sourceId && (["flood", "flame"].includes(card.type) || isPhoenixCard(card))
@@ -5244,6 +5253,9 @@ function formatSigned(value) {
 }
 
 window.addEventListener("load", finishInitialLoading, { once: true });
+updateDeviceClasses();
+window.addEventListener("resize", updateDeviceClasses);
+window.addEventListener("orientationchange", updateDeviceClasses);
 window.setTimeout(finishInitialLoading, 3200);
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) touchOnlinePresence();

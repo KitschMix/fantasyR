@@ -2609,6 +2609,115 @@ select {
 
 }
 
+@media (orientation: landscape) and (max-width: 1400px) {
+  body.is-ipad {
+    --hand-card-width: 184px;
+    --hand-card-gap: 8px;
+    --hand-row-min-width: calc((var(--hand-card-width) * 8) + (var(--hand-card-gap) * 7));
+    --discard-card-width: 106px;
+    --discard-card-height: 178px;
+    --discard-card-scale: 0.58;
+    font-size: 20px;
+  }
+
+  body.is-ipad .app-shell {
+    min-width: 0;
+    padding: 8px;
+  }
+
+  body.is-ipad .topbar {
+    margin-bottom: 8px;
+  }
+
+  body.is-ipad .brand-title-art-wrap {
+    width: 330px;
+    height: 88px;
+  }
+
+  body.is-ipad .brand-title-art {
+    max-height: 88px;
+  }
+
+  body.is-ipad .game-board {
+    gap: 10px;
+    min-width: 0;
+  }
+
+  body.is-ipad .status-panel,
+  body.is-ipad .center-table,
+  body.is-ipad .detail-panel {
+    padding: 10px;
+  }
+
+  body.is-ipad .status-panel {
+    grid-template-columns: minmax(150px, 210px) minmax(0, 1fr);
+  }
+
+  body.is-ipad .round-status,
+  body.is-ipad .score-list {
+    min-height: 148px;
+    max-height: 148px;
+  }
+
+  body.is-ipad .opponents-row {
+    grid-column: 1 / -1;
+    grid-auto-rows: 166px;
+    max-height: 166px;
+  }
+
+  body.is-ipad .log-panel {
+    display: none;
+  }
+
+  body.is-ipad .deck-stack {
+    width: 132px;
+    height: 184px;
+  }
+
+  body.is-ipad .discard-area {
+    min-height: 198px;
+    max-height: 198px;
+  }
+
+  body.is-ipad .discard-area.discard-area-empty {
+    min-height: 92px;
+    max-height: 92px;
+  }
+
+  body.is-ipad .player-hand {
+    grid-template-columns: repeat(var(--hand-card-count, 8), var(--hand-card-width));
+  }
+
+  body.is-ipad .card {
+    height: 314px;
+    min-height: 314px;
+  }
+
+  body.is-ipad .card-art {
+    height: 118px;
+  }
+
+  body.is-ipad .card-name {
+    font-size: 22px;
+  }
+
+  body.is-ipad .card-text {
+    font-size: 15px;
+  }
+
+  body.is-ipad .detail-panel {
+    grid-template-columns: 1fr;
+    max-height: none;
+    overflow: visible;
+  }
+
+  body.is-ipad .score-actions,
+  body.is-ipad .breakdown {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
 @media (max-width: 760px) {
   .app-shell {
     min-width: 0;
