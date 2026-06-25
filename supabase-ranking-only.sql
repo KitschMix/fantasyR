@@ -139,7 +139,8 @@ begin
       'score_updated', true,
       'nickname_updated', true,
       'nickname', v_existing.nickname,
-      'score', v_existing.score
+      'score', v_existing.score,
+      'include_expansion', v_existing.include_expansion
     );
   end if;
 
@@ -173,7 +174,8 @@ begin
     'score_updated', v_score_updated,
     'nickname_updated', v_nickname_allowed,
     'nickname', v_existing.nickname,
-    'score', v_existing.score
+    'score', v_existing.score,
+    'include_expansion', v_existing.include_expansion
   );
 end;
 $$;

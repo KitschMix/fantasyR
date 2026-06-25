@@ -2390,7 +2390,8 @@ select {
   font-weight: 800;
 }
 
-.end-hall-notice {
+.end-hall-notice,
+.end-leaderboard-notice {
   display: grid;
   gap: 4px;
   margin-top: 4px;
@@ -2403,18 +2404,21 @@ select {
   font-weight: 900;
 }
 
-.end-hall-notice span {
+.end-hall-notice span,
+.end-leaderboard-notice span {
   color: var(--focus);
   font-size: 14px;
 }
 
-.end-hall-notice.success {
+.end-hall-notice.success,
+.end-leaderboard-notice.success {
   border-color: rgba(139, 224, 187, 0.42);
   color: #d9ffed;
   background: rgba(30, 74, 55, 0.42);
 }
 
-.end-hall-notice.missed {
+.end-hall-notice.missed,
+.end-leaderboard-notice.missed {
   border-color: rgba(238, 143, 128, 0.36);
   color: #ffd0c7;
   background: rgba(78, 35, 29, 0.36);

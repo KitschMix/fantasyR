@@ -925,6 +925,28 @@ function leaderboardMetaText(entry) {
   return [count, difficulty].filter(Boolean).join(" · ");
 }
 
+function isExpansionCardForRanking(card) {
+  if (!card) return false;
+  const sourceId = String(cardSourceId(card) || card.sourceId || card.id || "");
+  return sourceId.startsWith("CH") || ["building", "outsider", "undead"].includes(card.type);
+}
+
+function isExpansionRankingGame() {
+  if (state.includeExpansion) return true;
+  const knownCards = [
+    ...(state.deck || []),
+    ...(state.discard || []),
+    ...(state.cursedDeck || []),
+    ...(state.cursedDiscard || []),
+    ...(state.players || []).flatMap((player) => [
+      ...(player.hand || []),
+      player.activeCursedItem,
+      ...(player.usedCursedItems || [])
+    ])
+  ];
+  return knownCards.some(isExpansionCardForRanking);
+}
+
 function hallOfFameMetaText(entry) {
   const mode = entry.include_expansion ? "확장팩" : "오리지널";
   const count = entry.player_count ? `${entry.player_count}인` : "";
@@ -1075,44 +1097,58 @@ async function loadLeaderboard() {
 async function submitLeaderboardScore(ranked) {
   if (state.leaderboardSubmitted) return;
   const humanEntry = ranked.find((entry) => entry.player.human);
-  const leaderboardModeLabel = state.includeExpansion ? "확장팩 랭킹" : "오리지널 랭킹";
+  const includeExpansion = isExpansionRankingGame();
+  const leaderboardModeLabel = includeExpansion ? "확장팩 랭킹" : "오리지널 랭킹";
   state.leaderboardSubmitted = true;
   if (state.onlineGame) {
     setLeaderboardStatus("온라인 게임은 랭킹에 등록하지 않습니다.");
+    updateEndLeaderboardNotice("온라인 게임은 랭킹에 등록하지 않습니다.", "missed");
     return;
   }
   if (!humanEntry || humanEntry.score < (ranked[0]?.score ?? Number.POSITIVE_INFINITY)) {
     setLeaderboardStatus("랭킹은 싱글플레이에서 승리했을 때만 자동 등록됩니다.");
+    updateEndLeaderboardNotice("랭킹은 싱글플레이에서 승리했을 때만 자동 등록됩니다.", "missed");
     return;
   }
 
   const client = getSupabaseClient();
   if (!client) {
     setLeaderboardStatus("랭킹 등록 실패: Supabase 설정 필요", true);
+    updateEndLeaderboardNotice("랭킹 등록 실패: Supabase 설정 필요", "missed");
     return;
   }
 
   const nickname = normalizeHumanNickname(humanEntry.player.baseName || humanEntry.player.name || currentHumanNickname());
   setLeaderboardStatus(`${leaderboardModeLabel}에 기록을 등록하는 중입니다.`);
+  updateEndLeaderboardNotice(`${leaderboardModeLabel}에 기록을 등록하는 중입니다.`, "pending");
   const { data, error } = await client.rpc("fantasy_submit_leaderboard_score", {
     p_nickname: nickname,
     p_score: Number(humanEntry.score || 0),
     p_player_count: Number(state.playerCount || state.players.length || 0),
-    p_include_expansion: Boolean(state.includeExpansion),
+    p_include_expansion: includeExpansion,
     p_ai_difficulty: state.aiDifficulty || onlineState.room?.ai_difficulty || "normal"
   });
 
   if (error) {
     setLeaderboardStatus(leaderboardSubmitErrorMessage(error), true);
+    updateEndLeaderboardNotice(leaderboardSubmitErrorMessage(error), "missed");
     return;
   }
 
   const result = Array.isArray(data) ? data[0] : data;
   const nicknameDenied = result && result.nickname_updated === false && result.nickname !== nickname;
+  const serverModeLabel = typeof result?.include_expansion === "boolean"
+    ? result.include_expansion ? "확장팩 랭킹" : "오리지널 랭킹"
+    : leaderboardModeLabel;
+  const modeMismatch = typeof result?.include_expansion === "boolean" && result.include_expansion !== includeExpansion;
   const scoreText = result?.score_updated ? "최고 점수 갱신!" : "기존 최고 점수를 유지했습니다.";
   setLeaderboardStatus(nicknameDenied
-    ? `${leaderboardModeLabel}: ${scoreText} 닉네임은 서버 기준 하루 1회 제한으로 기존 이름을 유지했습니다.`
-    : `${leaderboardModeLabel}: ${scoreText}`);
+    ? `${serverModeLabel}: ${scoreText} 닉네임은 서버 기준 하루 1회 제한으로 기존 이름을 유지했습니다.`
+    : `${serverModeLabel}: ${scoreText}`);
+  updateEndLeaderboardNotice(modeMismatch
+    ? "서버가 다른 랭킹 모드로 저장했습니다. 최신 supabase-schema.sql을 다시 실행해주세요."
+    : `${serverModeLabel}: ${scoreText}`,
+    modeMismatch ? "missed" : "success");
   loadLeaderboard();
 }
 
@@ -3865,10 +3901,11 @@ function showEndNotification(ranked) {
   if (!els.endDialog || !els.endSummary) return;
   const humanEntry = ranked.find((entry) => entry.player.human);
   const humanWon = Boolean(humanEntry && ranked[0]?.player.id === humanEntry.player.id);
+  const leaderboardModeLabel = isExpansionRankingGame() ? "확장팩 랭킹" : "오리지널 랭킹";
   const leaderboardText = state.onlineGame
     ? "온라인 게임은 랭킹에 등록하지 않습니다."
     : humanWon
-      ? "승리 기록을 랭킹에 자동 등록합니다."
+      ? `승리 기록을 ${leaderboardModeLabel}에 자동 등록합니다.`
       : "랭킹은 싱글플레이에서 승리했을 때만 등록됩니다.";
   const hallQualified = qualifiesForBeomryeHallOfFame(ranked);
   const hallText = hallQualified
@@ -3878,6 +3915,7 @@ function showEndNotification(ranked) {
     <strong>${escapeHtml(ranked[0].player.name)} 승리</strong>
     <span>${ranked[0].score}점으로 게임이 끝났습니다.</span>
     <small>${leaderboardText}</small>
+    ${endLeaderboardNoticeHtml(leaderboardText, !state.onlineGame && humanWon)}
     ${hallText ? `<small>${hallText}</small>` : ""}
     ${hallText ? endHallNoticeHtml(hallQualified, hallText) : ""}
     <div class="end-score-grid">
@@ -3888,6 +3926,25 @@ function showEndNotification(ranked) {
   if (typeof els.endDialog.showModal === "function" && !els.endDialog.open) {
     els.endDialog.showModal();
   }
+}
+
+function endLeaderboardNoticeHtml(text, pending = false) {
+  if (!text) return "";
+  return `
+    <div id="endLeaderboardNotice" class="end-leaderboard-notice${pending ? "" : " missed"}">
+      <span>랭킹 등록</span>
+      <strong>${escapeHtml(pending ? "랭킹 서버와 확인하는 중입니다." : text)}</strong>
+    </div>
+  `;
+}
+
+function updateEndLeaderboardNotice(message, status = "pending") {
+  const notice = document.querySelector("#endLeaderboardNotice");
+  if (!notice) return;
+  notice.classList.toggle("success", status === "success");
+  notice.classList.toggle("missed", status === "missed");
+  const body = notice.querySelector("strong");
+  if (body) body.textContent = message;
 }
 
 function endHallNoticeHtml(qualified, fallbackText = "") {
