@@ -701,6 +701,114 @@ h1 {
   min-width: 0;
 }
 
+.lobby-chat {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(246, 232, 202, 0.1);
+}
+
+.lobby-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.lobby-chat-head strong {
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.lobby-chat-head span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-chat-head span.error {
+  color: #ffd0c7;
+}
+
+.lobby-chat-list {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  height: 142px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+}
+
+.lobby-chat-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 25px;
+  padding: 4px 8px;
+  border: 1px solid rgba(246, 232, 202, 0.09);
+  border-radius: 6px;
+  background: rgba(48, 42, 33, 0.5);
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.lobby-chat-list .lobby-chat-empty {
+  grid-template-columns: 1fr;
+  color: var(--muted);
+  font-weight: 800;
+  text-align: center;
+}
+
+.lobby-chat-name {
+  max-width: 86px;
+  overflow: hidden;
+  color: var(--focus);
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-chat-message {
+  min-width: 0;
+  overflow: hidden;
+  color: #e8dcc8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-chat-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  min-width: 0;
+}
+
+.lobby-chat-form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  background: rgba(48, 42, 33, 0.86);
+  font-size: 16px;
+}
+
+.lobby-chat-form button {
+  min-height: 42px;
+  padding: 0 12px;
+  font-size: 16px;
+}
+
 .hall-panel {
   grid-column: 1 / -1;
   min-height: 0;

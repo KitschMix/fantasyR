@@ -239,10 +239,14 @@ const ONLINE_ROOM_TABLE = "fantasy_multiplayer_rooms";
 const ONLINE_PLAYER_TABLE = "fantasy_multiplayer_players";
 const LEADERBOARD_TABLE = "fantasy_leaderboard";
 const HALL_OF_FAME_TABLE = "fantasy_beomrye_hall_of_fame";
+const LOBBY_CHAT_TABLE = "fantasy_lobby_chat";
 const ONLINE_TURN_LIMIT_SECONDS = 30;
 const ONLINE_PRESENCE_INTERVAL_MS = 25000;
 const ONLINE_PRESENCE_STALE_MS = 70000;
 const ONLINE_PRESENCE_OFFLINE_MS = 150000;
+const LOBBY_CHAT_TTL_MS = 30000;
+const LOBBY_CHAT_MAX_VISIBLE = 5;
+const LOBBY_CHAT_MAX_LENGTH = 80;
 const NICKNAME_CHANGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const MIN_NICKNAME_LENGTH = 2;
 const LEADERBOARD_LIMIT = 10;
@@ -336,6 +340,16 @@ const onlineState = {
   presenceSaving: false
 };
 
+const lobbyChatState = {
+  messages: [],
+  subscription: null,
+  refreshTimer: null,
+  cleanupTimer: null,
+  loading: false,
+  sending: false,
+  initialized: false
+};
+
 const els = {
   loadingOverlay: document.querySelector("#loadingOverlay"),
   gameLauncher: document.querySelector("#gameLauncher"),
@@ -367,6 +381,10 @@ const els = {
   onlinePlayerList: document.querySelector("#onlinePlayerList"),
   startOnlineGameButton: document.querySelector("#startOnlineGameButton"),
   leaveRoomButton: document.querySelector("#leaveRoomButton"),
+  lobbyChatList: document.querySelector("#lobbyChatList"),
+  lobbyChatInput: document.querySelector("#lobbyChatInput"),
+  sendLobbyChatButton: document.querySelector("#sendLobbyChatButton"),
+  lobbyChatStatus: document.querySelector("#lobbyChatStatus"),
   newGameButton: document.querySelector("#newGameButton"),
   rulesButton: document.querySelector("#rulesButton"),
   rulesDialog: document.querySelector("#rulesDialog"),
@@ -694,6 +712,12 @@ function setOnlineStatus(message, error = false) {
   els.onlineStatus.classList.toggle("error", error);
 }
 
+function setLobbyChatStatus(message, error = false) {
+  if (!els.lobbyChatStatus) return;
+  els.lobbyChatStatus.textContent = message;
+  els.lobbyChatStatus.classList.toggle("error", error);
+}
+
 function getSupabaseClient() {
   if (onlineState.client) return onlineState.client;
   if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key || !window.supabase?.createClient) {
@@ -752,6 +776,14 @@ function saveHumanProfile(profile) {
 
 function currentHumanNickname() {
   return readHumanProfile().nickname;
+}
+
+function lobbyChatNickname() {
+  const nickname = currentHumanNickname();
+  if (nickname) return nickname;
+  const sourceInput = els.onlineNameInput?.value ? els.onlineNameInput : els.humanNameInput;
+  if (!confirmHumanNicknameChange(sourceInput)) return "";
+  return currentHumanNickname();
 }
 
 function nicknameChangeRemainingText(lastChangedAt) {
@@ -1344,6 +1376,173 @@ function onlinePlayerPresence(player) {
     label: "접속중",
     title: "최근 접속 신호가 확인되었습니다."
   };
+}
+
+function normalizeLobbyChatMessage(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, LOBBY_CHAT_MAX_LENGTH);
+}
+
+function lobbyChatErrorMessage(error) {
+  const message = String(error?.message || "");
+  if (error?.code === "42P01" || message.includes(LOBBY_CHAT_TABLE)) {
+    return "채팅 설정 필요: supabase-chat-only.sql 실행";
+  }
+  return `채팅 오류: ${message || "잠시 후 다시 시도"}`;
+}
+
+function lobbyChatCutoffIso() {
+  return new Date(Date.now() - LOBBY_CHAT_TTL_MS).toISOString();
+}
+
+function isFreshLobbyChatMessage(message) {
+  const createdAt = Date.parse(message?.created_at || "");
+  return Number.isFinite(createdAt) && Date.now() - createdAt < LOBBY_CHAT_TTL_MS;
+}
+
+function addLobbyChatMessage(message) {
+  if (!message?.id || !isFreshLobbyChatMessage(message)) return;
+  if (lobbyChatState.messages.some((item) => item.id === message.id)) return;
+  lobbyChatState.messages.push(message);
+  lobbyChatState.messages.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
+  renderLobbyChat();
+}
+
+function renderLobbyChat() {
+  if (!els.lobbyChatList) return;
+
+  lobbyChatState.messages = lobbyChatState.messages.filter(isFreshLobbyChatMessage);
+  const visibleMessages = lobbyChatState.messages.slice(-LOBBY_CHAT_MAX_VISIBLE);
+  els.lobbyChatList.innerHTML = "";
+
+  if (visibleMessages.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "lobby-chat-empty";
+    empty.textContent = "최근 메시지가 없습니다.";
+    els.lobbyChatList.append(empty);
+  } else {
+    visibleMessages.forEach((message) => {
+      const item = document.createElement("li");
+      item.innerHTML = `
+        <span class="lobby-chat-name">${escapeHtml(message.nickname || "익명")}</span>
+        <span class="lobby-chat-message">${escapeHtml(message.message || "")}</span>
+      `;
+      els.lobbyChatList.append(item);
+    });
+  }
+
+  if (els.sendLobbyChatButton) {
+    const configured = Boolean(SUPABASE_CONFIG.url && SUPABASE_CONFIG.key && window.supabase?.createClient);
+    els.sendLobbyChatButton.disabled = lobbyChatState.sending || !configured;
+  }
+}
+
+async function loadLobbyChat() {
+  const client = getSupabaseClient();
+  if (!client || lobbyChatState.loading) {
+    renderLobbyChat();
+    return;
+  }
+
+  lobbyChatState.loading = true;
+  try {
+    const { data, error } = await client
+      .from(LOBBY_CHAT_TABLE)
+      .select("id,nickname,message,created_at")
+      .gte("created_at", lobbyChatCutoffIso())
+      .order("created_at", { ascending: false })
+      .limit(40);
+    if (error) throw error;
+    lobbyChatState.messages = (data || [])
+      .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
+    setLobbyChatStatus("최근 30초");
+  } catch (error) {
+    setLobbyChatStatus(lobbyChatErrorMessage(error), true);
+  } finally {
+    lobbyChatState.loading = false;
+    renderLobbyChat();
+  }
+}
+
+async function cleanupLobbyChatRows() {
+  const client = getSupabaseClient();
+  if (!client) return;
+  try {
+    await client
+      .from(LOBBY_CHAT_TABLE)
+      .delete()
+      .lt("created_at", lobbyChatCutoffIso());
+  } catch {
+    // Cleanup is best effort; expired messages still disappear locally.
+  }
+}
+
+async function subscribeLobbyChat() {
+  const client = getSupabaseClient();
+  if (!client) return;
+
+  if (lobbyChatState.subscription) {
+    await client.removeChannel(lobbyChatState.subscription);
+    lobbyChatState.subscription = null;
+  }
+
+  lobbyChatState.subscription = client
+    .channel("fantasy-lobby-chat")
+    .on("postgres_changes", {
+      event: "INSERT",
+      schema: "public",
+      table: LOBBY_CHAT_TABLE
+    }, (payload) => addLobbyChatMessage(payload.new))
+    .subscribe((status) => {
+      if (status === "SUBSCRIBED" && !els.lobbyChatStatus?.classList.contains("error")) {
+        setLobbyChatStatus("최근 30초");
+      }
+    });
+}
+
+async function sendLobbyChatMessage() {
+  const client = getSupabaseClient();
+  const message = normalizeLobbyChatMessage(els.lobbyChatInput?.value);
+  if (!client || lobbyChatState.sending || !message) return;
+
+  const nickname = lobbyChatNickname();
+  if (!nickname) return;
+
+  lobbyChatState.sending = true;
+  renderLobbyChat();
+  try {
+    const { data, error } = await client
+      .from(LOBBY_CHAT_TABLE)
+      .insert({
+        player_token: onlinePlayerToken(),
+        nickname,
+        message
+      })
+      .select("id,nickname,message,created_at")
+      .single();
+    if (error) throw error;
+    if (els.lobbyChatInput) els.lobbyChatInput.value = "";
+    addLobbyChatMessage(data);
+    setLobbyChatStatus("최근 30초");
+    cleanupLobbyChatRows();
+  } catch (error) {
+    setLobbyChatStatus(lobbyChatErrorMessage(error), true);
+  } finally {
+    lobbyChatState.sending = false;
+    renderLobbyChat();
+  }
+}
+
+function initLobbyChat() {
+  if (lobbyChatState.initialized) return;
+  lobbyChatState.initialized = true;
+  renderLobbyChat();
+  loadLobbyChat();
+  subscribeLobbyChat();
+  lobbyChatState.refreshTimer = window.setInterval(renderLobbyChat, 1000);
+  lobbyChatState.cleanupTimer = window.setInterval(cleanupLobbyChatRows, 15000);
 }
 
 function renderOnlinePanel() {
@@ -4978,6 +5177,12 @@ els.joinRoomButton?.addEventListener("click", joinOnlineRoom);
 els.copyRoomCodeButton?.addEventListener("click", copyOnlineRoomCode);
 els.startOnlineGameButton?.addEventListener("click", startOnlineGame);
 els.leaveRoomButton?.addEventListener("click", leaveOnlineRoom);
+els.sendLobbyChatButton?.addEventListener("click", sendLobbyChatMessage);
+els.lobbyChatInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  sendLobbyChatMessage();
+});
 els.roomCodeInput?.addEventListener("input", () => {
   els.roomCodeInput.value = normalizeRoomCode(els.roomCodeInput.value);
 });
@@ -5030,3 +5235,4 @@ updateTitleArt();
 loadHallOfFame();
 loadLeaderboard();
 restoreOnlineRoom();
+initLobbyChat();

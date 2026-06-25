@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
-    <link rel="stylesheet" href="styles.css?v=20260625-final-polish" />
+    <link rel="stylesheet" href="styles.css?v=20260625-lobby-chat" />
   </head>
   <body class="launcher-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -117,6 +117,17 @@
             <ol id="onlinePlayerList" class="online-player-list"></ol>
             <button id="startOnlineGameButton" class="primary-button online-start-button" type="button">게임 시작</button>
             <button id="leaveRoomButton" class="secondary-button" type="button">나가기</button>
+          </div>
+          <div id="lobbyChat" class="lobby-chat" aria-label="로비 채팅">
+            <div class="lobby-chat-head">
+              <strong>로비 채팅</strong>
+              <span id="lobbyChatStatus">최근 30초</span>
+            </div>
+            <ol id="lobbyChatList" class="lobby-chat-list" aria-live="polite"></ol>
+            <div class="lobby-chat-form">
+              <input id="lobbyChatInput" type="text" maxlength="80" autocomplete="off" placeholder="메시지" />
+              <button id="sendLobbyChatButton" class="secondary-button" type="button">전송</button>
+            </div>
           </div>
         </div>
         <div class="mode-panel hall-panel">
@@ -296,6 +307,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
-    <script src="script.js?v=20260625-final-polish"></script>
+    <script src="script.js?v=20260625-lobby-chat"></script>
   </body>
 </html>
