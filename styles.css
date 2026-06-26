@@ -1,12 +1,47 @@
 @font-face {
-  font-family: "FantasyUI";
-  src: url("assets/fonts/PretendardVariable.woff2") format("woff2");
+  font-family: "FantasyUIVariable";
+  src:
+    url("assets/fonts/PretendardVariable.woff2") format("woff2-variations"),
+    url("assets/fonts/PretendardVariable.woff2") format("woff2");
   font-weight: 45 920;
   font-style: normal;
   font-display: swap;
 }
 
+@font-face {
+  font-family: "FantasyUIStatic";
+  src: url("assets/fonts/Pretendard-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FantasyUIStatic";
+  src: url("assets/fonts/Pretendard-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FantasyUIStatic";
+  src: url("assets/fonts/Pretendard-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FantasyUIStatic";
+  src: url("assets/fonts/Pretendard-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
+  --font-ui: "FantasyUIVariable", "FantasyUIStatic", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", "Malgun Gothic", sans-serif;
   --bg: #171512;
   --surface: #24201a;
   --surface-2: #302a21;
@@ -28,13 +63,25 @@
   --ui-scale: 1;
   --ui-scale-width: 100%;
   --ui-scale-min-height: 100vh;
-  font-family: "FantasyUI", "Pretendard Variable", "Noto Sans KR", "Segoe UI", "Malgun Gothic", sans-serif;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+  font-family: var(--font-ui);
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 * {
   box-sizing: border-box;
+}
+
+html,
+body,
+button,
+select,
+input,
+textarea,
+dialog {
+  font-family: var(--font-ui);
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 body {
@@ -131,6 +178,20 @@ button:disabled {
   .app-shell {
     width: var(--ui-scale-width);
     min-height: var(--ui-scale-min-height);
+    transform: scale(var(--ui-scale));
+    transform-origin: top left;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  :root {
+    --font-ui: "FantasyUIStatic", "FantasyUIVariable", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", "Malgun Gothic", sans-serif;
+  }
+
+  .app-shell {
+    width: var(--ui-scale-width);
+    min-height: var(--ui-scale-min-height);
+    zoom: 1;
     transform: scale(var(--ui-scale));
     transform-origin: top left;
   }
@@ -979,6 +1040,10 @@ h1 {
   background: rgba(48, 42, 33, 0.58);
 }
 
+.leaderboard-list li.leaderboard-entry {
+  align-items: start;
+}
+
 .leaderboard-rank {
   display: grid;
   width: 28px;
@@ -1010,6 +1075,91 @@ h1 {
   color: var(--muted);
   font-size: 15px;
   font-weight: 700;
+}
+
+.leaderboard-deck {
+  grid-column: 2 / -1;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.leaderboard-deck summary {
+  display: flex;
+  min-width: 0;
+  cursor: pointer;
+  align-items: center;
+  gap: 6px;
+}
+
+.leaderboard-deck summary::-webkit-details-marker {
+  color: var(--focus);
+}
+
+.leaderboard-deck-preview {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(246, 232, 202, 0.72);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-card-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.leaderboard-card-pill {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 176px;
+  max-width: 100%;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid rgba(246, 232, 202, 0.12);
+  border-radius: 6px;
+  background: rgba(22, 18, 14, 0.38);
+}
+
+.leaderboard-card-pill.blanked {
+  opacity: 0.62;
+}
+
+.leaderboard-card-pill span {
+  min-width: 0;
+}
+
+.leaderboard-card-pill b {
+  display: block;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-card-pill small {
+  display: block;
+  grid-column: auto;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-card-pill em {
+  color: var(--focus);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .leaderboard-empty {
@@ -1529,7 +1679,7 @@ select {
 .turn-timer strong {
   color: #fff8df;
   font-size: 64px;
-  font-weight: 950;
+  font-weight: 900;
   line-height: 0.95;
   text-shadow: 0 0 18px rgba(107, 198, 162, 0.36);
 }

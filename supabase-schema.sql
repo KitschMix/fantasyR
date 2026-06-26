@@ -126,10 +126,18 @@ create table if not exists public.fantasy_leaderboard (
   player_count integer check (player_count between 1 and 4),
   include_expansion boolean not null default false,
   ai_difficulty text,
+  hand_cards jsonb not null default '[]'::jsonb,
+  score_rows jsonb not null default '[]'::jsonb,
+  card_actions jsonb not null default '{}'::jsonb,
   last_nickname_changed_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.fantasy_leaderboard
+  add column if not exists hand_cards jsonb not null default '[]'::jsonb,
+  add column if not exists score_rows jsonb not null default '[]'::jsonb,
+  add column if not exists card_actions jsonb not null default '{}'::jsonb;
 
 alter table public.fantasy_leaderboard
   drop constraint if exists fantasy_leaderboard_player_fingerprint_key;
@@ -189,12 +197,17 @@ create policy "leaderboard public read"
 revoke insert, update, delete on public.fantasy_leaderboard from anon;
 grant select on public.fantasy_leaderboard to anon;
 
+drop function if exists public.fantasy_submit_leaderboard_score(text, integer, integer, boolean, text);
+
 create or replace function public.fantasy_submit_leaderboard_score(
   p_nickname text,
   p_score integer,
   p_player_count integer default null,
   p_include_expansion boolean default false,
-  p_ai_difficulty text default null
+  p_ai_difficulty text default null,
+  p_hand_cards jsonb default '[]'::jsonb,
+  p_score_rows jsonb default '[]'::jsonb,
+  p_card_actions jsonb default '{}'::jsonb
 )
 returns jsonb
 language plpgsql
@@ -216,6 +229,18 @@ declare
   v_score integer := greatest(coalesce(p_score, 0), 0);
   v_score_updated boolean := false;
   v_nickname_allowed boolean := true;
+  v_hand_cards jsonb := case
+    when jsonb_typeof(coalesce(p_hand_cards, '[]'::jsonb)) = 'array' then coalesce(p_hand_cards, '[]'::jsonb)
+    else '[]'::jsonb
+  end;
+  v_score_rows jsonb := case
+    when jsonb_typeof(coalesce(p_score_rows, '[]'::jsonb)) = 'array' then coalesce(p_score_rows, '[]'::jsonb)
+    else '[]'::jsonb
+  end;
+  v_card_actions jsonb := case
+    when jsonb_typeof(coalesce(p_card_actions, '{}'::jsonb)) = 'object' then coalesce(p_card_actions, '{}'::jsonb)
+    else '{}'::jsonb
+  end;
 begin
   if char_length(v_nickname) < 2 or v_nickname = '나' then
     raise exception 'invalid nickname'
@@ -237,6 +262,9 @@ begin
       player_count,
       include_expansion,
       ai_difficulty,
+      hand_cards,
+      score_rows,
+      card_actions,
       last_nickname_changed_at,
       updated_at
     )
@@ -247,6 +275,9 @@ begin
       p_player_count,
       coalesce(p_include_expansion, false),
       left(coalesce(p_ai_difficulty, ''), 32),
+      v_hand_cards,
+      v_score_rows,
+      v_card_actions,
       v_now,
       v_now
     )
@@ -276,6 +307,9 @@ begin
         score = case when v_score_updated then v_score else score end,
         player_count = case when v_score_updated then p_player_count else player_count end,
         ai_difficulty = case when v_score_updated then left(coalesce(p_ai_difficulty, ''), 32) else ai_difficulty end,
+        hand_cards = case when v_score_updated then v_hand_cards else hand_cards end,
+        score_rows = case when v_score_updated then v_score_rows else score_rows end,
+        card_actions = case when v_score_updated then v_card_actions else card_actions end,
         last_nickname_changed_at = case
           when v_existing.nickname is distinct from v_nickname then v_now
           else last_nickname_changed_at
@@ -298,7 +332,7 @@ begin
 end;
 $$;
 
-grant execute on function public.fantasy_submit_leaderboard_score(text, integer, integer, boolean, text) to anon;
+grant execute on function public.fantasy_submit_leaderboard_score(text, integer, integer, boolean, text, jsonb, jsonb, jsonb) to anon;
 
 create table if not exists public.fantasy_beomrye_hall_of_fame (
   id integer primary key default 1 check (id = 1),

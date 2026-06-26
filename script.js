@@ -251,6 +251,8 @@ const LOBBY_CHAT_MAX_LENGTH = 80;
 const NICKNAME_CHANGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const MIN_NICKNAME_LENGTH = 2;
 const LEADERBOARD_LIMIT = 10;
+const LEADERBOARD_BASE_SELECT = "nickname,score,player_count,include_expansion,ai_difficulty,updated_at";
+const LEADERBOARD_DECK_SELECT = `${LEADERBOARD_BASE_SELECT},hand_cards,score_rows,card_actions`;
 const HALL_OF_FAME_REQUIRED_DIFFICULTY = "random";
 const UI_SCALE_DEFAULT_PERCENT = 100;
 const UI_SCALE_MIN_PERCENT = 50;
@@ -933,6 +935,162 @@ function leaderboardMetaText(entry) {
   return [count, difficulty].filter(Boolean).join(" · ");
 }
 
+function normalizeLeaderboardScoreValue(value, fallback = 0) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function leaderboardTypeLabel(type) {
+  return TYPE_META[type]?.label || type || "";
+}
+
+function buildLeaderboardCardPayload(row) {
+  const card = row?.card || {};
+  const sourceId = cardSourceId(card);
+  const type = card.type || "";
+  return {
+    id: sourceId,
+    name: card.name || displayNameForSource(sourceId) || sourceId,
+    type,
+    typeLabel: leaderboardTypeLabel(type),
+    base: normalizeLeaderboardScoreValue(row?.baseOriginal ?? card.base),
+    extraSource: card.necromancerExtra ? "necromancer" : card.genieExtra ? "genie" : "",
+    cursedItem: Boolean(card.cursedItem)
+  };
+}
+
+function buildLeaderboardScoreRowPayload(row) {
+  const card = row?.card || {};
+  const sourceId = cardSourceId(card);
+  return {
+    id: sourceId,
+    name: card.name || displayNameForSource(sourceId) || sourceId,
+    type: card.type || "",
+    base: normalizeLeaderboardScoreValue(row?.base),
+    baseOriginal: normalizeLeaderboardScoreValue(row?.baseOriginal ?? card.base),
+    bonus: normalizeLeaderboardScoreValue(row?.bonus),
+    penalty: normalizeLeaderboardScoreValue(row?.penalty),
+    total: normalizeLeaderboardScoreValue(row?.total ?? row?.baseOriginal ?? card.base),
+    blanked: Boolean(row?.blanked),
+    penaltyCleared: Boolean(row?.penaltyCleared)
+  };
+}
+
+function buildLeaderboardActionPayload(cardIds) {
+  const ids = new Set(cardIds.map((id) => cardActionKey(id)));
+  const selected = {};
+  const confirmed = {};
+  const skipped = {};
+
+  ids.forEach((key) => {
+    if (Array.isArray(state.cardActions[key])) {
+      selected[key] = state.cardActions[key].map((value) => String(value || ""));
+    }
+    if (Object.prototype.hasOwnProperty.call(state.confirmedActions, key)) {
+      confirmed[key] = state.confirmedActions[key];
+    }
+    if (Object.prototype.hasOwnProperty.call(state.skippedActions, key)) {
+      skipped[key] = true;
+    }
+  });
+
+  return {
+    selected,
+    confirmed,
+    skipped
+  };
+}
+
+function buildLeaderboardDeckPayload(entry) {
+  const scoreDetails = entry?.scoreDetails || scorePlayer(entry?.player);
+  const rows = Array.isArray(scoreDetails?.rows) ? scoreDetails.rows : [];
+  const handCards = rows.map(buildLeaderboardCardPayload);
+  const scoreRows = rows.map(buildLeaderboardScoreRowPayload);
+  return {
+    handCards,
+    scoreRows,
+    cardActions: buildLeaderboardActionPayload(handCards.map((card) => card.id))
+  };
+}
+
+function mergeLeaderboardDeckRows(entry) {
+  const handCards = Array.isArray(entry?.hand_cards) ? entry.hand_cards : [];
+  const scoreRows = Array.isArray(entry?.score_rows) ? entry.score_rows : [];
+  const scoreRowsById = new Map(scoreRows.map((row) => [String(row.id || row.sourceId || row.name || ""), row]));
+
+  if (handCards.length) {
+    return handCards.map((card) => {
+      const scoreRow = scoreRowsById.get(String(card.id || card.sourceId || card.name || "")) || {};
+      return { ...scoreRow, ...card, ...scoreRow };
+    });
+  }
+
+  return scoreRows;
+}
+
+function leaderboardDeckSummary(cards) {
+  return cards
+    .map((card) => card.name || card.id || "")
+    .filter(Boolean)
+    .join(", ");
+}
+
+function leaderboardCardScoreLabel(card) {
+  const total = normalizeLeaderboardScoreValue(card.total, Number.NaN);
+  const bonus = normalizeLeaderboardScoreValue(card.bonus);
+  const penalty = normalizeLeaderboardScoreValue(card.penalty);
+  const parts = [];
+  if (Number.isFinite(total)) parts.push(`${total}점`);
+  if (bonus > 0) parts.push(`보너스 +${bonus}`);
+  if (penalty < 0) parts.push(`패널티 ${penalty}`);
+  if (card.blanked) parts.push("무효");
+  if (card.penaltyCleared) parts.push("패널티 제거");
+  return parts.join(" · ");
+}
+
+function leaderboardDeckHtml(entry) {
+  const cards = mergeLeaderboardDeckRows(entry);
+  if (!cards.length) return "";
+  const summary = leaderboardDeckSummary(cards);
+  return `
+    <details class="leaderboard-deck">
+      <summary>
+        <span>덱리스트 ${cards.length}장</span>
+        <span class="leaderboard-deck-preview">${escapeHtml(summary)}</span>
+      </summary>
+      <div class="leaderboard-card-list">
+        ${cards.map((card) => `
+          <span class="leaderboard-card-pill${card.blanked ? " blanked" : ""}">
+            <span>
+              <b>${escapeHtml(card.name || card.id || "카드")}</b>
+              <small>${escapeHtml(card.typeLabel || leaderboardTypeLabel(card.type))}${card.extraSource ? " · 추가 카드" : ""}${card.cursedItem ? " · 저주받은 유물" : ""}</small>
+            </span>
+            <em>${escapeHtml(leaderboardCardScoreLabel(card))}</em>
+          </span>
+        `).join("")}
+      </div>
+    </details>
+  `;
+}
+
+function isLeaderboardDeckColumnError(error) {
+  const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ");
+  return error?.code === "42703"
+    || message.includes("hand_cards")
+    || message.includes("score_rows")
+    || message.includes("card_actions");
+}
+
+function buildLeaderboardEntriesRequest(client, includeExpansion, selectColumns) {
+  return client
+    .from(LEADERBOARD_TABLE)
+    .select(selectColumns)
+    .eq("include_expansion", includeExpansion)
+    .order("score", { ascending: false })
+    .order("updated_at", { ascending: true })
+    .limit(LEADERBOARD_LIMIT);
+}
+
 function isExpansionCardForRanking(card) {
   if (!card) return false;
   const sourceId = String(cardSourceId(card) || card.sourceId || card.id || "");
@@ -964,13 +1122,12 @@ function hallOfFameMetaText(entry) {
 }
 
 async function fetchLeaderboardEntries(client, includeExpansion) {
-  return client
-    .from(LEADERBOARD_TABLE)
-    .select("nickname,score,player_count,include_expansion,ai_difficulty,updated_at")
-    .eq("include_expansion", includeExpansion)
-    .order("score", { ascending: false })
-    .order("updated_at", { ascending: true })
-    .limit(LEADERBOARD_LIMIT);
+  const result = await buildLeaderboardEntriesRequest(client, includeExpansion, LEADERBOARD_DECK_SELECT);
+  if (result.error && isLeaderboardDeckColumnError(result.error)) {
+    const fallback = await buildLeaderboardEntriesRequest(client, includeExpansion, LEADERBOARD_BASE_SELECT);
+    return { ...fallback, deckListUnavailable: !fallback.error };
+  }
+  return result;
 }
 
 function renderLeaderboardList(listElement, entries) {
@@ -987,12 +1144,14 @@ function renderLeaderboardList(listElement, entries) {
   const fragment = document.createDocumentFragment();
   entries.forEach((entry, index) => {
     const item = document.createElement("li");
+    item.className = "leaderboard-entry";
     const meta = leaderboardMetaText(entry);
     item.innerHTML = `
       <span class="leaderboard-rank">${index + 1}</span>
       <strong>${escapeHtml(entry.nickname || "익명")}</strong>
       <b>${Number(entry.score || 0)}점</b>
-      <small>${escapeHtml(meta)}${entry.updated_at ? `${meta ? " · " : ""}${formatLeaderboardDate(entry.updated_at)}` : ""}</small>
+      <small class="leaderboard-meta">${escapeHtml(meta)}${entry.updated_at ? `${meta ? " · " : ""}${formatLeaderboardDate(entry.updated_at)}` : ""}</small>
+      ${leaderboardDeckHtml(entry)}
     `;
     fragment.append(item);
   });
@@ -1063,6 +1222,37 @@ function leaderboardSubmitErrorMessage(error) {
   return `랭킹 등록 실패: ${message || "supabase-schema.sql 설정을 확인해주세요."}`;
 }
 
+function isLeaderboardRpcSignatureError(error) {
+  const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ");
+  return error?.code === "PGRST202"
+    || message.includes("Could not find the function")
+    || message.includes("schema cache");
+}
+
+function legacyLeaderboardParams(params) {
+  return {
+    p_nickname: params.p_nickname,
+    p_score: params.p_score,
+    p_player_count: params.p_player_count,
+    p_include_expansion: params.p_include_expansion,
+    p_ai_difficulty: params.p_ai_difficulty
+  };
+}
+
+async function submitLeaderboardScoreRpc(client, params) {
+  const result = await client.rpc("fantasy_submit_leaderboard_score", params);
+  if (!result.error || !isLeaderboardRpcSignatureError(result.error)) {
+    return { ...result, deckListStored: !result.error };
+  }
+
+  const fallback = await client.rpc("fantasy_submit_leaderboard_score", legacyLeaderboardParams(params));
+  return {
+    ...fallback,
+    error: fallback.error || result.error,
+    deckListStored: false
+  };
+}
+
 function hallOfFameSubmitErrorMessage(error) {
   const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ");
   if (error?.code === "PGRST202" || message.includes("Could not find the function")) {
@@ -1099,7 +1289,10 @@ async function loadLeaderboard() {
 
   renderLeaderboardList(originalList, originalResult.data || []);
   renderLeaderboardList(expansionList, expansionResult.data || []);
-  setLeaderboardStatus("싱글플레이에서 승리한 기록만, IP당 오리지널/확장팩 최고 점수 1개씩 표시됩니다.");
+  const deckListUnavailable = originalResult.deckListUnavailable || expansionResult.deckListUnavailable;
+  setLeaderboardStatus(deckListUnavailable
+    ? "랭킹은 불러왔지만 덱리스트 컬럼이 없습니다. 최신 supabase-schema.sql을 실행하면 카드 목록이 표시됩니다."
+    : "싱글플레이에서 승리한 기록만, IP당 오리지널/확장팩 최고 점수 1개씩 덱리스트와 함께 표시됩니다.");
 }
 
 async function submitLeaderboardScore(ranked) {
@@ -1127,14 +1320,18 @@ async function submitLeaderboardScore(ranked) {
   }
 
   const nickname = normalizeHumanNickname(humanEntry.player.baseName || humanEntry.player.name || currentHumanNickname());
+  const leaderboardDeck = buildLeaderboardDeckPayload(humanEntry);
   setLeaderboardStatus(`${leaderboardModeLabel}에 기록을 등록하는 중입니다.`);
   updateEndLeaderboardNotice(`${leaderboardModeLabel}에 기록을 등록하는 중입니다.`, "pending");
-  const { data, error } = await client.rpc("fantasy_submit_leaderboard_score", {
+  const { data, error, deckListStored } = await submitLeaderboardScoreRpc(client, {
     p_nickname: nickname,
     p_score: Number(humanEntry.score || 0),
     p_player_count: Number(state.playerCount || state.players.length || 0),
     p_include_expansion: includeExpansion,
-    p_ai_difficulty: state.aiDifficulty || onlineState.room?.ai_difficulty || "normal"
+    p_ai_difficulty: state.aiDifficulty || onlineState.room?.ai_difficulty || "normal",
+    p_hand_cards: leaderboardDeck.handCards,
+    p_score_rows: leaderboardDeck.scoreRows,
+    p_card_actions: leaderboardDeck.cardActions
   });
 
   if (error) {
@@ -1150,12 +1347,13 @@ async function submitLeaderboardScore(ranked) {
     : leaderboardModeLabel;
   const modeMismatch = typeof result?.include_expansion === "boolean" && result.include_expansion !== includeExpansion;
   const scoreText = result?.score_updated ? "최고 점수 갱신!" : "기존 최고 점수를 유지했습니다.";
+  const deckListText = deckListStored ? "" : " 덱리스트는 최신 SQL 실행 후 저장됩니다.";
   setLeaderboardStatus(nicknameDenied
-    ? `${serverModeLabel}: ${scoreText} 닉네임은 서버 기준 하루 1회 제한으로 기존 이름을 유지했습니다.`
-    : `${serverModeLabel}: ${scoreText}`);
+    ? `${serverModeLabel}: ${scoreText} 닉네임은 서버 기준 하루 1회 제한으로 기존 이름을 유지했습니다.${deckListText}`
+    : `${serverModeLabel}: ${scoreText}${deckListText}`);
   updateEndLeaderboardNotice(modeMismatch
     ? "서버가 다른 랭킹 모드로 저장했습니다. 최신 supabase-schema.sql을 다시 실행해주세요."
-    : `${serverModeLabel}: ${scoreText}`,
+    : `${serverModeLabel}: ${scoreText}${deckListText}`,
     modeMismatch ? "missed" : "success");
   loadLeaderboard();
 }
