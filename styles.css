@@ -145,6 +145,41 @@ body.app-loading .loading-overlay {
   font-size: 15px;
 }
 
+.turn-toast {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 2600;
+  display: grid;
+  place-items: center;
+  min-width: min(620px, 86vw);
+  padding: 30px 42px;
+  border: 2px solid rgba(242, 207, 120, 0.68);
+  border-radius: 8px;
+  color: #fff8dc;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(242, 207, 120, 0.2), transparent 62%),
+    rgba(22, 17, 11, 0.94);
+  box-shadow: 0 28px 82px rgba(0, 0, 0, 0.56), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.92);
+  transition: opacity 120ms ease, transform 160ms ease;
+}
+
+.turn-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.turn-toast strong {
+  font-size: clamp(38px, 5vw, 74px);
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.34), 0 0 22px rgba(242, 207, 120, 0.34);
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -3022,6 +3057,15 @@ select {
   .app-shell {
     min-width: 0;
     padding: 12px;
+  }
+
+  .turn-toast {
+    min-width: min(420px, 88vw);
+    padding: 22px 24px;
+  }
+
+  .turn-toast strong {
+    font-size: clamp(30px, 9vw, 48px);
   }
 
   .topbar {

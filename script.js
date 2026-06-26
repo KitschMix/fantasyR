@@ -378,6 +378,8 @@ const nicknameForceChangeState = {
 
 const els = {
   loadingOverlay: document.querySelector("#loadingOverlay"),
+  turnToast: document.querySelector("#turnToast"),
+  turnToastText: document.querySelector("#turnToastText"),
   gameLauncher: document.querySelector("#gameLauncher"),
   enterFantasyButton: document.querySelector("#enterFantasyButton"),
   enterClueButton: document.querySelector("#enterClueButton"),
@@ -471,6 +473,8 @@ let idleDialogueToken = 0;
 const speechClearTimers = new Map();
 let turnTimerInterval = null;
 let turnTimerHandledKey = "";
+let turnToastTimer = null;
+let lastTurnToastKey = "";
 
 function shuffle(items) {
   const result = [...items];
@@ -666,6 +670,48 @@ function updateTitleArt() {
   document.body.classList.toggle("expansion-title-active", showExpansionTitle);
 }
 
+function hideTurnToast() {
+  if (turnToastTimer) {
+    window.clearTimeout(turnToastTimer);
+    turnToastTimer = null;
+  }
+  els.turnToast?.classList.remove("visible");
+  els.turnToast?.setAttribute("aria-hidden", "true");
+}
+
+function resetTurnToastState() {
+  lastTurnToastKey = "";
+  hideTurnToast();
+}
+
+function turnToastSeat(player) {
+  return player?.seat ?? player?.id ?? state.activePlayer;
+}
+
+function syncTurnToast(player = currentPlayer()) {
+  if (!els.turnToast || !els.turnToastText) return;
+  if (!state.onlineGame || state.finished || !player || els.gameBoard?.classList.contains("hidden")) {
+    resetTurnToastState();
+    return;
+  }
+
+  const key = `${onlineState.room?.id || "online"}|${state.turnNumber}|${turnToastSeat(player)}`;
+  if (key === lastTurnToastKey) return;
+  lastTurnToastKey = key;
+
+  const name = String(player.name || "플레이어").trim();
+  els.turnToastText.textContent = `${name}의 턴`;
+  if (turnToastTimer) {
+    window.clearTimeout(turnToastTimer);
+    turnToastTimer = null;
+  }
+  els.turnToast.classList.remove("visible");
+  els.turnToast.setAttribute("aria-hidden", "false");
+  void els.turnToast.offsetWidth;
+  els.turnToast.classList.add("visible");
+  turnToastTimer = window.setTimeout(hideTurnToast, 1000);
+}
+
 function enterFantasyKingdom() {
   document.body.classList.remove("launcher-active", "clue-active");
   els.clueSetupPanel?.classList.add("hidden");
@@ -675,6 +721,7 @@ function enterFantasyKingdom() {
 }
 
 function enterClueSetup() {
+  resetTurnToastState();
   document.body.classList.remove("launcher-active");
   document.body.classList.add("clue-active");
   els.setupPanel?.classList.add("hidden");
@@ -683,6 +730,7 @@ function enterClueSetup() {
 }
 
 function returnToGameLauncher() {
+  resetTurnToastState();
   document.body.classList.add("launcher-active");
   document.body.classList.remove("clue-active");
   els.clueSetupPanel?.classList.add("hidden");
@@ -690,6 +738,7 @@ function returnToGameLauncher() {
 
 function startGame() {
   if (!confirmHumanNicknameChange(els.humanNameInput)) return;
+  resetTurnToastState();
   resetDialogueState();
   state.leaderboardSubmitted = false;
   state.hallOfFameSubmitted = false;
@@ -4556,6 +4605,7 @@ function renderStatus() {
   const player = currentPlayer();
   els.turnLabel.textContent = state.finished ? "게임 종료" : `${player.name} / ${state.turnNumber}라운드`;
   els.phaseLabel.textContent = phaseText();
+  syncTurnToast(player);
 
   els.scoreList.innerHTML = "";
   state.players.filter((entry) => entry.human).forEach((entry) => {
