@@ -3115,9 +3115,22 @@ select {
 
 @media (max-width: 760px) and (orientation: portrait) {
   :root {
-    --mobile-hand-card-width: clamp(74px, calc((100vw - 74px) / 4), 108px);
-    --mobile-hand-card-height: clamp(132px, 42vw, 188px);
+    --mobile-hand-card-width: 82px;
+    --mobile-hand-card-height: 138px;
     --mobile-hand-gap: 6px;
+    --mobile-card-padding: 4px;
+    --mobile-card-inner-gap: 3px;
+    --mobile-card-frame-inset: 4px;
+    --mobile-card-art-size: 44px;
+    --mobile-card-type-icon-size: 30px;
+    --mobile-card-watermark-size: 26px;
+    --mobile-card-name-font-size: 10.5px;
+    --mobile-card-point-size: 19px;
+    --mobile-card-point-font-size: 9px;
+    --mobile-card-type-font-size: 7px;
+    --mobile-card-effect-font-size: 6px;
+    --mobile-card-effect-font-size-long: 5.4px;
+    --mobile-card-effect-font-size-very-long: 4.8px;
   }
 
   body {
@@ -3193,25 +3206,27 @@ select {
   }
 
   .player-hand .card {
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    gap: 4px;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    align-content: start;
+    gap: var(--mobile-card-inner-gap);
     width: var(--mobile-hand-card-width);
     height: var(--mobile-hand-card-height);
     min-height: var(--mobile-hand-card-height);
-    padding: 5px;
+    aspect-ratio: 220 / 370;
+    padding: var(--mobile-card-padding);
     border-radius: 6px;
   }
 
   .player-hand .card::before {
-    inset: 4px;
+    inset: var(--mobile-card-frame-inset);
     border-radius: 5px;
   }
 
   .player-hand .card::after {
-    right: 5px;
-    bottom: 5px;
-    width: 26px;
-    height: 26px;
+    right: var(--mobile-card-padding);
+    bottom: var(--mobile-card-padding);
+    width: var(--mobile-card-watermark-size);
+    height: var(--mobile-card-watermark-size);
     opacity: 0.62;
   }
 
@@ -3221,37 +3236,55 @@ select {
   }
 
   .player-hand .card-name {
-    font-size: clamp(10px, 3vw, 14px);
+    font-size: var(--mobile-card-name-font-size);
     line-height: 1.05;
+    letter-spacing: 0;
   }
 
   .player-hand .card-points {
-    min-width: 19px;
-    height: 19px;
-    font-size: 11px;
+    min-width: var(--mobile-card-point-size);
+    height: var(--mobile-card-point-size);
+    font-size: var(--mobile-card-point-font-size);
   }
 
   .player-hand .card-art {
-    width: min(100%, calc(var(--mobile-hand-card-width) - 12px));
+    width: min(100%, var(--mobile-card-art-size));
     border-radius: 5px;
   }
 
   .player-hand .card-type-icon {
-    width: 32px;
-    height: 32px;
+    width: var(--mobile-card-type-icon-size);
+    height: var(--mobile-card-type-icon-size);
   }
 
   .player-hand .card-type {
     max-width: 100%;
-    padding: 2px 5px;
+    padding: 1px 4px;
     overflow: hidden;
-    font-size: 10px;
+    font-size: var(--mobile-card-type-font-size);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .player-hand .card-effect {
-    display: none;
+    display: block;
+    align-self: stretch;
+    padding-right: 0;
+    overflow: visible;
+    font-size: var(--mobile-card-effect-font-size);
+    line-height: 1.05;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .player-hand .card.effect-long .card-effect {
+    font-size: var(--mobile-card-effect-font-size-long);
+    line-height: 1.03;
+  }
+
+  .player-hand .card.effect-very-long .card-effect {
+    font-size: var(--mobile-card-effect-font-size-very-long);
+    line-height: 1.02;
   }
 
   .player-hand .card-status-tooltip,

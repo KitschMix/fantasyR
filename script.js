@@ -226,6 +226,10 @@ const CARD_LONG_PRESS_MOVE_LIMIT = 12;
 const CARD_ZOOM_SCALE = 2.5;
 const CARD_ZOOM_BASE_WIDTH = 220;
 const CARD_ZOOM_BASE_HEIGHT = 370;
+const MOBILE_HAND_CARD_MIN_WIDTH = 78;
+const MOBILE_HAND_CARD_MAX_WIDTH = 104;
+const MOBILE_HAND_CARD_WIDTH_OFFSET = 15.5;
+const MOBILE_HAND_CARD_GAP = 6;
 const MOBILE_PORTRAIT_QUERY = "(max-width: 760px) and (orientation: portrait)";
 const DIALOGUE_CHANCE = 0.3;
 const DIALOGUE_IDLE_INTERVAL_MS = 10000;
@@ -261,6 +265,7 @@ const UI_SCALE_DEFAULT_PERCENT = 100;
 const UI_SCALE_MIN_PERCENT = 50;
 const UI_SCALE_MAX_PERCENT = 125;
 const UI_SCALE_STEP_PERCENT = 5;
+let activeUiScalePercent = UI_SCALE_DEFAULT_PERCENT;
 
 const PROFILE_ASSET_ROOT = "assets/profiles/user";
 const AI_DIFFICULTY_LABELS = {
@@ -4827,9 +4832,11 @@ function buildCardElement(card, options = {}) {
   const statusTooltip = statusInfo
     ? `<span class="card-status-tooltip">${escapeHtml(statusInfo.title)}</span>`
     : "";
+  const effectLength = String(card.text || "").replace(/\s+/g, "").length;
+  const effectLengthClass = effectLength > 96 ? " effect-very-long" : (effectLength > 68 ? " effect-long" : "");
   const button = document.createElement("button");
   button.type = "button";
-  button.className = `card ${options.playable ? "playable" : "disabled-card"}${artUrl ? " has-art" : ""}${blankInfo ? " blanked-card" : ""}${state.selectedCardId === card.id ? " selected" : ""}${pendingMotionCardIds.has(card.id) ? " motion-arriving" : ""}`;
+  button.className = `card ${options.playable ? "playable" : "disabled-card"}${artUrl ? " has-art" : ""}${blankInfo ? " blanked-card" : ""}${effectLengthClass}${state.selectedCardId === card.id ? " selected" : ""}${pendingMotionCardIds.has(card.id) ? " motion-arriving" : ""}`;
   button.style.setProperty("--card-color", meta.color);
   button.dataset.cardId = card.id;
   button.dataset.cardType = card.type;
@@ -5497,11 +5504,46 @@ function saveUiScalePercent(value) {
   }
 }
 
+function mobileHandCardVisualWidth() {
+  const viewportWidth = Math.max(320, window.innerWidth || 390);
+  const width = (viewportWidth * 0.25) - MOBILE_HAND_CARD_WIDTH_OFFSET;
+  return Math.min(MOBILE_HAND_CARD_MAX_WIDTH, Math.max(MOBILE_HAND_CARD_MIN_WIDTH, width));
+}
+
+function scaledCssPx(value, percent = activeUiScalePercent) {
+  return `${((value * 100) / Math.max(1, percent)).toFixed(3)}px`;
+}
+
+function applyMobileHandCardMetrics(percent = activeUiScalePercent) {
+  const visualWidth = mobileHandCardVisualWidth();
+  const visualHeight = visualWidth * (CARD_ZOOM_BASE_HEIGHT / CARD_ZOOM_BASE_WIDTH);
+  const root = document.documentElement;
+
+  root.style.setProperty("--mobile-hand-card-width", scaledCssPx(visualWidth, percent));
+  root.style.setProperty("--mobile-hand-card-height", scaledCssPx(visualHeight, percent));
+  root.style.setProperty("--mobile-hand-card-gap", scaledCssPx(MOBILE_HAND_CARD_GAP, percent));
+  root.style.setProperty("--mobile-card-padding", scaledCssPx(Math.max(3.6, visualWidth * 0.048), percent));
+  root.style.setProperty("--mobile-card-inner-gap", scaledCssPx(Math.max(2.2, visualWidth * 0.032), percent));
+  root.style.setProperty("--mobile-card-frame-inset", scaledCssPx(Math.max(3, visualWidth * 0.045), percent));
+  root.style.setProperty("--mobile-card-art-size", scaledCssPx(Math.max(36, visualWidth * 0.54), percent));
+  root.style.setProperty("--mobile-card-type-icon-size", scaledCssPx(Math.max(24, visualWidth * 0.36), percent));
+  root.style.setProperty("--mobile-card-watermark-size", scaledCssPx(Math.max(20, visualWidth * 0.32), percent));
+  root.style.setProperty("--mobile-card-name-font-size", scaledCssPx(Math.max(9, Math.min(12, visualWidth * 0.13)), percent));
+  root.style.setProperty("--mobile-card-point-size", scaledCssPx(Math.max(16, visualWidth * 0.23), percent));
+  root.style.setProperty("--mobile-card-point-font-size", scaledCssPx(Math.max(8.5, visualWidth * 0.115), percent));
+  root.style.setProperty("--mobile-card-type-font-size", scaledCssPx(Math.max(6.8, visualWidth * 0.085), percent));
+  root.style.setProperty("--mobile-card-effect-font-size", scaledCssPx(Math.max(5.4, Math.min(7.2, visualWidth * 0.073)), percent));
+  root.style.setProperty("--mobile-card-effect-font-size-long", scaledCssPx(Math.max(4.8, Math.min(6.3, visualWidth * 0.064)), percent));
+  root.style.setProperty("--mobile-card-effect-font-size-very-long", scaledCssPx(Math.max(4.3, Math.min(5.5, visualWidth * 0.056)), percent));
+}
+
 function applyUiScalePercent(value, options = {}) {
   const percent = clampUiScalePercent(value);
+  activeUiScalePercent = percent;
   document.documentElement.style.setProperty("--ui-scale", (percent / 100).toFixed(2));
   document.documentElement.style.setProperty("--ui-scale-width", `${(10000 / percent).toFixed(2)}%`);
   document.documentElement.style.setProperty("--ui-scale-min-height", `${(10000 / percent).toFixed(2)}vh`);
+  applyMobileHandCardMetrics(percent);
   if (els.uiScaleValue) els.uiScaleValue.textContent = `${percent}%`;
   if (els.uiScaleDownButton) els.uiScaleDownButton.disabled = percent <= UI_SCALE_MIN_PERCENT;
   if (els.uiScaleUpButton) els.uiScaleUpButton.disabled = percent >= UI_SCALE_MAX_PERCENT;
@@ -5607,6 +5649,7 @@ function formatSigned(value) {
 window.addEventListener("load", finishInitialLoading, { once: true });
 initializeUiScaleControls();
 window.setTimeout(finishInitialLoading, 3200);
+window.addEventListener("resize", () => applyMobileHandCardMetrics(activeUiScalePercent));
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) touchOnlinePresence();
 });
