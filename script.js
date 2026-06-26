@@ -224,6 +224,9 @@ const preloadedCardArtUrls = new Set();
 const CARD_LONG_PRESS_MS = 450;
 const CARD_LONG_PRESS_MOVE_LIMIT = 12;
 const CARD_ZOOM_SCALE = 2.5;
+const CARD_ZOOM_BASE_WIDTH = 220;
+const CARD_ZOOM_BASE_HEIGHT = 370;
+const MOBILE_PORTRAIT_QUERY = "(max-width: 760px) and (orientation: portrait)";
 const DIALOGUE_CHANCE = 0.3;
 const DIALOGUE_IDLE_INTERVAL_MS = 10000;
 const DIALOGUE_DISPLAY_MS = 6200;
@@ -4745,6 +4748,7 @@ function showCardZoom(card, sourceElement, options = {}) {
   const sourceRect = sourceElement.getBoundingClientRect();
   const sourceWidth = Math.max(1, sourceRect.width);
   const sourceHeight = Math.max(1, sourceRect.height);
+  const zoomMetrics = getCardZoomMetrics(sourceElement, sourceWidth, sourceHeight);
   const overlay = document.createElement("div");
   const stage = document.createElement("div");
   const preview = buildCardElement(card, { playable: false, scoreRow: options.scoreRow || null });
@@ -4754,15 +4758,15 @@ function showCardZoom(card, sourceElement, options = {}) {
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-label", "Card zoom");
   stage.className = "card-zoom-stage";
-  stage.style.width = `${sourceWidth * CARD_ZOOM_SCALE}px`;
-  stage.style.height = `${sourceHeight * CARD_ZOOM_SCALE}px`;
+  stage.style.width = `${zoomMetrics.width * zoomMetrics.scale}px`;
+  stage.style.height = `${zoomMetrics.height * zoomMetrics.scale}px`;
   preview.classList.add("card-zoom-preview");
   preview.tabIndex = -1;
   preview.setAttribute("aria-hidden", "true");
-  preview.style.width = `${sourceWidth}px`;
-  preview.style.height = `${sourceHeight}px`;
-  preview.style.minHeight = `${sourceHeight}px`;
-  preview.style.setProperty("--card-zoom-scale", CARD_ZOOM_SCALE);
+  preview.style.width = `${zoomMetrics.width}px`;
+  preview.style.height = `${zoomMetrics.height}px`;
+  preview.style.minHeight = `${zoomMetrics.height}px`;
+  preview.style.setProperty("--card-zoom-scale", zoomMetrics.scale);
 
   stage.append(preview);
   overlay.append(stage);
@@ -4772,6 +4776,31 @@ function showCardZoom(card, sourceElement, options = {}) {
   document.body.append(overlay);
   window.addEventListener("keydown", handleCardZoomKeydown);
   window.requestAnimationFrame(() => overlay.classList.add("visible"));
+}
+
+function getCardZoomMetrics(sourceElement, sourceWidth, sourceHeight) {
+  const isMobileHandCard = sourceElement?.closest?.("#playerHand")
+    && window.matchMedia?.(MOBILE_PORTRAIT_QUERY).matches;
+  if (!isMobileHandCard) {
+    return {
+      width: sourceWidth,
+      height: sourceHeight,
+      scale: CARD_ZOOM_SCALE
+    };
+  }
+
+  const viewportWidth = Math.max(1, window.innerWidth || CARD_ZOOM_BASE_WIDTH);
+  const viewportHeight = Math.max(1, window.innerHeight || CARD_ZOOM_BASE_HEIGHT);
+  const fitScale = Math.min(
+    CARD_ZOOM_SCALE,
+    Math.max(1, (viewportWidth - 32) / CARD_ZOOM_BASE_WIDTH),
+    Math.max(1, (viewportHeight - 48) / CARD_ZOOM_BASE_HEIGHT)
+  );
+  return {
+    width: CARD_ZOOM_BASE_WIDTH,
+    height: CARD_ZOOM_BASE_HEIGHT,
+    scale: fitScale
+  };
 }
 
 function hideCardZoom() {

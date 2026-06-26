@@ -1178,6 +1178,57 @@ h1 {
   color: #ffd0c7;
 }
 
+.patch-panel {
+  grid-column: 1 / -1;
+  min-height: 0;
+  border-color: rgba(107, 198, 162, 0.22);
+  background: rgba(28, 31, 27, 0.9);
+}
+
+.patch-note-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.patch-note-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(246, 232, 202, 0.12);
+  border-radius: 6px;
+  background: rgba(19, 18, 15, 0.42);
+}
+
+.patch-note-list b {
+  display: grid;
+  min-width: 58px;
+  min-height: 30px;
+  place-items: center;
+  border: 1px solid rgba(107, 198, 162, 0.34);
+  border-radius: 999px;
+  color: #d8fff0;
+  background: rgba(107, 198, 162, 0.12);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.patch-note-list span {
+  min-width: 0;
+  color: rgba(247, 236, 217, 0.86);
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
 .online-room-card > .online-start-button,
 .online-room-card > #leaveRoomButton {
   width: 100%;
@@ -3006,6 +3057,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .patch-note-list {
+    grid-template-columns: 1fr;
+  }
+
   .hall-card {
     grid-template-columns: 1fr;
   }
@@ -3055,6 +3110,162 @@ select {
   .card {
     height: 370px;
     min-height: 370px;
+  }
+}
+
+@media (max-width: 760px) and (orientation: portrait) {
+  :root {
+    --mobile-hand-card-width: clamp(74px, calc((100vw - 74px) / 4), 108px);
+    --mobile-hand-card-height: clamp(132px, 42vw, 188px);
+    --mobile-hand-gap: 6px;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .game-board,
+  .table-area,
+  .hand-section {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .table-area {
+    padding: 10px;
+    overflow: hidden;
+  }
+
+  .center-table {
+    grid-template-columns: 1fr;
+  }
+
+  .deck-column {
+    grid-template-columns: minmax(92px, auto) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .deck-stack {
+    width: 92px;
+    height: 129px;
+    padding: 8px;
+  }
+
+  #deckCount {
+    min-width: 48px;
+    min-height: 42px;
+    font-size: 30px;
+  }
+
+  .catalog-button,
+  .turn-timer {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .turn-timer {
+    grid-column: 1 / -1;
+    min-height: 74px;
+  }
+
+  .turn-timer strong {
+    font-size: 42px;
+  }
+
+  .discard-zone,
+  .discard-area {
+    min-width: 0;
+  }
+
+  .discard-area {
+    grid-template-columns: repeat(auto-fill, var(--discard-card-width));
+    justify-content: center;
+    overflow: visible;
+  }
+
+  .player-hand {
+    grid-template-columns: repeat(4, var(--mobile-hand-card-width));
+    grid-auto-rows: var(--mobile-hand-card-height);
+    justify-content: center;
+    gap: var(--mobile-hand-gap);
+    overflow: visible;
+    padding-top: 6px;
+  }
+
+  .player-hand .card {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 4px;
+    width: var(--mobile-hand-card-width);
+    height: var(--mobile-hand-card-height);
+    min-height: var(--mobile-hand-card-height);
+    padding: 5px;
+    border-radius: 6px;
+  }
+
+  .player-hand .card::before {
+    inset: 4px;
+    border-radius: 5px;
+  }
+
+  .player-hand .card::after {
+    right: 5px;
+    bottom: 5px;
+    width: 26px;
+    height: 26px;
+    opacity: 0.62;
+  }
+
+  .player-hand .card-head {
+    align-items: center;
+    gap: 3px;
+  }
+
+  .player-hand .card-name {
+    font-size: clamp(10px, 3vw, 14px);
+    line-height: 1.05;
+  }
+
+  .player-hand .card-points {
+    min-width: 19px;
+    height: 19px;
+    font-size: 11px;
+  }
+
+  .player-hand .card-art {
+    width: min(100%, calc(var(--mobile-hand-card-width) - 12px));
+    border-radius: 5px;
+  }
+
+  .player-hand .card-type-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .player-hand .card-type {
+    max-width: 100%;
+    padding: 2px 5px;
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .player-hand .card-effect {
+    display: none;
+  }
+
+  .player-hand .card-status-tooltip,
+  .player-hand .card-clear-tooltip {
+    font-size: 10px;
+    line-height: 1.18;
+  }
+
+  .player-hand .card:not(.card-zoom-preview):hover {
+    transform: translateY(-5px) scale(1.025);
+  }
+
+  .card-zoom-overlay {
+    padding: 16px;
   }
 }
 
