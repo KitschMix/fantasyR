@@ -355,6 +355,7 @@ const onlineState = {
   lastLocalRevision: "",
   savingGame: false,
   pendingGameSave: false,
+  localGameStateProtectedUntil: 0,
   applyingRemote: false,
   presenceTimer: null,
   presenceRoomId: "",
@@ -679,6 +680,20 @@ function hideTurnToast() {
   els.turnToast?.setAttribute("aria-hidden", "true");
 }
 
+function showCenterToast(message, duration = 1000) {
+  if (!els.turnToast || !els.turnToastText || !message) return;
+  if (turnToastTimer) {
+    window.clearTimeout(turnToastTimer);
+    turnToastTimer = null;
+  }
+  els.turnToastText.textContent = message;
+  els.turnToast.classList.remove("visible");
+  els.turnToast.setAttribute("aria-hidden", "false");
+  void els.turnToast.offsetWidth;
+  els.turnToast.classList.add("visible");
+  turnToastTimer = window.setTimeout(hideTurnToast, duration);
+}
+
 function resetTurnToastState() {
   lastTurnToastKey = "";
   hideTurnToast();
@@ -700,16 +715,7 @@ function syncTurnToast(player = currentPlayer()) {
   lastTurnToastKey = key;
 
   const name = String(player.name || "플레이어").trim();
-  els.turnToastText.textContent = `${name}의 턴`;
-  if (turnToastTimer) {
-    window.clearTimeout(turnToastTimer);
-    turnToastTimer = null;
-  }
-  els.turnToast.classList.remove("visible");
-  els.turnToast.setAttribute("aria-hidden", "false");
-  void els.turnToast.offsetWidth;
-  els.turnToast.classList.add("visible");
-  turnToastTimer = window.setTimeout(hideTurnToast, 1000);
+  showCenterToast(`${name}의 턴`, 1000);
 }
 
 function enterFantasyKingdom() {
@@ -808,6 +814,12 @@ function setOnlineStatus(message, error = false) {
   if (!els.onlineStatus) return;
   els.onlineStatus.textContent = message;
   els.onlineStatus.classList.toggle("error", error);
+}
+
+function rerenderVisibleOnlineGameBoard() {
+  if (onlineState.room?.status === "playing" && !els.gameBoard?.classList.contains("hidden")) {
+    render();
+  }
 }
 
 function setLobbyChatStatus(message, error = false) {
@@ -1606,6 +1618,7 @@ function resetOnlineRoomLocalState() {
   onlineState.lastLocalRevision = "";
   onlineState.savingGame = false;
   onlineState.pendingGameSave = false;
+  onlineState.localGameStateProtectedUntil = 0;
   onlineState.applyingRemote = false;
   state.onlineGame = false;
   clearOnlineRoomSnapshot();
@@ -2043,15 +2056,23 @@ async function loadOnlineRoom(roomId, options = {}) {
     return false;
   }
 
-  onlineState.room = room;
+  const keepLocalGameState = shouldKeepLocalOnlineGameState(room);
+  onlineState.room = keepLocalGameState
+    ? {
+        ...room,
+        status: onlineState.room.status,
+        game_state: onlineState.room.game_state
+      }
+    : room;
   onlineState.players = players || [];
   saveOnlineRoomSnapshot();
   startOnlinePresenceHeartbeat();
-  if ((room.status === "playing" || room.status === "finished") && room.game_state?.startedAt) {
-    hydrateOnlineGameSnapshot(room.game_state);
-    setOnlineStatus(`${room.status === "finished" ? "게임 종료" : "게임 중"} ${room.code}`);
+  const activeRoom = onlineState.room;
+  if ((activeRoom.status === "playing" || activeRoom.status === "finished") && activeRoom.game_state?.startedAt) {
+    hydrateOnlineGameSnapshot(activeRoom.game_state);
+    setOnlineStatus(`${activeRoom.status === "finished" ? "게임 종료" : "게임 중"} ${activeRoom.code}`);
   } else {
-    setOnlineStatus(`방 ${room.code}`);
+    setOnlineStatus(`방 ${activeRoom.code}`);
   }
   renderOnlinePanel();
   return true;
@@ -2126,6 +2147,7 @@ async function createOnlineRoom() {
     setOnlineStatus(error.message || "생성 실패", true);
   } finally {
     onlineState.loading = false;
+    rerenderVisibleOnlineGameBoard();
     renderOnlinePanel();
   }
 }
@@ -2195,6 +2217,7 @@ async function joinOnlineRoom() {
     setOnlineStatus(error.message || "입장 실패", true);
   } finally {
     onlineState.loading = false;
+    rerenderVisibleOnlineGameBoard();
     renderOnlinePanel();
   }
 }
@@ -2266,12 +2289,34 @@ async function restoreOnlineRoom() {
     }
   } finally {
     onlineState.loading = false;
+    rerenderVisibleOnlineGameBoard();
   }
   renderOnlinePanel();
 }
 
 function sortedOnlinePlayers() {
   return [...onlineState.players].sort((a, b) => a.seat - b.seat);
+}
+
+function onlineSnapshotTimestamp(snapshot) {
+  const value = Date.parse(snapshot?.updatedAt || snapshot?.startedAt || "");
+  return Number.isFinite(value) ? value : 0;
+}
+
+function shouldKeepLocalOnlineGameState(incomingRoom) {
+  const incomingSnapshot = incomingRoom?.game_state;
+  const localSnapshot = onlineState.room?.game_state;
+  if (!incomingSnapshot?.startedAt || !localSnapshot?.startedAt) return false;
+  const localStateProtected = Date.now() < onlineState.localGameStateProtectedUntil;
+  if (!onlineState.savingGame && !state.animating && !localStateProtected) return false;
+
+  const incomingRevision = incomingSnapshot.revision || incomingSnapshot.updatedAt || incomingSnapshot.startedAt;
+  const localRevision = localSnapshot.revision || localSnapshot.updatedAt || localSnapshot.startedAt;
+  if (incomingRevision === localRevision || incomingRevision === onlineState.lastLocalRevision) return false;
+
+  const incomingTime = onlineSnapshotTimestamp(incomingSnapshot);
+  const localTime = onlineSnapshotTimestamp(localSnapshot);
+  return Boolean(localTime && incomingTime && incomingTime <= localTime);
 }
 
 function cardSnapshotId(card) {
@@ -2368,6 +2413,7 @@ async function saveOnlineGameState(reason = "") {
     const snapshot = serializeOnlineGameState();
     onlineState.lastLocalRevision = snapshot.revision;
     onlineState.lastAppliedRevision = snapshot.revision;
+    onlineState.localGameStateProtectedUntil = Date.now() + 1800;
     onlineState.room = {
       ...onlineState.room,
       status: state.finished ? "finished" : "playing",
@@ -2609,6 +2655,7 @@ async function startOnlineGame() {
     setOnlineStatus(error.message || "시작 실패", true);
   } finally {
     onlineState.loading = false;
+    rerenderVisibleOnlineGameBoard();
     renderOnlinePanel();
   }
 }
@@ -2790,7 +2837,7 @@ function canControlActivePlayer() {
   const player = currentPlayer();
   if (!player?.human || state.finished || state.animating) return false;
   if (!isOnlinePlaying()) return true;
-  return !onlineState.loading && !onlineState.savingGame && !onlineState.applyingRemote;
+  return !onlineState.loading && !onlineState.applyingRemote;
 }
 
 function canEditActionControlsForPlayer(player) {
@@ -2802,7 +2849,7 @@ function canEditActionControlsForPlayer(player) {
     return player === currentPlayer() && canControlActivePlayer();
   }
   if (!isOnlinePlaying()) return true;
-  return currentPlayer()?.human && !onlineState.loading && !onlineState.savingGame && !onlineState.applyingRemote;
+  return currentPlayer()?.human && !onlineState.loading && !onlineState.applyingRemote;
 }
 
 function isFinalActionPhase() {
@@ -3984,6 +4031,23 @@ function setActivePlayerByReference(player) {
   state.activePlayer = index >= 0 ? index : 0;
 }
 
+function advanceActivePlayerBySeatOrder() {
+  const orderedPlayers = finalActionPlayerOrder();
+  if (orderedPlayers.length === 0) {
+    state.activePlayer = 0;
+    return;
+  }
+
+  const current = currentPlayer();
+  const currentSeat = current?.seat ?? current?.id ?? state.activePlayer;
+  const currentIndex = orderedPlayers.findIndex((player) => (
+    (player.seat ?? player.id ?? 0) === currentSeat
+  ));
+  const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % orderedPlayers.length : 0;
+  setActivePlayerByReference(orderedPlayers[nextIndex]);
+  if (nextIndex === 0) state.turnNumber += 1;
+}
+
 function nextPendingFinalActionPlayer() {
   const pending = finalActionPlayerOrder().flatMap((player, playerOrder) => (
     getRequiredActionIssues(player).map((issue, issueOrder) => ({
@@ -4027,8 +4091,7 @@ function endTurn() {
 
   state.drawnCardId = null;
   state.phase = "draw";
-  state.activePlayer = (state.activePlayer + 1) % state.players.length;
-  if (state.activePlayer === 0) state.turnNumber += 1;
+  advanceActivePlayerBySeatOrder();
   render();
   saveOnlineGameState("end-turn");
   syncIdleDialogueTimer();
@@ -4044,12 +4107,22 @@ function requestFinishGame() {
   state.phase = "finalActions";
   state.drawnCardId = null;
 
-  advanceFinalActions("final-actions");
+  if (!advanceFinalActions("final-actions")) {
+    showFinalActionRequiredToast();
+  }
 }
 
 function completePendingFinishIfReady() {
   if (!state.pendingFinish || state.finished) return;
-  advanceFinalActions("final-actions");
+  if (!advanceFinalActions("final-actions")) {
+    showFinalActionRequiredToast();
+  }
+}
+
+function showFinalActionRequiredToast() {
+  const player = currentPlayer();
+  const name = player?.name || "플레이어";
+  showCenterToast(`${name}: 특수카드 확정 필요`, 1800);
 }
 
 function canUseCursedItem(player) {
