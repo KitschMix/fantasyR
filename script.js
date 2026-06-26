@@ -476,6 +476,7 @@ let turnTimerInterval = null;
 let turnTimerHandledKey = "";
 let turnToastTimer = null;
 let lastTurnToastKey = "";
+let lastFinalActionNoticeKey = "";
 
 function shuffle(items) {
   const result = [...items];
@@ -696,6 +697,7 @@ function showCenterToast(message, duration = 1000) {
 
 function resetTurnToastState() {
   lastTurnToastKey = "";
+  lastFinalActionNoticeKey = "";
   hideTurnToast();
 }
 
@@ -716,6 +718,43 @@ function syncTurnToast(player = currentPlayer()) {
 
   const name = String(player.name || "플레이어").trim();
   showCenterToast(`${name}의 턴`, 1000);
+}
+
+function localHumanPlayer() {
+  return state.players.find((player) => player.human) || null;
+}
+
+function finalActionNoticeKey(player, issues) {
+  const seat = player?.seat ?? player?.id ?? "local";
+  const cards = issues.map((entry) => cardSourceId(entry.card)).join(",");
+  return [
+    onlineState.room?.id || "local",
+    state.turnNumber,
+    state.phase,
+    seat,
+    cards
+  ].join("|");
+}
+
+function syncFinalActionNotice() {
+  if (!state.onlineGame || !state.pendingFinish || state.finished || els.gameBoard?.classList.contains("hidden")) {
+    lastFinalActionNoticeKey = "";
+    return;
+  }
+
+  const player = localHumanPlayer();
+  if (!player) return;
+
+  const issues = getRequiredActionIssues(player);
+  if (issues.length === 0) {
+    return;
+  }
+
+  const key = finalActionNoticeKey(player, issues);
+  if (key === lastFinalActionNoticeKey) return;
+  lastFinalActionNoticeKey = key;
+  const names = issues.map((entry) => entry.card.name).join(", ");
+  showCenterToast(`${names} 확정 필요`, 1800);
 }
 
 function enterFantasyKingdom() {
@@ -4682,6 +4721,7 @@ function renderStatus() {
   els.turnLabel.textContent = state.finished ? "게임 종료" : `${player.name} / ${state.turnNumber}라운드`;
   els.phaseLabel.textContent = phaseText();
   syncTurnToast(player);
+  syncFinalActionNotice();
 
   els.scoreList.innerHTML = "";
   state.players.filter((entry) => entry.human).forEach((entry) => {
