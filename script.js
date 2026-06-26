@@ -380,6 +380,10 @@ const els = {
   loadingOverlay: document.querySelector("#loadingOverlay"),
   gameLauncher: document.querySelector("#gameLauncher"),
   enterFantasyButton: document.querySelector("#enterFantasyButton"),
+  enterClueButton: document.querySelector("#enterClueButton"),
+  clueSetupPanel: document.querySelector("#clueSetupPanel"),
+  clueBackButton: document.querySelector("#clueBackButton"),
+  startClueButton: document.querySelector("#startClueButton"),
   homeLogoButton: document.querySelector("#homeLogoButton"),
   uiScaleDownButton: document.querySelector("#uiScaleDownButton"),
   uiScaleUpButton: document.querySelector("#uiScaleUpButton"),
@@ -663,11 +667,25 @@ function updateTitleArt() {
 }
 
 function enterFantasyKingdom() {
+  document.body.classList.remove("launcher-active", "clue-active");
+  els.clueSetupPanel?.classList.add("hidden");
+  if (els.setupPanel?.classList.contains("hidden") && els.gameBoard?.classList.contains("hidden")) {
+    els.setupPanel.classList.remove("hidden");
+  }
+}
+
+function enterClueSetup() {
   document.body.classList.remove("launcher-active");
+  document.body.classList.add("clue-active");
+  els.setupPanel?.classList.add("hidden");
+  els.gameBoard?.classList.add("hidden");
+  els.clueSetupPanel?.classList.remove("hidden");
 }
 
 function returnToGameLauncher() {
   document.body.classList.add("launcher-active");
+  document.body.classList.remove("clue-active");
+  els.clueSetupPanel?.classList.add("hidden");
 }
 
 function startGame() {
@@ -712,6 +730,8 @@ function startGame() {
   state.cardActions = {};
   state.confirmedActions = {};
   state.skippedActions = {};
+  document.body.classList.remove("clue-active");
+  els.clueSetupPanel?.classList.add("hidden");
   resetTurnTimerState();
   els.setupPanel.classList.add("hidden");
   els.gameBoard.classList.remove("hidden");
@@ -5699,6 +5719,8 @@ els.onlineNameInput?.addEventListener("keydown", (event) => {
 els.refreshLeaderboardButton?.addEventListener("click", loadLeaderboard);
 els.refreshLeaderboardButton?.addEventListener("click", loadHallOfFame);
 els.enterFantasyButton?.addEventListener("click", enterFantasyKingdom);
+els.enterClueButton?.addEventListener("click", enterClueSetup);
+els.clueBackButton?.addEventListener("click", returnToGameLauncher);
 els.homeLogoButton?.addEventListener("click", returnToGameLauncher);
 els.startButton.addEventListener("click", startGame);
 els.createRoomButton?.addEventListener("click", createOnlineRoom);
@@ -5720,6 +5742,8 @@ els.roomCodeInput?.addEventListener("keydown", (event) => {
   if (event.key === "Enter") joinOnlineRoom();
 });
 els.newGameButton.addEventListener("click", () => {
+  document.body.classList.remove("clue-active");
+  els.clueSetupPanel?.classList.add("hidden");
   resetTurnTimerState();
   els.setupPanel.classList.remove("hidden");
   els.gameBoard.classList.add("hidden");

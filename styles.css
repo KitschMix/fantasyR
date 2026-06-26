@@ -203,7 +203,14 @@ body.launcher-active .app-shell {
 
 body.launcher-active .topbar,
 body.launcher-active .setup-panel,
+body.launcher-active .clue-setup-panel,
 body.launcher-active .game-board {
+  display: none !important;
+}
+
+body.clue-active .topbar,
+body.clue-active .setup-panel,
+body.clue-active .game-board {
   display: none !important;
 }
 
@@ -212,7 +219,7 @@ body.launcher-active .game-board {
   min-height: calc(100vh - 28px);
   align-content: center;
   justify-items: center;
-  gap: 28px;
+  gap: 18px;
   padding: 28px;
 }
 
@@ -248,6 +255,16 @@ body:not(.launcher-active) .game-launcher {
   filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.42)) drop-shadow(0 0 14px rgba(242, 207, 120, 0.42));
 }
 
+.clue-launcher-card {
+  width: min(540px, 74vw);
+}
+
+.clue-launcher-card img {
+  max-height: 132px;
+  border-radius: 2px;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.44));
+}
+
 .launcher-device-note {
   color: rgba(247, 236, 217, 0.74);
   font-size: 18px;
@@ -278,6 +295,59 @@ body:not(.launcher-active) .game-launcher {
   max-height: 112px;
   object-fit: contain;
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.36));
+}
+
+.clue-setup-panel {
+  display: grid;
+  min-height: calc(100vh - 28px);
+  place-items: center;
+  padding: 28px;
+}
+
+body:not(.clue-active) .clue-setup-panel {
+  display: none !important;
+}
+
+.clue-panel {
+  width: min(900px, 92vw);
+  min-height: 0;
+  border-color: rgba(216, 47, 40, 0.36);
+  background:
+    linear-gradient(135deg, rgba(26, 25, 23, 0.96), rgba(44, 25, 22, 0.92)),
+    rgba(36, 32, 26, 0.94);
+}
+
+.clue-panel-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.clue-setup-logo {
+  display: block;
+  width: min(360px, 58vw);
+  max-height: 118px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.4));
+}
+
+.clue-setup-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.clue-setup-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.clue-setup-controls .primary-button {
+  grid-column: 1 / -1;
+  width: 100%;
 }
 
 .topbar {
@@ -3018,6 +3088,23 @@ select {
   .setup-panel {
     margin-top: 6vh;
     padding: 18px;
+  }
+
+  .clue-setup-panel {
+    padding: 18px;
+  }
+
+  .clue-panel-top {
+    display: grid;
+    justify-items: center;
+  }
+
+  .clue-panel-top .secondary-button {
+    width: 100%;
+  }
+
+  .clue-setup-controls {
+    grid-template-columns: 1fr;
   }
 
   .online-controls {
