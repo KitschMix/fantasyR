@@ -477,6 +477,8 @@ let turnTimerHandledKey = "";
 let turnToastTimer = null;
 let lastTurnToastKey = "";
 let lastFinalActionNoticeKey = "";
+let activeFinalWaitingNoticeKey = "";
+let currentCenterToastMode = "";
 
 function shuffle(items) {
   const result = [...items];
@@ -677,27 +679,32 @@ function hideTurnToast() {
     window.clearTimeout(turnToastTimer);
     turnToastTimer = null;
   }
+  currentCenterToastMode = "";
   els.turnToast?.classList.remove("visible");
   els.turnToast?.setAttribute("aria-hidden", "true");
 }
 
-function showCenterToast(message, duration = 1000) {
+function showCenterToast(message, duration = 1000, options = {}) {
   if (!els.turnToast || !els.turnToastText || !message) return;
   if (turnToastTimer) {
     window.clearTimeout(turnToastTimer);
     turnToastTimer = null;
   }
+  currentCenterToastMode = options.mode || "";
   els.turnToastText.textContent = message;
   els.turnToast.classList.remove("visible");
   els.turnToast.setAttribute("aria-hidden", "false");
   void els.turnToast.offsetWidth;
   els.turnToast.classList.add("visible");
-  turnToastTimer = window.setTimeout(hideTurnToast, duration);
+  if (duration > 0) {
+    turnToastTimer = window.setTimeout(hideTurnToast, duration);
+  }
 }
 
 function resetTurnToastState() {
   lastTurnToastKey = "";
   lastFinalActionNoticeKey = "";
+  activeFinalWaitingNoticeKey = "";
   hideTurnToast();
 }
 
@@ -717,7 +724,7 @@ function syncTurnToast(player = currentPlayer()) {
   lastTurnToastKey = key;
 
   const name = String(player.name || "플레이어").trim();
-  showCenterToast(`${name}의 턴`, 1000);
+  showCenterToast(`${name}의 턴`, 1000, { mode: "turn", key });
 }
 
 function localHumanPlayer() {
@@ -736,9 +743,43 @@ function finalActionNoticeKey(player, issues) {
   ].join("|");
 }
 
+function clearFinalWaitingNotice() {
+  activeFinalWaitingNoticeKey = "";
+  if (currentCenterToastMode === "final-waiting") {
+    hideTurnToast();
+  }
+}
+
+function pendingOtherFinalActionIssues(localPlayer) {
+  return state.players
+    .filter((player) => player !== localPlayer)
+    .map((player) => ({
+      player,
+      issues: getRequiredActionIssues(player)
+    }))
+    .filter((entry) => entry.issues.length > 0);
+}
+
+function finalWaitingNoticeKey(localPlayer, pendingEntries) {
+  const localSeat = localPlayer?.seat ?? localPlayer?.id ?? "local";
+  const pending = pendingEntries.map((entry) => {
+    const seat = entry.player?.seat ?? entry.player?.id ?? "player";
+    const cards = entry.issues.map((issue) => cardSourceId(issue.card)).join(",");
+    return `${seat}:${cards}`;
+  }).join("|");
+  return [
+    onlineState.room?.id || "local",
+    state.turnNumber,
+    state.phase,
+    localSeat,
+    pending
+  ].join("|");
+}
+
 function syncFinalActionNotice() {
   if (!state.onlineGame || !state.pendingFinish || state.finished || els.gameBoard?.classList.contains("hidden")) {
     lastFinalActionNoticeKey = "";
+    clearFinalWaitingNotice();
     return;
   }
 
@@ -747,14 +788,26 @@ function syncFinalActionNotice() {
 
   const issues = getRequiredActionIssues(player);
   if (issues.length === 0) {
+    const pendingOthers = pendingOtherFinalActionIssues(player);
+    if (pendingOthers.length === 0) {
+      clearFinalWaitingNotice();
+      return;
+    }
+
+    const key = finalWaitingNoticeKey(player, pendingOthers);
+    if (key === activeFinalWaitingNoticeKey && currentCenterToastMode === "final-waiting") return;
+    activeFinalWaitingNoticeKey = key;
+    showCenterToast("상대를 기다리는 중...", 0, { mode: "final-waiting", key });
     return;
   }
+
+  clearFinalWaitingNotice();
 
   const key = finalActionNoticeKey(player, issues);
   if (key === lastFinalActionNoticeKey) return;
   lastFinalActionNoticeKey = key;
   const names = issues.map((entry) => entry.card.name).join(", ");
-  showCenterToast(`${names} 확정 필요`, 1800);
+  showCenterToast(`${names} 확정 필요`, 1800, { mode: "final-required", key });
 }
 
 function enterFantasyKingdom() {
