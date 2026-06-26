@@ -2796,6 +2796,9 @@ function canControlActivePlayer() {
 function canEditActionControlsForPlayer(player) {
   if (!player?.human || state.finished || state.animating) return false;
   if (state.pendingFinish || state.phase === "finalActions") {
+    if (isOnlinePlaying()) {
+      return !onlineState.loading && !onlineState.applyingRemote;
+    }
     return player === currentPlayer() && canControlActivePlayer();
   }
   if (!isOnlinePlaying()) return true;
@@ -5533,7 +5536,6 @@ function createSelectField(label, selectedValue, options, onChange, settings = {
   select.addEventListener("change", () => {
     if (select.disabled) return;
     onChange(select.value);
-    completePendingFinishIfReady();
   });
 
   field.append(labelText, select);
