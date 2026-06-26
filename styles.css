@@ -3118,6 +3118,11 @@ select {
     --mobile-hand-card-width: 82px;
     --mobile-hand-card-height: 138px;
     --mobile-hand-gap: 6px;
+    --mobile-discard-card-width: 52px;
+    --mobile-discard-card-height: 87px;
+    --mobile-discard-card-gap: 4px;
+    --mobile-discard-area-height: 194px;
+    --mobile-discard-card-scale: 0.23636;
     --mobile-card-padding: 4px;
     --mobile-card-inner-gap: 3px;
     --mobile-card-frame-inset: 4px;
@@ -3191,9 +3196,33 @@ select {
   }
 
   .discard-area {
-    grid-template-columns: repeat(auto-fill, var(--discard-card-width));
+    grid-template-columns: repeat(6, var(--mobile-discard-card-width));
+    gap: var(--mobile-discard-card-gap);
     justify-content: center;
+    min-height: var(--mobile-discard-area-height);
+    max-height: var(--mobile-discard-area-height);
+    padding: 7px 6px;
     overflow: visible;
+  }
+
+  .discard-area.discard-area-empty {
+    min-height: 62px;
+    max-height: 62px;
+  }
+
+  .discard-card-slot {
+    width: var(--mobile-discard-card-width);
+    height: var(--mobile-discard-card-height);
+  }
+
+  .discard-card-slot .card {
+    transform: translate(-50%, -50%) scale(var(--mobile-discard-card-scale));
+  }
+
+  .discard-card-slot:hover .card:not(.card-zoom-preview),
+  .discard-card-slot:focus-within .card:not(.card-zoom-preview),
+  .discard-card-slot .card:not(.card-zoom-preview):hover {
+    transform: translate(-50%, -50%) scale(var(--mobile-discard-card-scale));
   }
 
   .player-hand {

@@ -230,6 +230,12 @@ const MOBILE_HAND_CARD_MIN_WIDTH = 78;
 const MOBILE_HAND_CARD_MAX_WIDTH = 104;
 const MOBILE_HAND_CARD_WIDTH_OFFSET = 15.5;
 const MOBILE_HAND_CARD_GAP = 6;
+const MOBILE_DISCARD_CARD_MIN_WIDTH = 42;
+const MOBILE_DISCARD_CARD_MAX_WIDTH = 54;
+const MOBILE_DISCARD_CARD_RATIO = 0.64;
+const MOBILE_DISCARD_COLUMNS = 6;
+const MOBILE_DISCARD_WIDTH_OFFSET = 76;
+const MOBILE_DISCARD_CARD_GAP = 4;
 const MOBILE_PORTRAIT_QUERY = "(max-width: 760px) and (orientation: portrait)";
 const DIALOGUE_CHANCE = 0.3;
 const DIALOGUE_IDLE_INTERVAL_MS = 10000;
@@ -5510,6 +5516,13 @@ function mobileHandCardVisualWidth() {
   return Math.min(MOBILE_HAND_CARD_MAX_WIDTH, Math.max(MOBILE_HAND_CARD_MIN_WIDTH, width));
 }
 
+function mobileDiscardCardVisualWidth(handVisualWidth) {
+  const viewportWidth = Math.max(320, window.innerWidth || 390);
+  const widthForColumns = (viewportWidth - MOBILE_DISCARD_WIDTH_OFFSET) / MOBILE_DISCARD_COLUMNS;
+  const width = Math.min(handVisualWidth * MOBILE_DISCARD_CARD_RATIO, widthForColumns);
+  return Math.min(MOBILE_DISCARD_CARD_MAX_WIDTH, Math.max(MOBILE_DISCARD_CARD_MIN_WIDTH, width));
+}
+
 function scaledCssPx(value, percent = activeUiScalePercent) {
   return `${((value * 100) / Math.max(1, percent)).toFixed(3)}px`;
 }
@@ -5517,11 +5530,21 @@ function scaledCssPx(value, percent = activeUiScalePercent) {
 function applyMobileHandCardMetrics(percent = activeUiScalePercent) {
   const visualWidth = mobileHandCardVisualWidth();
   const visualHeight = visualWidth * (CARD_ZOOM_BASE_HEIGHT / CARD_ZOOM_BASE_WIDTH);
+  const discardVisualWidth = mobileDiscardCardVisualWidth(visualWidth);
+  const discardVisualHeight = discardVisualWidth * (CARD_ZOOM_BASE_HEIGHT / CARD_ZOOM_BASE_WIDTH);
+  const discardVisualGap = MOBILE_DISCARD_CARD_GAP;
+  const discardVisualAreaHeight = (discardVisualHeight * 2) + discardVisualGap + 16;
+  const discardScale = discardVisualWidth / (CARD_ZOOM_BASE_WIDTH * Math.max(0.01, percent / 100));
   const root = document.documentElement;
 
   root.style.setProperty("--mobile-hand-card-width", scaledCssPx(visualWidth, percent));
   root.style.setProperty("--mobile-hand-card-height", scaledCssPx(visualHeight, percent));
   root.style.setProperty("--mobile-hand-card-gap", scaledCssPx(MOBILE_HAND_CARD_GAP, percent));
+  root.style.setProperty("--mobile-discard-card-width", scaledCssPx(discardVisualWidth, percent));
+  root.style.setProperty("--mobile-discard-card-height", scaledCssPx(discardVisualHeight, percent));
+  root.style.setProperty("--mobile-discard-card-gap", scaledCssPx(discardVisualGap, percent));
+  root.style.setProperty("--mobile-discard-area-height", scaledCssPx(discardVisualAreaHeight, percent));
+  root.style.setProperty("--mobile-discard-card-scale", discardScale.toFixed(5));
   root.style.setProperty("--mobile-card-padding", scaledCssPx(Math.max(3.6, visualWidth * 0.048), percent));
   root.style.setProperty("--mobile-card-inner-gap", scaledCssPx(Math.max(2.2, visualWidth * 0.032), percent));
   root.style.setProperty("--mobile-card-frame-inset", scaledCssPx(Math.max(3, visualWidth * 0.045), percent));
