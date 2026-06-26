@@ -4640,6 +4640,7 @@ function renderTable() {
           playable: canHumanDraw(),
           onClick: (event) => canHumanDraw() ? drawFromDiscard(card.id, event.currentTarget) : selectCard(card.id)
         }));
+        attachCardZoom(slot, card, { directPointerOnly: true });
       }
       els.discardArea.append(slot);
     });
@@ -4701,6 +4702,7 @@ function attachCardZoom(cardElement, card, options = {}) {
   };
 
   cardElement.addEventListener("pointerdown", (event) => {
+    if (options.directPointerOnly && event.target !== cardElement) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
     clearLongPress();
     pointerId = event.pointerId;
@@ -4790,9 +4792,13 @@ function showCardZoom(card, sourceElement, options = {}) {
 }
 
 function getCardZoomMetrics(sourceElement, sourceWidth, sourceHeight) {
-  const isMobileHandCard = sourceElement?.closest?.("#playerHand")
-    && window.matchMedia?.(MOBILE_PORTRAIT_QUERY).matches;
-  if (!isMobileHandCard) {
+  const isMobilePortraitCard = window.matchMedia?.(MOBILE_PORTRAIT_QUERY).matches
+    && (
+      sourceElement?.classList?.contains("card")
+      || sourceElement?.classList?.contains("revealed-card")
+      || sourceElement?.closest?.(".discard-card-slot")
+    );
+  if (!isMobilePortraitCard) {
     return {
       width: sourceWidth,
       height: sourceHeight,
