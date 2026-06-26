@@ -3206,8 +3206,8 @@ select {
   }
 
   .discard-area.discard-area-empty {
-    min-height: 62px;
-    max-height: 62px;
+    min-height: var(--mobile-discard-area-height);
+    max-height: var(--mobile-discard-area-height);
   }
 
   .discard-card-slot {
