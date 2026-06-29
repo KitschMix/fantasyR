@@ -796,8 +796,9 @@
         } else {
           const selectable = !aiTurn && !state.finished && (!tile.faceUp || canSelectMovableTile(tile));
           const tileEl = document.createElement("span");
+          const typeClass = tile.faceUp ? ` ${tile.type}` : "";
           const directionClass = tile.faceUp && tile.type === "hunter" ? ` dir-${tile.dir}` : "";
-          tileEl.className = `tally-tile ${tile.faceUp ? tile.side : "face-down"} ${tile.type}${directionClass}`;
+          tileEl.className = `tally-tile ${tile.faceUp ? tile.side : "face-down"}${typeClass}${directionClass}`;
           tileEl.innerHTML = pieceMarkup(tile);
           cell.append(tileEl);
           if (selectable) cell.classList.add("selectable");

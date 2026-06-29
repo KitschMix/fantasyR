@@ -152,6 +152,7 @@ body.app-loading .loading-overlay {
   z-index: 2600;
   display: grid;
   place-items: center;
+  cursor: pointer;
   min-width: min(620px, 86vw);
   padding: 30px 42px;
   border: 2px solid rgba(242, 207, 120, 0.68);

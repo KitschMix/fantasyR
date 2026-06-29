@@ -479,6 +479,8 @@ let lastTurnToastKey = "";
 let lastFinalActionNoticeKey = "";
 let activeFinalWaitingNoticeKey = "";
 let currentCenterToastMode = "";
+let currentCenterToastKey = "";
+let dismissedCenterToastKey = "";
 
 function shuffle(items) {
   const result = [...items];
@@ -680,17 +682,27 @@ function hideTurnToast() {
     turnToastTimer = null;
   }
   currentCenterToastMode = "";
+  currentCenterToastKey = "";
   els.turnToast?.classList.remove("visible");
   els.turnToast?.setAttribute("aria-hidden", "true");
 }
 
+function dismissCenterToast() {
+  if (!els.turnToast?.classList.contains("visible")) return;
+  dismissedCenterToastKey = currentCenterToastKey;
+  hideTurnToast();
+}
+
 function showCenterToast(message, duration = 1000, options = {}) {
   if (!els.turnToast || !els.turnToastText || !message) return;
+  const nextKey = options.key || "";
+  if (nextKey && nextKey === dismissedCenterToastKey) return;
   if (turnToastTimer) {
     window.clearTimeout(turnToastTimer);
     turnToastTimer = null;
   }
   currentCenterToastMode = options.mode || "";
+  currentCenterToastKey = nextKey;
   els.turnToastText.textContent = message;
   els.turnToast.classList.remove("visible");
   els.turnToast.setAttribute("aria-hidden", "false");
@@ -705,6 +717,7 @@ function resetTurnToastState() {
   lastTurnToastKey = "";
   lastFinalActionNoticeKey = "";
   activeFinalWaitingNoticeKey = "";
+  dismissedCenterToastKey = "";
   hideTurnToast();
 }
 
@@ -5936,6 +5949,7 @@ els.onlineNameInput?.addEventListener("keydown", (event) => {
 });
 els.refreshLeaderboardButton?.addEventListener("click", loadLeaderboard);
 els.refreshLeaderboardButton?.addEventListener("click", loadHallOfFame);
+els.turnToast?.addEventListener("click", dismissCenterToast);
 els.enterFantasyButton?.addEventListener("click", enterFantasyKingdom);
 els.enterClueButton?.addEventListener("click", enterClueSetup);
 els.clueBackButton?.addEventListener("click", returnToGameLauncher);
