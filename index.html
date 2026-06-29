@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
     <link rel="stylesheet" href="styles.css?v=20260629-dismissible-toast" />
-    <link rel="stylesheet" href="tally-ho.css?v=20260629-tally-ho-rotated-hunter" />
+    <link rel="stylesheet" href="tally-ho.css?v=20260629-tally-ho-help" />
   </head>
   <body class="launcher-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -46,6 +46,7 @@
             <img class="tally-title-art" src="assets/titles/title-tally-ho.png" alt="Tally Ho! 탤리 호" />
             <div class="tally-top-actions">
               <button id="tallyNewGameButton" class="secondary-button" type="button">새 게임</button>
+              <button id="tallyRulesButton" class="icon-button tally-help-button" type="button" title="탤리 호 도움말" aria-label="탤리 호 도움말">?</button>
               <button id="tallyBackButton" class="secondary-button" type="button">첫 화면</button>
             </div>
           </div>
@@ -89,6 +90,50 @@
           </div>
         </div>
       </section>
+
+      <dialog id="tallyRulesDialog" class="rules-dialog tally-rules-dialog">
+        <form method="dialog">
+          <div class="dialog-header">
+            <h2>탤리 호 규칙</h2>
+            <button class="icon-button" value="close" title="닫기" aria-label="닫기">×</button>
+          </div>
+          <div class="rules-help tally-rules-help">
+            <section class="rules-section">
+              <h3>시작</h3>
+              <ul>
+                <li>7×7 보드에 48개 타일을 뒷면으로 놓고, 가운데 한 칸은 비워둡니다.</li>
+                <li>처음 공개된 유색 타일로 진영이 정해집니다. 곰/여우는 동물팀, 사냥꾼/나무꾼은 사냥꾼팀입니다.</li>
+                <li>중립 타일이 먼저 나오면 진영은 아직 정해지지 않고 계속 진행합니다.</li>
+              </ul>
+            </section>
+            <section class="rules-section">
+              <h3>차례</h3>
+              <ul>
+                <li>차례에는 뒷면 타일 1개를 공개하거나, 공개된 타일 1개를 이동합니다.</li>
+                <li>곰과 나무꾼은 상하좌우 1칸 이동합니다.</li>
+                <li>여우, 사냥꾼, 꿩, 오리는 상하좌우로 원하는 만큼 이동하지만 다른 타일은 뛰어넘을 수 없습니다.</li>
+              </ul>
+            </section>
+            <section class="rules-section">
+              <h3>포획</h3>
+              <ul>
+                <li>곰은 사냥꾼과 나무꾼을 잡습니다.</li>
+                <li>여우는 꿩과 오리를 잡습니다.</li>
+                <li>나무꾼은 나무를 베어 점수로 가져갑니다.</li>
+                <li>사냥꾼은 자신이 바라보는 방향으로 곰, 여우, 꿩, 오리를 잡습니다.</li>
+              </ul>
+            </section>
+            <section class="rules-section">
+              <h3>종료</h3>
+              <ul>
+                <li>모든 타일이 공개되면 각 진영은 마지막 5턴씩 진행합니다.</li>
+                <li>마지막 단계에서는 가장자리 출구로 자기 유색 타일을 탈출시켜 점수로 가져갈 수 있습니다.</li>
+                <li>획득한 타일 점수가 더 높은 쪽이 승리합니다.</li>
+              </ul>
+            </section>
+          </div>
+        </form>
+      </dialog>
 
       <section id="clueSetupPanel" class="clue-setup-panel hidden" aria-label="클루 게임 설정">
         <div class="mode-panel clue-panel">
@@ -440,6 +485,6 @@
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
     <script src="script.js?v=20260629-dismissible-toast"></script>
-    <script src="tally-ho.js?v=20260629-tally-ho-facedown-fix"></script>
+    <script src="tally-ho.js?v=20260629-tally-ho-help"></script>
   </body>
 </html>

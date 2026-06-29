@@ -43,6 +43,8 @@
     panel: document.querySelector("#tallyHoPanel"),
     backButton: document.querySelector("#tallyBackButton"),
     newGameButton: document.querySelector("#tallyNewGameButton"),
+    rulesButton: document.querySelector("#tallyRulesButton"),
+    rulesDialog: document.querySelector("#tallyRulesDialog"),
     board: document.querySelector("#tallyBoard"),
     blueScore: document.querySelector("#tallyBlueScore"),
     brownScore: document.querySelector("#tallyBrownScore"),
@@ -751,6 +753,12 @@
     if (exitTarget) moveSelectedTo(exitTarget);
   }
 
+  function openTallyRules() {
+    if (typeof els.rulesDialog?.showModal === "function" && !els.rulesDialog.open) {
+      els.rulesDialog.showModal();
+    }
+  }
+
   function pieceMarkup(tile) {
     if (!tile.faceUp) {
       return `
@@ -903,6 +911,12 @@
   els.enterButton?.addEventListener("click", enterTallyHo);
   els.backButton?.addEventListener("click", leaveTallyHo);
   els.newGameButton?.addEventListener("click", resetTallyGame);
+  els.rulesButton?.addEventListener("click", openTallyRules);
+  els.rulesDialog?.addEventListener("click", (event) => {
+    if (event.target === els.rulesDialog) {
+      els.rulesDialog.close();
+    }
+  });
   els.flipButton?.addEventListener("click", handleFlipButton);
   els.exitButton?.addEventListener("click", handleExitButton);
 
