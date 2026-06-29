@@ -4,10 +4,13 @@
   const SIZE = 7;
   const CENTER = 3;
   const SIDES = {
-    blue: { label: "나", colorLabel: "파랑", opponent: "brown" },
-    brown: { label: "AI", colorLabel: "갈색", opponent: "blue" }
+    blue: { label: "동물팀", colorLabel: "파랑", pieces: "곰 · 여우", opponent: "brown" },
+    brown: { label: "사냥꾼팀", colorLabel: "갈색", pieces: "사냥꾼 · 나무꾼", opponent: "blue" }
   };
-  const AI_SIDE = "brown";
+  const ACTORS = {
+    human: { label: "나", opponent: "ai" },
+    ai: { label: "AI", opponent: "human" }
+  };
   const AI_THINK_DELAY_MS = 560;
   const AI_ACTION_DELAY_MS = 460;
   const DIRS = [
@@ -57,7 +60,10 @@
 
   const state = {
     board: [],
-    currentSide: "blue",
+    currentActor: "human",
+    currentSide: "",
+    actorSides: { human: "", ai: "" },
+    sideActors: { blue: "", brown: "" },
     selected: null,
     scores: { blue: 0, brown: 0 },
     captured: { blue: [], brown: [] },
@@ -92,6 +98,32 @@
 
   function opponent(side = state.currentSide) {
     return SIDES[side].opponent;
+  }
+
+  function opponentActor(actor = state.currentActor) {
+    return ACTORS[actor].opponent;
+  }
+
+  function sidesAssigned() {
+    return Boolean(state.actorSides.human && state.actorSides.ai);
+  }
+
+  function controlledSide(actor = state.currentActor) {
+    return state.actorSides[actor] || "";
+  }
+
+  function setCurrentActor(actor) {
+    state.currentActor = actor;
+    state.currentSide = controlledSide(actor);
+  }
+
+  function actorLabel(actor = state.currentActor) {
+    return ACTORS[actor]?.label || actor;
+  }
+
+  function sideOwnerLabel(side) {
+    const actor = state.sideActors[side];
+    return actor ? actorLabel(actor) : "미정";
   }
 
   function tileMeta(tile) {
@@ -134,7 +166,10 @@
         state.board[row][col] = tiles.pop() || null;
       }
     }
-    state.currentSide = "blue";
+    state.currentActor = "human";
+    state.currentSide = "";
+    state.actorSides = { human: "", ai: "" };
+    state.sideActors = { blue: "", brown: "" };
     state.selected = null;
     state.scores = { blue: 0, brown: 0 };
     state.captured = { blue: [], brown: [] };
@@ -146,7 +181,7 @@
     state.finished = false;
     state.started = true;
     state.aiActing = false;
-    state.log = ["게임 시작. 나부터 진행합니다."];
+    state.log = ["게임 시작. 먼저 공개된 유색 타일로 진영이 정해집니다."];
     renderTally();
     scheduleAiTurn();
   }
@@ -172,19 +207,23 @@
   }
 
   function currentSideLabel() {
-    return SIDES[state.currentSide].label;
+    if (!sidesAssigned()) return actorLabel();
+    return `${actorLabel()}(${SIDES[state.currentSide].label})`;
   }
 
   function sideDisplayLabel(side) {
-    return SIDES[side]?.label || side;
+    const meta = SIDES[side];
+    if (!meta) return side;
+    const owner = sideOwnerLabel(side);
+    return owner === "미정" ? meta.label : `${owner} · ${meta.label}`;
   }
 
   function isAiSide(side = state.currentSide) {
-    return side === AI_SIDE;
+    return state.sideActors[side] === "ai";
   }
 
   function isAiTurn() {
-    return state.started && !state.finished && isAiSide(state.currentSide);
+    return state.started && !state.finished && state.currentActor === "ai";
   }
 
   function clearAiTurnTimer() {
@@ -211,12 +250,12 @@
   }
 
   function isLockedForCurrentSide(tile) {
-    return Boolean(tile?.lockedFor === state.currentSide && tile.lockedTurn === state.turnSequence);
+    return Boolean(tile?.lockedFor === state.currentActor && tile.lockedTurn === state.turnSequence);
   }
 
   function lockNeutralForOpponent(tile) {
     if (!isNeutralMover(tile)) return;
-    tile.lockedFor = opponent();
+    tile.lockedFor = opponentActor();
     tile.lockedTurn = state.turnSequence + 1;
   }
 
@@ -224,6 +263,7 @@
     if (!tile || !tile.faceUp || state.finished) return false;
     if (tile.type === "tree") return false;
     if (isLockedForCurrentSide(tile)) return false;
+    if (!sidesAssigned()) return false;
     if (tile.side === "neutral") return isNeutralMover(tile);
     return tile.side === state.currentSide;
   }
@@ -263,6 +303,31 @@
     if (!state.finalMode || !tile || tile.side === "neutral" || tile.side !== state.currentSide) return false;
     const exitDir = EXIT_CELLS.get(keyOf(row, col));
     return exitDir === dir.key;
+  }
+
+  function lineDistance(fromRow, fromCol, toRow, toCol) {
+    if (fromRow !== toRow && fromCol !== toCol) return Infinity;
+    return Math.abs(toRow - fromRow) + Math.abs(toCol - fromCol);
+  }
+
+  function explainBlockedTarget(row, col) {
+    if (!state.selected) return "";
+    const mover = selectedTile();
+    const target = state.board[row]?.[col];
+    if (!mover || !target || !mover.faceUp || !target.faceUp || mover === target) return "";
+
+    const dir = directionBetween(state.selected.row, state.selected.col, row, col);
+    const distance = lineDistance(state.selected.row, state.selected.col, row, col);
+    if (mover.type === "bear" && (target.type === "hunter" || target.type === "lumberjack")) {
+      if (!dir || distance !== 1) return "곰은 상하좌우 바로 1칸의 사냥꾼/나무꾼만 잡을 수 있습니다.";
+      if (isPreviousSpace(mover, row, col)) return "직전에 있던 칸으로는 바로 되돌아갈 수 없습니다.";
+    }
+
+    if (dir && isPreviousSpace(mover, row, col) && canCapture(mover, target, dir)) {
+      return "직전에 있던 칸으로는 바로 되돌아갈 수 없습니다.";
+    }
+
+    return "";
   }
 
   function legalTargetsFor(row, col) {
@@ -321,27 +386,35 @@
   }
 
   function hasAnyActionFor(side) {
+    return hasAnyActionForActor(state.sideActors[side] || state.currentActor);
+  }
+
+  function hasAnyActionForActor(actor) {
+    const previousActor = state.currentActor;
     const previousSide = state.currentSide;
-    state.currentSide = side;
+    setCurrentActor(actor);
     const hasAction = canCurrentSideFlip() || state.board.some((row, rowIndex) => (
       row.some((tile, colIndex) => canSelectMovableTile(tile) && legalTargetsFor(rowIndex, colIndex).length > 0)
     ));
+    state.currentActor = previousActor;
     state.currentSide = previousSide;
     return hasAction;
   }
 
-  function withTemporarySide(side, callback) {
+  function withTemporaryActor(actor, callback) {
+    const previousActor = state.currentActor;
     const previousSide = state.currentSide;
-    state.currentSide = side;
+    setCurrentActor(actor);
     try {
       return callback();
     } finally {
+      state.currentActor = previousActor;
       state.currentSide = previousSide;
     }
   }
 
-  function collectMoveActions(side) {
-    return withTemporarySide(side, () => {
+  function collectMoveActionsForActor(actor) {
+    return withTemporaryActor(actor, () => {
       const actions = [];
       state.board.forEach((row, rowIndex) => {
         row.forEach((tile, colIndex) => {
@@ -447,9 +520,10 @@
   }
 
   function chooseAiAction() {
-    const moves = collectMoveActions(AI_SIDE);
+    const aiSide = controlledSide("ai");
+    const moves = collectMoveActionsForActor("ai");
     const tacticalMoves = moves.filter((action) => action.target.exit || action.captured);
-    const tactical = chooseTopScored(tacticalMoves, (action) => scoreAiMove(action, AI_SIDE));
+    const tactical = chooseTopScored(tacticalMoves, (action) => scoreAiMove(action, aiSide));
     if (tactical) return tactical;
 
     const flips = collectFlipActions();
@@ -457,7 +531,7 @@
       return chooseTopScored(flips, scoreAiFlip);
     }
 
-    return chooseTopScored(moves, (action) => scoreAiMove(action, AI_SIDE))
+    return chooseTopScored(moves, (action) => scoreAiMove(action, aiSide))
       || chooseTopScored(flips, scoreAiFlip);
   }
 
@@ -509,13 +583,31 @@
     toast("마지막 5턴 시작", 1400);
   }
 
+  function assignSidesFromRevealedTile(tile) {
+    if (sidesAssigned() || !tile || tile.side === "neutral") return;
+    const actor = state.currentActor;
+    const otherActor = opponentActor(actor);
+    state.actorSides[actor] = tile.side;
+    state.actorSides[otherActor] = opponent(tile.side);
+    state.sideActors[tile.side] = actor;
+    state.sideActors[opponent(tile.side)] = otherActor;
+    state.currentSide = tile.side;
+    log(`${actorLabel(actor)}는 ${SIDES[tile.side].label}, ${actorLabel(otherActor)}는 ${SIDES[opponent(tile.side)].label}입니다.`);
+    toast(`${actorLabel(actor)}: ${SIDES[tile.side].label}`, 1500);
+  }
+
   function finishGame(reason = "") {
     clearAiTurnTimer();
     state.finished = true;
     state.selected = null;
     const blue = state.scores.blue;
     const brown = state.scores.brown;
-    const winner = blue === brown ? "무승부" : blue > brown ? "파랑 승리" : "갈색 승리";
+    const winnerSide = blue === brown ? "" : blue > brown ? "blue" : "brown";
+    const winner = !winnerSide
+      ? "무승부"
+      : sidesAssigned()
+        ? `${sideOwnerLabel(winnerSide)} 승리`
+        : `${SIDES[winnerSide].label} 승리`;
     log(`${winner}. ${blue}:${brown}${reason ? ` · ${reason}` : ""}`);
     toast(winner, 1800);
     renderTally();
@@ -541,7 +633,7 @@
     if (state.finalMode) {
       if (state.finalJustStarted) {
         state.finalJustStarted = false;
-      } else {
+      } else if (state.currentSide) {
         state.finalTurns[state.currentSide] = Math.max(0, state.finalTurns[state.currentSide] - 1);
       }
       if (state.finalTurns.blue <= 0 && state.finalTurns.brown <= 0) {
@@ -550,12 +642,12 @@
       }
     }
 
-    state.currentSide = opponent();
+    setCurrentActor(opponentActor());
     state.turnNumber += 1;
     state.turnSequence += 1;
     state.selected = null;
 
-    if (!hasAnyActionFor(state.currentSide)) {
+    if (!hasAnyActionForActor(state.currentActor)) {
       finishGame(`${currentSideLabel()}이 움직일 수 없습니다.`);
       return;
     }
@@ -568,6 +660,7 @@
     const tile = state.board[row]?.[col];
     if (!tile || tile.faceUp || state.finished) return;
     tile.faceUp = true;
+    assignSidesFromRevealedTile(tile);
     lockNeutralForOpponent(tile);
     state.selected = { row, col };
     log(`${currentSideLabel()}: ${tileMeta(tile).label} 공개`);
@@ -618,6 +711,12 @@
       return;
     }
 
+    const blockedReason = explainBlockedTarget(row, col);
+    if (blockedReason) {
+      toast(blockedReason, 1800);
+      return;
+    }
+
     const tile = state.board[row]?.[col];
     if (!tile) {
       state.selected = null;
@@ -627,6 +726,11 @@
 
     if (!tile.faceUp) {
       flipTile(row, col);
+      return;
+    }
+
+    if (!canSelectMovableTile(tile)) {
+      toast(tile.side === "neutral" ? "이번 차례에는 이 타일을 움직일 수 없습니다." : "내 차례에는 상대 타일을 움직일 수 없습니다.", 1400);
       return;
     }
 
@@ -653,9 +757,10 @@
     const dir = tile.type === "hunter" ? DIR_BY_KEY.get(tile.dir) : null;
     return `
       <span class="tally-piece-mark">
-        <span class="tally-piece-name">${meta.label}</span>
-        ${dir ? `<span class="tally-piece-dir">${dir.mark}</span>` : ""}
+        <span class="tally-piece-art" aria-hidden="true"></span>
+        ${dir ? `<span class="tally-piece-dir" title="${dir.label}쪽">${dir.mark}</span>` : ""}
         <span class="tally-piece-value">${tile.value}</span>
+        <span class="sr-only">${meta.label}</span>
       </span>
     `;
   }
@@ -702,13 +807,21 @@
 
   function capturedMarkup(side) {
     return state.captured[side].slice(-18).map((tile) => (
-      `<span class="tally-captured-chip" title="${tileMeta(tile).label} ${tile.value}점">${tileMeta(tile).label[0]}${tile.value}</span>`
+      `<span class="tally-captured-chip ${tile.type}" title="${tileMeta(tile).label} ${tile.value}점"><span class="tally-captured-art" aria-hidden="true"></span><span>${tile.value}</span></span>`
     )).join("");
   }
 
   function renderStatus() {
     if (els.blueScore) els.blueScore.textContent = `${state.scores.blue}점`;
     if (els.brownScore) els.brownScore.textContent = `${state.scores.brown}점`;
+    const blueLabel = els.blueCard?.querySelector("span");
+    const brownLabel = els.brownCard?.querySelector("span");
+    const blueSmall = els.blueCard?.querySelector("small");
+    const brownSmall = els.brownCard?.querySelector("small");
+    if (blueLabel) blueLabel.textContent = `${SIDES.blue.label} · ${sideOwnerLabel("blue")}`;
+    if (brownLabel) brownLabel.textContent = `${SIDES.brown.label} · ${sideOwnerLabel("brown")}`;
+    if (blueSmall) blueSmall.textContent = SIDES.blue.pieces;
+    if (brownSmall) brownSmall.textContent = SIDES.brown.pieces;
     els.blueCaptured.innerHTML = capturedMarkup("blue");
     els.brownCaptured.innerHTML = capturedMarkup("brown");
     els.blueCard?.classList.toggle("active", state.currentSide === "blue" && !state.finished);

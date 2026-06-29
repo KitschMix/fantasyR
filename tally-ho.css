@@ -256,8 +256,8 @@ body:not(.tally-active) .tally-ho-panel {
 .tally-tile {
   display: grid;
   place-items: center;
-  width: 78%;
-  height: 78%;
+  width: 82%;
+  height: 82%;
   border: 1px solid rgba(246, 232, 202, 0.18);
   border-radius: 8px;
   background: rgba(50, 44, 34, 0.95);
@@ -287,28 +287,127 @@ body:not(.tally-active) .tally-ho-panel {
 }
 
 .tally-piece-mark {
+  position: relative;
   display: grid;
-  gap: 1px;
-  justify-items: center;
+  width: 100%;
+  height: 100%;
+  place-items: center;
 }
 
-.tally-piece-name {
-  font-size: clamp(15px, 1.35vw, 23px);
-  font-weight: 900;
-  line-height: 1;
+.tally-piece-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.tally-tile.bear .tally-piece-art {
+  background-image: url("assets/tally-ho/tiles/bear.webp");
+}
+
+.tally-tile.fox .tally-piece-art {
+  background-image: url("assets/tally-ho/tiles/fox.webp");
+}
+
+.tally-tile.hunter .tally-piece-art {
+  background-image: url("assets/tally-ho/tiles/hunter.webp");
+}
+
+.tally-tile.lumberjack .tally-piece-art {
+  background-image: url("assets/tally-ho/tiles/lumberjack.webp");
+}
+
+.tally-tile.pheasant .tally-piece-art {
+  background-image: url("assets/tally-ho/tiles/pheasant.webp");
+}
+
+.tally-tile.duck .tally-piece-art {
+  background-image: url("assets/tally-ho/tiles/duck.webp");
+}
+
+.tally-tile.tree .tally-piece-art {
+  background-image: url("assets/tally-ho/tiles/tree.webp");
 }
 
 .tally-piece-value {
-  color: rgba(255, 249, 223, 0.88);
-  font-size: 12px;
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border: 1px solid rgba(42, 27, 12, 0.35);
+  border-radius: 999px;
+  color: #2b1c0f;
+  background: rgba(255, 225, 128, 0.92);
+  font-size: 13px;
   font-weight: 900;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
 }
 
 .tally-piece-dir {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(255, 244, 189, 0.46);
+  border-radius: 999px;
   color: #fff4bd;
-  font-size: 18px;
+  background: rgba(24, 16, 9, 0.72);
+  font-size: 15px;
   font-weight: 900;
   line-height: 1;
+}
+
+.tally-captured-chip {
+  gap: 4px;
+}
+
+.tally-captured-art {
+  display: inline-block;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.tally-captured-chip.bear .tally-captured-art {
+  background-image: url("assets/tally-ho/tiles/bear.webp");
+}
+
+.tally-captured-chip.fox .tally-captured-art {
+  background-image: url("assets/tally-ho/tiles/fox.webp");
+}
+
+.tally-captured-chip.hunter .tally-captured-art {
+  background-image: url("assets/tally-ho/tiles/hunter.webp");
+}
+
+.tally-captured-chip.lumberjack .tally-captured-art {
+  background-image: url("assets/tally-ho/tiles/lumberjack.webp");
+}
+
+.tally-captured-chip.pheasant .tally-captured-art {
+  background-image: url("assets/tally-ho/tiles/pheasant.webp");
+}
+
+.tally-captured-chip.duck .tally-captured-art {
+  background-image: url("assets/tally-ho/tiles/duck.webp");
+}
+
+.tally-captured-chip.tree .tally-captured-art {
+  background-image: url("assets/tally-ho/tiles/tree.webp");
 }
 
 .tally-log {
@@ -376,12 +475,20 @@ body:not(.tally-active) .tally-ho-panel {
     padding: 3.75%;
   }
 
-  .tally-piece-name {
-    font-size: 12px;
+  .tally-piece-value {
+    right: 3px;
+    bottom: 3px;
+    min-width: 18px;
+    height: 18px;
+    font-size: 11px;
   }
 
-  .tally-piece-value {
-    font-size: 10px;
+  .tally-piece-dir {
+    left: 3px;
+    top: 3px;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
   }
 
   .tally-cell.exit::after {
