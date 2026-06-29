@@ -752,13 +752,18 @@
   }
 
   function pieceMarkup(tile) {
-    if (!tile.faceUp) return "<span>?</span>";
+    if (!tile.faceUp) {
+      return `
+        <span class="tally-piece-mark">
+          <span class="tally-piece-art" aria-hidden="true"></span>
+          <span class="sr-only">뒷면 타일</span>
+        </span>
+      `;
+    }
     const meta = tileMeta(tile);
-    const dir = tile.type === "hunter" ? DIR_BY_KEY.get(tile.dir) : null;
     return `
       <span class="tally-piece-mark">
         <span class="tally-piece-art" aria-hidden="true"></span>
-        ${dir ? `<span class="tally-piece-dir" title="${dir.label}쪽">${dir.mark}</span>` : ""}
         <span class="tally-piece-value">${tile.value}</span>
         <span class="sr-only">${meta.label}</span>
       </span>
@@ -791,7 +796,8 @@
         } else {
           const selectable = !aiTurn && !state.finished && (!tile.faceUp || canSelectMovableTile(tile));
           const tileEl = document.createElement("span");
-          tileEl.className = `tally-tile ${tile.faceUp ? tile.side : "face-down"} ${tile.type}`;
+          const directionClass = tile.faceUp && tile.type === "hunter" ? ` dir-${tile.dir}` : "";
+          tileEl.className = `tally-tile ${tile.faceUp ? tile.side : "face-down"} ${tile.type}${directionClass}`;
           tileEl.innerHTML = pieceMarkup(tile);
           cell.append(tileEl);
           if (selectable) cell.classList.add("selectable");

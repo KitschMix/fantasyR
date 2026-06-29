@@ -265,13 +265,7 @@ body:not(.tally-active) .tally-ho-panel {
 }
 
 .tally-tile.face-down {
-  color: #fff0c2;
-  background:
-    radial-gradient(circle at 50% 38%, rgba(242, 207, 120, 0.24), transparent 38%),
-    repeating-linear-gradient(45deg, rgba(90, 67, 34, 0.42), rgba(90, 67, 34, 0.42) 8px, rgba(34, 62, 38, 0.42) 8px, rgba(34, 62, 38, 0.42) 16px),
-    #2f3d27;
-  font-size: 32px;
-  font-weight: 900;
+  background: rgba(19, 72, 27, 0.95);
 }
 
 .tally-tile.blue {
@@ -303,10 +297,15 @@ body:not(.tally-active) .tally-ho-panel {
   background-size: cover;
   background-repeat: no-repeat;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transform-origin: 50% 50%;
 }
 
 .tally-tile.bear .tally-piece-art {
   background-image: url("assets/tally-ho/tiles/bear.webp");
+}
+
+.tally-tile.face-down .tally-piece-art {
+  background-image: url("assets/tally-ho/tiles/base.webp");
 }
 
 .tally-tile.fox .tally-piece-art {
@@ -315,6 +314,22 @@ body:not(.tally-active) .tally-ho-panel {
 
 .tally-tile.hunter .tally-piece-art {
   background-image: url("assets/tally-ho/tiles/hunter.webp");
+}
+
+.tally-tile.hunter.dir-north .tally-piece-art {
+  transform: rotate(-90deg);
+}
+
+.tally-tile.hunter.dir-east .tally-piece-art {
+  transform: rotate(0deg);
+}
+
+.tally-tile.hunter.dir-south .tally-piece-art {
+  transform: rotate(90deg);
+}
+
+.tally-tile.hunter.dir-west .tally-piece-art {
+  transform: rotate(180deg);
 }
 
 .tally-tile.lumberjack .tally-piece-art {
@@ -349,23 +364,6 @@ body:not(.tally-active) .tally-ho-panel {
   font-size: 13px;
   font-weight: 900;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
-}
-
-.tally-piece-dir {
-  position: absolute;
-  left: 5px;
-  top: 5px;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid rgba(255, 244, 189, 0.46);
-  border-radius: 999px;
-  color: #fff4bd;
-  background: rgba(24, 16, 9, 0.72);
-  font-size: 15px;
-  font-weight: 900;
-  line-height: 1;
 }
 
 .tally-captured-chip {
@@ -481,14 +479,6 @@ body:not(.tally-active) .tally-ho-panel {
     min-width: 18px;
     height: 18px;
     font-size: 11px;
-  }
-
-  .tally-piece-dir {
-    left: 3px;
-    top: 3px;
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
   }
 
   .tally-cell.exit::after {
