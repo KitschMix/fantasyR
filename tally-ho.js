@@ -4,9 +4,12 @@
   const SIZE = 7;
   const CENTER = 3;
   const SIDES = {
-    blue: { label: "파랑", opponent: "brown" },
-    brown: { label: "갈색", opponent: "blue" }
+    blue: { label: "나", colorLabel: "파랑", opponent: "brown" },
+    brown: { label: "AI", colorLabel: "갈색", opponent: "blue" }
   };
+  const AI_SIDE = "brown";
+  const AI_THINK_DELAY_MS = 560;
+  const AI_ACTION_DELAY_MS = 460;
   const DIRS = [
     { key: "north", label: "북", mark: "▲", dr: -1, dc: 0 },
     { key: "east", label: "동", mark: "▶", dr: 0, dc: 1 },
@@ -65,6 +68,8 @@
     finalTurns: { blue: 5, brown: 5 },
     finished: false,
     started: false,
+    aiTimer: 0,
+    aiActing: false,
     log: []
   };
 
@@ -119,6 +124,7 @@
   }
 
   function resetTallyGame() {
+    clearAiTurnTimer();
     const tiles = createTileBag();
     state.board = Array.from({ length: SIZE }, () => Array.from({ length: SIZE }, () => null));
     for (let row = 0; row < SIZE; row += 1) {
@@ -138,8 +144,10 @@
     state.finalTurns = { blue: 5, brown: 5 };
     state.finished = false;
     state.started = true;
-    state.log = ["게임 시작. 파랑부터 진행합니다."];
+    state.aiActing = false;
+    state.log = ["게임 시작. 나부터 진행합니다."];
     renderTally();
+    scheduleAiTurn();
   }
 
   function enterTallyHo() {
@@ -148,9 +156,11 @@
     els.panel?.classList.remove("hidden");
     if (!state.started) resetTallyGame();
     renderTally();
+    scheduleAiTurn();
   }
 
   function leaveTallyHo() {
+    clearAiTurnTimer();
     document.body.classList.add("launcher-active");
     document.body.classList.remove("tally-active");
     els.panel?.classList.add("hidden");
@@ -162,6 +172,26 @@
 
   function currentSideLabel() {
     return SIDES[state.currentSide].label;
+  }
+
+  function sideDisplayLabel(side) {
+    return SIDES[side]?.label || side;
+  }
+
+  function isAiSide(side = state.currentSide) {
+    return side === AI_SIDE;
+  }
+
+  function isAiTurn() {
+    return state.started && !state.finished && isAiSide(state.currentSide);
+  }
+
+  function clearAiTurnTimer() {
+    if (state.aiTimer) {
+      window.clearTimeout(state.aiTimer);
+      state.aiTimer = 0;
+    }
+    state.aiActing = false;
   }
 
   function log(message) {
@@ -295,6 +325,176 @@
     return hasAction;
   }
 
+  function withTemporarySide(side, callback) {
+    const previousSide = state.currentSide;
+    state.currentSide = side;
+    try {
+      return callback();
+    } finally {
+      state.currentSide = previousSide;
+    }
+  }
+
+  function collectMoveActions(side) {
+    return withTemporarySide(side, () => {
+      const actions = [];
+      state.board.forEach((row, rowIndex) => {
+        row.forEach((tile, colIndex) => {
+          if (!canSelectMovableTile(tile)) return;
+          legalTargetsFor(rowIndex, colIndex).forEach((target) => {
+            actions.push({
+              type: "move",
+              from: { row: rowIndex, col: colIndex },
+              target: { ...target },
+              tile,
+              captured: target.capture ? state.board[target.row]?.[target.col] : null
+            });
+          });
+        });
+      });
+      return actions;
+    });
+  }
+
+  function collectFlipActions() {
+    const actions = [];
+    state.board.forEach((row, rowIndex) => {
+      row.forEach((tile, colIndex) => {
+        if (tile && !tile.faceUp) {
+          actions.push({ type: "flip", row: rowIndex, col: colIndex });
+        }
+      });
+    });
+    return actions;
+  }
+
+  function distanceToNearestExit(row, col) {
+    return Math.min(
+      row + Math.abs(col - CENTER),
+      (SIZE - 1 - row) + Math.abs(col - CENTER),
+      col + Math.abs(row - CENTER),
+      (SIZE - 1 - col) + Math.abs(row - CENTER)
+    );
+  }
+
+  function emptyNeighborCount(row, col) {
+    return DIRS.reduce((sum, dir) => {
+      const nextRow = row + dir.dr;
+      const nextCol = col + dir.dc;
+      return sum + (inBounds(nextRow, nextCol) && !state.board[nextRow][nextCol] ? 1 : 0);
+    }, 0);
+  }
+
+  function potentialCaptureScoreAt(mover, row, col, side) {
+    if (!mover || mover.side === "neutral") return 0;
+    const maxSteps = LONG_MOVERS.has(mover.type) ? SIZE : 1;
+    return DIRS.reduce((best, dir) => {
+      for (let step = 1; step <= maxSteps; step += 1) {
+        const nextRow = row + (dir.dr * step);
+        const nextCol = col + (dir.dc * step);
+        if (!inBounds(nextRow, nextCol)) break;
+        const occupant = state.board[nextRow][nextCol];
+        if (!occupant || occupant.id === mover.id) continue;
+        if (!occupant.faceUp) break;
+        if (canCapture(mover, occupant, dir)) {
+          const sideBonus = occupant.side === opponent(side) ? 8 : 0;
+          return Math.max(best, occupant.value + sideBonus);
+        }
+        break;
+      }
+      return best;
+    }, 0);
+  }
+
+  function scoreAiMove(action, side) {
+    const mover = action.tile;
+    if (action.target.exit) return 130 + (mover?.value || 0) * 8;
+
+    if (action.captured) {
+      let score = 70 + action.captured.value * 10;
+      if (action.captured.side === opponent(side)) score += 35;
+      if (action.captured.side === "neutral") score += 12;
+      if (mover.type === "hunter" && action.captured.type === "bear") score += 25;
+      if (mover.type === "hunter" && action.captured.type === "fox") score += 18;
+      if (mover.type === "lumberjack" && action.captured.type === "tree") score += 7;
+      return score;
+    }
+
+    let score = -8 + emptyNeighborCount(action.target.row, action.target.col);
+    score += potentialCaptureScoreAt(mover, action.target.row, action.target.col, side) * 4;
+    if (state.finalMode && mover.side === side) {
+      score += 26 - distanceToNearestExit(action.target.row, action.target.col) * 4;
+    }
+    if (mover.side === "neutral") score -= 2;
+    return score;
+  }
+
+  function scoreAiFlip(action) {
+    const centerDistance = Math.abs(action.row - CENTER) + Math.abs(action.col - CENTER);
+    return emptyNeighborCount(action.row, action.col) * 3 - centerDistance + Math.random();
+  }
+
+  function chooseTopScored(actions, scoreFn) {
+    if (!actions.length) return null;
+    return [...actions]
+      .map((action) => ({ action, score: scoreFn(action) }))
+      .sort((left, right) => right.score - left.score)[0].action;
+  }
+
+  function chooseAiAction() {
+    const moves = collectMoveActions(AI_SIDE);
+    const tacticalMoves = moves.filter((action) => action.target.exit || action.captured);
+    const tactical = chooseTopScored(tacticalMoves, (action) => scoreAiMove(action, AI_SIDE));
+    if (tactical) return tactical;
+
+    const flips = collectFlipActions();
+    if (flips.length && (!state.finalMode || moves.length === 0 || Math.random() < 0.72)) {
+      return chooseTopScored(flips, scoreAiFlip);
+    }
+
+    return chooseTopScored(moves, (action) => scoreAiMove(action, AI_SIDE))
+      || chooseTopScored(flips, scoreAiFlip);
+  }
+
+  function runDelayedAiAction(action) {
+    state.aiTimer = window.setTimeout(() => {
+      state.aiTimer = 0;
+      if (!isAiTurn() || state.finished) return;
+      state.aiActing = false;
+      if (action.type === "flip") {
+        flipTile(action.row, action.col);
+      } else {
+        moveSelectedTo(action.target);
+      }
+    }, AI_ACTION_DELAY_MS);
+  }
+
+  function performAiTurn() {
+    state.aiTimer = 0;
+    if (!isAiTurn()) return;
+
+    const action = chooseAiAction();
+    if (!action) {
+      finishGame("AI가 움직일 수 없습니다.");
+      return;
+    }
+
+    state.aiActing = true;
+    if (action.type === "flip") {
+      state.selected = { row: action.row, col: action.col };
+    } else {
+      state.selected = { ...action.from };
+    }
+    renderTally();
+    runDelayedAiAction(action);
+  }
+
+  function scheduleAiTurn(delay = AI_THINK_DELAY_MS) {
+    clearAiTurnTimer();
+    if (!isAiTurn() || !document.body.classList.contains("tally-active")) return;
+    state.aiTimer = window.setTimeout(performAiTurn, delay);
+  }
+
   function maybeStartFinalMode() {
     if (state.finalMode || faceDownCount() > 0) return;
     state.finalMode = true;
@@ -305,6 +505,7 @@
   }
 
   function finishGame(reason = "") {
+    clearAiTurnTimer();
     state.finished = true;
     state.selected = null;
     const blue = state.scores.blue;
@@ -354,6 +555,7 @@
     }
 
     renderTally();
+    scheduleAiTurn();
   }
 
   function flipTile(row, col) {
@@ -401,7 +603,7 @@
   }
 
   function handleCellClick(row, col) {
-    if (state.finished) return;
+    if (state.finished || isAiTurn()) return;
     const target = selectedTargets().find((entry) => entry.row === row && entry.col === col && !entry.exit);
     if (target) {
       moveSelectedTo(target);
@@ -425,12 +627,14 @@
   }
 
   function handleFlipButton() {
+    if (isAiTurn()) return;
     const selected = state.selected;
     if (!selected) return;
     flipTile(selected.row, selected.col);
   }
 
   function handleExitButton() {
+    if (isAiTurn()) return;
     const exitTarget = selectedTargets().find((target) => target.exit);
     if (exitTarget) moveSelectedTo(exitTarget);
   }
@@ -453,6 +657,8 @@
     const selected = state.selected;
     const targets = selectedTargets();
     const targetMap = new Map(targets.filter((target) => !target.exit).map((target) => [target.key, target]));
+    const aiTurn = isAiTurn();
+    els.board.classList.toggle("ai-thinking", aiTurn);
     els.board.innerHTML = "";
 
     for (let row = 0; row < SIZE; row += 1) {
@@ -470,7 +676,7 @@
           cell.classList.add("empty");
           cell.setAttribute("aria-label", "빈칸");
         } else {
-          const selectable = !state.finished && (!tile.faceUp || canSelectMovableTile(tile));
+          const selectable = !aiTurn && !state.finished && (!tile.faceUp || canSelectMovableTile(tile));
           const tileEl = document.createElement("span");
           tileEl.className = `tally-tile ${tile.faceUp ? tile.side : "face-down"} ${tile.type}`;
           tileEl.innerHTML = pieceMarkup(tile);
@@ -499,7 +705,11 @@
     els.brownCaptured.innerHTML = capturedMarkup("brown");
     els.blueCard?.classList.toggle("active", state.currentSide === "blue" && !state.finished);
     els.brownCard?.classList.toggle("active", state.currentSide === "brown" && !state.finished);
-    if (els.turnLabel) els.turnLabel.textContent = state.finished ? "게임 종료" : `${currentSideLabel()} / ${state.turnNumber}턴`;
+    if (els.turnLabel) {
+      els.turnLabel.textContent = state.finished
+        ? "게임 종료"
+        : `${currentSideLabel()} ${isAiTurn() ? "생각 중" : "차례"} / ${state.turnNumber}턴`;
+    }
     if (els.phaseLabel) {
       els.phaseLabel.textContent = state.finalMode
         ? `마지막 턴 파랑 ${state.finalTurns.blue} · 갈색 ${state.finalTurns.brown}`
@@ -510,7 +720,13 @@
   function renderSelected() {
     const tile = selectedTile();
     if (!els.selectedPanel) return;
-    if (!tile) {
+    if (isAiTurn() && !tile) {
+      els.selectedPanel.innerHTML = `
+        <span>AI</span>
+        <strong>생각 중</strong>
+        <small>잠시 후 자동으로 진행합니다.</small>
+      `;
+    } else if (!tile) {
       els.selectedPanel.innerHTML = `
         <span>선택</span>
         <strong>타일을 선택하세요</strong>
@@ -526,17 +742,17 @@
       const meta = tileMeta(tile);
       const targets = selectedTargets();
       els.selectedPanel.innerHTML = `
-        <span>${meta.side === "neutral" ? "중립" : SIDES[meta.side].label}</span>
+        <span>${meta.side === "neutral" ? "중립" : sideDisplayLabel(meta.side)}</span>
         <strong>${meta.label} ${tile.value}점</strong>
         <small>${targets.length ? `${targets.length}곳 이동 가능` : "이동할 곳 없음"}${tile.type === "hunter" ? ` · ${DIR_BY_KEY.get(tile.dir).label}쪽` : ""}</small>
       `;
     }
 
     const selected = state.selected;
-    const canFlip = Boolean(selected && state.board[selected.row]?.[selected.col] && !state.board[selected.row][selected.col].faceUp && !state.finished);
+    const canFlip = Boolean(selected && state.board[selected.row]?.[selected.col] && !state.board[selected.row][selected.col].faceUp && !state.finished && !isAiTurn());
     const exitTarget = selectedTargets().find((target) => target.exit);
     if (els.flipButton) els.flipButton.disabled = !canFlip;
-    if (els.exitButton) els.exitButton.disabled = !exitTarget || state.finished;
+    if (els.exitButton) els.exitButton.disabled = !exitTarget || state.finished || isAiTurn();
   }
 
   function renderLog() {

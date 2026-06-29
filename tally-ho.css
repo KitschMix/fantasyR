@@ -161,6 +161,7 @@ body:not(.tally-active) .tally-ho-panel {
 }
 
 .tally-board {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(7, minmax(58px, 86px));
   grid-template-rows: repeat(7, minmax(58px, 86px));
@@ -172,6 +173,26 @@ body:not(.tally-active) .tally-ho-panel {
     linear-gradient(135deg, rgba(24, 46, 31, 0.7), rgba(53, 41, 24, 0.78)),
     rgba(18, 16, 12, 0.9);
   box-shadow: var(--shadow);
+}
+
+.tally-board.ai-thinking::after {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  content: "AI 생각 중";
+  padding: 8px 12px;
+  border: 1px solid rgba(242, 207, 120, 0.34);
+  border-radius: 8px;
+  color: #fff5c9;
+  background: rgba(28, 23, 17, 0.86);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.tally-board.ai-thinking .tally-cell {
+  pointer-events: none;
 }
 
 .tally-cell {
