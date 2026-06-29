@@ -108,6 +108,7 @@
       faceUp: false,
       dir: type === "hunter" ? DIRS[index % DIRS.length].key : "",
       lastFrom: null,
+      lastFromTurn: -999,
       lockedFor: "",
       lockedTurn: -1
     };
@@ -239,7 +240,11 @@
   }
 
   function isPreviousSpace(tile, row, col) {
-    return Boolean(tile?.side !== "neutral" && tile.lastFrom && tile.lastFrom.row === row && tile.lastFrom.col === col);
+    if (!tile || tile.side === "neutral" || !tile.lastFrom) return false;
+    const immediateReturnTurn = tile.lastFromTurn + 2;
+    return state.turnSequence <= immediateReturnTurn
+      && tile.lastFrom.row === row
+      && tile.lastFrom.col === col;
   }
 
   function canCapture(mover, target, dir) {
@@ -518,12 +523,13 @@
 
   function checkEndAfterAction() {
     if (state.finished) return true;
-    maybeStartFinalMode();
 
     if (faceDownCount() === 0 && (coloredTilesOnBoard("blue") === 0 || coloredTilesOnBoard("brown") === 0)) {
       finishGame("한쪽 색 타일이 모두 사라졌습니다.");
       return true;
     }
+
+    maybeStartFinalMode();
 
     return false;
   }
@@ -590,8 +596,10 @@
     const captured = state.board[target.row][target.col];
     state.board[from.row][from.col] = null;
     state.board[target.row][target.col] = tile;
-    tile.lastFrom = { row: from.row, col: from.col };
-    lockNeutralForOpponent(tile);
+    if (tile.side !== "neutral") {
+      tile.lastFrom = { row: from.row, col: from.col };
+      tile.lastFromTurn = state.turnSequence;
+    }
 
     if (captured) {
       captureTile(state.currentSide, captured);
