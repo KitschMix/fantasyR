@@ -312,6 +312,21 @@ const AI_PROFILE_GROUPS = {
   ]
 };
 
+window.FANTASY_SHARED_PROFILES = {
+  root: PROFILE_ASSET_ROOT,
+  human: HUMAN_PROFILE,
+  difficultyLabels: AI_DIFFICULTY_LABELS,
+  difficultyKeys: AI_PROFILE_DIFFICULTY_KEYS,
+  groups: AI_PROFILE_GROUPS
+};
+
+window.FANTASY_SHARED_NICKNAME_RULES = {
+  storageKey: HUMAN_PROFILE_STORAGE_KEY,
+  intervalMs: NICKNAME_CHANGE_INTERVAL_MS,
+  minLength: MIN_NICKNAME_LENGTH,
+  blockedName: HUMAN_PROFILE.name
+};
+
 const state = {
   players: [],
   deck: [],
