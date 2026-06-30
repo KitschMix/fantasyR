@@ -15,6 +15,19 @@
     11: 5,
     12: 3
   };
+  const BOARD_SPOTS = {
+    2: [[8.79, 77.08], [8.90, 70.97], [8.99, 64.85]],
+    3: [[16.85, 77.07], [16.92, 70.97], [16.97, 64.90], [17.06, 58.81], [17.12, 52.81]],
+    4: [[24.89, 77.08], [24.93, 70.97], [24.97, 64.90], [25.02, 58.83], [25.05, 52.80], [25.13, 46.82], [25.17, 40.83]],
+    5: [[32.93, 77.08], [32.95, 70.98], [32.97, 64.90], [32.99, 58.82], [33.03, 52.81], [33.07, 46.83], [33.08, 40.85], [33.11, 34.88], [33.15, 29.00]],
+    6: [[40.96, 77.07], [40.97, 70.98], [40.98, 64.91], [40.97, 58.86], [41.00, 52.81], [41.01, 46.83], [41.02, 40.86], [41.03, 34.89], [41.03, 28.99], [41.06, 23.12], [41.08, 17.30]],
+    7: [[48.98, 77.08], [48.98, 70.98], [48.97, 64.93], [48.96, 58.87], [48.95, 52.82], [48.95, 46.84], [48.94, 40.88], [48.94, 34.90], [48.93, 29.01], [48.92, 23.15], [48.93, 17.35], [48.92, 11.58], [48.91, 5.85]],
+    8: [[57.02, 77.08], [57.00, 70.99], [56.97, 64.92], [56.93, 58.85], [56.91, 52.80], [56.88, 46.82], [56.86, 40.88], [56.85, 34.89], [56.82, 28.99], [56.78, 23.13], [56.73, 17.34]],
+    9: [[65.06, 77.07], [65.01, 70.99], [64.97, 64.91], [64.92, 58.85], [64.90, 52.80], [64.83, 46.83], [64.82, 40.85], [64.76, 34.88], [64.70, 29.04]],
+    10: [[73.09, 77.08], [73.03, 70.98], [72.97, 64.91], [72.90, 58.86], [72.85, 52.80], [72.80, 46.83], [72.64, 40.91]],
+    11: [[81.17, 77.09], [81.10, 70.98], [81.00, 64.90], [80.90, 58.82], [80.81, 52.85]],
+    12: [[89.25, 77.12], [89.13, 70.98], [89.01, 64.87]]
+  };
   const ACTORS = {
     human: { label: "나", opponent: "ai" },
     ai: { label: "AI", opponent: "human" }
@@ -841,12 +854,10 @@
   function renderBoard() {
     if (!els.board) return;
     els.board.innerHTML = "";
+    const fragment = document.createDocumentFragment();
     COLUMNS.forEach((column) => {
-      const columnEl = document.createElement("section");
-      columnEl.className = "cant-column";
-      if (state.claimed[column] === "human") columnEl.classList.add("claimed-human");
-      if (state.claimed[column] === "ai") columnEl.classList.add("claimed-ai");
-      const track = Array.from({ length: COLUMN_HEIGHTS[column] }, (_, index) => {
+      const spots = BOARD_SPOTS[column] || [];
+      spots.forEach(([x, y], index) => {
         const step = index + 1;
         const humanHere = visibleProgress("human", column) === step;
         const aiHere = visibleProgress("ai", column) === step;
@@ -855,16 +866,25 @@
           : state.currentActor === "ai"
             && Object.prototype.hasOwnProperty.call(state.tempProgress, column)
             && state.tempProgress[column] === step;
-        return `<span class="cant-step${humanHere ? " human" : ""}${aiHere ? " ai" : ""}${runnerHere ? " runner" : ""}"></span>`;
-      }).join("");
-      const claimedText = state.claimed[column] ? `${actorLabel(state.claimed[column])} 완주` : `${COLUMN_HEIGHTS[column]}칸`;
-      columnEl.innerHTML = `
-        <div class="cant-column-number">${column}</div>
-        <div class="cant-track">${track}</div>
-        <div class="cant-column-meta">${escapeHtml(claimedText)}</div>
-      `;
-      els.board.append(columnEl);
+        const claimedActor = state.claimed[column];
+        const spotEl = document.createElement("span");
+        spotEl.className = [
+          "cant-board-spot",
+          humanHere ? "human" : "",
+          aiHere ? "ai" : "",
+          runnerHere ? "runner" : "",
+          claimedActor && step === COLUMN_HEIGHTS[column] ? `claimed-${claimedActor}` : ""
+        ].filter(Boolean).join(" ");
+        spotEl.style.left = `${x}%`;
+        spotEl.style.top = `${y}%`;
+        spotEl.title = claimedActor
+          ? `${column}번 기둥 ${actorLabel(claimedActor)} 완주`
+          : `${column}번 기둥 ${step}/${COLUMN_HEIGHTS[column]}`;
+        spotEl.setAttribute("aria-label", spotEl.title);
+        fragment.append(spotEl);
+      });
     });
+    els.board.append(fragment);
   }
 
   function renderDice() {

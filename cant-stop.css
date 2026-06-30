@@ -276,111 +276,76 @@ body:not(.cant-active) .cant-stop-panel {
 }
 
 .cant-board-wrap {
+  display: grid;
+  justify-items: center;
   min-width: 0;
 }
 
 .cant-board {
-  display: grid;
-  grid-template-columns: repeat(11, minmax(58px, 1fr));
-  gap: 10px;
-  min-height: 690px;
-  padding: 16px;
+  position: relative;
+  width: min(100%, 860px);
+  aspect-ratio: 2122 / 1984;
+  overflow: hidden;
   border: 1px solid rgba(98, 162, 191, 0.24);
-  border-radius: 8px;
+  border-radius: 10px;
   background:
-    linear-gradient(180deg, rgba(52, 80, 69, 0.5), rgba(30, 34, 28, 0.7)),
-    rgba(27, 30, 27, 0.94);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(20, 38, 48, 0.08)),
+    url("assets/boards/cant-stop-board.webp") center / 100% 100% no-repeat;
   box-shadow: var(--shadow);
 }
 
-.cant-column {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 8px;
-  min-width: 0;
-}
-
-.cant-column-number {
-  display: grid;
-  place-items: center;
-  min-height: 38px;
-  border: 1px solid rgba(246, 232, 202, 0.14);
-  border-radius: 8px;
-  color: #eef9ff;
-  background: rgba(18, 43, 68, 0.82);
-  font-size: 22px;
-  font-weight: 900;
-}
-
-.cant-track {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 5px;
-  align-items: center;
-  justify-content: flex-start;
-  min-height: 0;
-  padding: 7px 5px;
-  border: 1px solid rgba(246, 232, 202, 0.12);
-  border-radius: 999px;
-  background: rgba(8, 16, 22, 0.42);
-}
-
-.cant-step {
-  position: relative;
-  width: min(34px, 90%);
+.cant-board-spot {
+  position: absolute;
+  width: 4.18%;
   aspect-ratio: 1;
-  border: 1px solid rgba(246, 232, 202, 0.13);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
-.cant-step::before,
-.cant-step::after {
+.cant-board-spot::before,
+.cant-board-spot::after {
   position: absolute;
   content: "";
   border-radius: 50%;
 }
 
-.cant-step.human::before,
-.cant-step.ai::after {
+.cant-board-spot.human::before,
+.cant-board-spot.ai::after {
   width: 58%;
   height: 58%;
   top: 21%;
 }
 
-.cant-step.human::before {
+.cant-board-spot.human::before {
   left: 9%;
   background: #5ed0ff;
   box-shadow: 0 0 9px rgba(94, 208, 255, 0.7);
 }
 
-.cant-step.ai::after {
+.cant-board-spot.ai::after {
   right: 9%;
   background: #ff9d5e;
   box-shadow: 0 0 9px rgba(255, 157, 94, 0.68);
 }
 
-.cant-step.runner::before {
-  outline: 3px solid rgba(242, 207, 120, 0.86);
-  outline-offset: 2px;
+.cant-board-spot.runner {
+  outline: 3px solid rgba(242, 207, 120, 0.9);
+  outline-offset: -2px;
 }
 
-.cant-column.claimed-human .cant-column-number {
-  color: #0b2635;
-  background: #75d9ff;
+.cant-board-spot.claimed-human,
+.cant-board-spot.claimed-ai {
+  outline-width: 4px;
+  outline-offset: -3px;
 }
 
-.cant-column.claimed-ai .cant-column-number {
-  color: #371909;
-  background: #ffb06d;
+.cant-board-spot.claimed-human {
+  outline-color: rgba(117, 217, 255, 0.96);
 }
 
-.cant-column-meta {
-  min-height: 26px;
-  color: rgba(247, 236, 217, 0.76);
-  font-size: 13px;
-  font-weight: 850;
-  text-align: center;
+.cant-board-spot.claimed-ai {
+  outline-color: rgba(255, 176, 109, 0.96);
 }
 
 .cant-dice {
@@ -478,7 +443,7 @@ body:not(.cant-active) .cant-stop-panel {
   }
 
   .cant-board {
-    min-height: 620px;
+    width: min(920px, 100%);
   }
 }
 
@@ -500,19 +465,6 @@ body:not(.cant-active) .cant-stop-panel {
   }
 
   .cant-board {
-    grid-template-columns: repeat(11, minmax(44px, 1fr));
-    gap: 6px;
-    min-height: 560px;
-    padding: 10px;
-    overflow-x: auto;
-  }
-
-  .cant-column-number {
-    min-height: 34px;
-    font-size: 18px;
-  }
-
-  .cant-step {
-    width: min(26px, 92%);
+    width: 100%;
   }
 }
