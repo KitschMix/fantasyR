@@ -120,7 +120,7 @@
   }
 
   function renderTallyZoomControls() {
-    els.panel?.style.setProperty("--tally-board-zoom", String(tallyZoomPercent / 100));
+    els.panel?.style.setProperty("--tally-ui-zoom", String(tallyZoomPercent / 100));
     if (els.zoomLabel) els.zoomLabel.textContent = `${tallyZoomPercent}%`;
     if (els.zoomOutButton) els.zoomOutButton.disabled = tallyZoomPercent <= ZOOM_MIN_PERCENT;
     if (els.zoomInButton) els.zoomInButton.disabled = tallyZoomPercent >= ZOOM_MAX_PERCENT;
