@@ -726,7 +726,7 @@
   }
 
   function enterTallyHo() {
-    document.body.classList.remove("launcher-active", "clue-active");
+    document.body.classList.remove("launcher-active", "clue-active", "cant-active");
     document.body.classList.add("tally-active");
     els.panel?.classList.remove("hidden");
     showTallySetup();

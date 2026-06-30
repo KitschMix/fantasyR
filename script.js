@@ -839,7 +839,7 @@ function syncFinalActionNotice() {
 }
 
 function enterFantasyKingdom() {
-  document.body.classList.remove("launcher-active", "clue-active");
+  document.body.classList.remove("launcher-active", "clue-active", "tally-active", "cant-active");
   els.clueSetupPanel?.classList.add("hidden");
   if (els.setupPanel?.classList.contains("hidden") && els.gameBoard?.classList.contains("hidden")) {
     els.setupPanel.classList.remove("hidden");
@@ -848,7 +848,7 @@ function enterFantasyKingdom() {
 
 function enterClueSetup() {
   resetTurnToastState();
-  document.body.classList.remove("launcher-active");
+  document.body.classList.remove("launcher-active", "tally-active", "cant-active");
   document.body.classList.add("clue-active");
   els.setupPanel?.classList.add("hidden");
   els.gameBoard?.classList.add("hidden");
@@ -858,7 +858,7 @@ function enterClueSetup() {
 function returnToGameLauncher() {
   resetTurnToastState();
   document.body.classList.add("launcher-active");
-  document.body.classList.remove("clue-active");
+  document.body.classList.remove("clue-active", "tally-active", "cant-active");
   els.clueSetupPanel?.classList.add("hidden");
 }
 

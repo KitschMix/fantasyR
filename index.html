@@ -6,6 +6,7 @@
     <title>판타지왕국 PC버전</title>
     <link rel="stylesheet" href="styles.css?v=20260629-dismissible-toast" />
     <link rel="stylesheet" href="tally-ho.css?v=20260630-tally-hide-opponent" />
+    <link rel="stylesheet" href="cant-stop.css?v=20260630-cant-stop-setup" />
   </head>
   <body class="launcher-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -28,6 +29,9 @@
         </button>
         <button id="enterTallyHoButton" class="game-launcher-card tally-launcher-card" type="button" aria-label="탤리 호 입장">
           <img src="assets/titles/title-tally-ho.png" alt="Tally Ho! 탤리 호" />
+        </button>
+        <button id="enterCantStopButton" class="game-launcher-card cant-stop-launcher-card" type="button" aria-label="캔트스탑 입장">
+          <img src="assets/titles/title-cant-stop.png" alt="Can't Stop 캔트스탑" />
         </button>
         <p class="launcher-device-note">PC 화면 권장 · 모바일은 가로 화면에서 플레이하세요.</p>
         <div class="game-launcher-coming-soon" aria-label="개발 예정 게임">
@@ -220,6 +224,174 @@
                 <li>모든 타일이 공개되면 각 진영은 마지막 5턴씩 진행합니다.</li>
                 <li>마지막 단계에서는 가장자리 출구로 자기 유색 타일을 탈출시켜 점수로 가져갈 수 있습니다.</li>
                 <li>획득한 타일 점수가 더 높은 쪽이 승리합니다.</li>
+              </ul>
+            </section>
+          </div>
+        </form>
+      </dialog>
+
+      <section id="cantStopPanel" class="cant-stop-panel hidden" aria-label="캔트스탑 게임">
+        <div class="cant-shell">
+          <div class="cant-top">
+            <img class="cant-title-art" src="assets/titles/title-cant-stop.png" alt="Can't Stop 캔트스탑" />
+            <div class="cant-top-actions">
+              <button id="cantNewGameButton" class="secondary-button" type="button">새 게임</button>
+              <button id="cantRulesButton" class="icon-button cant-help-button" type="button" title="캔트스탑 도움말" aria-label="캔트스탑 도움말">?</button>
+              <button id="cantBackButton" class="secondary-button" type="button">첫 화면</button>
+            </div>
+          </div>
+
+          <section id="cantSetupView" class="cant-setup-view" aria-label="캔트스탑 시작 설정">
+            <div class="cant-setup-grid">
+              <div class="mode-panel single-panel cant-single-panel">
+                <div class="mode-panel-head">
+                  <strong>싱글플레이</strong>
+                  <span>AI와 등반 대결</span>
+                </div>
+                <div class="setup-controls">
+                  <div class="nickname-control">
+                    <label>
+                      내 닉네임
+                      <input id="cantNameInput" type="text" minlength="2" maxlength="12" required placeholder="2글자 이상" autocomplete="nickname" />
+                    </label>
+                    <button id="cantConfirmNicknameButton" class="secondary-button" type="button">확인</button>
+                    <small id="cantNicknameStatus">닉네임은 모든 게임과 공유되며, 하루에 한 번만 변경할 수 있습니다.</small>
+                  </div>
+                  <label class="setup-tooltip" data-tooltip="보통: 안전하게 멈춥니다. 어려움: 완주 기회가 보이면 더 밀어붙입니다. 매우어려움: 기대값과 위험을 더 공격적으로 봅니다. 완전랜덤: 프로필과 실제 난이도가 섞입니다.">
+                    AI 난이도
+                    <select id="cantDifficultySelect">
+                      <option value="normal">보통</option>
+                      <option value="hard">어려움</option>
+                      <option value="expert">매우어려움</option>
+                      <option value="random">완전랜덤</option>
+                    </select>
+                  </label>
+                  <div class="cant-profile-preview" aria-label="캔트스탑 플레이어">
+                    <div class="cant-profile-card">
+                      <img id="cantHumanAvatar" src="assets/profiles/user/유저.jpg" alt="" />
+                      <span>플레이어</span>
+                      <strong id="cantHumanPreviewName">닉네임 필요</strong>
+                    </div>
+                  </div>
+                  <button id="cantStartButton" class="primary-button" type="button">게임 시작</button>
+                </div>
+              </div>
+              <div class="mode-panel online-panel cant-online-panel">
+                <div class="mode-panel-head online-panel-head">
+                  <strong>멀티플레이</strong>
+                  <span class="online-status">준비중</span>
+                </div>
+                <div class="online-controls">
+                  <label>
+                    닉네임
+                    <input id="cantOnlineNameInput" type="text" maxlength="12" placeholder="공유 닉네임 사용" disabled />
+                  </label>
+                  <button class="secondary-button" type="button" disabled>방 만들기</button>
+                  <label>
+                    방 코드
+                    <input type="text" maxlength="6" placeholder="추후 지원" disabled />
+                  </label>
+                  <button class="secondary-button" type="button" disabled>입장</button>
+                </div>
+                <div class="cant-online-placeholder">
+                  <strong>온라인 방 코드 멀티는 아직 준비중입니다.</strong>
+                  <small>턴제라서 이후 Supabase 동기화를 붙이면 비교적 가볍게 확장할 수 있습니다.</small>
+                </div>
+              </div>
+              <div class="mode-panel leaderboard-panel cant-leaderboard-panel">
+                <div class="mode-panel-head">
+                  <strong>캔트스탑 랭킹</strong>
+                  <button id="cantRefreshLeaderboardButton" class="secondary-button leaderboard-refresh-button" type="button">새로고침</button>
+                </div>
+                <div class="leaderboard-board cant-leaderboard-board">
+                  <section class="leaderboard-column" aria-label="캔트스탑 최고 등반점수">
+                    <h3>최고 등반점수</h3>
+                    <ol id="cantLeaderboardList" class="leaderboard-list"></ol>
+                  </section>
+                </div>
+                <div id="cantLeaderboardStatus" class="leaderboard-status">랭킹을 불러오는 중입니다.</div>
+              </div>
+            </div>
+          </section>
+
+          <section id="cantGameView" class="cant-game-view hidden" aria-label="캔트스탑 플레이 화면">
+            <aside class="cant-status-panel">
+              <section class="cant-player-card human" id="cantHumanCard">
+                <div class="cant-player-head">
+                  <img id="cantGameHumanAvatar" src="assets/profiles/user/유저.jpg" alt="" />
+                  <span id="cantHumanNameLabel">플레이어</span>
+                  <small>나</small>
+                </div>
+                <strong id="cantHumanScore">0개 완주</strong>
+                <small id="cantHumanProgressSummary">등반 준비</small>
+              </section>
+              <section class="cant-player-card ai" id="cantAiCard">
+                <div class="cant-player-head">
+                  <img id="cantAiAvatar" src="assets/profiles/user/보통-건일.jpg" alt="" />
+                  <span id="cantAiNameLabel">AI</span>
+                  <small id="cantAiDifficultyLabel">보통</small>
+                </div>
+                <strong id="cantAiScore">0개 완주</strong>
+                <small id="cantAiProgressSummary">대기 중</small>
+              </section>
+              <section class="cant-turn-card">
+                <span>현재 차례</span>
+                <strong id="cantTurnLabel">-</strong>
+                <small id="cantPhaseLabel">주사위를 굴리세요.</small>
+              </section>
+            </aside>
+
+            <section class="cant-board-wrap">
+              <div id="cantBoard" class="cant-board" aria-label="캔트스탑 산 기둥"></div>
+            </section>
+
+            <aside class="cant-control-panel">
+              <section class="cant-dice-panel">
+                <span>주사위</span>
+                <div id="cantDice" class="cant-dice" aria-label="주사위 결과"></div>
+              </section>
+              <section class="cant-options-panel">
+                <span>선택 가능한 묶음</span>
+                <div id="cantOptions" class="cant-options"></div>
+              </section>
+              <section class="cant-actions-panel">
+                <button id="cantRollButton" class="primary-button" type="button">굴리기</button>
+                <button id="cantStopButton" class="secondary-button" type="button" disabled>그만</button>
+              </section>
+              <ol id="cantLog" class="cant-log" aria-label="캔트스탑 기록"></ol>
+            </aside>
+          </section>
+        </div>
+      </section>
+
+      <dialog id="cantRulesDialog" class="rules-dialog cant-rules-dialog">
+        <form method="dialog">
+          <div class="dialog-header">
+            <h2>캔트스탑 규칙</h2>
+            <button class="icon-button" value="close" title="닫기" aria-label="닫기">×</button>
+          </div>
+          <div class="rules-help cant-rules-help">
+            <section class="rules-section">
+              <h3>한 줄 요약</h3>
+              <ul>
+                <li>더 올라갈래? 여기서 멈출래?</li>
+                <li>주사위 운과 욕심을 저울질해서 먼저 기둥 3개를 완주하면 승리합니다.</li>
+              </ul>
+            </section>
+            <section class="rules-section">
+              <h3>차례</h3>
+              <ul>
+                <li>주사위 4개를 굴리고 2개씩 묶어 합계 2개를 만듭니다.</li>
+                <li>한 차례에 도전할 수 있는 숫자 기둥은 최대 3개입니다.</li>
+                <li>선택한 숫자 기둥을 임시로 올라간 뒤, 계속 굴리거나 멈출 수 있습니다.</li>
+              </ul>
+            </section>
+            <section class="rules-section">
+              <h3>실패와 저장</h3>
+              <ul>
+                <li>굴린 결과로 더 올라갈 수 있는 기둥이 없으면 이번 턴의 임시 진행이 전부 사라집니다.</li>
+                <li>그만을 누르면 이번 턴에 오른 위치가 내 기록으로 저장됩니다.</li>
+                <li>기둥 꼭대기에 도달한 뒤 저장하면 그 기둥을 차지합니다.</li>
               </ul>
             </section>
           </div>
@@ -575,7 +747,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
-    <script src="script.js?v=20260630-tally-shared-profile"></script>
-    <script src="tally-ho.js?v=20260630-tally-hide-opponent"></script>
+    <script src="script.js?v=20260630-cant-stop-classes"></script>
+    <script src="tally-ho.js?v=20260630-cant-stop-classes"></script>
+    <script src="cant-stop.js?v=20260630-cant-stop-setup"></script>
   </body>
 </html>
