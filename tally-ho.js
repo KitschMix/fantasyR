@@ -13,6 +13,10 @@
   };
   const AI_THINK_DELAY_MS = 560;
   const AI_ACTION_DELAY_MS = 460;
+  const ZOOM_STORAGE_KEY = "fantasyR.tallyHoZoomPercent";
+  const ZOOM_MIN_PERCENT = 70;
+  const ZOOM_MAX_PERCENT = 220;
+  const ZOOM_STEP_PERCENT = 10;
   const DIRS = [
     { key: "north", label: "북", mark: "▲", dr: -1, dc: 0 },
     { key: "east", label: "동", mark: "▶", dr: 0, dc: 1 },
@@ -45,6 +49,9 @@
     newGameButton: document.querySelector("#tallyNewGameButton"),
     rulesButton: document.querySelector("#tallyRulesButton"),
     rulesDialog: document.querySelector("#tallyRulesDialog"),
+    zoomOutButton: document.querySelector("#tallyZoomOutButton"),
+    zoomInButton: document.querySelector("#tallyZoomInButton"),
+    zoomLabel: document.querySelector("#tallyZoomLabel"),
     board: document.querySelector("#tallyBoard"),
     blueScore: document.querySelector("#tallyBlueScore"),
     brownScore: document.querySelector("#tallyBrownScore"),
@@ -80,6 +87,7 @@
     aiActing: false,
     log: []
   };
+  let tallyZoomPercent = 100;
 
   function shuffle(items) {
     const result = [...items];
@@ -88,6 +96,48 @@
       [result[i], result[j]] = [result[j], result[i]];
     }
     return result;
+  }
+
+  function clampNumber(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function loadTallyZoomPercent() {
+    try {
+      const saved = Number(window.localStorage.getItem(ZOOM_STORAGE_KEY));
+      return Number.isFinite(saved) ? clampNumber(saved, ZOOM_MIN_PERCENT, ZOOM_MAX_PERCENT) : 100;
+    } catch {
+      return 100;
+    }
+  }
+
+  function saveTallyZoomPercent(percent) {
+    try {
+      window.localStorage.setItem(ZOOM_STORAGE_KEY, String(percent));
+    } catch {
+      // Storage can be blocked in private browsing; the live setting still works.
+    }
+  }
+
+  function renderTallyZoomControls() {
+    els.panel?.style.setProperty("--tally-board-zoom", String(tallyZoomPercent / 100));
+    if (els.zoomLabel) els.zoomLabel.textContent = `${tallyZoomPercent}%`;
+    if (els.zoomOutButton) els.zoomOutButton.disabled = tallyZoomPercent <= ZOOM_MIN_PERCENT;
+    if (els.zoomInButton) els.zoomInButton.disabled = tallyZoomPercent >= ZOOM_MAX_PERCENT;
+  }
+
+  function setTallyZoomPercent(percent, persist = true) {
+    tallyZoomPercent = clampNumber(Math.round(percent / ZOOM_STEP_PERCENT) * ZOOM_STEP_PERCENT, ZOOM_MIN_PERCENT, ZOOM_MAX_PERCENT);
+    renderTallyZoomControls();
+    if (persist) saveTallyZoomPercent(tallyZoomPercent);
+  }
+
+  function adjustTallyZoom(delta) {
+    setTallyZoomPercent(tallyZoomPercent + delta);
+  }
+
+  function initializeTallyZoomControls() {
+    setTallyZoomPercent(loadTallyZoomPercent(), false);
   }
 
   function keyOf(row, col) {
@@ -912,6 +962,8 @@
   els.backButton?.addEventListener("click", leaveTallyHo);
   els.newGameButton?.addEventListener("click", resetTallyGame);
   els.rulesButton?.addEventListener("click", openTallyRules);
+  els.zoomOutButton?.addEventListener("click", () => adjustTallyZoom(-ZOOM_STEP_PERCENT));
+  els.zoomInButton?.addEventListener("click", () => adjustTallyZoom(ZOOM_STEP_PERCENT));
   els.rulesDialog?.addEventListener("click", (event) => {
     if (event.target === els.rulesDialog) {
       els.rulesDialog.close();
@@ -919,6 +971,7 @@
   });
   els.flipButton?.addEventListener("click", handleFlipButton);
   els.exitButton?.addEventListener("click", handleExitButton);
+  initializeTallyZoomControls();
 
   window.TallyHoGame = {
     enter: enterTallyHo,

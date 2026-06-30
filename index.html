@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
     <link rel="stylesheet" href="styles.css?v=20260629-dismissible-toast" />
-    <link rel="stylesheet" href="tally-ho.css?v=20260629-tally-ho-help" />
+    <link rel="stylesheet" href="tally-ho.css?v=20260630-tally-ho-zoom" />
   </head>
   <body class="launcher-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -47,6 +47,11 @@
             <div class="tally-top-actions">
               <button id="tallyNewGameButton" class="secondary-button" type="button">새 게임</button>
               <button id="tallyRulesButton" class="icon-button tally-help-button" type="button" title="탤리 호 도움말" aria-label="탤리 호 도움말">?</button>
+              <div class="tally-zoom-controls" aria-label="탤리 호 확대 축소">
+                <button id="tallyZoomOutButton" class="icon-button tally-zoom-button" type="button" title="축소" aria-label="축소">-</button>
+                <span id="tallyZoomLabel" class="tally-zoom-label">100%</span>
+                <button id="tallyZoomInButton" class="icon-button tally-zoom-button" type="button" title="확대" aria-label="확대">+</button>
+              </div>
               <button id="tallyBackButton" class="secondary-button" type="button">첫 화면</button>
             </div>
           </div>
@@ -485,6 +490,6 @@
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
     <script src="script.js?v=20260629-dismissible-toast"></script>
-    <script src="tally-ho.js?v=20260629-tally-ho-help"></script>
+    <script src="tally-ho.js?v=20260630-tally-ho-zoom"></script>
   </body>
 </html>

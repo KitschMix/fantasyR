@@ -20,6 +20,7 @@ body:not(.tally-active) .tally-ho-panel {
 }
 
 .tally-ho-panel {
+  --tally-board-zoom: 1;
   min-height: calc(100vh - 28px);
   padding: 18px;
 }
@@ -59,6 +60,35 @@ body:not(.tally-active) .tally-ho-panel {
   height: 46px;
   border-radius: 50%;
   font-size: 22px;
+}
+
+.tally-zoom-controls {
+  display: grid;
+  grid-template-columns: 46px minmax(62px, auto) 46px;
+  align-items: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 4px;
+  border: 1px solid rgba(246, 232, 202, 0.16);
+  border-radius: 8px;
+  background: rgba(31, 28, 23, 0.76);
+}
+
+.tally-zoom-button {
+  min-width: 38px;
+  width: 38px;
+  min-height: 38px;
+  height: 38px;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.tally-zoom-label {
+  color: #fff6d8;
+  font-size: 15px;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .tally-rules-dialog {
@@ -175,9 +205,14 @@ body:not(.tally-active) .tally-ho-panel {
 
 .tally-board-wrap {
   display: grid;
-  justify-items: center;
+  justify-items: start;
   gap: 12px;
   min-width: 0;
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+  scrollbar-gutter: stable both-edges;
 }
 
 .tally-board {
@@ -186,7 +221,8 @@ body:not(.tally-active) .tally-ho-panel {
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-template-rows: repeat(7, minmax(0, 1fr));
   gap: 0;
-  width: min(900px, 100%, calc(100vh - 180px));
+  width: calc(min(900px, calc(100vw - 36px), calc(100vh - 180px)) * var(--tally-board-zoom));
+  min-width: calc(520px * var(--tally-board-zoom));
   aspect-ratio: 1;
   padding: 3.75%;
   border: 1px solid rgba(246, 232, 202, 0.28);
@@ -194,6 +230,7 @@ body:not(.tally-active) .tally-ho-panel {
   overflow: hidden;
   background: url("assets/boards/tally-ho-board.webp") center / 100% 100% no-repeat;
   box-shadow: var(--shadow);
+  transition: width 140ms ease;
 }
 
 .tally-board.ai-thinking::after {
@@ -484,11 +521,17 @@ body:not(.tally-active) .tally-ho-panel {
     grid-template-columns: 1fr auto 1fr;
   }
 
+  .tally-zoom-controls {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    grid-template-columns: 46px 1fr 46px;
+  }
+
   .tally-board {
     grid-template-columns: repeat(7, minmax(0, 1fr));
     grid-template-rows: repeat(7, minmax(0, 1fr));
     gap: 0;
-    width: min(100%, calc(100vh - 140px));
+    width: calc(min(calc(100vw - 34px), calc(100vh - 140px)) * var(--tally-board-zoom));
     min-width: 0;
     padding: 3.75%;
   }
