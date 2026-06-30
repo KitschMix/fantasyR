@@ -653,16 +653,54 @@
     return active.includes(column) || active.length < 3;
   }
 
+  function advanceTempProgress(tempProgress, column) {
+    const next = { ...tempProgress };
+    const current = next[column] ?? permanentProgress(state.currentActor, column);
+    next[column] = Math.min(COLUMN_HEIGHTS[column], current + 1);
+    return next;
+  }
+
   function optionSteps(sums) {
     const temp = { ...state.tempProgress };
     const steps = [];
     sums.forEach((sum) => {
       if (!canAdvanceColumn(sum, temp)) return;
-      const current = temp[sum] ?? permanentProgress(state.currentActor, sum);
-      temp[sum] = Math.min(COLUMN_HEIGHTS[sum], current + 1);
+      Object.assign(temp, advanceTempProgress(temp, sum));
       steps.push(sum);
     });
     return steps;
+  }
+
+  function optionStepVariants(sums) {
+    const [first, second] = sums;
+    if (first === second) {
+      const duplicateSteps = optionSteps(sums);
+      return duplicateSteps.length ? [duplicateSteps] : [];
+    }
+
+    const variants = [];
+    [first, second].forEach((primary, index) => {
+      const secondary = index === 0 ? second : first;
+      if (!canAdvanceColumn(primary)) return;
+      const afterPrimary = advanceTempProgress(state.tempProgress, primary);
+      const steps = [primary];
+      if (canAdvanceColumn(secondary, afterPrimary)) {
+        steps.push(secondary);
+      }
+      variants.push(steps);
+    });
+
+    if (!variants.length) return [];
+    const maxMoves = Math.max(...variants.map((steps) => steps.length));
+    const seen = new Set();
+    return variants
+      .filter((steps) => steps.length === maxMoves)
+      .filter((steps) => {
+        const key = [...steps].sort((a, b) => a - b).join("-");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
   }
 
   function buildRollOptions(dice) {
@@ -672,10 +710,13 @@
       [dice[0] + dice[3], dice[1] + dice[2]]
     ];
     const seen = new Set();
-    return raw.map((sums) => {
+    return raw.flatMap((sums) => {
       const sortedKey = [...sums].sort((a, b) => a - b).join("-");
-      const steps = optionSteps(sums);
-      return { sums, steps, key: sortedKey };
+      return optionStepVariants(sums).map((steps) => ({
+        sums,
+        steps,
+        key: `${sortedKey}:${[...steps].sort((a, b) => a - b).join("-")}:${steps.length}`
+      }));
     }).filter((option) => {
       if (seen.has(option.key) || option.steps.length === 0) return false;
       seen.add(option.key);
@@ -729,6 +770,7 @@
       state.progress[actor][column] = value;
       if (value >= COLUMN_HEIGHTS[column]) {
         state.claimed[column] = actor;
+        delete state.progress[opponentActor(actor)]?.[column];
       }
     });
     const completed = completedColumns(actor);
@@ -859,14 +901,14 @@
       const spots = BOARD_SPOTS[column] || [];
       spots.forEach(([x, y], index) => {
         const step = index + 1;
-        const humanHere = visibleProgress("human", column) === step;
-        const aiHere = visibleProgress("ai", column) === step;
+        const claimedActor = state.claimed[column];
+        const humanHere = (!claimedActor || claimedActor === "human") && visibleProgress("human", column) === step;
+        const aiHere = (!claimedActor || claimedActor === "ai") && visibleProgress("ai", column) === step;
         const runnerHere = state.currentActor === "human"
           ? Object.prototype.hasOwnProperty.call(state.tempProgress, column) && state.tempProgress[column] === step
           : state.currentActor === "ai"
             && Object.prototype.hasOwnProperty.call(state.tempProgress, column)
             && state.tempProgress[column] === step;
-        const claimedActor = state.claimed[column];
         const spotEl = document.createElement("span");
         spotEl.className = [
           "cant-board-spot",
