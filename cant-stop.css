@@ -355,6 +355,7 @@ body:not(.cant-active) .cant-stop-panel {
 }
 
 .cant-die {
+  position: relative;
   display: grid;
   place-items: center;
   min-height: 58px;
@@ -365,6 +366,37 @@ body:not(.cant-active) .cant-stop-panel {
   font-size: 28px;
   font-weight: 900;
   box-shadow: inset 0 -4px 0 rgba(18, 48, 78, 0.14);
+}
+
+button.cant-die {
+  cursor: pointer;
+}
+
+button.cant-die:hover,
+button.cant-die:focus-visible,
+.cant-die.selected {
+  border-color: rgba(242, 181, 63, 0.92);
+  background: #fff5cc;
+  box-shadow:
+    inset 0 -4px 0 rgba(165, 99, 21, 0.18),
+    0 0 0 2px rgba(242, 181, 63, 0.2);
+}
+
+.cant-die.selected::after {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid rgba(20, 29, 31, 0.9);
+  border-radius: 50%;
+  color: #1e1709;
+  background: #f2cf78;
+  content: attr(data-order);
+  font-size: 13px;
+  font-weight: 950;
 }
 
 .cant-options {
@@ -399,6 +431,63 @@ body:not(.cant-active) .cant-stop-panel {
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;
+}
+
+.cant-manual-choice {
+  display: grid;
+  gap: 10px;
+}
+
+.cant-selected-pairs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cant-selected-pair {
+  display: grid;
+  min-height: 58px;
+  align-content: center;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid rgba(246, 232, 202, 0.15);
+  border-radius: 8px;
+  background: rgba(8, 16, 22, 0.34);
+}
+
+.cant-selected-pair.complete {
+  border-color: rgba(98, 162, 191, 0.45);
+  background: rgba(23, 55, 70, 0.5);
+}
+
+.cant-selected-pair span {
+  color: rgba(247, 236, 217, 0.76);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.cant-selected-pair strong {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.cant-manual-choice small {
+  min-height: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.cant-manual-choice small.error {
+  color: #ffb4a6;
+}
+
+.cant-manual-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .cant-actions-panel {

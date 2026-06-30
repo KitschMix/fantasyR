@@ -137,6 +137,7 @@
     tempProgress: {},
     dice: [],
     options: [],
+    selectedDice: [],
     turnNumber: 1,
     log: [],
     aiTimer: 0,
@@ -590,6 +591,7 @@
     state.tempProgress = {};
     state.dice = [];
     state.options = [];
+    state.selectedDice = [];
     state.turnNumber = 1;
     state.leaderboardSubmitted = false;
     state.log = ["게임 시작. 주사위를 굴리고, 올라갈지 멈출지 선택하세요."];
@@ -724,10 +726,64 @@
     });
   }
 
+  function isManualDiceChoice() {
+    return state.currentActor === "human" && state.phase === "choice";
+  }
+
+  function clearManualDiceSelection() {
+    state.selectedDice = [];
+  }
+
+  function toggleManualDieSelection(index) {
+    if (!isManualDiceChoice()) return;
+    const selectedIndex = state.selectedDice.indexOf(index);
+    if (selectedIndex >= 0) {
+      state.selectedDice.splice(selectedIndex, 1);
+    } else if (state.selectedDice.length < 4) {
+      state.selectedDice.push(index);
+    }
+    renderCant();
+  }
+
+  function selectedDicePairSums() {
+    const selected = state.selectedDice;
+    const pairs = [];
+    for (let index = 0; index < selected.length; index += 2) {
+      const diceIndexes = selected.slice(index, index + 2);
+      pairs.push({
+        diceIndexes,
+        values: diceIndexes.map((diceIndex) => state.dice[diceIndex]),
+        sum: diceIndexes.length === 2
+          ? diceIndexes.reduce((total, diceIndex) => total + state.dice[diceIndex], 0)
+          : null
+      });
+    }
+    return pairs;
+  }
+
+  function manualDiceOption() {
+    if (state.selectedDice.length !== 4) return null;
+    const sums = selectedDicePairSums().map((pair) => pair.sum);
+    const steps = optionSteps(sums);
+    if (!steps.length) return { sums, steps: [], key: `manual:${sums.join("-")}`, invalid: true };
+    return { sums, steps, key: `manual:${sums.join("-")}` };
+  }
+
+  function confirmManualDiceSelection() {
+    if (!isManualDiceChoice()) return;
+    const option = manualDiceOption();
+    if (!option || option.invalid) {
+      toast("올라갈 수 있는 묶음이 아닙니다.", 1400);
+      return;
+    }
+    applyOption(option);
+  }
+
   function rollForCurrentActor() {
     if (state.finished || state.phase === "choice") return;
     state.dice = rollDice();
     state.options = buildRollOptions(state.dice);
+    clearManualDiceSelection();
     if (!state.options.length) {
       bustCurrentTurn();
       return;
@@ -748,6 +804,7 @@
     log(`${actorLabel()}: ${climbed}번 기둥 등반`);
     state.phase = "decision";
     state.options = [];
+    clearManualDiceSelection();
     renderCant();
     if (state.currentActor === "ai") scheduleAiDecision();
   }
@@ -756,6 +813,7 @@
     const lost = activeTempColumns();
     state.tempProgress = {};
     state.options = [];
+    clearManualDiceSelection();
     state.phase = "idle";
     log(`${actorLabel()}: 실패!${lost.length ? ` 이번 턴 등반(${lost.join(", ")})이 사라졌습니다.` : ""}`);
     toast(`${actorLabel()} 실패`, 1400);
@@ -777,6 +835,7 @@
     log(`${actorLabel(actor)}: 멈춤. 현재 완주 ${completed.length}개`);
     state.tempProgress = {};
     state.options = [];
+    clearManualDiceSelection();
     state.phase = "idle";
     if (completed.length >= 3) {
       finishCantGame(actor);
@@ -791,6 +850,7 @@
     state.turnNumber += 1;
     state.dice = [];
     state.options = [];
+    clearManualDiceSelection();
     state.phase = "idle";
     renderCant();
     if (state.currentActor === "ai") scheduleAiRoll();
@@ -935,20 +995,27 @@
       els.dice.innerHTML = Array.from({ length: 4 }, () => '<span class="cant-die">-</span>').join("");
       return;
     }
-    els.dice.innerHTML = state.dice.map((value) => `<span class="cant-die">${value}</span>`).join("");
+    els.dice.innerHTML = "";
+    state.dice.forEach((value, index) => {
+      const selectedOrder = state.selectedDice.indexOf(index);
+      const die = document.createElement(isManualDiceChoice() ? "button" : "span");
+      die.className = `cant-die${selectedOrder >= 0 ? " selected" : ""}`;
+      die.textContent = value;
+      if (selectedOrder >= 0) {
+        die.setAttribute("data-order", String(selectedOrder + 1));
+      }
+      if (die.tagName === "BUTTON") {
+        die.type = "button";
+        die.setAttribute("aria-pressed", selectedOrder >= 0 ? "true" : "false");
+        die.setAttribute("aria-label", `${index + 1}번째 주사위 ${value}`);
+        die.addEventListener("click", () => toggleManualDieSelection(index));
+      }
+      els.dice.append(die);
+    });
   }
 
-  function renderOptions() {
+  function renderAutomaticOptionButtons() {
     if (!els.options) return;
-    els.options.innerHTML = "";
-    if (state.phase !== "choice") {
-      const empty = document.createElement("div");
-      empty.className = "leaderboard-empty";
-      empty.textContent = state.phase === "decision" ? "더 굴릴지 멈출지 선택하세요." : "주사위를 굴리면 선택지가 나옵니다.";
-      els.options.append(empty);
-      return;
-    }
-
     state.options.forEach((option, index) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -962,6 +1029,67 @@
       button.addEventListener("click", () => applyOption(state.options[index]));
       els.options.append(button);
     });
+  }
+
+  function renderManualDiceChoice() {
+    const pairs = selectedDicePairSums();
+    const option = manualDiceOption();
+    const complete = state.selectedDice.length === 4;
+    const wrapper = document.createElement("div");
+    wrapper.className = "cant-manual-choice";
+    const pairHtml = [0, 1].map((pairIndex) => {
+      const pair = pairs[pairIndex] || { values: [], sum: null };
+      const values = pair.values.length ? pair.values.join(" + ") : "-";
+      const sum = pair.sum === null ? "?" : pair.sum;
+      return `
+        <div class="cant-selected-pair${pair.values.length === 2 ? " complete" : ""}">
+          <span>${escapeHtml(values)}</span>
+          <strong>${escapeHtml(sum)}</strong>
+        </div>
+      `;
+    }).join("");
+    const resultText = complete
+      ? option?.invalid
+        ? "이 묶음으로는 올라갈 수 없습니다."
+        : `${option.steps.join(", ")}번 기둥 상승`
+      : "주사위를 순서대로 4개 선택하세요.";
+    wrapper.innerHTML = `
+      <div class="cant-selected-pairs">${pairHtml}</div>
+      <small class="${option?.invalid ? "error" : ""}">${escapeHtml(resultText)}</small>
+      <div class="cant-manual-actions">
+        <button class="secondary-button" type="button">초기화</button>
+        <button class="primary-button" type="button"${!complete || option?.invalid ? " disabled" : ""}>확정</button>
+      </div>
+    `;
+    const [resetButton, confirmButton] = wrapper.querySelectorAll("button");
+    resetButton?.addEventListener("click", () => {
+      clearManualDiceSelection();
+      renderCant();
+    });
+    confirmButton?.addEventListener("click", confirmManualDiceSelection);
+    els.options.append(wrapper);
+  }
+
+  function renderOptions() {
+    if (!els.options) return;
+    els.options.innerHTML = "";
+    if (state.phase !== "choice") {
+      const empty = document.createElement("div");
+      empty.className = "leaderboard-empty";
+      empty.textContent = state.phase === "decision" ? "더 굴릴지 멈출지 선택하세요." : "주사위를 굴리면 선택지가 나옵니다.";
+      els.options.append(empty);
+      return;
+    }
+
+    if (state.currentActor === "human") {
+      renderManualDiceChoice();
+      return;
+    }
+
+    const empty = document.createElement("div");
+    empty.className = "leaderboard-empty";
+    empty.textContent = "AI가 주사위 묶음을 고르는 중입니다.";
+    els.options.append(empty);
   }
 
   function progressSummary(actor) {
