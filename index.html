@@ -6,7 +6,7 @@
     <title>판타지왕국 PC버전</title>
     <link rel="stylesheet" href="styles.css?v=20260629-dismissible-toast" />
     <link rel="stylesheet" href="tally-ho.css?v=20260630-tally-hide-opponent" />
-    <link rel="stylesheet" href="cant-stop.css?v=20260630-cant-manual-dice" />
+    <link rel="stylesheet" href="cant-stop.css?v=20260630-cant-4p-slide" />
   </head>
   <body class="launcher-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -257,6 +257,14 @@
                     <button id="cantConfirmNicknameButton" class="secondary-button" type="button">확인</button>
                     <small id="cantNicknameStatus">닉네임은 모든 게임과 공유되며, 하루에 한 번만 변경할 수 있습니다.</small>
                   </div>
+                  <label>
+                    플레이어 수
+                    <select id="cantPlayerCountSelect">
+                      <option value="2">2명</option>
+                      <option value="3">3명</option>
+                      <option value="4">4명</option>
+                    </select>
+                  </label>
                   <label class="setup-tooltip" data-tooltip="보통: 안전하게 멈춥니다. 어려움: 완주 기회가 보이면 더 밀어붙입니다. 매우어려움: 기대값과 위험을 더 공격적으로 봅니다. 완전랜덤: 프로필과 실제 난이도가 섞입니다.">
                     AI 난이도
                     <select id="cantDifficultySelect">
@@ -316,24 +324,7 @@
 
           <section id="cantGameView" class="cant-game-view hidden" aria-label="캔트스탑 플레이 화면">
             <aside class="cant-status-panel">
-              <section class="cant-player-card human" id="cantHumanCard">
-                <div class="cant-player-head">
-                  <img id="cantGameHumanAvatar" src="assets/profiles/user/유저.jpg" alt="" />
-                  <span id="cantHumanNameLabel">플레이어</span>
-                  <small>나</small>
-                </div>
-                <strong id="cantHumanScore">0개 완주</strong>
-                <small id="cantHumanProgressSummary">등반 준비</small>
-              </section>
-              <section class="cant-player-card ai" id="cantAiCard">
-                <div class="cant-player-head">
-                  <img id="cantAiAvatar" src="assets/profiles/user/보통-건일.jpg" alt="" />
-                  <span id="cantAiNameLabel">AI</span>
-                  <small id="cantAiDifficultyLabel">보통</small>
-                </div>
-                <strong id="cantAiScore">0개 완주</strong>
-                <small id="cantAiProgressSummary">대기 중</small>
-              </section>
+              <div id="cantPlayersList" class="cant-players-list" aria-label="캔트스탑 플레이어"></div>
               <section class="cant-turn-card">
                 <span>현재 차례</span>
                 <strong id="cantTurnLabel">-</strong>
@@ -749,6 +740,6 @@
     <script src="dialogues.js?v=20260618-dialogues"></script>
     <script src="script.js?v=20260630-cant-stop-classes"></script>
     <script src="tally-ho.js?v=20260630-cant-stop-classes"></script>
-    <script src="cant-stop.js?v=20260630-cant-manual-dice"></script>
+    <script src="cant-stop.js?v=20260630-cant-4p-slide"></script>
   </body>
 </html>

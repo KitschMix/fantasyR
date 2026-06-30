@@ -210,6 +210,11 @@ body:not(.cant-active) .cant-stop-panel {
   gap: 12px;
 }
 
+.cant-players-list {
+  display: grid;
+  gap: 12px;
+}
+
 .cant-player-card,
 .cant-turn-card,
 .cant-dice-panel,
@@ -225,12 +230,20 @@ body:not(.cant-active) .cant-stop-panel {
   box-shadow: 0 0 0 2px rgba(242, 207, 120, 0.16), 0 18px 46px rgba(0, 0, 0, 0.3);
 }
 
-.cant-player-card.human {
+.cant-player-card.player-human {
   background: linear-gradient(135deg, rgba(32, 79, 96, 0.94), rgba(22, 26, 36, 0.94));
 }
 
-.cant-player-card.ai {
+.cant-player-card.player-ai1 {
   background: linear-gradient(135deg, rgba(87, 56, 35, 0.94), rgba(35, 27, 21, 0.94));
+}
+
+.cant-player-card.player-ai2 {
+  background: linear-gradient(135deg, rgba(38, 77, 46, 0.94), rgba(22, 33, 24, 0.94));
+}
+
+.cant-player-card.player-ai3 {
+  background: linear-gradient(135deg, rgba(70, 50, 103, 0.94), rgba(32, 24, 43, 0.94));
 }
 
 .cant-player-head {
@@ -303,49 +316,68 @@ body:not(.cant-active) .cant-stop-panel {
   pointer-events: none;
 }
 
-.cant-board-spot::before,
-.cant-board-spot::after {
+.cant-board-token-anchor {
   position: absolute;
-  content: "";
+  top: calc(50% + var(--token-y, 0%));
+  left: calc(50% + var(--token-x, 0%));
+  width: 42%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.cant-board-token {
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 3px 8px rgba(0, 0, 0, 0.38),
+    0 0 10px rgba(255, 255, 255, 0.2);
+  will-change: transform;
 }
 
-.cant-board-spot.human::before,
-.cant-board-spot.ai::after {
-  width: 58%;
-  height: 58%;
-  top: 21%;
-}
-
-.cant-board-spot.human::before {
-  left: 9%;
+.cant-board-token.player-human {
   background: #5ed0ff;
-  box-shadow: 0 0 9px rgba(94, 208, 255, 0.7);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 3px 8px rgba(0, 0, 0, 0.38),
+    0 0 11px rgba(94, 208, 255, 0.72);
 }
 
-.cant-board-spot.ai::after {
-  right: 9%;
+.cant-board-token.player-ai1 {
   background: #ff9d5e;
-  box-shadow: 0 0 9px rgba(255, 157, 94, 0.68);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 3px 8px rgba(0, 0, 0, 0.38),
+    0 0 11px rgba(255, 157, 94, 0.68);
 }
 
-.cant-board-spot.runner {
-  outline: 3px solid rgba(242, 207, 120, 0.9);
-  outline-offset: -2px;
+.cant-board-token.player-ai2 {
+  background: #84dd6a;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 3px 8px rgba(0, 0, 0, 0.38),
+    0 0 11px rgba(132, 221, 106, 0.68);
 }
 
-.cant-board-spot.claimed-human,
-.cant-board-spot.claimed-ai {
-  outline-width: 4px;
-  outline-offset: -3px;
+.cant-board-token.player-ai3 {
+  background: #c891ff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 3px 8px rgba(0, 0, 0, 0.38),
+    0 0 11px rgba(200, 145, 255, 0.68);
 }
 
-.cant-board-spot.claimed-human {
-  outline-color: rgba(117, 217, 255, 0.96);
+.cant-board-token.runner {
+  outline: 3px solid rgba(242, 207, 120, 0.94);
+  outline-offset: 2px;
 }
 
-.cant-board-spot.claimed-ai {
-  outline-color: rgba(255, 176, 109, 0.96);
+.cant-board-token.claimed {
+  outline: 4px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
 }
 
 .cant-dice {
@@ -519,7 +551,11 @@ button.cant-die:focus-visible,
   }
 
   .cant-status-panel {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+  }
+
+  .cant-players-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .cant-control-panel {
@@ -539,6 +575,7 @@ button.cant-die:focus-visible,
 @media (max-width: 760px) {
   .cant-top,
   .cant-status-panel,
+  .cant-players-list,
   .cant-control-panel {
     display: grid;
     grid-template-columns: 1fr;

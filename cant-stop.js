@@ -28,9 +28,15 @@
     11: [[81.17, 77.09], [81.10, 70.98], [81.00, 64.90], [80.90, 58.82], [80.81, 52.85]],
     12: [[89.25, 77.12], [89.13, 70.98], [89.01, 64.87]]
   };
-  const ACTORS = {
-    human: { label: "나", opponent: "ai" },
-    ai: { label: "AI", opponent: "human" }
+  const DEFAULT_PLAYERS = [
+    { id: "human", role: "human", label: "나", className: "human" },
+    { id: "ai1", role: "ai", label: "AI 1", className: "ai1" }
+  ];
+  const PLAYER_TOKEN_OFFSETS = {
+    1: [[0, 0]],
+    2: [[-18, 0], [18, 0]],
+    3: [[0, -18], [-18, 16], [18, 16]],
+    4: [[-18, -18], [18, -18], [-18, 18], [18, 18]]
   };
   const AI_THINK_DELAY_MS = 520;
   const AI_STEP_DELAY_MS = 620;
@@ -91,6 +97,7 @@
     rulesButton: document.querySelector("#cantRulesButton"),
     rulesDialog: document.querySelector("#cantRulesDialog"),
     startButton: document.querySelector("#cantStartButton"),
+    playerCountSelect: document.querySelector("#cantPlayerCountSelect"),
     difficultySelect: document.querySelector("#cantDifficultySelect"),
     nameInput: document.querySelector("#cantNameInput"),
     onlineNameInput: document.querySelector("#cantOnlineNameInput"),
@@ -101,17 +108,7 @@
     leaderboardList: document.querySelector("#cantLeaderboardList"),
     leaderboardStatus: document.querySelector("#cantLeaderboardStatus"),
     refreshLeaderboardButton: document.querySelector("#cantRefreshLeaderboardButton"),
-    humanCard: document.querySelector("#cantHumanCard"),
-    aiCard: document.querySelector("#cantAiCard"),
-    gameHumanAvatar: document.querySelector("#cantGameHumanAvatar"),
-    aiAvatar: document.querySelector("#cantAiAvatar"),
-    humanNameLabel: document.querySelector("#cantHumanNameLabel"),
-    aiNameLabel: document.querySelector("#cantAiNameLabel"),
-    aiDifficultyLabel: document.querySelector("#cantAiDifficultyLabel"),
-    humanScore: document.querySelector("#cantHumanScore"),
-    aiScore: document.querySelector("#cantAiScore"),
-    humanProgressSummary: document.querySelector("#cantHumanProgressSummary"),
-    aiProgressSummary: document.querySelector("#cantAiProgressSummary"),
+    playersList: document.querySelector("#cantPlayersList"),
     turnLabel: document.querySelector("#cantTurnLabel"),
     phaseLabel: document.querySelector("#cantPhaseLabel"),
     board: document.querySelector("#cantBoard"),
@@ -127,12 +124,15 @@
     started: false,
     finished: false,
     currentActor: "human",
+    playerCount: 2,
+    players: [...DEFAULT_PLAYERS],
     phase: "idle",
     humanName: "",
     difficultyMode: "normal",
     aiDifficulty: "normal",
     aiProfile: null,
-    progress: { human: {}, ai: {} },
+    aiProfiles: {},
+    progress: { human: {}, ai1: {} },
     claimed: {},
     tempProgress: {},
     dice: [],
@@ -204,20 +204,72 @@
     return shuffle(pool)[0] || prepareAiProfile({ name: "AI", avatarUrl: profileImageUrl("보통-건일.jpg") }, "normal");
   }
 
+  function selectCantAiProfiles(difficulty, count) {
+    const pool = difficulty === "random"
+      ? AI_PROFILE_DIFFICULTY_KEYS.flatMap((key) => AI_PROFILE_GROUPS[key] || []).map((profile) => (
+        prepareAiProfile(profile, randomAiDifficultyKey(), "랜덤")
+      ))
+      : (AI_PROFILE_GROUPS[difficulty] || AI_PROFILE_GROUPS.normal || []).map((profile) => (
+        prepareAiProfile(profile, AI_PROFILE_GROUPS[difficulty] ? difficulty : "normal")
+      ));
+    const shuffled = shuffle(pool);
+    return Array.from({ length: count }, (_, index) => (
+      shuffled[index % Math.max(1, shuffled.length)]
+        ? { ...shuffled[index % Math.max(1, shuffled.length)] }
+        : prepareAiProfile({ name: `AI ${index + 1}`, avatarUrl: profileImageUrl("보통-건일.jpg") }, "normal")
+    ));
+  }
+
   function aiProfileDisplayName(profile = state.aiProfile) {
     if (!profile) return "AI";
     if (profile.boss) return "강범례(최종보스)";
     return `${profile.name} (${profile.difficultyLabel || aiDifficultyLabel(profile.difficulty)})`;
   }
 
-  function actorLabel(actor = state.currentActor) {
-    if (actor === "human") return state.humanName || currentHumanNickname() || ACTORS.human.label;
-    if (actor === "ai") return aiProfileDisplayName(state.aiProfile);
-    return ACTORS[actor]?.label || actor;
+  function actorPlayer(actor = state.currentActor) {
+    return (state.players || []).find((player) => player.id === actor)
+      || DEFAULT_PLAYERS.find((player) => player.id === actor)
+      || { id: actor, label: actor, role: actor === "human" ? "human" : "ai", className: "ai1" };
   }
 
-  function opponentActor(actor = state.currentActor) {
-    return ACTORS[actor].opponent;
+  function isAiActor(actor = state.currentActor) {
+    return actorPlayer(actor).role === "ai";
+  }
+
+  function actorLabel(actor = state.currentActor) {
+    const player = actorPlayer(actor);
+    if (player.role === "human") return state.humanName || currentHumanNickname() || player.label;
+    return aiProfileDisplayName(player.profile || state.aiProfiles?.[actor] || state.aiProfile);
+  }
+
+  function nextActor(actor = state.currentActor) {
+    const players = state.players?.length ? state.players : DEFAULT_PLAYERS;
+    const index = Math.max(0, players.findIndex((player) => player.id === actor));
+    return players[(index + 1) % players.length]?.id || "human";
+  }
+
+  function buildCantPlayers(playerCount, difficulty) {
+    const total = Math.min(4, Math.max(2, Number(playerCount) || 2));
+    const aiProfiles = selectCantAiProfiles(difficulty, total - 1);
+    return [
+      {
+        id: "human",
+        role: "human",
+        className: "human",
+        label: state.humanName || currentHumanNickname() || "플레이어",
+        avatarUrl: HUMAN_PROFILE.avatarUrl,
+        difficultyLabel: "나"
+      },
+      ...aiProfiles.map((profile, index) => ({
+        id: `ai${index + 1}`,
+        role: "ai",
+        className: `ai${index + 1}`,
+        label: profile.name || `AI ${index + 1}`,
+        avatarUrl: profile.avatarUrl || profileImageUrl("보통-건일.jpg"),
+        profile,
+        difficultyLabel: profile.difficultyLabel || aiDifficultyLabel(profile.difficulty)
+      }))
+    ];
   }
 
   function normalizeHumanNickname(value) {
@@ -499,7 +551,7 @@
       p_columns_claimed: completedColumns("human").length,
       p_turns: state.turnNumber,
       p_ai_difficulty: state.difficultyMode || state.aiDifficulty || "normal",
-      p_opponent_name: state.aiProfile?.name || "AI",
+      p_opponent_name: state.players.filter((player) => player.role === "ai").map((player) => player.profile?.name || player.label).join(", ") || "AI",
       p_won: won
     });
 
@@ -517,6 +569,10 @@
 
   function currentDifficultyMode() {
     return els.difficultySelect?.value || state.difficultyMode || "normal";
+  }
+
+  function currentPlayerCount() {
+    return Math.min(4, Math.max(2, Number(els.playerCountSelect?.value || state.playerCount || 2)));
   }
 
   function renderCantSetup() {
@@ -571,8 +627,11 @@
       return;
     }
     state.difficultyMode = currentDifficultyMode();
-    state.aiProfile = { ...selectCantAiProfile(state.difficultyMode) };
-    state.aiDifficulty = state.aiProfile.difficulty || "normal";
+    state.playerCount = currentPlayerCount();
+    state.players = buildCantPlayers(state.playerCount, state.difficultyMode);
+    state.aiProfiles = Object.fromEntries(state.players.filter((player) => player.role === "ai").map((player) => [player.id, player.profile]));
+    state.aiProfile = state.aiProfiles.ai1 || null;
+    state.aiDifficulty = state.aiProfile?.difficulty || "normal";
     resetCantGame();
   }
 
@@ -580,13 +639,18 @@
     clearAiTimer();
     showCantGame();
     if (!state.humanName) state.humanName = currentHumanNickname() || HUMAN_PROFILE.name;
-    if (!state.aiProfile) state.aiProfile = { ...selectCantAiProfile(state.difficultyMode || currentDifficultyMode()) };
-    state.aiDifficulty = state.aiProfile.difficulty || "normal";
+    state.playerCount = state.playerCount || currentPlayerCount();
+    if (!state.players?.length || state.players.length !== state.playerCount) {
+      state.players = buildCantPlayers(state.playerCount, state.difficultyMode || currentDifficultyMode());
+    }
+    state.aiProfiles = Object.fromEntries(state.players.filter((player) => player.role === "ai").map((player) => [player.id, player.profile]));
+    state.aiProfile = state.aiProfiles.ai1 || null;
+    state.aiDifficulty = state.aiProfile?.difficulty || "normal";
     state.started = true;
     state.finished = false;
     state.currentActor = "human";
     state.phase = "idle";
-    state.progress = { human: {}, ai: {} };
+    state.progress = Object.fromEntries(state.players.map((player) => [player.id, {}]));
     state.claimed = {};
     state.tempProgress = {};
     state.dice = [];
@@ -791,7 +855,7 @@
     state.phase = "choice";
     log(`${actorLabel()}: ${state.dice.join(", ")} 굴림`);
     renderCant();
-    if (state.currentActor === "ai") scheduleAiChoice();
+    if (isAiActor()) scheduleAiChoice();
   }
 
   function applyOption(option) {
@@ -806,7 +870,7 @@
     state.options = [];
     clearManualDiceSelection();
     renderCant();
-    if (state.currentActor === "ai") scheduleAiDecision();
+    if (isAiActor()) scheduleAiDecision();
   }
 
   function bustCurrentTurn() {
@@ -823,12 +887,15 @@
   function stopCurrentTurn() {
     if (state.finished || activeTempColumns().length === 0) return;
     const actor = state.currentActor;
+    if (!state.progress[actor]) state.progress[actor] = {};
     activeTempColumns().forEach((column) => {
       const value = Math.min(state.tempProgress[column], COLUMN_HEIGHTS[column]);
       state.progress[actor][column] = value;
       if (value >= COLUMN_HEIGHTS[column]) {
         state.claimed[column] = actor;
-        delete state.progress[opponentActor(actor)]?.[column];
+        state.players.forEach((player) => {
+          if (player.id !== actor && state.progress[player.id]) delete state.progress[player.id][column];
+        });
       }
     });
     const completed = completedColumns(actor);
@@ -846,14 +913,14 @@
 
   function endTurn() {
     if (state.finished) return;
-    state.currentActor = opponentActor();
+    state.currentActor = nextActor();
     state.turnNumber += 1;
     state.dice = [];
     state.options = [];
     clearManualDiceSelection();
     state.phase = "idle";
     renderCant();
-    if (state.currentActor === "ai") scheduleAiRoll();
+    if (isAiActor()) scheduleAiRoll();
   }
 
   function finishCantGame(winnerActor) {
@@ -884,8 +951,10 @@
     return 15 - Math.abs(7 - column);
   }
 
-  function aiDifficultyKey() {
-    const difficulty = state.aiDifficulty || state.aiProfile?.difficulty || "normal";
+  function aiDifficultyKey(actor = state.currentActor) {
+    const player = actorPlayer(actor);
+    const profile = state.aiProfiles?.[actor] || player.profile || state.aiProfile;
+    const difficulty = profile?.difficulty || state.aiDifficulty || "normal";
     return AI_DIFFICULTY_LABELS[difficulty] ? difficulty : "normal";
   }
 
@@ -899,11 +968,12 @@
 
   function shouldAiStop() {
     const difficulty = aiDifficultyKey();
+    const actor = state.currentActor;
     const tempColumns = activeTempColumns();
     const tempCompleted = tempColumns.filter((column) => state.tempProgress[column] >= COLUMN_HEIGHTS[column]).length;
-    const totalCompleted = completedColumns("ai").length + tempCompleted;
+    const totalCompleted = completedColumns(actor).length + tempCompleted;
     const gained = tempColumns.reduce((sum, column) => (
-      sum + Math.max(0, (state.tempProgress[column] || 0) - permanentProgress("ai", column))
+      sum + Math.max(0, (state.tempProgress[column] || 0) - permanentProgress(actor, column))
     ), 0);
 
     if (totalCompleted >= 3) return true;
@@ -918,7 +988,7 @@
 
   function scheduleAiRoll() {
     clearAiTimer();
-    if (state.currentActor !== "ai" || state.finished) return;
+    if (!isAiActor() || state.finished) return;
     state.aiTimer = window.setTimeout(() => {
       state.aiTimer = 0;
       rollForCurrentActor();
@@ -929,7 +999,7 @@
     clearAiTimer();
     state.aiTimer = window.setTimeout(() => {
       state.aiTimer = 0;
-      if (state.currentActor !== "ai" || state.finished || state.phase !== "choice") return;
+      if (!isAiActor() || state.finished || state.phase !== "choice") return;
       applyOption(chooseAiOption());
     }, AI_STEP_DELAY_MS);
   }
@@ -938,7 +1008,7 @@
     clearAiTimer();
     state.aiTimer = window.setTimeout(() => {
       state.aiTimer = 0;
-      if (state.currentActor !== "ai" || state.finished || state.phase !== "decision") return;
+      if (!isAiActor() || state.finished || state.phase !== "decision") return;
       if (shouldAiStop()) {
         stopCurrentTurn();
       } else {
@@ -953,8 +1023,45 @@
     }
   }
 
+  function collectBoardTokenRects() {
+    const rects = new Map();
+    if (!els.board) return rects;
+    els.board.querySelectorAll(".cant-board-token-anchor[data-token-key]").forEach((token) => {
+      rects.set(token.dataset.tokenKey, token.getBoundingClientRect());
+    });
+    return rects;
+  }
+
+  function animateBoardTokenMoves(previousRects) {
+    if (!els.board || !previousRects?.size) return;
+    els.board.querySelectorAll(".cant-board-token-anchor[data-token-key]").forEach((anchor) => {
+      const previous = previousRects.get(anchor.dataset.tokenKey);
+      if (!previous) return;
+      const current = anchor.getBoundingClientRect();
+      const dx = previous.left - current.left;
+      const dy = previous.top - current.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      const target = anchor.firstElementChild || anchor;
+      if (typeof target.animate !== "function") return;
+      target.animate(
+        [
+          { transform: `translate(${dx}px, ${dy}px)` },
+          { transform: "translate(0, 0)" }
+        ],
+        { duration: 420, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+      );
+    });
+  }
+
+  function playersAtBoardSpot(column, step) {
+    const claimedActor = state.claimed[column];
+    return (state.players?.length ? state.players : DEFAULT_PLAYERS)
+      .filter((player) => (!claimedActor || claimedActor === player.id) && visibleProgress(player.id, column) === step);
+  }
+
   function renderBoard() {
     if (!els.board) return;
+    const previousRects = collectBoardTokenRects();
     els.board.innerHTML = "";
     const fragment = document.createDocumentFragment();
     COLUMNS.forEach((column) => {
@@ -962,31 +1069,47 @@
       spots.forEach(([x, y], index) => {
         const step = index + 1;
         const claimedActor = state.claimed[column];
-        const humanHere = (!claimedActor || claimedActor === "human") && visibleProgress("human", column) === step;
-        const aiHere = (!claimedActor || claimedActor === "ai") && visibleProgress("ai", column) === step;
-        const runnerHere = state.currentActor === "human"
-          ? Object.prototype.hasOwnProperty.call(state.tempProgress, column) && state.tempProgress[column] === step
-          : state.currentActor === "ai"
-            && Object.prototype.hasOwnProperty.call(state.tempProgress, column)
-            && state.tempProgress[column] === step;
+        const runnerActor = Object.prototype.hasOwnProperty.call(state.tempProgress, column)
+          && state.tempProgress[column] === step
+          ? state.currentActor
+          : "";
+        const spotPlayers = playersAtBoardSpot(column, step);
         const spotEl = document.createElement("span");
-        spotEl.className = [
-          "cant-board-spot",
-          humanHere ? "human" : "",
-          aiHere ? "ai" : "",
-          runnerHere ? "runner" : "",
-          claimedActor && step === COLUMN_HEIGHTS[column] ? `claimed-${claimedActor}` : ""
-        ].filter(Boolean).join(" ");
+        spotEl.className = "cant-board-spot";
         spotEl.style.left = `${x}%`;
         spotEl.style.top = `${y}%`;
+        const playerLabels = spotPlayers.map((player) => actorLabel(player.id)).join(", ");
         spotEl.title = claimedActor
           ? `${column}번 기둥 ${actorLabel(claimedActor)} 완주`
-          : `${column}번 기둥 ${step}/${COLUMN_HEIGHTS[column]}`;
+          : `${column}번 기둥 ${step}/${COLUMN_HEIGHTS[column]}${playerLabels ? ` - ${playerLabels}` : ""}`;
         spotEl.setAttribute("aria-label", spotEl.title);
+
+        const offsets = PLAYER_TOKEN_OFFSETS[Math.min(4, Math.max(1, spotPlayers.length))] || PLAYER_TOKEN_OFFSETS[1];
+        spotPlayers.forEach((player, playerIndex) => {
+          const [offsetX, offsetY] = offsets[playerIndex] || [0, 0];
+          const anchor = document.createElement("span");
+          anchor.className = "cant-board-token-anchor";
+          anchor.dataset.tokenKey = `${player.id}:${column}`;
+          anchor.style.setProperty("--token-x", `${offsetX}%`);
+          anchor.style.setProperty("--token-y", `${offsetY}%`);
+          anchor.title = actorLabel(player.id);
+
+          const token = document.createElement("span");
+          token.className = [
+            "cant-board-token",
+            `player-${player.className || player.id}`,
+            runnerActor === player.id ? "runner" : "",
+            claimedActor === player.id && step === COLUMN_HEIGHTS[column] ? "claimed" : ""
+          ].filter(Boolean).join(" ");
+          anchor.append(token);
+          spotEl.append(anchor);
+        });
+
         fragment.append(spotEl);
       });
     });
     els.board.append(fragment);
+    animateBoardTokenMoves(previousRects);
   }
 
   function renderDice() {
@@ -1106,23 +1229,43 @@
   }
 
   function renderStatus() {
-    const humanDone = completedColumns("human").length;
-    const aiDone = completedColumns("ai").length;
-    if (els.gameHumanAvatar) els.gameHumanAvatar.src = HUMAN_PROFILE.avatarUrl;
-    if (els.aiAvatar) els.aiAvatar.src = state.aiProfile?.avatarUrl || profileImageUrl("보통-건일.jpg");
-    if (els.humanNameLabel) els.humanNameLabel.textContent = state.humanName || currentHumanNickname() || "플레이어";
-    if (els.aiNameLabel) els.aiNameLabel.textContent = aiProfileDisplayName(state.aiProfile);
-    if (els.aiDifficultyLabel) els.aiDifficultyLabel.textContent = aiDifficultyLabel(state.aiDifficulty);
-    if (els.humanScore) els.humanScore.textContent = `${humanDone}개 완주`;
-    if (els.aiScore) els.aiScore.textContent = `${aiDone}개 완주`;
-    if (els.humanProgressSummary) els.humanProgressSummary.textContent = progressSummary("human");
-    if (els.aiProgressSummary) els.aiProgressSummary.textContent = progressSummary("ai");
-    els.humanCard?.classList.toggle("active", state.currentActor === "human" && !state.finished);
-    els.aiCard?.classList.toggle("active", state.currentActor === "ai" && !state.finished);
+    const players = state.players?.length ? state.players : DEFAULT_PLAYERS;
+    if (els.playersList) {
+      els.playersList.innerHTML = "";
+      const fragment = document.createDocumentFragment();
+      players.forEach((player) => {
+        const profile = player.role === "human"
+          ? HUMAN_PROFILE
+          : (player.profile || state.aiProfiles?.[player.id] || {});
+        const displayName = player.role === "human"
+          ? state.humanName || currentHumanNickname() || player.label
+          : profile.name || player.label || "AI";
+        const subLabel = player.role === "human"
+          ? "플레이어"
+          : (profile.boss ? AI_DIFFICULTY_LABELS.boss : (profile.difficultyLabel || aiDifficultyLabel(profile.difficulty)));
+        const card = document.createElement("section");
+        card.className = [
+          "cant-player-card",
+          `player-${player.className || player.id}`,
+          state.currentActor === player.id && !state.finished ? "active" : ""
+        ].filter(Boolean).join(" ");
+        card.innerHTML = `
+          <div class="cant-player-head">
+            <img src="${escapeHtml(profile.avatarUrl || profileImageUrl("보통-건일.jpg"))}" alt="">
+            <span>${escapeHtml(displayName)}</span>
+            <small>${escapeHtml(subLabel)}</small>
+          </div>
+          <strong>${completedColumns(player.id).length}개 완주</strong>
+          <small>${escapeHtml(progressSummary(player.id))}</small>
+        `;
+        fragment.append(card);
+      });
+      els.playersList.append(fragment);
+    }
     if (els.turnLabel) {
       els.turnLabel.textContent = state.finished
         ? "게임 종료"
-        : `${actorLabel()} ${state.currentActor === "ai" ? "생각 중" : "차례"} / ${state.turnNumber}턴`;
+        : `${actorLabel()} ${isAiActor() ? "생각 중" : "차례"} / ${state.turnNumber}턴`;
     }
     if (els.phaseLabel) {
       const active = activeTempColumns();
@@ -1179,6 +1322,7 @@
     confirmCantNicknameChange(els.nameInput);
   });
   els.difficultySelect?.addEventListener("change", renderCantSetup);
+  els.playerCountSelect?.addEventListener("change", renderCantSetup);
   els.refreshLeaderboardButton?.addEventListener("click", loadCantLeaderboard);
   els.rulesButton?.addEventListener("click", openCantRules);
   els.rulesDialog?.addEventListener("click", (event) => {
