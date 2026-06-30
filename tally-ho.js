@@ -105,8 +105,6 @@
     nicknameStatus: document.querySelector("#tallyNicknameStatus"),
     humanAvatar: document.querySelector("#tallyHumanAvatar"),
     humanPreviewName: document.querySelector("#tallyHumanPreviewName"),
-    aiAvatar: document.querySelector("#tallyAiAvatar"),
-    aiPreviewName: document.querySelector("#tallyAiPreviewName"),
     animalLeaderboardList: document.querySelector("#tallyAnimalLeaderboardList"),
     hunterLeaderboardList: document.querySelector("#tallyHunterLeaderboardList"),
     leaderboardStatus: document.querySelector("#tallyLeaderboardStatus"),
@@ -158,7 +156,6 @@
     difficultyMode: "normal",
     aiDifficulty: "normal",
     aiProfile: null,
-    previewAiProfile: null,
     leaderboardSubmitted: false,
     aiTimer: 0,
     aiActing: false,
@@ -650,25 +647,11 @@
     return els.difficultySelect?.value || state.difficultyMode || "normal";
   }
 
-  function ensurePreviewAiProfile(force = false) {
-    const difficulty = currentDifficultyMode();
-    if (force || !state.previewAiProfile || state.previewAiProfile.sourceDifficulty !== difficulty) {
-      state.previewAiProfile = {
-        ...selectTallyAiProfile(difficulty),
-        sourceDifficulty: difficulty
-      };
-    }
-    return state.previewAiProfile;
-  }
-
   function renderTallySetup() {
     syncTallyNicknameInputs();
     const nickname = currentHumanNickname();
-    const aiProfile = ensurePreviewAiProfile();
     if (els.humanAvatar) els.humanAvatar.src = HUMAN_PROFILE.avatarUrl;
     if (els.humanPreviewName) els.humanPreviewName.textContent = nickname || "닉네임 필요";
-    if (els.aiAvatar) els.aiAvatar.src = aiProfile.avatarUrl;
-    if (els.aiPreviewName) els.aiPreviewName.textContent = aiProfileDisplayName(aiProfile);
     if (!nickname) {
       setTallyNicknameStatus("닉네임을 2글자 이상으로 설정해야 시작할 수 있습니다.", true);
     } else if (!els.nicknameStatus?.classList.contains("error")) {
@@ -702,9 +685,8 @@
       return;
     }
     state.difficultyMode = currentDifficultyMode();
-    state.aiProfile = { ...ensurePreviewAiProfile(true) };
+    state.aiProfile = { ...selectTallyAiProfile(state.difficultyMode) };
     state.aiDifficulty = state.aiProfile.difficulty || "normal";
-    ensurePreviewAiProfile(true);
     resetTallyGame();
   }
 
@@ -712,7 +694,7 @@
     clearAiTurnTimer();
     showTallyGame();
     if (!state.humanName) state.humanName = currentHumanNickname() || HUMAN_PROFILE.name;
-    if (!state.aiProfile) state.aiProfile = { ...ensurePreviewAiProfile(true) };
+    if (!state.aiProfile) state.aiProfile = { ...selectTallyAiProfile(state.difficultyMode || currentDifficultyMode()) };
     state.aiDifficulty = state.aiProfile.difficulty || "normal";
     const tiles = createTileBag();
     state.board = Array.from({ length: SIZE }, () => Array.from({ length: SIZE }, () => null));
@@ -1509,7 +1491,6 @@
     confirmTallyNicknameChange(els.nameInput, { force });
   });
   els.difficultySelect?.addEventListener("change", () => {
-    ensurePreviewAiProfile(true);
     renderTallySetup();
   });
   els.refreshLeaderboardButton?.addEventListener("click", loadTallyLeaderboard);

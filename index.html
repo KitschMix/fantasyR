@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
     <link rel="stylesheet" href="styles.css?v=20260629-dismissible-toast" />
-    <link rel="stylesheet" href="tally-ho.css?v=20260630-tally-setup-ranking" />
+    <link rel="stylesheet" href="tally-ho.css?v=20260630-tally-hide-opponent" />
   </head>
   <body class="launcher-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -80,16 +80,11 @@
                       <option value="random">완전랜덤</option>
                     </select>
                   </label>
-                  <div class="tally-profile-preview" aria-label="탤리 호 참가자">
+                  <div class="tally-profile-preview" aria-label="탤리 호 플레이어">
                     <div class="tally-profile-card">
                       <img id="tallyHumanAvatar" src="assets/profiles/user/유저.jpg" alt="" />
                       <span>플레이어</span>
                       <strong id="tallyHumanPreviewName">닉네임 필요</strong>
-                    </div>
-                    <div class="tally-profile-card ai">
-                      <img id="tallyAiAvatar" src="assets/profiles/user/보통-건일.jpg" alt="" />
-                      <span>AI 상대</span>
-                      <strong id="tallyAiPreviewName">보통 NPC</strong>
                     </div>
                   </div>
                   <button id="tallyStartButton" class="primary-button" type="button">게임 시작</button>
@@ -581,6 +576,6 @@
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
     <script src="script.js?v=20260630-tally-shared-profile"></script>
-    <script src="tally-ho.js?v=20260630-tally-setup-ranking"></script>
+    <script src="tally-ho.js?v=20260630-tally-hide-opponent"></script>
   </body>
 </html>
