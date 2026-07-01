@@ -7,13 +7,15 @@
     { id: "bedroom", name: "침실", x: 18, y: 19, cost: 4 },
     { id: "bathroom", name: "욕실", x: 40, y: 13, cost: 3 },
     { id: "study", name: "서재", x: 58, y: 13, cost: 3 },
-    { id: "kitchen", name: "주방", x: 82, y: 24, cost: 4 },
+    { id: "kitchen", name: "부엌", x: 82, y: 24, cost: 4 },
     { id: "dining", name: "식당", x: 80, y: 52, cost: 3 },
     { id: "living", name: "거실", x: 82, y: 76, cost: 4 },
-    { id: "hall", name: "현관", x: 48, y: 86, cost: 4 },
+    { id: "hall", name: "마당", x: 48, y: 86, cost: 4 },
     { id: "garage", name: "차고", x: 17, y: 80, cost: 5 },
-    { id: "game", name: "오락실", x: 20, y: 52, cost: 3 }
+    { id: "game", name: "게임룸", x: 20, y: 52, cost: 3 }
   ];
+  const CLUE_ZONE = { id: "clue", name: "CLUE 존", x: 50, y: 58, cost: 6, clue: true };
+  const MOVE_DESTINATIONS = [...ROOMS, CLUE_ZONE];
   const ROOM_BY_ID = Object.fromEntries(ROOMS.map((room) => [room.id, room]));
   const ROOM_BY_NAME = Object.fromEntries(ROOMS.map((room) => [room.name, room]));
   const CENTER = { id: "center", name: "복도", x: 50, y: 50 };
@@ -27,7 +29,8 @@
     hall: { living: 4, garage: 5, center: 4 },
     garage: { hall: 5, game: 3, center: 4 },
     game: { garage: 3, bedroom: 4, center: 3 },
-    center: Object.fromEntries(ROOMS.map((room) => [room.id, room.cost]))
+    clue: { center: CLUE_ZONE.cost },
+    center: Object.fromEntries(MOVE_DESTINATIONS.map((destination) => [destination.id, destination.cost]))
   };
   const TOKEN_COLORS = ["#de3b35", "#f0c84b", "#e8e4da", "#60b86e", "#5da9e9", "#9b6ee8"];
   const CARD_TYPE_LABEL = { suspect: "용의자", weapon: "무기", room: "장소" };
@@ -55,6 +58,8 @@
     dice: document.querySelector("#clueDice"),
     rollButton: document.querySelector("#clueRollButton"),
     endTurnButton: document.querySelector("#clueEndTurnButton"),
+    moveHint: document.querySelector("#clueMoveHint"),
+    moveOptions: document.querySelector("#clueMoveOptions"),
     handList: document.querySelector("#clueHandList"),
     suggestSuspect: document.querySelector("#clueSuggestSuspect"),
     suggestWeapon: document.querySelector("#clueSuggestWeapon"),
@@ -63,7 +68,9 @@
     accuseSuspect: document.querySelector("#clueAccuseSuspect"),
     accuseRoom: document.querySelector("#clueAccuseRoom"),
     accuseWeapon: document.querySelector("#clueAccuseWeapon"),
+    accusationCard: document.querySelector("#clueAccusationCard"),
     makeAccusationButton: document.querySelector("#clueMakeAccusationButton"),
+    cancelAccusationButton: document.querySelector("#clueCancelAccusationButton"),
     notes: document.querySelector("#clueNotes"),
     log: document.querySelector("#clueLog")
   };
@@ -79,7 +86,7 @@
     dice: [],
     reachableRooms: [],
     humanKnown: new Set(),
-    manualMarks: new Set(),
+    noteMarks: {},
     log: [],
     aiTimer: 0
   };
@@ -161,6 +168,24 @@
     return { id: `${type}:${name}`, type, name };
   }
 
+  const DEDUCTION_ROWS = [
+    ...["그린", "머스터드", "피콕", "플럼", "스칼렛", "화이트"].map((name, index) => ({
+      card: card("suspect", name),
+      top: 10.9 + index * 3.35
+    })),
+    ...["렌치", "촛대", "단검", "권총", "파이프", "밧줄"].map((name, index) => ({
+      card: card("weapon", name),
+      top: 36.5 + index * 3.35
+    })),
+    ...["욕실", "서재", "게임룸", "차고", "침실", "거실", "부엌", "마당", "식당"].map((name, index) => ({
+      card: card("room", name),
+      top: 62.2 + index * 3.35
+    }))
+  ];
+  const NOTE_STATES = ["", "suspect", "confirmed", "excluded"];
+  const NOTE_SYMBOLS = { suspect: "?", confirmed: "확", excluded: "×" };
+  const NOTE_LABELS = { suspect: "의심", confirmed: "확정", excluded: "제외" };
+
   function createGameDeck() {
     const solution = {
       suspect: card("suspect", randomItem(SUSPECTS)),
@@ -194,11 +219,13 @@
   }
 
   function roomName(location) {
+    if (location === CLUE_ZONE.id) return CLUE_ZONE.name;
     return location === "center" ? CENTER.name : ROOM_BY_ID[location]?.name || location;
   }
 
   function locationPoint(location) {
     if (location === "center") return CENTER;
+    if (location === CLUE_ZONE.id) return CLUE_ZONE;
     return ROOM_BY_ID[location] || CENTER;
   }
 
@@ -274,9 +301,11 @@
   }
 
   function chooseAiRoom(player, reachable) {
+    const roomChoices = reachable.filter((destination) => !destination.clue);
+    if (!roomChoices.length) return randomItem(ROOMS);
     const unknownRooms = candidateCards(player, "room").map((entry) => ROOM_BY_NAME[entry.name]?.id).filter(Boolean);
-    const preferred = reachable.filter((room) => unknownRooms.includes(room.id));
-    return randomItem(preferred.length ? preferred : reachable);
+    const preferred = roomChoices.filter((room) => unknownRooms.includes(room.id));
+    return randomItem(preferred.length ? preferred : roomChoices);
   }
 
   function aiSuggestion(player, room) {
@@ -287,15 +316,12 @@
     };
   }
 
-  function maybeAiAccuse(player) {
+  function buildCertainAccusation(player) {
     const suspects = candidateCards(player, "suspect");
     const weapons = candidateCards(player, "weapon");
     const rooms = candidateCards(player, "room");
-    if (suspects.length !== 1 || weapons.length !== 1 || rooms.length !== 1) return false;
-    const accusation = { suspect: suspects[0], weapon: weapons[0], room: rooms[0] };
-    log(`${player.name}이 최종 추리를 선언했습니다.`);
-    finishGame(player, isCorrectAccusation(accusation), accusation);
-    return true;
+    if (suspects.length !== 1 || weapons.length !== 1 || rooms.length !== 1) return null;
+    return { suspect: suspects[0], weapon: weapons[0], room: rooms[0] };
   }
 
   function isCorrectAccusation(accusation) {
@@ -337,7 +363,7 @@
 
   function reachableRoomsForRoll(player, total) {
     const distances = shortestDistances(player.location);
-    const reachable = ROOMS.filter((room) => distances[room.id] !== undefined && distances[room.id] <= total);
+    const reachable = MOVE_DESTINATIONS.filter((destination) => distances[destination.id] !== undefined && distances[destination.id] <= total);
     if (reachable.length) return reachable;
     return ROOMS
       .map((room) => ({ room, distance: distances[room.id] ?? 99 }))
@@ -351,7 +377,7 @@
     const playerCount = Math.min(6, Math.max(3, Number(els.playerCountSelect?.value || 4)));
     state.players = buildPlayers(playerCount);
     state.humanKnown = new Set();
-    state.manualMarks = new Set();
+    state.noteMarks = {};
     const { solution, deck } = createGameDeck();
     state.solution = solution;
     state.deck = deck;
@@ -364,6 +390,7 @@
     state.reachableRooms = [];
     state.log = [];
     log("사건 봉투가 준비되었습니다. 주사위를 굴리세요.");
+    closeAccusationDialog();
     document.body.classList.add("clue-playing");
     els.setupPanel?.classList.add("hidden");
     els.gamePanel?.classList.remove("hidden");
@@ -372,6 +399,7 @@
 
   function leaveClueGame() {
     clearAiTimer();
+    closeAccusationDialog();
     document.body.classList.remove("clue-playing", "clue-active");
     document.body.classList.add("launcher-active");
     els.setupPanel?.classList.add("hidden");
@@ -380,10 +408,19 @@
 
   function resetToClueSetup() {
     clearAiTimer();
+    closeAccusationDialog();
     document.body.classList.remove("clue-playing");
     document.body.classList.add("clue-active");
     els.gamePanel?.classList.add("hidden");
     els.setupPanel?.classList.remove("hidden");
+  }
+
+  function openAccusationDialog() {
+    els.accusationCard?.classList.add("open");
+  }
+
+  function closeAccusationDialog() {
+    els.accusationCard?.classList.remove("open");
   }
 
   function rollForHuman() {
@@ -398,11 +435,18 @@
 
   function moveHumanTo(roomId) {
     if (state.phase !== "chooseMove" || !activePlayer()?.human) return;
-    const room = state.reachableRooms.find((entry) => entry.id === roomId);
-    if (!room) return;
-    activePlayer().location = room.id;
+    const destination = state.reachableRooms.find((entry) => entry.id === roomId);
+    if (!destination) return;
+    activePlayer().location = destination.id;
+    if (destination.clue) {
+      state.phase = "accuse";
+      log(`${activePlayer().name}이 ${destination.name}에 들어갔습니다.`);
+      renderClue();
+      openAccusationDialog();
+      return;
+    }
     state.phase = "suggest";
-    log(`${activePlayer().name}이 ${room.name}에 들어갔습니다.`);
+    log(`${activePlayer().name}이 ${destination.name}에 들어갔습니다.`);
     renderClue();
   }
 
@@ -422,17 +466,19 @@
   }
 
   function makeHumanAccusation() {
-    if (state.finished || !activePlayer()?.human) return;
+    if (state.finished || state.phase !== "accuse" || !activePlayer()?.human) return;
     const accusation = {
       suspect: card("suspect", els.accuseSuspect?.value || SUSPECTS[0]),
       room: card("room", els.accuseRoom?.value || ROOMS[0].name),
       weapon: card("weapon", els.accuseWeapon?.value || WEAPONS[0])
     };
+    closeAccusationDialog();
     finishGame(activePlayer(), isCorrectAccusation(accusation), accusation);
   }
 
   function endHumanTurn() {
-    if (state.finished || !activePlayer()?.human || state.phase === "chooseMove") return;
+    if (state.finished || !activePlayer()?.human || state.phase === "chooseMove" || state.phase === "awaitRoll") return;
+    closeAccusationDialog();
     state.currentPlayer = nextPlayerIndex();
     state.phase = "awaitRoll";
     state.dice = [];
@@ -458,10 +504,17 @@
     clearAiTimer();
     if (state.finished || activePlayer()?.human) return;
     const player = activePlayer();
-    if (maybeAiAccuse(player)) return;
     state.dice = rollDice();
     const total = state.dice[0] + state.dice[1];
     const reachable = reachableRoomsForRoll(player, total);
+    const accusation = buildCertainAccusation(player);
+    if (accusation && reachable.some((destination) => destination.id === CLUE_ZONE.id)) {
+      player.location = CLUE_ZONE.id;
+      log(`${player.name}: ${state.dice.join(" + ")} = ${total}, ${CLUE_ZONE.name} 이동`);
+      log(`${player.name}이 최종 추리를 선언했습니다.`);
+      finishGame(player, isCorrectAccusation(accusation), accusation);
+      return;
+    }
     const room = chooseAiRoom(player, reachable);
     player.location = room.id;
     log(`${player.name}: ${state.dice.join(" + ")} = ${total}, ${room.name} 이동`);
@@ -505,19 +558,19 @@
   function renderBoard() {
     if (!els.board) return;
     els.board.innerHTML = "";
-    ROOMS.forEach((room) => {
+    MOVE_DESTINATIONS.forEach((destination) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = [
         "clue-room-button",
-        state.reachableRooms.some((entry) => entry.id === room.id) && state.phase === "chooseMove" ? "reachable" : "",
-        activePlayer()?.location === room.id ? "current" : ""
+        destination.clue ? "clue-zone" : "",
+        state.reachableRooms.some((entry) => entry.id === destination.id) && state.phase === "chooseMove" ? "reachable" : "",
+        activePlayer()?.location === destination.id ? "current" : ""
       ].filter(Boolean).join(" ");
-      button.style.setProperty("--room-x", `${room.x}%`);
-      button.style.setProperty("--room-y", `${room.y}%`);
-      button.textContent = room.name;
-      button.disabled = !(state.phase === "chooseMove" && activePlayer()?.human && state.reachableRooms.some((entry) => entry.id === room.id));
-      button.addEventListener("click", () => moveHumanTo(room.id));
+      button.style.setProperty("--room-x", `${destination.x}%`);
+      button.style.setProperty("--room-y", `${destination.y}%`);
+      button.textContent = destination.name;
+      button.disabled = true;
       els.board.append(button);
     });
 
@@ -538,6 +591,31 @@
     });
   }
 
+  function renderMoveOptions() {
+    if (!els.moveOptions) return;
+    const player = activePlayer();
+    const humanCanChoose = Boolean(player?.human && state.phase === "chooseMove" && !state.finished);
+    if (els.moveHint) {
+      const total = state.dice.length ? state.dice[0] + state.dice[1] : 0;
+      els.moveHint.textContent = humanCanChoose
+        ? `주사위 합계 ${total}. 갈 곳을 고르세요.`
+        : "주사위를 굴리면 이동 가능한 장소가 표시됩니다.";
+    }
+    if (!humanCanChoose) {
+      els.moveOptions.innerHTML = '<div class="clue-move-empty">아직 선택 가능한 이동지가 없습니다.</div>';
+      return;
+    }
+    els.moveOptions.innerHTML = state.reachableRooms.map((destination) => `
+      <button class="clue-move-option${destination.clue ? " clue-zone" : ""}" type="button" data-destination-id="${escapeHtml(destination.id)}">
+        <span>${escapeHtml(destination.name)}</span>
+        <small>${destination.clue ? "최종추리" : "방 이동"}</small>
+      </button>
+    `).join("");
+    els.moveOptions.querySelectorAll(".clue-move-option").forEach((button) => {
+      button.addEventListener("click", () => moveHumanTo(button.dataset.destinationId));
+    });
+  }
+
   function renderHand() {
     if (!els.handList) return;
     const human = state.players[0];
@@ -553,27 +631,34 @@
 
   function renderNotes() {
     if (!els.notes) return;
-    const groups = [
-      ["용의자", SUSPECTS.map((name) => card("suspect", name))],
-      ["장소", ROOMS.map((room) => card("room", room.name))],
-      ["무기", WEAPONS.map((name) => card("weapon", name))]
-    ];
-    els.notes.innerHTML = groups.map(([label, cards]) => `
-      <div class="clue-note-group">
-        <strong>${escapeHtml(label)}</strong>
-        <div class="clue-note-grid">
-          ${cards.map((entry) => {
-            const known = state.humanKnown.has(entry.id) || state.manualMarks.has(entry.id);
-            return `<button class="clue-note-button${known ? " known" : ""}" type="button" data-card-id="${escapeHtml(entry.id)}">${escapeHtml(entry.name)}</button>`;
-          }).join("")}
-        </div>
-      </div>
-    `).join("");
-    els.notes.querySelectorAll(".clue-note-button").forEach((button) => {
+    const playerCount = Math.max(3, state.players.length || 4);
+    const left = 29.5;
+    const totalWidth = 67.5;
+    const cellWidth = totalWidth / playerCount;
+    els.notes.innerHTML = DEDUCTION_ROWS.flatMap((row) => {
+      return Array.from({ length: playerCount }, (_, column) => {
+        const key = `${row.card.id}:${column}`;
+        const mark = state.noteMarks[key] || "";
+        const title = `${row.card.name} / ${state.players[column]?.name || `${column + 1}번`} / ${NOTE_LABELS[mark] || "빈칸"}`;
+        return `
+          <button
+            class="clue-note-cell${mark ? ` ${mark}` : ""}"
+            type="button"
+            style="--note-left:${left + column * cellWidth}%; --note-top:${row.top}%; --note-width:${cellWidth}%; --note-height:3.1%;"
+            title="${escapeHtml(title)}"
+            aria-label="${escapeHtml(title)}"
+            data-note-key="${escapeHtml(key)}"
+          >${escapeHtml(NOTE_SYMBOLS[mark] || "")}</button>
+        `;
+      });
+    }).join("");
+    els.notes.querySelectorAll(".clue-note-cell").forEach((button) => {
       button.addEventListener("click", () => {
-        const id = button.dataset.cardId;
-        if (state.manualMarks.has(id)) state.manualMarks.delete(id);
-        else state.manualMarks.add(id);
+        const key = button.dataset.noteKey;
+        const currentIndex = NOTE_STATES.indexOf(state.noteMarks[key] || "");
+        const nextState = NOTE_STATES[(currentIndex + 1) % NOTE_STATES.length];
+        if (nextState) state.noteMarks[key] = nextState;
+        else delete state.noteMarks[key];
         renderNotes();
       });
     });
@@ -588,8 +673,9 @@
     if (els.phaseLabel) {
       const phaseText = {
         awaitRoll: "주사위를 굴리세요.",
-        chooseMove: "이동할 방을 선택하세요.",
+        chooseMove: "갈 수 있는 곳 중 하나를 선택하세요.",
         suggest: `${roomName(player?.location)}에서 제안할 수 있습니다.`,
+        accuse: "CLUE 존에서 최종 추리를 할 수 있습니다.",
         waitEnd: "턴을 종료하세요.",
         finished: "사건이 끝났습니다."
       };
@@ -612,7 +698,13 @@
       els.makeSuggestionButton.disabled = !humanTurn || state.phase !== "suggest" || !currentRoom;
     }
     if (els.makeAccusationButton) {
-      els.makeAccusationButton.disabled = !humanTurn || state.finished;
+      els.makeAccusationButton.disabled = !humanTurn || state.phase !== "accuse";
+    }
+    if (els.cancelAccusationButton) {
+      els.cancelAccusationButton.disabled = !humanTurn || state.phase !== "accuse";
+    }
+    if (els.accusationCard) {
+      els.accusationCard.classList.toggle("open", humanTurn && state.phase === "accuse");
     }
   }
 
@@ -624,6 +716,7 @@
   function renderClue() {
     renderPlayers();
     renderBoard();
+    renderMoveOptions();
     renderHand();
     renderNotes();
     renderControls();
@@ -664,6 +757,13 @@
   els.endTurnButton?.addEventListener("click", endHumanTurn);
   els.makeSuggestionButton?.addEventListener("click", makeHumanSuggestion);
   els.makeAccusationButton?.addEventListener("click", makeHumanAccusation);
+  els.cancelAccusationButton?.addEventListener("click", () => {
+    if (state.phase !== "accuse" || !activePlayer()?.human) return;
+    closeAccusationDialog();
+    state.phase = "waitEnd";
+    log(`${activePlayer().name}이 고발을 미뤘습니다.`);
+    renderClue();
+  });
 
   window.ClueGame = {
     start: startClueGame,
