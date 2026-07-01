@@ -63,6 +63,7 @@
   const AI_DELAY_MS = 1250;
   const DICE_ROLL_DURATION_MS = 650;
   const DICE_ROLL_FRAME_MS = 58;
+  const HINT_DUD_CHANCE = 1 / 3;
   const SHARED_PROFILES = window.FANTASY_SHARED_PROFILES || {};
   const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
   const PROFILE_ASSET_ROOT = SHARED_PROFILES.root || "assets/profiles/user";
@@ -400,6 +401,14 @@
 
   function claimHintCard(player) {
     const candidates = availableHintCards(player);
+    if (Math.random() < HINT_DUD_CHANCE) {
+      log(`${withSubject(player.name)} ? 카드를 확인했지만 꽝이 나왔습니다.`);
+      queueClueEvent({
+        title: "? 카드",
+        message: player.human ? "꽝입니다. 이번에는 얻은 단서가 없습니다." : `${withSubject(player.name)} ? 카드를 확인했지만 단서를 얻지 못했습니다.`
+      });
+      return null;
+    }
     if (!candidates.length) {
       log(`${withTopic(player.name)} 더 얻을 ? 카드 정보가 없습니다.`);
       queueClueEvent({
@@ -772,8 +781,8 @@
   }
 
   function reachableRoomsForRoll(player, total) {
-    if (total >= 7) return [...ROOMS, CLUE_ZONE];
-    const currentRoom = ROOM_BY_ID[player.location];
+    if (total <= 4) return [HINT_ACTION];
+    if (total >= 10) return [HINT_ACTION, ...ROOMS, CLUE_ZONE];
     const linkedRooms = (player.location === "center" || player.location === CLUE_ZONE.id ? [] : Object.keys(ROOM_LINKS[player.location] || {}))
       .filter((id) => id !== "center")
       .map((id) => ROOM_BY_ID[id])
@@ -782,10 +791,8 @@
       ? CENTRAL_NEAR_ROOM_IDS.map((id) => ROOM_BY_ID[id]).filter(Boolean)
       : [];
     return uniqueDestinations([
-      currentRoom,
       ...linkedRooms,
-      ...centerRooms,
-      HINT_ACTION
+      ...centerRooms
     ]);
   }
 
@@ -1062,8 +1069,13 @@
     const humanCanChoose = Boolean(player?.human && state.phase === "chooseMove" && !state.finished);
     if (els.moveHint) {
       const total = state.dice.length ? state.dice[0] + state.dice[1] : 0;
+      const rangeHint = total <= 4
+        ? "이동할 수 없습니다. ? 카드만 선택하세요."
+        : total >= 10
+          ? "아무 장소, CLUE 존, ? 카드를 선택할 수 있습니다."
+          : "현재 위치와 붙어있는 장소 중 하나를 선택하세요.";
       els.moveHint.textContent = humanCanChoose
-        ? `주사위 합계 ${total}. 갈 곳을 고르세요.`
+        ? `주사위 합계 ${total}. ${rangeHint}`
         : "주사위를 굴리면 이동 가능한 장소가 표시됩니다.";
     }
     if (!humanCanChoose) {
