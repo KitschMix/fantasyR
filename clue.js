@@ -61,6 +61,8 @@
   };
   const CARD_BACK_SRC = "assets/clue-cards/back.webp";
   const AI_DELAY_MS = 1250;
+  const DICE_ROLL_DURATION_MS = 650;
+  const DICE_ROLL_FRAME_MS = 58;
   const SHARED_PROFILES = window.FANTASY_SHARED_PROFILES || {};
   const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
   const PROFILE_ASSET_ROOT = SHARED_PROFILES.root || "assets/profiles/user";
@@ -89,6 +91,10 @@
     handList: document.querySelector("#clueHandList"),
     suggestSuspect: document.querySelector("#clueSuggestSuspect"),
     suggestWeapon: document.querySelector("#clueSuggestWeapon"),
+    suggestionCardPanel: document.querySelector("#clueSuggestionCardPanel"),
+    suggestionRoomCard: document.querySelector("#clueSuggestionRoomCard"),
+    suggestSuspectPicker: document.querySelector("#clueSuggestSuspectPicker"),
+    suggestWeaponPicker: document.querySelector("#clueSuggestWeaponPicker"),
     suggestionRoomLabel: document.querySelector("#clueSuggestionRoomLabel"),
     makeSuggestionButton: document.querySelector("#clueMakeSuggestionButton"),
     accuseSuspect: document.querySelector("#clueAccuseSuspect"),
@@ -110,6 +116,9 @@
     solution: null,
     deck: [],
     dice: [],
+    dicePreview: [],
+    diceRolling: false,
+    diceRollTimer: 0,
     reachableRooms: [],
     humanKnown: new Set(),
     noteMarks: {},
@@ -282,6 +291,7 @@
   function buildPlayers(count) {
     const names = ["스칼렛", "머스터드", "화이트", "그린", "피콕", "플럼"];
     const pool = shuffle(aiProfiles());
+    const colors = shuffle(TOKEN_COLORS);
     return Array.from({ length: count }, (_, index) => {
       if (index === 0) {
         return {
@@ -289,7 +299,7 @@
           human: true,
           name: currentHumanNickname() || "탐정",
           suspect: names[index],
-          color: TOKEN_COLORS[index],
+          color: colors[index % colors.length],
           location: "center",
           hand: [],
           known: new Set(),
@@ -303,7 +313,7 @@
         name: profile.name || `AI ${index}`,
         avatarUrl: profile.avatarUrl,
         suspect: names[index],
-        color: TOKEN_COLORS[index],
+        color: colors[index % colors.length],
         location: "center",
         hand: [],
         known: new Set(),
@@ -319,6 +329,7 @@
   const NOTE_IMAGE_WIDTH = 420;
   const NOTE_IMAGE_HEIGHT = 620;
   const NOTE_COLUMN_EDGES = [88, 129, 168, 208, 248, 288, 327, 367, 407];
+  const NOTE_HEADER_ROW = { y1: 13, y2: 45 };
   const NOTE_ROW_EDGES = {
     suspect: [68, 91, 114, 138, 161, 184, 208],
     weapon: [231, 254, 277, 301, 324, 347, 371],
@@ -342,7 +353,7 @@
     }))
   ];
   const NOTE_STATES = ["", "suspect", "confirmed", "excluded"];
-  const NOTE_SYMBOLS = { suspect: "?", confirmed: "확", excluded: "×" };
+  const NOTE_SYMBOLS = { suspect: "?", confirmed: "O", excluded: "×" };
   const NOTE_LABELS = { suspect: "의심", confirmed: "확정", excluded: "제외" };
   const NOTE_COLUMN_COUNT = NOTE_COLUMN_EDGES.length - 1;
   const CARD_TYPE_ORDER = { suspect: 0, weapon: 1, room: 2 };
@@ -427,6 +438,60 @@
 
   function rollDice() {
     return [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+  }
+
+  function clearDiceRollTimer() {
+    if (state.diceRollTimer) {
+      window.clearTimeout(state.diceRollTimer);
+      state.diceRollTimer = 0;
+    }
+    state.diceRolling = false;
+    state.dicePreview = [];
+  }
+
+  function currentDiceDisplay() {
+    return state.diceRolling && state.dicePreview.length ? state.dicePreview : state.dice;
+  }
+
+  function renderDiceDisplay() {
+    if (!els.dice) return;
+    const values = currentDiceDisplay();
+    els.dice.classList.toggle("rolling", state.diceRolling);
+    els.dice.setAttribute("aria-label", state.diceRolling ? "주사위를 굴리는 중" : "주사위 결과");
+    els.dice.innerHTML = values.length
+      ? `
+        <span class="clue-die">${values[0]}</span>
+        <span class="clue-dice-plus">+</span>
+        <span class="clue-die">${values[1]}</span>
+      `
+      : '<span class="clue-dice-empty">-</span>';
+  }
+
+  function animateDiceRoll(finalDice) {
+    clearDiceRollTimer();
+    state.dice = [];
+    state.dicePreview = rollDice();
+    state.diceRolling = true;
+    renderControls();
+    const startedAt = window.performance.now();
+    return new Promise((resolve) => {
+      const tick = () => {
+        const elapsed = window.performance.now() - startedAt;
+        if (elapsed >= DICE_ROLL_DURATION_MS) {
+          state.dice = finalDice;
+          state.dicePreview = [];
+          state.diceRolling = false;
+          state.diceRollTimer = 0;
+          renderControls();
+          resolve();
+          return;
+        }
+        state.dicePreview = rollDice();
+        renderControls();
+        state.diceRollTimer = window.setTimeout(tick, DICE_ROLL_FRAME_MS);
+      };
+      state.diceRollTimer = window.setTimeout(tick, DICE_ROLL_FRAME_MS);
+    });
   }
 
   function activePlayer() {
@@ -635,7 +700,9 @@
   function beginClueTurn(playerIndex = state.currentPlayer) {
     state.currentPlayer = playerIndex;
     state.phase = "awaitRoll";
+    clearDiceRollTimer();
     state.dice = [];
+    state.dicePreview = [];
     state.reachableRooms = [];
     state.turnSerial += 1;
   }
@@ -724,6 +791,7 @@
 
   function startClueGame() {
     clearAiTimer();
+    clearDiceRollTimer();
     clearClueEventLayers();
     preloadClueCardImages();
     const playerCount = Math.min(6, Math.max(3, Number(els.playerCountSelect?.value || 4)));
@@ -752,6 +820,7 @@
 
   function leaveClueGame() {
     clearAiTimer();
+    clearDiceRollTimer();
     clearClueEventLayers();
     closeAccusationDialog();
     document.body.classList.remove("clue-playing", "clue-active");
@@ -762,6 +831,7 @@
 
   function resetToClueSetup() {
     clearAiTimer();
+    clearDiceRollTimer();
     clearClueEventLayers();
     closeAccusationDialog();
     document.body.classList.remove("clue-playing");
@@ -778,9 +848,11 @@
     els.accusationCard?.classList.remove("open");
   }
 
-  function rollForHuman() {
+  async function rollForHuman() {
+    if (state.finished || state.phase !== "awaitRoll" || state.diceRolling || !activePlayer()?.human) return;
+    const finalDice = rollDice();
+    await animateDiceRoll(finalDice);
     if (state.finished || state.phase !== "awaitRoll" || !activePlayer()?.human) return;
-    state.dice = rollDice();
     const total = state.dice[0] + state.dice[1];
     state.reachableRooms = reachableRoomsForRoll(activePlayer(), total);
     state.phase = "chooseMove";
@@ -877,11 +949,13 @@
     state.aiTimer = window.setTimeout(runAiTurn, AI_DELAY_MS);
   }
 
-  function runAiTurn() {
+  async function runAiTurn() {
     clearAiTimer();
     if (state.finished || activePlayer()?.human) return;
     const player = activePlayer();
-    state.dice = rollDice();
+    const finalDice = rollDice();
+    await animateDiceRoll(finalDice);
+    if (state.finished || activePlayer() !== player) return;
     const total = state.dice[0] + state.dice[1];
     const reachable = reachableRoomsForRoll(player, total);
     const accusation = buildCertainAccusation(player);
@@ -1023,9 +1097,82 @@
       : '<small>카드 없음</small>';
   }
 
+  function suggestionCardHtml(entry) {
+    return `
+      <span class="clue-suggestion-card">
+        <img src="${escapeHtml(cardImageUrl(entry))}" alt="${escapeHtml(entry.name)}" loading="lazy" decoding="async" />
+        <span>${escapeHtml(entry.name)}</span>
+      </span>
+    `;
+  }
+
+  function renderCardPicker(picker, select, type, names, enabled) {
+    if (!picker || !select) return;
+    picker.classList.remove("open");
+    const selectedName = select.value || names[0];
+    if (!select.value) select.value = selectedName;
+    const selected = card(type, selectedName);
+    picker.innerHTML = `
+      <button class="clue-card-select-button" type="button" ${enabled ? "" : "disabled"} aria-expanded="false">
+        ${suggestionCardHtml(selected)}
+      </button>
+      <div class="clue-card-select-menu" hidden>
+        ${names.map((name) => {
+          const entry = card(type, name);
+          return `
+            <button class="clue-card-select-option${name === selectedName ? " selected" : ""}" type="button" data-card-name="${escapeHtml(name)}">
+              ${suggestionCardHtml(entry)}
+            </button>
+          `;
+        }).join("")}
+      </div>
+    `;
+    const button = picker.querySelector(".clue-card-select-button");
+    const menu = picker.querySelector(".clue-card-select-menu");
+    button?.addEventListener("click", () => {
+      const isOpen = picker.classList.toggle("open");
+      button.setAttribute("aria-expanded", String(isOpen));
+      if (menu) menu.hidden = !isOpen;
+    });
+    picker.querySelectorAll(".clue-card-select-option").forEach((option) => {
+      option.addEventListener("click", () => {
+        select.value = option.dataset.cardName || selectedName;
+        renderSuggestionCards();
+      });
+    });
+  }
+
+  function renderSuggestionCards() {
+    const player = activePlayer();
+    const humanCanSuggest = Boolean(player?.human && state.phase === "suggest" && !state.finished);
+    const currentRoom = player?.human ? ROOM_BY_ID[player.location] : null;
+    if (els.suggestionRoomLabel) {
+      els.suggestionRoomLabel.textContent = humanCanSuggest ? "카드를 골라 제안하세요." : "방에 들어가면 카드로 제안할 수 있습니다.";
+    }
+    if (els.suggestionRoomCard) {
+      els.suggestionRoomCard.innerHTML = currentRoom
+        ? suggestionCardHtml(card("room", currentRoom.name))
+        : '<div class="clue-suggestion-empty-card">방 없음</div>';
+      els.suggestionRoomCard.classList.toggle("disabled", !currentRoom);
+    }
+    renderCardPicker(els.suggestSuspectPicker, els.suggestSuspect, "suspect", SUSPECTS, humanCanSuggest);
+    renderCardPicker(els.suggestWeaponPicker, els.suggestWeapon, "weapon", WEAPONS, humanCanSuggest);
+  }
+
   function renderNotes() {
     if (!els.notes) return;
-    els.notes.innerHTML = DEDUCTION_ROWS.flatMap((row) => {
+    const playerHeaders = Array.from({ length: NOTE_COLUMN_COUNT }, (_, column) => {
+      const player = state.players[column];
+      return `
+        <span
+          class="clue-note-player-cell${player ? " filled" : ""}"
+          style="${noteCellStyle(NOTE_HEADER_ROW, column)}${player ? `; --player-color:${escapeHtml(player.color)}` : ""}"
+          title="${player ? escapeHtml(`${column + 1}번 ${player.name}`) : ""}"
+          aria-hidden="true"
+        >${player ? column + 1 : ""}</span>
+      `;
+    }).join("");
+    const noteCells = DEDUCTION_ROWS.flatMap((row) => {
       return Array.from({ length: NOTE_COLUMN_COUNT }, (_, column) => {
         const key = `${row.card.id}:${column}`;
         const mark = state.noteMarks[key] || "";
@@ -1042,6 +1189,7 @@
         `;
       });
     }).join("");
+    els.notes.innerHTML = playerHeaders + noteCells;
     els.notes.querySelectorAll(".clue-note-cell").forEach((button) => {
       button.addEventListener("click", () => {
         const key = button.dataset.noteKey;
@@ -1072,19 +1220,14 @@
       };
       els.phaseLabel.textContent = phaseText[state.phase] || "-";
     }
-    if (els.dice) {
-      els.dice.textContent = state.dice.length ? `${state.dice[0]} + ${state.dice[1]}` : "-";
-    }
+    renderDiceDisplay();
     if (els.rollButton) {
-      els.rollButton.disabled = !humanTurn || state.phase !== "awaitRoll";
+      els.rollButton.disabled = !humanTurn || state.phase !== "awaitRoll" || state.diceRolling;
     }
     if (els.endTurnButton) {
-      els.endTurnButton.disabled = !humanTurn || state.phase === "chooseMove" || state.phase === "awaitRoll";
+      els.endTurnButton.disabled = !humanTurn || state.diceRolling || state.phase === "chooseMove" || state.phase === "awaitRoll";
     }
     const currentRoom = ROOM_BY_ID[player?.location];
-    if (els.suggestionRoomLabel) {
-      els.suggestionRoomLabel.textContent = currentRoom ? `현재 장소: ${currentRoom.name}` : "방에 들어가면 제안할 수 있습니다.";
-    }
     if (els.makeSuggestionButton) {
       els.makeSuggestionButton.disabled = !humanTurn || state.phase !== "suggest" || !currentRoom;
     }
@@ -1111,6 +1254,7 @@
     renderHand();
     renderNotes();
     renderControls();
+    renderSuggestionCards();
     renderLog();
   }
 

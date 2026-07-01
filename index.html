@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
     <link rel="stylesheet" href="styles.css?v=20260701-hide-coming-soon" />
-    <link rel="stylesheet" href="clue.css?v=20260701-clue-note-grid-turns" />
+    <link rel="stylesheet" href="clue.css?v=20260701-clue-dice-card-suggest" />
     <link rel="stylesheet" href="tally-ho.css?v=20260630-tally-hide-opponent" />
     <link rel="stylesheet" href="cant-stop.css?v=20260630-cant-4p-slide" />
   </head>
@@ -477,15 +477,23 @@
             <aside class="clue-control-panel">
               <section class="clue-action-card">
                 <div class="clue-panel-title">제안</div>
-                <small id="clueSuggestionRoomLabel">방에 들어가면 제안할 수 있습니다.</small>
-                <label>
-                  용의자
-                  <select id="clueSuggestSuspect"></select>
-                </label>
-                <label>
-                  무기
-                  <select id="clueSuggestWeapon"></select>
-                </label>
+                <small id="clueSuggestionRoomLabel">방에 들어가면 카드로 제안할 수 있습니다.</small>
+                <div id="clueSuggestionCardPanel" class="clue-suggestion-card-panel">
+                  <div class="clue-suggestion-slot">
+                    <span>장소</span>
+                    <div id="clueSuggestionRoomCard" class="clue-suggestion-static-card"></div>
+                  </div>
+                  <div class="clue-suggestion-slot">
+                    <span>용의자</span>
+                    <div id="clueSuggestSuspectPicker" class="clue-card-select"></div>
+                    <select id="clueSuggestSuspect" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                  </div>
+                  <div class="clue-suggestion-slot">
+                    <span>도구</span>
+                    <div id="clueSuggestWeaponPicker" class="clue-card-select"></div>
+                    <select id="clueSuggestWeapon" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                  </div>
+                </div>
                 <button id="clueMakeSuggestionButton" class="primary-button" type="button">제안하기</button>
               </section>
 
@@ -842,7 +850,7 @@
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
     <script src="script.js?v=20260630-cant-stop-classes"></script>
-    <script src="clue.js?v=20260701-clue-note-grid-turns"></script>
+    <script src="clue.js?v=20260701-clue-dice-card-suggest"></script>
     <script src="tally-ho.js?v=20260630-cant-stop-classes"></script>
     <script src="cant-stop.js?v=20260701-cant-turn-ranking"></script>
   </body>
