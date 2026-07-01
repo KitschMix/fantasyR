@@ -237,7 +237,10 @@ with duplicate_rows as (
   select id,
          row_number() over (
            partition by player_fingerprint
-           order by score desc, updated_at asc, created_at asc
+           order by case when won and turns > 0 then turns else 2147483647 end asc,
+                    score desc,
+                    updated_at asc,
+                    created_at asc
          ) as row_number
     from public.fantasy_cant_stop_leaderboard
 )
@@ -252,6 +255,10 @@ alter table public.fantasy_cant_stop_leaderboard
 
 create index if not exists fantasy_cant_stop_leaderboard_score_idx
   on public.fantasy_cant_stop_leaderboard(score desc, updated_at asc);
+
+create index if not exists fantasy_cant_stop_leaderboard_turns_idx
+  on public.fantasy_cant_stop_leaderboard(turns asc, score desc, updated_at asc)
+  where won = true and turns > 0;
 
 alter table public.fantasy_cant_stop_leaderboard enable row level security;
 
@@ -713,6 +720,7 @@ declare
   v_columns_claimed integer := least(greatest(coalesce(p_columns_claimed, 0), 0), 3);
   v_turns integer := greatest(coalesce(p_turns, 0), 0);
   v_score_updated boolean := false;
+  v_turns_updated boolean := false;
   v_nickname_allowed boolean := true;
   v_last_nickname_changed_at timestamptz := v_now;
 begin
@@ -725,10 +733,12 @@ begin
     return jsonb_build_object(
       'created', false,
       'score_updated', false,
+      'turns_updated', false,
       'nickname_updated', true,
       'skipped', true,
       'nickname', v_nickname,
-      'score', v_score
+      'score', v_score,
+      'turns', v_turns
     );
   end if;
 
@@ -797,13 +807,21 @@ begin
     return jsonb_build_object(
       'created', true,
       'score_updated', true,
+      'turns_updated', true,
       'nickname_updated', v_nickname_allowed,
       'nickname', v_existing.nickname,
-      'score', v_existing.score
+      'score', v_existing.score,
+      'turns', v_existing.turns
     );
   end if;
 
-  v_score_updated := v_score > v_existing.score;
+  v_turns_updated := v_turns > 0 and (
+    coalesce(v_existing.won, false) is not true
+    or coalesce(v_existing.turns, 0) = 0
+    or v_turns < v_existing.turns
+    or (v_turns = v_existing.turns and v_score > v_existing.score)
+  );
+  v_score_updated := v_turns_updated;
 
   if v_existing.nickname is distinct from v_nickname then
     if v_existing.last_nickname_changed_at > v_now - interval '1 day' then
@@ -839,9 +857,11 @@ begin
   return jsonb_build_object(
     'created', false,
     'score_updated', v_score_updated,
+    'turns_updated', v_turns_updated,
     'nickname_updated', v_nickname_allowed,
     'nickname', v_existing.nickname,
-    'score', v_existing.score
+    'score', v_existing.score,
+    'turns', v_existing.turns
   );
 end;
 $$;

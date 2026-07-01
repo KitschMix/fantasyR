@@ -473,7 +473,7 @@
       item.innerHTML = `
         <span class="leaderboard-rank">${index + 1}</span>
         <strong>${escapeHtml(entry.nickname || "익명")}</strong>
-        <b>${Number(entry.score || 0)}점</b>
+        <b>${Number(entry.turns || 0)}턴</b>
         <small class="leaderboard-meta">${escapeHtml(meta)}</small>
       `;
       fragment.append(item);
@@ -494,6 +494,8 @@
       .from(CANT_LEADERBOARD_TABLE)
       .select("nickname,score,columns_claimed,turns,ai_difficulty,opponent_name,won,updated_at")
       .eq("won", true)
+      .gt("turns", 0)
+      .order("turns", { ascending: true })
       .order("score", { ascending: false })
       .order("updated_at", { ascending: true })
       .limit(CANT_LEADERBOARD_LIMIT);
@@ -505,7 +507,7 @@
     }
 
     renderCantLeaderboardList(data || []);
-    setCantLeaderboardStatus("싱글플레이 최고 등반점수만 자동 기록됩니다.");
+    setCantLeaderboardStatus("싱글플레이 승리 중 최단 턴 기록만 자동 기록됩니다.");
   }
 
   function cantLeaderboardSubmitErrorMessage(error) {
@@ -544,7 +546,7 @@
 
     const score = rankingScore("human", won);
     const nickname = normalizeHumanNickname(state.humanName || currentHumanNickname());
-    setCantLeaderboardStatus(`캔트스탑 랭킹에 ${score}점을 등록하는 중입니다.`);
+    setCantLeaderboardStatus(`캔트스탑 랭킹에 ${state.turnNumber}턴 승리 기록을 등록하는 중입니다.`);
     const { data, error } = await client.rpc("fantasy_submit_cant_stop_score", {
       p_nickname: nickname,
       p_score: score,
@@ -561,9 +563,10 @@
     }
 
     const result = Array.isArray(data) ? data[0] : data;
-    const scoreText = result?.score_updated ? "최고 점수 갱신!" : "기존 최고 점수를 유지했습니다.";
+    const turnsUpdated = result?.turns_updated ?? result?.score_updated;
+    const recordText = turnsUpdated ? "최단 턴 갱신!" : "기존 최단 턴 기록을 유지했습니다.";
     const nicknameText = result?.nickname_updated === false ? " 서버 기준 닉네임 변경 제한으로 기존 이름을 유지했습니다." : "";
-    setCantLeaderboardStatus(`캔트스탑 랭킹: ${scoreText}${nicknameText}`);
+    setCantLeaderboardStatus(`캔트스탑 랭킹: ${recordText}${nicknameText}`);
     loadCantLeaderboard();
   }
 
