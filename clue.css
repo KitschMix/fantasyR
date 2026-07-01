@@ -493,11 +493,12 @@ body.clue-active.clue-playing .clue-game-panel {
 .clue-event-overlay,
 .clue-choice-overlay {
   position: fixed;
-  z-index: 1300;
+  z-index: 1500;
   inset: 0;
   display: none;
   place-items: center;
   padding: 20px;
+  pointer-events: none;
 }
 
 .clue-event-overlay.open,
@@ -506,15 +507,11 @@ body.clue-active.clue-playing .clue-game-panel {
 }
 
 .clue-event-overlay {
-  align-items: start;
-  justify-items: center;
-  padding-top: 18px;
-  pointer-events: none;
+  place-items: center;
 }
 
 .clue-choice-overlay {
-  z-index: 1500;
-  pointer-events: none;
+  z-index: 1550;
 }
 
 .clue-event-card,
@@ -641,7 +638,7 @@ body.clue-active.clue-playing .clue-game-panel {
   position: relative;
   display: block;
   width: min(100%, 360px);
-  aspect-ratio: 451 / 656;
+  aspect-ratio: 420 / 620;
   margin: 0 auto;
   overflow: hidden;
   border: 1px solid rgba(246, 232, 202, 0.2);

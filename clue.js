@@ -35,7 +35,7 @@
     center: Object.fromEntries(MOVE_DESTINATIONS.map((destination) => [destination.id, destination.cost]))
   };
   const TOKEN_COLORS = ["#de3b35", "#f0c84b", "#e8e4da", "#60b86e", "#5da9e9", "#9b6ee8"];
-  const CARD_TYPE_LABEL = { suspect: "용의자", weapon: "무기", room: "장소" };
+  const CARD_TYPE_LABEL = { suspect: "용의자", weapon: "도구", room: "장소" };
   const CARD_IMAGE_SLUGS = {
     "suspect:스칼렛": "suspect-scarlet",
     "suspect:머스터드": "suspect-mustard",
@@ -60,7 +60,7 @@
     "room:게임룸": "room-game"
   };
   const CARD_BACK_SRC = "assets/clue-cards/back.webp";
-  const AI_DELAY_MS = 720;
+  const AI_DELAY_MS = 1250;
   const SHARED_PROFILES = window.FANTASY_SHARED_PROFILES || {};
   const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
   const PROFILE_ASSET_ROOT = SHARED_PROFILES.root || "assets/profiles/user";
@@ -118,6 +118,8 @@
     eventShowing: false,
     choiceTimer: 0,
     piecePositions: {},
+    turnSerial: 0,
+    lastTurnNoticeKey: "",
     log: [],
     aiTimer: 0
   };
@@ -213,6 +215,7 @@
     const event = state.eventQueue.shift();
     if (!event) {
       if (state.pendingRefute) showHumanRefutePrompt();
+      else showClueTurnNotice();
       return;
     }
     const layer = ensureClueEventLayer();
@@ -313,27 +316,36 @@
     return { id: `${type}:${name}`, type, name };
   }
 
+  const NOTE_IMAGE_WIDTH = 420;
+  const NOTE_IMAGE_HEIGHT = 620;
+  const NOTE_COLUMN_EDGES = [88, 129, 168, 208, 248, 288, 327, 367, 407];
+  const NOTE_ROW_EDGES = {
+    suspect: [68, 91, 114, 138, 161, 184, 208],
+    weapon: [231, 254, 277, 301, 324, 347, 371],
+    room: [394, 417, 440, 464, 487, 510, 534, 557, 580, 604]
+  };
   const DEDUCTION_ROWS = [
     ...["그린", "머스터드", "피콕", "플럼", "스칼렛", "화이트"].map((name, index) => ({
       card: card("suspect", name),
-      top: 10.9 + index * 3.35
+      y1: NOTE_ROW_EDGES.suspect[index],
+      y2: NOTE_ROW_EDGES.suspect[index + 1]
     })),
     ...["렌치", "촛대", "단검", "권총", "파이프", "밧줄"].map((name, index) => ({
       card: card("weapon", name),
-      top: 36.5 + index * 3.35
+      y1: NOTE_ROW_EDGES.weapon[index],
+      y2: NOTE_ROW_EDGES.weapon[index + 1]
     })),
     ...["욕실", "서재", "게임룸", "차고", "침실", "거실", "부엌", "마당", "식당"].map((name, index) => ({
       card: card("room", name),
-      top: 62.2 + index * 3.35
+      y1: NOTE_ROW_EDGES.room[index],
+      y2: NOTE_ROW_EDGES.room[index + 1]
     }))
   ];
   const NOTE_STATES = ["", "suspect", "confirmed", "excluded"];
   const NOTE_SYMBOLS = { suspect: "?", confirmed: "확", excluded: "×" };
   const NOTE_LABELS = { suspect: "의심", confirmed: "확정", excluded: "제외" };
-  const NOTE_COLUMN_COUNT = 10;
-  const NOTE_GRID_LEFT = 29.5;
-  const NOTE_GRID_WIDTH = 67.5;
-  const NOTE_CELL_HEIGHT = 3.1;
+  const NOTE_COLUMN_COUNT = NOTE_COLUMN_EDGES.length - 1;
+  const CARD_TYPE_ORDER = { suspect: 0, weapon: 1, room: 2 };
 
   function createGameDeck() {
     const solution = {
@@ -597,6 +609,51 @@
     });
   }
 
+  function compactPercent(value, total) {
+    return ((value / total) * 100).toFixed(4).replace(/\.?0+$/, "");
+  }
+
+  function noteCellStyle(row, column) {
+    const x1 = NOTE_COLUMN_EDGES[column];
+    const x2 = NOTE_COLUMN_EDGES[column + 1];
+    return [
+      `--note-left:${compactPercent(x1, NOTE_IMAGE_WIDTH)}%`,
+      `--note-top:${compactPercent(row.y1, NOTE_IMAGE_HEIGHT)}%`,
+      `--note-width:${compactPercent(x2 - x1, NOTE_IMAGE_WIDTH)}%`,
+      `--note-height:${compactPercent(row.y2 - row.y1, NOTE_IMAGE_HEIGHT)}%`
+    ].join("; ");
+  }
+
+  function sortedCaseCards(cards) {
+    return [...cards].sort((left, right) => {
+      const typeDiff = (CARD_TYPE_ORDER[left.type] ?? 9) - (CARD_TYPE_ORDER[right.type] ?? 9);
+      if (typeDiff) return typeDiff;
+      return left.name.localeCompare(right.name, "ko");
+    });
+  }
+
+  function beginClueTurn(playerIndex = state.currentPlayer) {
+    state.currentPlayer = playerIndex;
+    state.phase = "awaitRoll";
+    state.dice = [];
+    state.reachableRooms = [];
+    state.turnSerial += 1;
+  }
+
+  function showClueTurnNotice(force = false) {
+    if (!state.started || state.finished || !activePlayer()) return;
+    if (state.eventShowing || state.eventQueue.length || isChoiceOpen()) return;
+    if (typeof window.showCenterToast !== "function") return;
+    const key = `clue-turn:${state.turnSerial}:${state.currentPlayer}`;
+    if (!force && state.lastTurnNoticeKey === key) return;
+    state.lastTurnNoticeKey = key;
+    const player = activePlayer();
+    window.showCenterToast(player.human ? "당신의 턴입니다" : `${player.name}의 턴.`, 1200, {
+      mode: "clue-turn",
+      key
+    });
+  }
+
   function isCorrectAccusation(accusation) {
     return accusation.suspect.id === state.solution.suspect.id
       && accusation.weapon.id === state.solution.weapon.id
@@ -637,11 +694,14 @@
           return;
         }
         state.finished = false;
-        state.phase = "awaitRoll";
-        state.currentPlayer = nextPlayerIndex();
+        beginClueTurn(nextPlayerIndex());
       }
     }
     renderClue();
+    if (!state.finished) {
+      playNextClueEvent();
+      if (!activePlayer()?.human) scheduleAiTurn();
+    }
   }
 
   function reachableRoomsForRoll(player, total) {
@@ -676,10 +736,9 @@
     dealCards(deck);
     state.started = true;
     state.finished = false;
-    state.currentPlayer = 0;
-    state.phase = "awaitRoll";
-    state.dice = [];
-    state.reachableRooms = [];
+    state.turnSerial = 0;
+    state.lastTurnNoticeKey = "";
+    beginClueTurn(0);
     state.piecePositions = {};
     state.log = [];
     log("사건 봉투가 준비되었습니다. 주사위를 굴리세요.");
@@ -688,6 +747,7 @@
     els.setupPanel?.classList.add("hidden");
     els.gamePanel?.classList.remove("hidden");
     renderClue();
+    showClueTurnNotice(true);
   }
 
   function leaveClueGame() {
@@ -786,20 +846,15 @@
   function endHumanTurn() {
     if (state.finished || !activePlayer()?.human || state.phase === "chooseMove" || state.phase === "awaitRoll") return;
     closeAccusationDialog();
-    state.currentPlayer = nextPlayerIndex();
-    state.phase = "awaitRoll";
-    state.dice = [];
-    state.reachableRooms = [];
+    beginClueTurn(nextPlayerIndex());
     renderClue();
+    showClueTurnNotice();
     scheduleAiTurn();
   }
 
   function finishAiTurnAfterSuggestion() {
     if (state.finished) return;
-    state.currentPlayer = nextPlayerIndex();
-    state.phase = "awaitRoll";
-    state.dice = [];
-    state.reachableRooms = [];
+    beginClueTurn(nextPlayerIndex());
     renderClue();
     playNextClueEvent();
     if (!activePlayer().human) scheduleAiTurn();
@@ -956,7 +1011,7 @@
     if (!els.handList) return;
     const human = state.players[0];
     els.handList.innerHTML = human?.hand?.length
-      ? human.hand.map((entry) => `
+      ? sortedCaseCards(human.hand).map((entry) => `
           <span class="clue-card-chip">
             <img src="${escapeHtml(cardImageUrl(entry))}" alt="${escapeHtml(entry.name)}" loading="lazy" decoding="async" />
             <span class="clue-card-caption">
@@ -970,7 +1025,6 @@
 
   function renderNotes() {
     if (!els.notes) return;
-    const cellWidth = NOTE_GRID_WIDTH / NOTE_COLUMN_COUNT;
     els.notes.innerHTML = DEDUCTION_ROWS.flatMap((row) => {
       return Array.from({ length: NOTE_COLUMN_COUNT }, (_, column) => {
         const key = `${row.card.id}:${column}`;
@@ -980,7 +1034,7 @@
           <button
             class="clue-note-cell${mark ? ` ${mark}` : ""}"
             type="button"
-            style="--note-left:${NOTE_GRID_LEFT + column * cellWidth}%; --note-top:${row.top}%; --note-width:${cellWidth}%; --note-height:${NOTE_CELL_HEIGHT}%;"
+            style="${noteCellStyle(row, column)}"
             title="${escapeHtml(title)}"
             aria-label="${escapeHtml(title)}"
             data-note-key="${escapeHtml(key)}"
