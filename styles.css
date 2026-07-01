@@ -316,6 +316,10 @@ body:not(.launcher-active) .game-launcher {
   align-items: center;
 }
 
+.game-launcher-coming-soon[hidden] {
+  display: none !important;
+}
+
 .game-launcher-placeholder {
   display: grid;
   min-height: 112px;
