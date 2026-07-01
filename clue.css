@@ -626,6 +626,10 @@ body.clue-active.clue-playing .clue-game-panel {
   transform: translateX(-50%);
 }
 
+.clue-card-select-menu[hidden] {
+  display: none !important;
+}
+
 .clue-card-select-option {
   min-width: 0;
   padding: 0;
