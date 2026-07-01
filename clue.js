@@ -60,10 +60,10 @@
     "room:게임룸": "room-game"
   };
   const CARD_BACK_SRC = "assets/clue-cards/back.webp";
+  const HINT_CARD_SRC = "assets/clue-cards/hint-tool-card.webp";
   const AI_DELAY_MS = 1250;
   const DICE_ROLL_DURATION_MS = 650;
   const DICE_ROLL_FRAME_MS = 58;
-  const HINT_DUD_CHANCE = 1 / 3;
   const SHARED_PROFILES = window.FANTASY_SHARED_PROFILES || {};
   const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
   const PROFILE_ASSET_ROOT = SHARED_PROFILES.root || "assets/profiles/user";
@@ -116,6 +116,7 @@
     players: [],
     solution: null,
     deck: [],
+    hintDeck: [],
     dice: [],
     dicePreview: [],
     diceRolling: false,
@@ -165,6 +166,7 @@
   }
 
   function cardImageUrl(entry) {
+    if (entry?.type === "hint") return HINT_CARD_SRC;
     return entry?.back ? CARD_BACK_SRC : `assets/clue-cards/${CARD_IMAGE_SLUGS[entry?.id] || "back"}.webp`;
   }
 
@@ -174,6 +176,17 @@
   }
 
   function cardFigureHtml(entry, className = "clue-event-card-image") {
+    if (entry?.type === "hint") {
+      return `
+        <span class="${className} clue-hint-card-image">
+          <img src="${escapeHtml(HINT_CARD_SRC)}" alt="${escapeHtml(cardLabel(entry))}" loading="lazy" decoding="async" />
+          <span class="clue-hint-card-copy">
+            <b>${entry.title.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}</b>
+            <small>${entry.body.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}</small>
+          </span>
+        </span>
+      `;
+    }
     return `
       <span class="${className}">
         <img src="${escapeHtml(cardImageUrl(entry))}" alt="${escapeHtml(cardLabel(entry))}" loading="lazy" decoding="async" />
@@ -256,7 +269,7 @@
   }
 
   function preloadClueCardImages() {
-    [CARD_BACK_SRC, ...Object.values(CARD_IMAGE_SLUGS).map((slug) => `assets/clue-cards/${slug}.webp`)].forEach((src) => {
+    [CARD_BACK_SRC, HINT_CARD_SRC, ...Object.values(CARD_IMAGE_SLUGS).map((slug) => `assets/clue-cards/${slug}.webp`)].forEach((src) => {
       const image = new Image();
       image.src = src;
     });
@@ -358,6 +371,57 @@
   const NOTE_LABELS = { suspect: "의심", confirmed: "확정", excluded: "제외" };
   const NOTE_COLUMN_COUNT = NOTE_COLUMN_EDGES.length - 1;
   const CARD_TYPE_ORDER = { suspect: 0, weapon: 1, room: 2 };
+  const HINT_CARD_DEFINITIONS = [
+    {
+      id: "extra-turn",
+      name: "차례를 한 번 더 진행합니다.",
+      title: ["차례를", "한 번 더", "진행합니다."],
+      body: ["지금 사용하거나", "필요할 때 사용합니다."],
+      copies: 2
+    },
+    {
+      id: "extra-suggestion",
+      name: "한 번 더 추리합니다.",
+      title: ["한 번 더", "추리합니다."],
+      body: ["자기 말이나 다른 사람의 말", "또는 토큰을 이동하지 않고", "원하는 장소, 사람, 도구를 정해", "추리할 수 있습니다.", "지금 사용합니다."],
+      copies: 2
+    },
+    {
+      id: "add-six",
+      name: "나온 주사위에 6을 더할 수 있습니다.",
+      title: ["나온 주사위에", "6을 더할 수", "있습니다."],
+      body: ["지금 사용하거나", "필요할 때 사용합니다."],
+      copies: 2
+    },
+    {
+      id: "reveal-card",
+      name: "다른 사람의 카드 한 장을 공개합니다.",
+      title: ["다른 사람의 카드", "한 장을 공개합니다."],
+      body: ["한 사람을 정해 이 카드를 보여주면,", "그 사람은 자기 카드 중 한 장을", "모두에게 보여주어야 합니다.", "지금 사용합니다."],
+      copies: 2
+    },
+    {
+      id: "move-anywhere",
+      name: "원하는 장소로 이동합니다.",
+      title: ["원하는 장소로", "이동합니다."],
+      body: ["지금 사용합니다."],
+      copies: 2
+    },
+    {
+      id: "peek-card",
+      name: "카드 엿보기",
+      title: ["카드 엿보기"],
+      body: ["누군가 다른 사람에게 추리 카드를", "보여줄 때 그 카드를 볼 수 있습니다.", "필요할 때 사용합니다."],
+      copies: 2
+    },
+    {
+      id: "dud",
+      name: "꽝",
+      title: ["꽝"],
+      body: ["아무 효과가 없습니다."],
+      copies: 3
+    }
+  ];
 
   function createGameDeck() {
     const solution = {
@@ -386,47 +450,33 @@
     });
   }
 
-  function allCaseCards() {
-    return [
-      ...SUSPECTS.map((name) => card("suspect", name)),
-      ...WEAPONS.map((name) => card("weapon", name)),
-      ...ROOMS.map((room) => card("room", room.name))
-    ];
+  function createHintDeck() {
+    return shuffle(HINT_CARD_DEFINITIONS.flatMap((definition) => {
+      return Array.from({ length: definition.copies }, (_, copyIndex) => ({
+        ...definition,
+        id: `hint:${definition.id}:${copyIndex + 1}`,
+        type: "hint"
+      }));
+    }));
   }
 
-  function availableHintCards(player) {
-    const hiddenIds = new Set(Object.values(state.solution || {}).map((entry) => entry.id));
-    return allCaseCards().filter((entry) => !hiddenIds.has(entry.id) && !player.known.has(entry.id));
-  }
-
-  function claimHintCard(player) {
-    const candidates = availableHintCards(player);
-    if (Math.random() < HINT_DUD_CHANCE) {
-      log(`${withSubject(player.name)} ? 카드를 확인했지만 꽝이 나왔습니다.`);
+  function drawHintCard(player) {
+    if (!state.hintDeck.length) {
+      log("남은 ? 카드가 없습니다.");
       queueClueEvent({
         title: "? 카드",
-        message: player.human ? "꽝입니다. 이번에는 얻은 단서가 없습니다." : `${withSubject(player.name)} ? 카드를 확인했지만 단서를 얻지 못했습니다.`
+        message: "남은 ? 카드가 없습니다."
       });
       return null;
     }
-    if (!candidates.length) {
-      log(`${withTopic(player.name)} 더 얻을 ? 카드 정보가 없습니다.`);
-      queueClueEvent({
-        title: "? 카드",
-        message: `${withTopic(player.name)} 더 얻을 단서가 없습니다.`
-      });
-      return null;
-    }
-    const revealed = randomItem(candidates);
-    player.known.add(revealed.id);
-    if (player.human) state.humanKnown.add(revealed.id);
-    log(`${withSubject(player.name)} ? 카드로 단서 1장을 확인했습니다.`);
+    const drawn = state.hintDeck.shift();
+    log(`${withSubject(player.name)} ? 카드 '${drawn.name}'을 뽑았습니다.`);
     queueClueEvent({
-      title: "? 카드 획득",
-      message: player.human ? `새 단서 ${revealed.name}을 확인했습니다.` : `${withSubject(player.name)} ? 카드로 단서 1장을 확인했습니다.`,
-      cards: player.human ? [revealed] : [{ back: true }]
+      title: "? 카드",
+      message: `${withSubject(player.name)} ? 카드를 뽑았습니다.`,
+      cards: [drawn]
     });
-    return revealed;
+    return drawn;
   }
 
   function log(message) {
@@ -650,7 +700,7 @@
 
   function chooseAiDestination(player, reachable) {
     const hint = reachable.find((destination) => destination.hint);
-    if (hint && availableHintCards(player).length && Math.random() < 0.3) return hint;
+    if (hint && state.hintDeck.length && Math.random() < 0.3) return hint;
     const roomChoices = reachable.filter((destination) => !destination.clue && !destination.hint);
     if (!roomChoices.length) return hint || randomItem(ROOMS);
     const unknownRooms = candidateCards(player, "room").map((entry) => ROOM_BY_NAME[entry.name]?.id).filter(Boolean);
@@ -808,6 +858,7 @@
     const { solution, deck } = createGameDeck();
     state.solution = solution;
     state.deck = deck;
+    state.hintDeck = createHintDeck();
     dealCards(deck);
     state.started = true;
     state.finished = false;
@@ -872,7 +923,7 @@
     const destination = state.reachableRooms.find((entry) => entry.id === roomId);
     if (!destination) return;
     if (destination.hint) {
-      claimHintCard(activePlayer());
+      drawHintCard(activePlayer());
       state.phase = "waitEnd";
       renderClue();
       return;
@@ -981,7 +1032,7 @@
     const room = chooseAiDestination(player, reachable);
     if (room.hint) {
       log(`${player.name}: ${state.dice.join(" + ")} = ${total}, ? 카드 획득`);
-      claimHintCard(player);
+      drawHintCard(player);
       finishAiTurnAfterSuggestion();
       return;
     }

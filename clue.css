@@ -806,6 +806,54 @@ body.clue-active.clue-playing .clue-game-panel {
   width: 88px;
 }
 
+.clue-event-card-image.clue-hint-card-image {
+  width: min(220px, 58vw);
+}
+
+.clue-hint-card-image .clue-hint-card-copy {
+  position: absolute;
+  inset: 21% 10% 21%;
+  display: grid;
+  align-content: center;
+  gap: 24px;
+  padding: 0;
+  color: #3f1d14;
+  background: transparent;
+  text-align: center;
+  text-shadow: none;
+}
+
+.clue-hint-card-copy b,
+.clue-hint-card-copy small {
+  display: grid;
+  gap: 4px;
+  color: inherit;
+  background: transparent;
+  line-height: 1.16;
+}
+
+.clue-hint-card-copy span {
+  position: static;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.clue-hint-card-copy b {
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.clue-hint-card-copy small {
+  color: #65422a;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.28;
+}
+
 .clue-choice-card-button {
   width: 132px;
   cursor: pointer;
