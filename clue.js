@@ -34,6 +34,30 @@
   };
   const TOKEN_COLORS = ["#de3b35", "#f0c84b", "#e8e4da", "#60b86e", "#5da9e9", "#9b6ee8"];
   const CARD_TYPE_LABEL = { suspect: "용의자", weapon: "무기", room: "장소" };
+  const CARD_IMAGE_SLUGS = {
+    "suspect:스칼렛": "suspect-scarlet",
+    "suspect:머스터드": "suspect-mustard",
+    "suspect:화이트": "suspect-white",
+    "suspect:그린": "suspect-green",
+    "suspect:피콕": "suspect-peacock",
+    "suspect:플럼": "suspect-plum",
+    "weapon:촛대": "weapon-candlestick",
+    "weapon:단검": "weapon-dagger",
+    "weapon:파이프": "weapon-pipe",
+    "weapon:권총": "weapon-pistol",
+    "weapon:밧줄": "weapon-rope",
+    "weapon:렌치": "weapon-wrench",
+    "room:침실": "room-bedroom",
+    "room:욕실": "room-bathroom",
+    "room:서재": "room-study",
+    "room:부엌": "room-kitchen",
+    "room:식당": "room-dining",
+    "room:거실": "room-living",
+    "room:마당": "room-hall",
+    "room:차고": "room-garage",
+    "room:게임룸": "room-game"
+  };
+  const CARD_BACK_SRC = "assets/clue-cards/back.webp";
   const AI_DELAY_MS = 720;
   const SHARED_PROFILES = window.FANTASY_SHARED_PROFILES || {};
   const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
@@ -87,9 +111,17 @@
     reachableRooms: [],
     humanKnown: new Set(),
     noteMarks: {},
+    pendingRefute: null,
+    eventQueue: [],
+    eventShowing: false,
+    eventTimer: 0,
+    choiceTimer: 0,
     log: [],
     aiTimer: 0
   };
+
+  let clueEventLayer = null;
+  let clueChoiceLayer = null;
 
   function profileImageUrl(fileName) {
     return encodeURI(`${PROFILE_ASSET_ROOT}/${fileName}`);
@@ -102,6 +134,116 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  function hasFinalConsonant(value) {
+    const text = String(value || "").trim();
+    const code = text.charCodeAt(text.length - 1);
+    return code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;
+  }
+
+  function withSubject(value) {
+    return `${value}${hasFinalConsonant(value) ? "이" : "가"}`;
+  }
+
+  function withTopic(value) {
+    return `${value}${hasFinalConsonant(value) ? "은" : "는"}`;
+  }
+
+  function cardImageUrl(entry) {
+    return entry?.back ? CARD_BACK_SRC : `assets/clue-cards/${CARD_IMAGE_SLUGS[entry?.id] || "back"}.webp`;
+  }
+
+  function cardLabel(entry) {
+    if (entry?.back) return "카드";
+    return entry?.name || "";
+  }
+
+  function cardFigureHtml(entry, className = "clue-event-card-image") {
+    return `
+      <span class="${className}">
+        <img src="${escapeHtml(cardImageUrl(entry))}" alt="${escapeHtml(cardLabel(entry))}" loading="lazy" decoding="async" />
+        ${entry?.back ? "" : `<span>${escapeHtml(cardLabel(entry))}</span>`}
+      </span>
+    `;
+  }
+
+  function ensureClueEventLayer() {
+    if (!clueEventLayer) {
+      clueEventLayer = document.createElement("div");
+      clueEventLayer.className = "clue-event-overlay";
+      clueEventLayer.setAttribute("aria-live", "polite");
+      document.body.append(clueEventLayer);
+    }
+    return clueEventLayer;
+  }
+
+  function ensureClueChoiceLayer() {
+    if (!clueChoiceLayer) {
+      clueChoiceLayer = document.createElement("div");
+      clueChoiceLayer.className = "clue-choice-overlay";
+      clueChoiceLayer.setAttribute("aria-live", "assertive");
+      document.body.append(clueChoiceLayer);
+    }
+    return clueChoiceLayer;
+  }
+
+  function isChoiceOpen() {
+    return Boolean(clueChoiceLayer?.classList.contains("open"));
+  }
+
+  function queueClueEvent(event) {
+    state.eventQueue.push({ duration: 1350, cards: [], ...event });
+    playNextClueEvent();
+  }
+
+  function playNextClueEvent() {
+    if (state.eventShowing || isChoiceOpen()) return;
+    const event = state.eventQueue.shift();
+    if (!event) {
+      if (state.pendingRefute) showHumanRefutePrompt();
+      return;
+    }
+    const layer = ensureClueEventLayer();
+    state.eventShowing = true;
+    layer.innerHTML = `
+      <section class="clue-event-card">
+        <strong>${escapeHtml(event.title || "클루")}</strong>
+        <p>${escapeHtml(event.message || "")}</p>
+        ${event.detail ? `<small>${escapeHtml(event.detail)}</small>` : ""}
+        ${event.cards?.length ? `<div class="clue-event-card-row">${event.cards.map((entry) => cardFigureHtml(entry)).join("")}</div>` : ""}
+      </section>
+    `;
+    layer.classList.add("open");
+    if (state.eventTimer) window.clearTimeout(state.eventTimer);
+    state.eventTimer = window.setTimeout(() => {
+      layer.classList.remove("open");
+      layer.innerHTML = "";
+      state.eventShowing = false;
+      state.eventTimer = 0;
+      playNextClueEvent();
+    }, event.duration);
+  }
+
+  function clearClueEventLayers() {
+    if (state.eventTimer) window.clearTimeout(state.eventTimer);
+    if (state.choiceTimer) window.clearTimeout(state.choiceTimer);
+    state.eventTimer = 0;
+    state.choiceTimer = 0;
+    state.eventQueue = [];
+    state.eventShowing = false;
+    state.pendingRefute = null;
+    clueEventLayer?.classList.remove("open");
+    clueChoiceLayer?.classList.remove("open");
+    if (clueEventLayer) clueEventLayer.innerHTML = "";
+    if (clueChoiceLayer) clueChoiceLayer.innerHTML = "";
+  }
+
+  function preloadClueCardImages() {
+    [CARD_BACK_SRC, ...Object.values(CARD_IMAGE_SLUGS).map((slug) => `assets/clue-cards/${slug}.webp`)].forEach((src) => {
+      const image = new Image();
+      image.src = src;
+    });
   }
 
   function shuffle(items) {
@@ -266,6 +408,87 @@
     return player.hand.filter((entry) => ids.has(entry.id));
   }
 
+  function announceSuggestion(player, suggestion) {
+    queueClueEvent({
+      title: `${player.name}의 추리`,
+      message: `${withSubject(suggestion.suspect.name)} ${suggestion.weapon.name}로 ${suggestion.room.name}에서 죽였다고 추리합니다.`,
+      cards: [suggestion.suspect, suggestion.weapon, suggestion.room],
+      duration: 1900
+    });
+  }
+
+  function announceNoCard(target) {
+    queueClueEvent({
+      title: "반박 없음",
+      message: `${withTopic(target.name)} 보여줄 카드가 없다고 합니다.`,
+      duration: 1050
+    });
+  }
+
+  function announceShownCard(target, player, shown, revealName = false) {
+    const message = target.human
+      ? `당신이 ${player.name}에게 카드 1장을 보여줬습니다.`
+      : player.human
+        ? `${withSubject(target.name)} 당신에게 카드 1장을 보여줬습니다.`
+        : `${withSubject(target.name)} ${player.name}에게 카드 1장을 보여줬습니다.`;
+    queueClueEvent({
+      title: "카드 제시",
+      message,
+      detail: revealName ? `확인한 카드: ${shown.name}` : "",
+      cards: [{ back: true }],
+      duration: revealName ? 1700 : 1250
+    });
+  }
+
+  function showHumanRefutePrompt() {
+    if (!state.pendingRefute) return;
+    if (state.eventShowing || state.eventQueue.length) {
+      if (!state.choiceTimer) {
+        state.choiceTimer = window.setTimeout(() => {
+          state.choiceTimer = 0;
+          showHumanRefutePrompt();
+        }, 160);
+      }
+      return;
+    }
+    const pending = state.pendingRefute;
+    const suggester = state.players[pending.suggesterIndex];
+    const layer = ensureClueChoiceLayer();
+    layer.innerHTML = `
+      <section class="clue-choice-card">
+        <strong>보여줄 카드를 선택하세요</strong>
+        <p>${escapeHtml(suggester.name)}의 추리를 반박할 수 있습니다.</p>
+        <small>${escapeHtml(pending.suggestion.suspect.name)} / ${escapeHtml(pending.suggestion.room.name)} / ${escapeHtml(pending.suggestion.weapon.name)}</small>
+        <div class="clue-choice-card-row">
+          ${pending.matches.map((entry) => `
+            <button class="clue-choice-card-button" type="button" data-card-id="${escapeHtml(entry.id)}">
+              <img src="${escapeHtml(cardImageUrl(entry))}" alt="${escapeHtml(entry.name)}" />
+              <span>${escapeHtml(entry.name)}</span>
+            </button>
+          `).join("")}
+        </div>
+      </section>
+    `;
+    layer.classList.add("open");
+    layer.querySelectorAll(".clue-choice-card-button").forEach((button) => {
+      button.addEventListener("click", () => chooseHumanRefute(button.dataset.cardId));
+    });
+  }
+
+  function chooseHumanRefute(cardId) {
+    const pending = state.pendingRefute;
+    if (!pending) return;
+    const shown = pending.matches.find((entry) => entry.id === cardId) || pending.matches[0];
+    const player = state.players[pending.suggesterIndex];
+    player.known.add(shown.id);
+    log(`당신이 ${player.name}에게 ${shown.name} 카드를 보여줬습니다.`);
+    state.pendingRefute = null;
+    clueChoiceLayer?.classList.remove("open");
+    if (clueChoiceLayer) clueChoiceLayer.innerHTML = "";
+    announceShownCard(state.players[pending.targetIndex], player, shown, true);
+    finishAiTurnAfterSuggestion();
+  }
+
   function resolveSuggestion(playerIndex, suggestion) {
     const player = state.players[playerIndex];
     const suspectPlayer = state.players.find((entry) => entry.suspect === suggestion.suspect.name);
@@ -275,22 +498,39 @@
       const target = state.players[(playerIndex + offset) % state.players.length];
       if (target.eliminated) continue;
       const matches = matchingCards(target, suggestion);
-      if (!matches.length) continue;
+      if (!matches.length) {
+        announceNoCard(target);
+        continue;
+      }
+      if (target.human) {
+        state.pendingRefute = { suggesterIndex: playerIndex, targetIndex: (playerIndex + offset) % state.players.length, suggestion, matches };
+        state.phase = "chooseRefute";
+        log(`${player.name}의 추리에 보여줄 카드를 선택해야 합니다.`);
+        renderClue();
+        showHumanRefutePrompt();
+        return { pendingHumanRefute: true };
+      }
       const shown = randomItem(matches);
       player.known.add(shown.id);
       if (player.human) {
         state.humanKnown.add(shown.id);
-        log(`${target.name}이 ${shown.name} 카드를 보여줬습니다.`);
+        log(`${withSubject(target.name)} ${shown.name} 카드를 보여줬습니다.`);
       } else if (target.human) {
         log(`당신이 ${player.name}에게 ${shown.name} 카드를 보여줬습니다.`);
       } else {
-        log(`${target.name}이 ${player.name}에게 카드 1장을 보여줬습니다.`);
+        log(`${withSubject(target.name)} ${player.name}에게 카드 1장을 보여줬습니다.`);
       }
-      return shown;
+      announceShownCard(target, player, shown, player.human);
+      return { shown };
     }
 
     log(`${player.name}의 제안은 아무도 반박하지 못했습니다.`);
-    return null;
+    queueClueEvent({
+      title: "반박 실패",
+      message: `${player.name}의 추리를 아무도 반박하지 못했습니다.`,
+      duration: 1300
+    });
+    return { shown: null };
   }
 
   function candidateCards(player, type) {
@@ -336,12 +576,24 @@
     clearAiTimer();
     if (success) {
       log(`${player.name} 승리! 정답은 ${state.solution.suspect.name}, ${state.solution.room.name}, ${state.solution.weapon.name}입니다.`);
+      queueClueEvent({
+        title: `${player.name} 승리`,
+        message: `정답은 ${state.solution.suspect.name}, ${state.solution.weapon.name}, ${state.solution.room.name}입니다.`,
+        cards: [state.solution.suspect, state.solution.weapon, state.solution.room],
+        duration: 2200
+      });
       if (typeof window.showCenterToast === "function") {
         window.showCenterToast(`${player.name} 승리`, 1800, { mode: "clue-finish" });
       }
     } else {
       player.eliminated = true;
       log(`${player.name}의 고발 실패: ${accusation.suspect.name}, ${accusation.room.name}, ${accusation.weapon.name}`);
+      queueClueEvent({
+        title: "고발 실패",
+        message: `${player.name}의 최종 고발은 틀렸습니다.`,
+        cards: [accusation.suspect, accusation.weapon, accusation.room],
+        duration: 1900
+      });
       if (player.human) {
         log(`정답은 ${state.solution.suspect.name}, ${state.solution.room.name}, ${state.solution.weapon.name}입니다.`);
         if (typeof window.showCenterToast === "function") {
@@ -374,6 +626,8 @@
 
   function startClueGame() {
     clearAiTimer();
+    clearClueEventLayers();
+    preloadClueCardImages();
     const playerCount = Math.min(6, Math.max(3, Number(els.playerCountSelect?.value || 4)));
     state.players = buildPlayers(playerCount);
     state.humanKnown = new Set();
@@ -399,6 +653,7 @@
 
   function leaveClueGame() {
     clearAiTimer();
+    clearClueEventLayers();
     closeAccusationDialog();
     document.body.classList.remove("clue-playing", "clue-active");
     document.body.classList.add("launcher-active");
@@ -408,6 +663,7 @@
 
   function resetToClueSetup() {
     clearAiTimer();
+    clearClueEventLayers();
     closeAccusationDialog();
     document.body.classList.remove("clue-playing");
     document.body.classList.add("clue-active");
@@ -440,13 +696,13 @@
     activePlayer().location = destination.id;
     if (destination.clue) {
       state.phase = "accuse";
-      log(`${activePlayer().name}이 ${destination.name}에 들어갔습니다.`);
+      log(`${withSubject(activePlayer().name)} ${destination.name}에 들어갔습니다.`);
       renderClue();
       openAccusationDialog();
       return;
     }
     state.phase = "suggest";
-    log(`${activePlayer().name}이 ${destination.name}에 들어갔습니다.`);
+    log(`${withSubject(activePlayer().name)} ${destination.name}에 들어갔습니다.`);
     renderClue();
   }
 
@@ -460,6 +716,7 @@
       room: card("room", room.name)
     };
     log(`${activePlayer().name} 제안: ${suggestion.suspect.name}, ${suggestion.room.name}, ${suggestion.weapon.name}`);
+    announceSuggestion(activePlayer(), suggestion);
     resolveSuggestion(state.currentPlayer, suggestion);
     state.phase = "waitEnd";
     renderClue();
@@ -473,6 +730,12 @@
       weapon: card("weapon", els.accuseWeapon?.value || WEAPONS[0])
     };
     closeAccusationDialog();
+    queueClueEvent({
+      title: `${activePlayer().name}의 최종 고발`,
+      message: `${withSubject(accusation.suspect.name)} ${accusation.weapon.name}로 ${accusation.room.name}에서 죽였다고 고발합니다.`,
+      cards: [accusation.suspect, accusation.weapon, accusation.room],
+      duration: 1900
+    });
     finishGame(activePlayer(), isCorrectAccusation(accusation), accusation);
   }
 
@@ -487,6 +750,17 @@
     scheduleAiTurn();
   }
 
+  function finishAiTurnAfterSuggestion() {
+    if (state.finished) return;
+    state.currentPlayer = nextPlayerIndex();
+    state.phase = "awaitRoll";
+    state.dice = [];
+    state.reachableRooms = [];
+    renderClue();
+    playNextClueEvent();
+    if (!activePlayer().human) scheduleAiTurn();
+  }
+
   function clearAiTimer() {
     if (state.aiTimer) {
       window.clearTimeout(state.aiTimer);
@@ -497,6 +771,10 @@
   function scheduleAiTurn() {
     clearAiTimer();
     if (state.finished || activePlayer()?.human) return;
+    if (state.eventShowing || state.eventQueue.length || isChoiceOpen()) {
+      state.aiTimer = window.setTimeout(scheduleAiTurn, 260);
+      return;
+    }
     state.aiTimer = window.setTimeout(runAiTurn, AI_DELAY_MS);
   }
 
@@ -511,7 +789,13 @@
     if (accusation && reachable.some((destination) => destination.id === CLUE_ZONE.id)) {
       player.location = CLUE_ZONE.id;
       log(`${player.name}: ${state.dice.join(" + ")} = ${total}, ${CLUE_ZONE.name} 이동`);
-      log(`${player.name}이 최종 추리를 선언했습니다.`);
+      log(`${withSubject(player.name)} 최종 추리를 선언했습니다.`);
+      queueClueEvent({
+        title: `${player.name}의 최종 고발`,
+        message: `${withSubject(accusation.suspect.name)} ${accusation.weapon.name}로 ${accusation.room.name}에서 죽였다고 고발합니다.`,
+        cards: [accusation.suspect, accusation.weapon, accusation.room],
+        duration: 1900
+      });
       finishGame(player, isCorrectAccusation(accusation), accusation);
       return;
     }
@@ -520,14 +804,11 @@
     log(`${player.name}: ${state.dice.join(" + ")} = ${total}, ${room.name} 이동`);
     const suggestion = aiSuggestion(player, room);
     log(`${player.name} 제안: ${suggestion.suspect.name}, ${suggestion.room.name}, ${suggestion.weapon.name}`);
-    resolveSuggestion(state.currentPlayer, suggestion);
+    announceSuggestion(player, suggestion);
+    const result = resolveSuggestion(state.currentPlayer, suggestion);
     if (state.finished) return;
-    state.currentPlayer = nextPlayerIndex();
-    state.phase = "awaitRoll";
-    state.dice = [];
-    state.reachableRooms = [];
-    renderClue();
-    if (!activePlayer().human) scheduleAiTurn();
+    if (result?.pendingHumanRefute) return;
+    finishAiTurnAfterSuggestion();
   }
 
   function fillSelect(select, values) {
@@ -622,8 +903,11 @@
     els.handList.innerHTML = human?.hand?.length
       ? human.hand.map((entry) => `
           <span class="clue-card-chip">
-            <b>${escapeHtml(CARD_TYPE_LABEL[entry.type])}</b>
-            ${escapeHtml(entry.name)}
+            <img src="${escapeHtml(cardImageUrl(entry))}" alt="${escapeHtml(entry.name)}" loading="lazy" decoding="async" />
+            <span class="clue-card-caption">
+              <b>${escapeHtml(CARD_TYPE_LABEL[entry.type])}</b>
+              <span>${escapeHtml(entry.name)}</span>
+            </span>
           </span>
         `).join("")
       : '<small>카드 없음</small>';
@@ -675,6 +959,7 @@
         awaitRoll: "주사위를 굴리세요.",
         chooseMove: "갈 수 있는 곳 중 하나를 선택하세요.",
         suggest: `${roomName(player?.location)}에서 제안할 수 있습니다.`,
+        chooseRefute: "보여줄 카드를 선택하세요.",
         accuse: "CLUE 존에서 최종 추리를 할 수 있습니다.",
         waitEnd: "턴을 종료하세요.",
         finished: "사건이 끝났습니다."
@@ -761,7 +1046,7 @@
     if (state.phase !== "accuse" || !activePlayer()?.human) return;
     closeAccusationDialog();
     state.phase = "waitEnd";
-    log(`${activePlayer().name}이 고발을 미뤘습니다.`);
+    log(`${withSubject(activePlayer().name)} 고발을 미뤘습니다.`);
     renderClue();
   });
 
