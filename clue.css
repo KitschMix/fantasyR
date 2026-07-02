@@ -840,6 +840,10 @@ body.clue-active.clue-playing .clue-game-panel {
   display: grid;
 }
 
+.clue-suggestion-modal-card {
+  border-color: rgba(242, 207, 120, 0.58);
+}
+
 .clue-event-overlay,
 .clue-choice-overlay {
   position: fixed;
@@ -1087,42 +1091,6 @@ body.clue-active.clue-playing .clue-game-panel {
 .clue-choice-card-button:hover {
   border-color: rgba(242, 207, 120, 0.86);
   transform: translateY(-3px);
-}
-
-.clue-suggestion-dialog {
-  width: min(620px, calc(100vw - 32px));
-  max-height: min(86vh, 760px);
-  overflow: auto;
-}
-
-.clue-dialog-card-panel {
-  margin-top: 2px;
-}
-
-.clue-suggestion-dialog-section {
-  display: grid;
-  gap: 8px;
-}
-
-.clue-suggestion-dialog-section > b {
-  color: rgba(247, 236, 217, 0.84);
-  font-size: 14px;
-  font-weight: 950;
-}
-
-.clue-suggestion-option {
-  width: 104px;
-}
-
-.clue-suggestion-option.selected {
-  border-color: rgba(107, 198, 162, 0.95);
-  box-shadow: 0 0 0 2px rgba(107, 198, 162, 0.28), 0 12px 28px rgba(0, 0, 0, 0.34);
-}
-
-.clue-choice-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
 }
 
 .clue-popup-hint {

@@ -129,6 +129,11 @@
     moveHint: document.querySelector("#clueMoveHint"),
     moveOptions: document.querySelector("#clueMoveOptions"),
     handList: document.querySelector("#clueHandList"),
+    suggestionDialogCard: document.querySelector("#clueSuggestionModalCard"),
+    suggestionModalHint: document.querySelector("#clueSuggestionModalHint"),
+    suggestRoomStaticCard: document.querySelector("#clueSuggestRoomStaticCard"),
+    suggestRoom: document.querySelector("#clueSuggestRoom"),
+    suggestRoomPicker: document.querySelector("#clueSuggestRoomPicker"),
     suggestSuspect: document.querySelector("#clueSuggestSuspect"),
     suggestWeapon: document.querySelector("#clueSuggestWeapon"),
     suggestionCardPanel: document.querySelector("#clueSuggestionCardPanel"),
@@ -137,6 +142,8 @@
     suggestWeaponPicker: document.querySelector("#clueSuggestWeaponPicker"),
     suggestionRoomLabel: document.querySelector("#clueSuggestionRoomLabel"),
     makeSuggestionButton: document.querySelector("#clueMakeSuggestionButton"),
+    confirmSuggestionButton: document.querySelector("#clueConfirmSuggestionButton"),
+    cancelSuggestionButton: document.querySelector("#clueCancelSuggestionButton"),
     accuseSuspect: document.querySelector("#clueAccuseSuspect"),
     accuseRoom: document.querySelector("#clueAccuseRoom"),
     accuseWeapon: document.querySelector("#clueAccuseWeapon"),
@@ -170,6 +177,8 @@
     humanKnown: new Set(),
     noteMarks: {},
     lastSuggestionIds: new Set(),
+    suggestionDialogOpen: false,
+    suggestionAllowRoomPick: false,
     pendingRefute: null,
     eventQueue: [],
     currentEvent: null,
@@ -1128,6 +1137,7 @@
     state.clueZoneAssistEligible = false;
     state.clueZoneAssistApplied = false;
     state.lastSuggestionIds = new Set();
+    closeSuggestionDialog();
     state.turnSerial += 1;
   }
 
@@ -1293,6 +1303,7 @@
     clearIdleSpeechTimer();
     clearClueEventLayers();
     clearClueSpeech();
+    closeSuggestionDialog();
     closeAccusationDialog();
     document.body.classList.remove("clue-playing", "clue-active");
     document.body.classList.add("launcher-active");
@@ -1306,6 +1317,7 @@
     clearIdleSpeechTimer();
     clearClueEventLayers();
     clearClueSpeech();
+    closeSuggestionDialog();
     closeAccusationDialog();
     document.body.classList.remove("clue-playing");
     document.body.classList.add("clue-active");
@@ -1319,6 +1331,12 @@
 
   function closeAccusationDialog() {
     els.accusationCard?.classList.remove("open");
+  }
+
+  function closeSuggestionDialog() {
+    state.suggestionDialogOpen = false;
+    state.suggestionAllowRoomPick = false;
+    els.suggestionDialogCard?.classList.remove("open");
   }
 
   async function rollForHuman() {
@@ -1378,81 +1396,18 @@
     if (clueChoiceLayer) clueChoiceLayer.innerHTML = "";
   }
 
-  function renderPopupCardPicker(layer, selected, type, names, enabled = true) {
-    const picker = layer.querySelector(`[data-popup-picker="${type}"]`);
-    const select = layer.querySelector(`[data-popup-select="${type}"]`);
-    if (!picker || !select) return;
-    fillSelect(select, names);
-    select.value = selected[type] || names[0];
-    renderCardPicker(picker, select, type, names, enabled, () => {
-      selected[type] = select.value || names[0];
-      renderPopupCardPicker(layer, selected, type, names, enabled);
-    });
-  }
-
   function openSuggestionDialog({ allowRoomPick = false } = {}) {
     if (state.finished || !activePlayer()?.human) return;
     const currentRoom = ROOM_BY_ID[activePlayer().location];
     if (!allowRoomPick && (state.phase !== "suggest" || !currentRoom)) return;
-    const selected = {
-      suspect: els.suggestSuspect?.value || SUSPECTS[0],
-      weapon: els.suggestWeapon?.value || WEAPONS[0],
-      room: allowRoomPick ? ROOMS[0].name : currentRoom.name
-    };
-    const layer = ensureClueChoiceLayer();
-    const roomSlot = allowRoomPick
-      ? `
-        <div class="clue-suggestion-slot">
-          <span>장소</span>
-          <div class="clue-card-select" data-popup-picker="room"></div>
-          <select class="visually-hidden-select" data-popup-select="room" tabindex="-1" aria-hidden="true"></select>
-        </div>
-      `
-      : `
-        <div class="clue-suggestion-slot">
-          <span>장소</span>
-          <div class="clue-suggestion-static-card">${suggestionCardHtml(card("room", selected.room))}</div>
-        </div>
-      `;
-    layer.innerHTML = `
-      <section class="clue-choice-card clue-suggestion-dialog">
-        <strong>제안하기</strong>
-        <p>${allowRoomPick ? "장소, 용의자, 도구를 골라 추가 추리를 합니다." : `${selected.room}에서 추리합니다. 장소는 현재 방으로 고정됩니다.`}</p>
-        <div class="clue-suggestion-card-panel clue-dialog-card-panel">
-          ${roomSlot}
-          <div class="clue-suggestion-slot">
-            <span>용의자</span>
-            <div class="clue-card-select" data-popup-picker="suspect"></div>
-            <select class="visually-hidden-select" data-popup-select="suspect" tabindex="-1" aria-hidden="true"></select>
-          </div>
-          <div class="clue-suggestion-slot">
-            <span>도구</span>
-            <div class="clue-card-select" data-popup-picker="weapon"></div>
-            <select class="visually-hidden-select" data-popup-select="weapon" tabindex="-1" aria-hidden="true"></select>
-          </div>
-        </div>
-        <div class="clue-choice-actions">
-          <button class="secondary-button" type="button" data-cancel-suggestion>취소</button>
-          <button class="primary-button" type="button" data-confirm-suggestion>제안하기</button>
-        </div>
-      </section>
-    `;
-    layer.classList.add("open");
-    if (allowRoomPick) renderPopupCardPicker(layer, selected, "room", ROOMS.map((room) => room.name));
-    renderPopupCardPicker(layer, selected, "suspect", SUSPECTS);
-    renderPopupCardPicker(layer, selected, "weapon", WEAPONS);
-    layer.querySelector("[data-cancel-suggestion]")?.addEventListener("click", () => {
-      closeChoiceOverlay();
-      renderClue();
-    });
-    layer.querySelector("[data-confirm-suggestion]")?.addEventListener("click", () => {
-      closeChoiceOverlay();
-      confirmHumanSuggestion({
-        suspect: card("suspect", selected.suspect),
-        weapon: card("weapon", selected.weapon),
-        room: card("room", selected.room)
-      });
-    });
+    state.suggestionDialogOpen = true;
+    state.suggestionAllowRoomPick = allowRoomPick;
+    if (els.suggestRoom) {
+      fillSelect(els.suggestRoom, ROOMS.map((room) => room.name));
+      els.suggestRoom.value = allowRoomPick ? (els.suggestRoom.value || ROOMS[0].name) : currentRoom.name;
+    }
+    renderClue();
+    els.suggestionDialogCard?.classList.add("open");
   }
 
   function confirmHumanSuggestion(suggestion) {
@@ -1465,6 +1420,19 @@
 
   function makeHumanSuggestion() {
     openSuggestionDialog();
+  }
+
+  function confirmSuggestionDialog() {
+    if (state.finished || !activePlayer()?.human || !state.suggestionDialogOpen) return;
+    const currentRoom = ROOM_BY_ID[activePlayer().location];
+    if (!state.suggestionAllowRoomPick && (state.phase !== "suggest" || !currentRoom)) return;
+    const suggestion = {
+      suspect: card("suspect", els.suggestSuspect?.value || SUSPECTS[0]),
+      weapon: card("weapon", els.suggestWeapon?.value || WEAPONS[0]),
+      room: card("room", state.suggestionAllowRoomPick ? (els.suggestRoom?.value || ROOMS[0].name) : currentRoom.name)
+    };
+    closeSuggestionDialog();
+    confirmHumanSuggestion(suggestion);
   }
 
   function makeHumanAccusation() {
@@ -1762,8 +1730,42 @@
   }
 
   function renderSuggestionCards() {
-    if (els.suggestionRoomLabel) {
-      els.suggestionRoomLabel.hidden = true;
+    const player = activePlayer();
+    const open = Boolean(state.suggestionDialogOpen && player?.human && !state.finished);
+    els.suggestionDialogCard?.classList.toggle("open", open);
+    if (!open) return;
+
+    const roomNames = ROOMS.map((room) => room.name);
+    const currentRoom = ROOM_BY_ID[player.location];
+    const fixedRoomName = currentRoom?.name || roomNames[0];
+    if (els.suggestionModalHint) {
+      els.suggestionModalHint.textContent = state.suggestionAllowRoomPick
+        ? "장소, 용의자, 도구를 골라 추가 추리를 합니다."
+        : `${fixedRoomName}에서 추리합니다. 장소는 현재 방으로 고정됩니다.`;
+    }
+
+    if (els.suggestRoom) {
+      fillSelect(els.suggestRoom, roomNames);
+      if (!state.suggestionAllowRoomPick) els.suggestRoom.value = fixedRoomName;
+      else if (!els.suggestRoom.value) els.suggestRoom.value = roomNames[0];
+    }
+    if (els.suggestRoomStaticCard) {
+      els.suggestRoomStaticCard.hidden = state.suggestionAllowRoomPick;
+      els.suggestRoomStaticCard.innerHTML = suggestionCardHtml(card("room", state.suggestionAllowRoomPick ? (els.suggestRoom?.value || roomNames[0]) : fixedRoomName));
+    }
+    if (els.suggestRoomPicker) {
+      els.suggestRoomPicker.hidden = !state.suggestionAllowRoomPick;
+      if (state.suggestionAllowRoomPick) {
+        renderCardPicker(els.suggestRoomPicker, els.suggestRoom, "room", roomNames, true, renderSuggestionCards);
+      }
+    }
+    renderCardPicker(els.suggestSuspectPicker, els.suggestSuspect, "suspect", SUSPECTS, true, renderSuggestionCards);
+    renderCardPicker(els.suggestWeaponPicker, els.suggestWeapon, "weapon", WEAPONS, true, renderSuggestionCards);
+    if (els.confirmSuggestionButton) {
+      els.confirmSuggestionButton.disabled = false;
+    }
+    if (els.cancelSuggestionButton) {
+      els.cancelSuggestionButton.disabled = false;
     }
   }
 
@@ -1892,6 +1894,7 @@
   }
 
   function initializeClue() {
+    fillSelect(els.suggestRoom, ROOMS.map((room) => room.name));
     fillSelect(els.suggestSuspect, SUSPECTS);
     fillSelect(els.suggestWeapon, WEAPONS);
     fillSelect(els.accuseSuspect, SUSPECTS);
@@ -1924,6 +1927,16 @@
   els.rollButton?.addEventListener("click", rollForHuman);
   els.endTurnButton?.addEventListener("click", endHumanTurn);
   els.makeSuggestionButton?.addEventListener("click", makeHumanSuggestion);
+  els.confirmSuggestionButton?.addEventListener("click", confirmSuggestionDialog);
+  els.cancelSuggestionButton?.addEventListener("click", () => {
+    closeSuggestionDialog();
+    renderClue();
+  });
+  els.suggestionDialogCard?.addEventListener("click", (event) => {
+    if (event.target.closest("button, select, label, .clue-suggestion-card-panel")) return;
+    closeSuggestionDialog();
+    renderClue();
+  });
   els.makeAccusationButton?.addEventListener("click", makeHumanAccusation);
   els.cancelAccusationButton?.addEventListener("click", () => {
     if (state.phase !== "accuse" || !activePlayer()?.human) return;
