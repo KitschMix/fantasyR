@@ -1098,6 +1098,16 @@
     });
   }
 
+  function nearbyRoomsForPlayer(player) {
+    const linkedRooms = Object.keys(ROOM_LINKS[player.location] || {})
+      .filter((id) => id !== "center")
+      .map((id) => ROOM_BY_ID[id])
+      .filter(Boolean);
+    const centerRooms = CENTRAL_NEAR_ROOM_IDS.map((id) => ROOM_BY_ID[id]).filter(Boolean);
+    if (player.location === "center" || player.location === CLUE_ZONE.id) return centerRooms;
+    return linkedRooms.length ? linkedRooms : centerRooms;
+  }
+
   function sortedCaseCards(cards) {
     return [...cards].sort((left, right) => {
       const typeDiff = (CARD_TYPE_ORDER[left.type] ?? 9) - (CARD_TYPE_ORDER[right.type] ?? 9);
@@ -1236,16 +1246,8 @@
   function reachableRoomsForRoll(player, total, clueZoneAssistEligible = player.clueZoneAssistReady) {
     if (total === 2) return [HINT_ACTION];
     if (total >= 10) return [HINT_ACTION, ...ROOMS, CLUE_ZONE];
-    const linkedRooms = (player.location === "center" || player.location === CLUE_ZONE.id ? [] : Object.keys(ROOM_LINKS[player.location] || {}))
-      .filter((id) => id !== "center")
-      .map((id) => ROOM_BY_ID[id])
-      .filter(Boolean);
-    const centerRooms = player.location === "center" || player.location === CLUE_ZONE.id
-      ? CENTRAL_NEAR_ROOM_IDS.map((id) => ROOM_BY_ID[id]).filter(Boolean)
-      : [];
     return uniqueDestinations([
-      ...linkedRooms,
-      ...centerRooms,
+      ...nearbyRoomsForPlayer(player),
       clueZoneAssistEligible ? clueZoneAssistDestination() : null
     ]);
   }
