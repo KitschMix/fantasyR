@@ -161,11 +161,15 @@
     hintDeck: [],
     dice: [],
     dicePreview: [],
+    diceBonus: 0,
     diceRolling: false,
     diceRollTimer: 0,
     reachableRooms: [],
+    clueZoneAssistEligible: false,
+    clueZoneAssistApplied: false,
     humanKnown: new Set(),
     noteMarks: {},
+    lastSuggestionIds: new Set(),
     pendingRefute: null,
     eventQueue: [],
     currentEvent: null,
@@ -557,8 +561,12 @@
           color: colors[index % colors.length],
           location: "center",
           hand: [],
+          hintCards: [],
           known: new Set(),
           speech: "",
+          clueZoneAssistReady: false,
+          extraTurnPending: false,
+          peekReady: false,
           eliminated: false
         };
       }
@@ -573,8 +581,12 @@
         color: colors[index % colors.length],
         location: "center",
         hand: [],
+        hintCards: [],
         known: new Set(),
         speech: "",
+        clueZoneAssistReady: false,
+        extraTurnPending: false,
+        peekReady: false,
         eliminated: false
       };
     });
@@ -664,7 +676,11 @@
   function dealCards(deck) {
     state.players.forEach((player) => {
       player.hand = [];
+      player.hintCards = [];
       player.known = new Set();
+      player.clueZoneAssistReady = false;
+      player.extraTurnPending = false;
+      player.peekReady = false;
     });
     deck.forEach((entry, index) => {
       const player = state.players[index % state.players.length];
@@ -694,6 +710,8 @@
       return null;
     }
     const drawn = state.hintDeck.shift();
+    player.hintCards = player.hintCards || [];
+    player.hintCards.push(drawn);
     log(`${playerDisplayWithSubject(player)} ? 카드 '${drawn.name}'을 뽑았습니다.`);
     queueClueEvent({
       title: "? 카드",
@@ -703,6 +721,91 @@
       cards: [drawn]
     });
     return drawn;
+  }
+
+  function hintBaseId(hintCard) {
+    return String(hintCard?.id || "").split(":")[1] || hintCard?.id || "";
+  }
+
+  function removeHumanHintCard(hintId) {
+    const human = state.players[0];
+    const index = human?.hintCards?.findIndex((entry) => entry.id === hintId) ?? -1;
+    if (index < 0) return null;
+    return human.hintCards.splice(index, 1)[0];
+  }
+
+  function activeHumanCanUseHint() {
+    return Boolean(state.started && !state.finished && activePlayer()?.human && state.phase !== "chooseRefute");
+  }
+
+  function revealRandomOpponentCard() {
+    const candidates = state.players
+      .filter((player) => !player.human && !player.eliminated && player.hand.length)
+      .flatMap((player) => player.hand.map((entry) => ({ player, entry })));
+    return randomItem(candidates);
+  }
+
+  function useHumanHintCard(hintId) {
+    if (!activeHumanCanUseHint()) return;
+    const human = state.players[0];
+    const hint = human?.hintCards?.find((entry) => entry.id === hintId);
+    if (!hint) return;
+    const baseId = hintBaseId(hint);
+
+    if (baseId === "add-six" && state.phase !== "chooseMove") {
+      queueClueEvent({
+        title: "? 카드 사용 불가",
+        message: "주사위를 굴린 뒤 이동지를 고르는 중에 사용할 수 있습니다.",
+        cards: [hint]
+      });
+      return;
+    }
+
+    const consumed = removeHumanHintCard(hintId);
+    if (!consumed) return;
+
+    if (baseId === "dud") {
+      queueClueEvent({ title: "? 카드", message: "꽝입니다. 아무 일도 일어나지 않았습니다.", cards: [hint] });
+    } else if (baseId === "extra-turn") {
+      human.extraTurnPending = true;
+      queueClueEvent({ title: "? 카드 사용", message: "이번 턴을 끝낸 뒤 한 번 더 진행합니다.", cards: [hint] });
+    } else if (baseId === "add-six") {
+      state.diceBonus += 6;
+      state.reachableRooms = reachableRoomsForRoll(human, currentRollTotal(), state.clueZoneAssistEligible);
+      queueClueEvent({ title: "? 카드 사용", message: "이번 주사위 합계에 6을 더했습니다.", cards: [hint] });
+    } else if (baseId === "move-anywhere") {
+      state.phase = "chooseMove";
+      state.reachableRooms = uniqueDestinations([...ROOMS, CLUE_ZONE]);
+      queueClueEvent({ title: "? 카드 사용", message: "원하는 장소나 CLUE 존으로 이동할 수 있습니다.", cards: [hint] });
+    } else if (baseId === "extra-suggestion") {
+      queueClueEvent({
+        title: "? 카드 사용",
+        message: "원하는 장소를 골라 한 번 더 추리할 수 있습니다.",
+        cards: [hint],
+        afterDismiss: () => openSuggestionDialog({ allowRoomPick: true })
+      });
+    } else if (baseId === "reveal-card") {
+      const revealed = revealRandomOpponentCard();
+      if (revealed) {
+        state.humanKnown.add(revealed.entry.id);
+        queueClueEvent({
+          title: "? 카드 사용",
+          message: `${playerDisplayWithSubject(revealed.player)} 카드 1장을 공개합니다.`,
+          detail: `공개한 카드: ${revealed.entry.name}`,
+          cards: [revealed.entry]
+        });
+      } else {
+        queueClueEvent({ title: "? 카드 사용", message: "공개할 상대 카드가 없습니다.", cards: [hint] });
+      }
+    } else if (baseId === "peek-card") {
+      human.peekReady = true;
+      queueClueEvent({
+        title: "? 카드 사용",
+        message: "다음에 AI끼리 카드를 보여줄 때 그 카드를 엿봅니다.",
+        cards: [hint]
+      });
+    }
+    renderClue();
   }
 
   function log(message) {
@@ -725,6 +828,23 @@
     return [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
   }
 
+  function currentRollTotal() {
+    return state.dice.length ? state.dice[0] + state.dice[1] + state.diceBonus : 0;
+  }
+
+  function isNearRoomRoll(total) {
+    return total >= 3 && total <= 9;
+  }
+
+  function clueZoneAssistDestination() {
+    return {
+      ...CLUE_ZONE,
+      assist: true,
+      label: "CLUE 존 (두 번째 기회)",
+      reason: "이전 턴에 근처 방 구간이 나와서 개방"
+    };
+  }
+
   function clearDiceRollTimer() {
     if (state.diceRollTimer) {
       window.clearTimeout(state.diceRollTimer);
@@ -732,6 +852,7 @@
     }
     state.diceRolling = false;
     state.dicePreview = [];
+    state.diceBonus = 0;
   }
 
   function currentDiceDisplay() {
@@ -797,6 +918,8 @@
   }
 
   function announceSuggestion(player, suggestion) {
+    state.lastSuggestionIds = new Set([suggestion.suspect.id, suggestion.weapon.id, suggestion.room.id]);
+    renderNotes();
     queueClueEvent({
       title: `${playerDisplayName(player)}의 추리`,
       message: `${withSubject(suggestion.suspect.name)} ${withInstrument(suggestion.weapon.name)} ${suggestion.room.name}에서 죽였다고 추리합니다.`,
@@ -817,6 +940,12 @@
 
   function announceShownCard(target, player, shown, revealName = false) {
     const actor = target.human ? player : target;
+    const human = state.players[0];
+    const peekReveal = Boolean(human?.peekReady && !target.human && !player.human && !revealName);
+    if (peekReveal) {
+      human.peekReady = false;
+      state.humanKnown.add(shown.id);
+    }
     const message = target.human
       ? `당신이 ${playerDisplayName(player)}에게 카드 1장을 보여줬습니다.`
       : player.human
@@ -825,10 +954,10 @@
     queueClueEvent({
       title: "카드 제시",
       message,
-      detail: revealName ? `확인한 카드: ${shown.name}` : "",
+      detail: revealName || peekReveal ? `확인한 카드: ${shown.name}` : "",
       actor,
       dialogueKey: target.human ? "userShowCard" : player.human ? "showUserCard" : "showCard",
-      cards: revealName ? [shown] : [{ back: true }]
+      cards: revealName || peekReveal ? [shown] : [{ back: true }]
     });
   }
 
@@ -984,7 +1113,10 @@
     clearDiceRollTimer();
     state.dice = [];
     state.dicePreview = [];
+    state.diceBonus = 0;
     state.reachableRooms = [];
+    state.clueZoneAssistEligible = false;
+    state.clueZoneAssistApplied = false;
     state.turnSerial += 1;
   }
 
@@ -1100,8 +1232,8 @@
     }
   }
 
-  function reachableRoomsForRoll(player, total) {
-    if (total <= 4) return [HINT_ACTION];
+  function reachableRoomsForRoll(player, total, clueZoneAssistEligible = player.clueZoneAssistReady) {
+    if (total === 2) return [HINT_ACTION];
     if (total >= 10) return [HINT_ACTION, ...ROOMS, CLUE_ZONE];
     const linkedRooms = (player.location === "center" || player.location === CLUE_ZONE.id ? [] : Object.keys(ROOM_LINKS[player.location] || {}))
       .filter((id) => id !== "center")
@@ -1112,7 +1244,8 @@
       : [];
     return uniqueDestinations([
       ...linkedRooms,
-      ...centerRooms
+      ...centerRooms,
+      clueZoneAssistEligible ? clueZoneAssistDestination() : null
     ]);
   }
 
@@ -1126,6 +1259,7 @@
     state.players = buildPlayers(playerCount);
     state.humanKnown = new Set();
     state.noteMarks = {};
+    state.lastSuggestionIds = new Set();
     clearClueSpeech();
     clueDialogueUsage.clear();
     const { solution, deck } = createGameDeck();
@@ -1189,8 +1323,20 @@
     const finalDice = rollDice();
     await animateDiceRoll(finalDice);
     if (state.finished || state.phase !== "awaitRoll" || !activePlayer()?.human) return;
-    const total = state.dice[0] + state.dice[1];
-    state.reachableRooms = reachableRoomsForRoll(activePlayer(), total);
+    const total = currentRollTotal();
+    const clueAssistReady = activePlayer().clueZoneAssistReady;
+    state.clueZoneAssistEligible = clueAssistReady;
+    state.reachableRooms = reachableRoomsForRoll(activePlayer(), total, clueAssistReady);
+    state.clueZoneAssistApplied = isNearRoomRoll(total) && clueAssistReady;
+    activePlayer().clueZoneAssistReady = isNearRoomRoll(total);
+    if (total === 2) {
+      log(`${activePlayer().name}: ${state.dice.join(" + ")} = ${total}, ? 카드 확정`);
+      drawHintCard(activePlayer());
+      state.phase = "waitEnd";
+      renderClue();
+      scheduleHumanIdleSpeech();
+      return;
+    }
     state.phase = "chooseMove";
     log(`${activePlayer().name}: ${state.dice.join(" + ")} = ${total}`);
     renderClue();
@@ -1210,6 +1356,7 @@
     }
     activePlayer().location = destination.id;
     if (destination.clue) {
+      if (destination.assist) activePlayer().clueZoneAssistReady = false;
       state.phase = "accuse";
       log(`${withSubject(activePlayer().name)} ${destination.name}에 들어갔습니다.`);
       renderClue();
@@ -1223,20 +1370,89 @@
     scheduleHumanIdleSpeech();
   }
 
-  function makeHumanSuggestion() {
-    if (state.finished || state.phase !== "suggest" || !activePlayer()?.human) return;
-    const room = ROOM_BY_ID[activePlayer().location];
-    if (!room) return;
-    const suggestion = {
-      suspect: card("suspect", els.suggestSuspect?.value || SUSPECTS[0]),
-      weapon: card("weapon", els.suggestWeapon?.value || WEAPONS[0]),
-      room: card("room", room.name)
+  function closeChoiceOverlay() {
+    clueChoiceLayer?.classList.remove("open");
+    if (clueChoiceLayer) clueChoiceLayer.innerHTML = "";
+  }
+
+  function suggestionOptionHtml(type, name, selected) {
+    const entry = card(type, name);
+    return `
+      <button class="clue-choice-card-button clue-suggestion-option${selected ? " selected" : ""}" type="button" data-suggestion-type="${escapeHtml(type)}" data-card-name="${escapeHtml(name)}">
+        ${suggestionCardHtml(entry)}
+      </button>
+    `;
+  }
+
+  function openSuggestionDialog({ allowRoomPick = false } = {}) {
+    if (state.finished || !activePlayer()?.human) return;
+    const currentRoom = ROOM_BY_ID[activePlayer().location];
+    if (!allowRoomPick && (state.phase !== "suggest" || !currentRoom)) return;
+    const selected = {
+      suspect: els.suggestSuspect?.value || SUSPECTS[0],
+      weapon: els.suggestWeapon?.value || WEAPONS[0],
+      room: allowRoomPick ? ROOMS[0].name : currentRoom.name
     };
+    const layer = ensureClueChoiceLayer();
+    const roomOptions = allowRoomPick
+      ? ROOMS.map((room) => suggestionOptionHtml("room", room.name, room.name === selected.room)).join("")
+      : suggestionCardHtml(card("room", selected.room));
+    layer.innerHTML = `
+      <section class="clue-choice-card clue-suggestion-dialog">
+        <strong>제안하기</strong>
+        <p>${allowRoomPick ? "장소, 용의자, 도구를 골라 추가 추리를 합니다." : `${selected.room}에서 추리할 카드를 고르세요.`}</p>
+        <div class="clue-suggestion-dialog-section">
+          <b>장소</b>
+          <div class="clue-choice-card-row">${roomOptions}</div>
+        </div>
+        <div class="clue-suggestion-dialog-section">
+          <b>용의자</b>
+          <div class="clue-choice-card-row">${SUSPECTS.map((name) => suggestionOptionHtml("suspect", name, name === selected.suspect)).join("")}</div>
+        </div>
+        <div class="clue-suggestion-dialog-section">
+          <b>도구</b>
+          <div class="clue-choice-card-row">${WEAPONS.map((name) => suggestionOptionHtml("weapon", name, name === selected.weapon)).join("")}</div>
+        </div>
+        <div class="clue-choice-actions">
+          <button class="secondary-button" type="button" data-cancel-suggestion>취소</button>
+          <button class="primary-button" type="button" data-confirm-suggestion>제안하기</button>
+        </div>
+      </section>
+    `;
+    layer.classList.add("open");
+    layer.querySelectorAll(".clue-suggestion-option").forEach((button) => {
+      button.addEventListener("click", () => {
+        const type = button.dataset.suggestionType;
+        selected[type] = button.dataset.cardName;
+        layer.querySelectorAll(`.clue-suggestion-option[data-suggestion-type="${type}"]`).forEach((option) => {
+          option.classList.toggle("selected", option === button);
+        });
+      });
+    });
+    layer.querySelector("[data-cancel-suggestion]")?.addEventListener("click", () => {
+      closeChoiceOverlay();
+      renderClue();
+    });
+    layer.querySelector("[data-confirm-suggestion]")?.addEventListener("click", () => {
+      closeChoiceOverlay();
+      confirmHumanSuggestion({
+        suspect: card("suspect", selected.suspect),
+        weapon: card("weapon", selected.weapon),
+        room: card("room", selected.room)
+      });
+    });
+  }
+
+  function confirmHumanSuggestion(suggestion) {
     log(`${activePlayer().name} 제안: ${suggestion.suspect.name}, ${suggestion.room.name}, ${suggestion.weapon.name}`);
     announceSuggestion(activePlayer(), suggestion);
     resolveSuggestion(state.currentPlayer, suggestion);
     state.phase = "waitEnd";
     renderClue();
+  }
+
+  function makeHumanSuggestion() {
+    openSuggestionDialog();
   }
 
   function makeHumanAccusation() {
@@ -1259,8 +1475,15 @@
 
   function endHumanTurn() {
     if (state.finished || !activePlayer()?.human || state.phase === "chooseMove" || state.phase === "awaitRoll") return;
+    const player = activePlayer();
     closeAccusationDialog();
-    beginClueTurn(nextPlayerIndex());
+    if (player.extraTurnPending) {
+      player.extraTurnPending = false;
+      beginClueTurn(state.currentPlayer);
+      log(`${playerDisplayWithSubject(player)} ? 카드 효과로 한 번 더 진행합니다.`);
+    } else {
+      beginClueTurn(nextPlayerIndex());
+    }
     renderClue();
     showClueTurnNotice();
     scheduleAiTurn();
@@ -1299,7 +1522,9 @@
     await animateDiceRoll(finalDice);
     if (state.finished || activePlayer() !== player) return;
     const total = state.dice[0] + state.dice[1];
-    const reachable = reachableRoomsForRoll(player, total);
+    const clueAssistReady = player.clueZoneAssistReady;
+    const reachable = reachableRoomsForRoll(player, total, clueAssistReady);
+    player.clueZoneAssistReady = isNearRoomRoll(total);
     const accusation = buildCertainAccusation(player);
     if (accusation && reachable.some((destination) => destination.id === CLUE_ZONE.id)) {
       player.location = CLUE_ZONE.id;
@@ -1418,12 +1643,14 @@
     const player = activePlayer();
     const humanCanChoose = Boolean(player?.human && state.phase === "chooseMove" && !state.finished);
     if (els.moveHint) {
-      const total = state.dice.length ? state.dice[0] + state.dice[1] : 0;
-      const rangeHint = total <= 4
-        ? "이동할 수 없습니다. ? 카드만 선택하세요."
+      const total = currentRollTotal();
+      const rangeHint = total === 2
+        ? "이동할 수 없습니다. ? 카드를 획득합니다."
         : total >= 10
           ? "아무 장소, CLUE 존, ? 카드를 선택할 수 있습니다."
-          : "현재 위치와 붙어있는 장소 중 하나를 선택하세요.";
+          : state.clueZoneAssistApplied
+            ? "근처 장소 또는 이전 근처 이동 보정으로 열린 CLUE 존을 선택할 수 있습니다."
+            : "현재 위치와 붙어있는 장소 중 하나를 선택하세요.";
       els.moveHint.textContent = humanCanChoose
         ? `주사위 합계 ${total}. ${rangeHint}`
         : "주사위를 굴리면 이동 가능한 장소가 표시됩니다.";
@@ -1434,8 +1661,8 @@
     }
     els.moveOptions.innerHTML = state.reachableRooms.map((destination) => `
       <button class="clue-move-option${destination.clue ? " clue-zone" : ""}${destination.hint ? " hint-option" : ""}" type="button" data-destination-id="${escapeHtml(destination.id)}">
-        <span>${escapeHtml(destination.name)}</span>
-        <small>${destination.clue ? "최종추리" : destination.hint ? "단서 획득" : "방 이동"}</small>
+        <span>${escapeHtml(destination.label || destination.name)}</span>
+        <small>${escapeHtml(destination.reason || (destination.clue ? "최종추리" : destination.hint ? "단서 획득" : "방 이동"))}</small>
       </button>
     `).join("");
     els.moveOptions.querySelectorAll(".clue-move-option").forEach((button) => {
@@ -1446,7 +1673,7 @@
   function renderHand() {
     if (!els.handList) return;
     const human = state.players[0];
-    els.handList.innerHTML = human?.hand?.length
+    const caseCardsHtml = human?.hand?.length
       ? sortedCaseCards(human.hand).map((entry) => `
           <span class="clue-card-chip">
             <img src="${escapeHtml(cardImageUrl(entry))}" alt="${escapeHtml(entry.name)}" loading="lazy" decoding="async" />
@@ -1457,6 +1684,24 @@
           </span>
         `).join("")
       : '<small>카드 없음</small>';
+    const hintCardsHtml = human?.hintCards?.length
+      ? `
+        <div class="clue-hint-hand-title">? 카드</div>
+        ${human.hintCards.map((entry) => `
+          <button class="clue-card-chip clue-hint-chip" type="button" data-hint-id="${escapeHtml(entry.id)}" ${activeHumanCanUseHint() ? "" : "disabled"}>
+            ${cardFigureHtml(entry, "clue-hint-hand-card")}
+            <span class="clue-hint-use-label">사용</span>
+          </button>
+        `).join("")}
+      `
+      : "";
+    els.handList.innerHTML = `
+      <div class="clue-case-hand-grid">${caseCardsHtml}</div>
+      ${hintCardsHtml ? `<div class="clue-hint-hand-grid">${hintCardsHtml}</div>` : ""}
+    `;
+    els.handList.querySelectorAll(".clue-hint-chip").forEach((button) => {
+      button.addEventListener("click", () => useHumanHintCard(button.dataset.hintId));
+    });
   }
 
   function suggestionCardHtml(entry) {
@@ -1544,13 +1789,14 @@
     }).join("");
     const noteRows = ["suspect", "weapon", "room"].map((type) => {
       const rows = DEDUCTION_ROWS.filter((row) => row.card.type === type).map((row) => {
+        const highlighted = state.lastSuggestionIds?.has(row.card.id);
         const cells = Array.from({ length: NOTE_COLUMN_COUNT }, (_, column) => {
           const key = `${row.card.id}:${column}`;
           const mark = state.noteMarks[key] || "";
           const title = `${row.card.name} / 메모칸 ${column + 1} / ${NOTE_LABELS[mark] || "빈칸"}`;
           return `
             <button
-              class="clue-note-cell${mark ? ` ${mark}` : ""}"
+              class="clue-note-cell${mark ? ` ${mark}` : ""}${highlighted ? " highlighted" : ""}"
               type="button"
               title="${escapeHtml(title)}"
               aria-label="${escapeHtml(title)}"
@@ -1559,7 +1805,7 @@
           `;
         }).join("");
         return `
-          <span class="clue-note-row-label">${escapeHtml(row.card.name)}</span>
+          <span class="clue-note-row-label${highlighted ? " highlighted" : ""}">${escapeHtml(row.card.name)}</span>
           ${cells}
         `;
       }).join("");
