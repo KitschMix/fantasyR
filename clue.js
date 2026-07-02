@@ -148,6 +148,7 @@
 
   let clueEventLayer = null;
   let clueChoiceLayer = null;
+  const clueSpeechTimers = new Map();
 
   function profileImageUrl(fileName) {
     return encodeURI(`${PROFILE_ASSET_ROOT}/${fileName}`);
@@ -298,6 +299,35 @@
     if (clueChoiceLayer) clueChoiceLayer.innerHTML = "";
   }
 
+  function clearClueSpeech() {
+    clueSpeechTimers.forEach((timer) => window.clearTimeout(timer));
+    clueSpeechTimers.clear();
+    state.players.forEach((player) => {
+      player.speech = "";
+    });
+  }
+
+  function showClueSpeech(player, line, duration = 3000) {
+    if (!player || !line) return;
+    const timer = clueSpeechTimers.get(player.id);
+    if (timer) window.clearTimeout(timer);
+    player.speech = line;
+    renderPlayers();
+    clueSpeechTimers.set(player.id, window.setTimeout(() => {
+      if (player.speech === line) {
+        player.speech = "";
+        renderPlayers();
+      }
+      clueSpeechTimers.delete(player.id);
+    }, duration));
+  }
+
+  function greetCluePlayers() {
+    state.players.forEach((player) => {
+      showClueSpeech(player, "반갑습니다", 3000);
+    });
+  }
+
   function preloadClueCardImages() {
     [CARD_BACK_SRC, HINT_CARD_SRC, ...Object.values(CARD_IMAGE_SLUGS).map((slug) => `assets/clue-cards/${slug}.webp`)].forEach((src) => {
       const image = new Image();
@@ -362,6 +392,7 @@
           location: "center",
           hand: [],
           known: new Set(),
+          speech: "",
           eliminated: false
         };
       }
@@ -376,6 +407,7 @@
         location: "center",
         hand: [],
         known: new Set(),
+        speech: "",
         eliminated: false
       };
     });
@@ -893,6 +925,7 @@
     state.players = buildPlayers(playerCount);
     state.humanKnown = new Set();
     state.noteMarks = {};
+    clearClueSpeech();
     const { solution, deck } = createGameDeck();
     state.solution = solution;
     state.deck = deck;
@@ -911,6 +944,7 @@
     els.setupPanel?.classList.add("hidden");
     els.gamePanel?.classList.remove("hidden");
     renderClue();
+    greetCluePlayers();
     showClueTurnNotice(true);
   }
 
@@ -918,6 +952,7 @@
     clearAiTimer();
     clearDiceRollTimer();
     clearClueEventLayers();
+    clearClueSpeech();
     closeAccusationDialog();
     document.body.classList.remove("clue-playing", "clue-active");
     document.body.classList.add("launcher-active");
@@ -929,6 +964,7 @@
     clearAiTimer();
     clearDiceRollTimer();
     clearClueEventLayers();
+    clearClueSpeech();
     closeAccusationDialog();
     document.body.classList.remove("clue-playing");
     document.body.classList.add("clue-active");
@@ -1116,6 +1152,7 @@
           <small>${escapeHtml(player.suspect)} · ${escapeHtml(roomName(player.location))}</small>
         </span>
         <b>${player.hand.length}장</b>
+        ${player.speech ? `<span class="clue-speech-bubble">${escapeHtml(player.speech)}</span>` : ""}
       `;
       fragment.append(item);
     });

@@ -77,10 +77,12 @@ body.clue-active.clue-playing .clue-game-panel {
 }
 
 .clue-player-card {
+  position: relative;
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
+  overflow: visible;
   padding: 10px;
 }
 
@@ -157,6 +159,51 @@ body.clue-active.clue-playing .clue-game-panel {
   color: rgba(242, 207, 120, 0.9);
   font-size: 13px;
   font-weight: 900;
+}
+
+.clue-speech-bubble {
+  position: absolute;
+  left: 62px;
+  top: 4px;
+  z-index: 18;
+  max-width: min(230px, 62vw);
+  padding: 8px 11px;
+  border: 1px solid rgba(246, 232, 202, 0.46);
+  border-radius: 12px;
+  color: #24170d;
+  background: rgba(255, 246, 220, 0.96);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.36);
+  font-size: 14px;
+  font-weight: 950;
+  line-height: 1.2;
+  pointer-events: none;
+  transform: translateY(-72%);
+  animation: clue-speech-pop 150ms ease-out;
+}
+
+.clue-speech-bubble::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  border-right: 1px solid rgba(246, 232, 202, 0.46);
+  border-bottom: 1px solid rgba(246, 232, 202, 0.46);
+  transform: rotate(45deg);
+}
+
+@keyframes clue-speech-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-64%) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-72%) scale(1);
+  }
 }
 
 .clue-status-card,
