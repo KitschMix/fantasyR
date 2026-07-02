@@ -78,8 +78,8 @@ body.clue-active.clue-playing .clue-game-panel {
 
 .clue-player-card {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: center;
   padding: 10px;
 }
@@ -89,15 +89,39 @@ body.clue-active.clue-playing .clue-game-panel {
   box-shadow: 0 0 0 2px rgba(216, 47, 40, 0.2), 0 18px 46px rgba(0, 0, 0, 0.3);
 }
 
-.clue-player-token {
+.clue-player-avatar-wrap {
+  position: relative;
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  overflow: visible;
+  border: 2px solid var(--player-color);
+  border-radius: 9px;
+  background: rgba(11, 13, 16, 0.48);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.34);
+}
+
+.clue-player-avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.clue-player-token {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  display: grid;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border: 2px solid rgba(255, 255, 255, 0.72);
   border-radius: 50%;
   color: #17130f;
-  font-size: 15px;
+  font-size: 11px;
   font-weight: 950;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.34);
 }
@@ -877,55 +901,72 @@ body.clue-active.clue-playing .clue-game-panel {
 }
 
 .clue-notes {
-  position: relative;
-  display: block;
-  width: min(100%, 360px);
-  aspect-ratio: 420 / 620;
+  width: min(100%, 410px);
   margin: 0 auto;
-  overflow: hidden;
+  padding: 8px;
   border: 1px solid rgba(246, 232, 202, 0.2);
   border-radius: 8px;
-  background: url("assets/boards/clue-deduction.webp") center / 100% 100% no-repeat;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.12)),
+    rgba(8, 8, 9, 0.86);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
-.clue-note-cell {
-  position: absolute;
-  z-index: 2;
-  left: var(--note-left);
-  top: var(--note-top);
+.clue-notes-grid {
   display: grid;
-  width: var(--note-width);
-  height: var(--note-height);
+  grid-template-columns: minmax(72px, 1.55fr) repeat(8, minmax(22px, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid rgba(246, 232, 202, 0.16);
+  border-radius: 6px;
+  background: rgba(246, 232, 202, 0.12);
+}
+
+.clue-note-corner,
+.clue-note-section,
+.clue-note-row-label,
+.clue-note-player-cell,
+.clue-note-cell {
+  display: grid;
   place-items: center;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: transparent;
-  background: rgba(255, 255, 255, 0.01);
-  appearance: none;
-  font-size: 18px;
-  font-weight: 950;
+  min-height: 24px;
+  min-width: 0;
+  border: 0;
   line-height: 1;
-  cursor: pointer;
-  pointer-events: auto;
-  touch-action: manipulation;
+}
+
+.clue-note-corner {
+  color: #15100c;
+  background: rgba(246, 232, 202, 0.92);
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.clue-note-section {
+  grid-column: 1 / -1;
+  justify-content: start;
+  min-height: 25px;
+  padding: 0 8px;
+  color: rgba(247, 236, 217, 0.95);
+  background: rgba(246, 232, 202, 0.16);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.clue-note-row-label {
+  justify-content: start;
+  padding: 0 7px;
+  color: rgba(247, 236, 217, 0.88);
+  background: rgba(18, 17, 16, 0.86);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .clue-note-player-cell {
-  position: absolute;
-  z-index: 2;
-  left: var(--note-left);
-  top: var(--note-top);
-  display: grid;
-  width: var(--note-width);
-  height: var(--note-height);
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.16);
   color: rgba(255, 255, 255, 0.94);
   background: rgba(255, 255, 255, 0.03);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 950;
-  line-height: 1;
   pointer-events: none;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.88);
 }
@@ -937,8 +978,20 @@ body.clue-active.clue-playing .clue-game-panel {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.32);
 }
 
+.clue-note-cell {
+  color: transparent;
+  background: rgba(15, 15, 15, 0.88);
+  appearance: none;
+  font-size: 16px;
+  font-weight: 950;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
 .clue-note-cell:hover {
-  border-color: rgba(242, 207, 120, 0.74);
+  outline: 1px solid rgba(242, 207, 120, 0.74);
+  outline-offset: -1px;
   background: rgba(242, 207, 120, 0.12);
 }
 
