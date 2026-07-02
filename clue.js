@@ -76,6 +76,31 @@
   const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
   const CLUE_DIALOGUE_BOOKS = window.CLUE_DIALOGUE_BOOKS || {};
   const CLUE_DIALOGUE_CHARACTER_BOOKS = window.CLUE_DIALOGUE_CHARACTER_BOOKS || {};
+  const CLUE_DIALOGUE_NAME_ALIASES = { "채호": "재호" };
+  const CLUE_DIALOGUE_EVENT_FALLBACKS = {
+    wait: ["wait"],
+    start: ["start", "wait"],
+    suggest: ["suggest", "wait"],
+    noCard: ["noCard", "wait"],
+    showCard: ["showCard", "wait"],
+    hint: ["hint", "wait"],
+    accuse: ["accuse", "wait"],
+    win: ["win", "wait"],
+    lose: ["lose", "wait"]
+  };
+  const CLUE_DIALOGUE_REPLACEMENTS = [
+    ["카드 효과", "단서"],
+    ["카드 7장", "단서들"],
+    ["첫 패", "첫 단서"],
+    ["패가", "단서가"],
+    ["손패", "단서"],
+    ["버림패", "기록"],
+    ["왕국", "추리"],
+    ["필드", "현장"],
+    ["점수", "근거"],
+    ["조합", "추리"]
+  ];
+  const CLUE_DIALOGUE_FANTASY_TERMS = ["손패", "버림패", "왕국", "필드", "점수", "조합", "카드 7장"];
   const PROFILE_ASSET_ROOT = SHARED_PROFILES.root || "assets/profiles/user";
   const HUMAN_PROFILE_STORAGE_KEY = SHARED_NICKNAME_RULES.storageKey || "fantasyKingdom.humanProfile.v1";
 
@@ -172,6 +197,13 @@
     return code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;
   }
 
+  function withInstrument(value) {
+    const text = String(value || "").trim();
+    const code = text.charCodeAt(text.length - 1);
+    const finalIndex = code >= 0xac00 && code <= 0xd7a3 ? (code - 0xac00) % 28 : 0;
+    return `${value}${finalIndex && finalIndex !== 8 ? "으로" : "로"}`;
+  }
+
   function withSubject(value) {
     return `${value}${hasFinalConsonant(value) ? "이" : "가"}`;
   }
@@ -234,7 +266,10 @@
   }
 
   function clueDialogueBooksForPlayer(player) {
-    return CLUE_DIALOGUE_CHARACTER_BOOKS[clueDialoguePlayerName(player)] || [];
+    const name = clueDialoguePlayerName(player);
+    return CLUE_DIALOGUE_CHARACTER_BOOKS[name]
+      || CLUE_DIALOGUE_CHARACTER_BOOKS[CLUE_DIALOGUE_NAME_ALIASES[name]]
+      || [];
   }
 
   function clueDialogueUsageSet(bookKey, eventKey) {
@@ -243,28 +278,50 @@
     return clueDialogueUsage.get(key);
   }
 
+  function normalizeClueDialogueLine(line) {
+    return CLUE_DIALOGUE_REPLACEMENTS.reduce(
+      (text, [from, to]) => text.replaceAll(from, to),
+      String(line)
+    );
+  }
+
+  function clueDialogueLineFitsClue(line) {
+    const normalized = normalizeClueDialogueLine(line);
+    return !CLUE_DIALOGUE_FANTASY_TERMS.some((term) => normalized.includes(term));
+  }
+
+  function pickClueDialogueFromLines(bookKey, usageKey, lines, clueOnly) {
+    const pool = clueOnly ? lines.filter(clueDialogueLineFitsClue) : lines;
+    if (!pool.length) return "";
+    const used = clueDialogueUsageSet(bookKey, usageKey);
+    let unused = pool.filter((line) => !used.has(line));
+    if (!unused.length) {
+      used.clear();
+      unused = pool;
+    }
+    const line = randomItem(unused);
+    used.add(line);
+    return normalizeClueDialogueLine(line);
+  }
+
   function pickClueDialogueLine(player, eventKey = "wait") {
     const books = shuffle(clueDialogueBooksForPlayer(player));
-    for (const bookKey of books) {
-      const lines = CLUE_DIALOGUE_BOOKS[bookKey]?.[eventKey] || [];
-      if (!lines.length) continue;
-      const used = clueDialogueUsageSet(bookKey, eventKey);
-      let unused = lines.filter((line) => !used.has(line));
-      if (!unused.length) {
-        used.clear();
-        unused = lines;
+    const keys = CLUE_DIALOGUE_EVENT_FALLBACKS[eventKey] || [eventKey, "wait"];
+    for (const clueOnly of [true, false]) {
+      for (const bookKey of books) {
+        for (const key of keys) {
+          const lines = CLUE_DIALOGUE_BOOKS[bookKey]?.[key] || [];
+          const line = pickClueDialogueFromLines(bookKey, `${eventKey}:${key}`, lines, clueOnly);
+          if (line) return line;
+        }
       }
-      const line = randomItem(unused);
-      used.add(line);
-      return line;
     }
-    if (eventKey !== "wait") return pickClueDialogueLine(player, "wait");
     return "반갑습니다.";
   }
 
   function clueEventActorHeaderHtml(actor, eventKey = "wait") {
     if (!actor || actor.human) return "";
-    const line = actor.speech || pickClueDialogueLine(actor, eventKey);
+    const line = pickClueDialogueLine(actor, eventKey);
     return `
       <div class="clue-event-speaker">
         <img src="${escapeHtml(actor.avatarUrl || profileImageUrl("보통-건일.jpg"))}" alt="" loading="lazy" decoding="async" />
@@ -324,8 +381,8 @@
     }
     const layer = ensureClueEventLayer();
     state.eventShowing = true;
-    const actorHeader = clueEventActorHeaderHtml(event.actor, event.dialogueKey);
     clearClueSpeech();
+    const actorHeader = clueEventActorHeaderHtml(event.actor, event.dialogueKey);
     layer.innerHTML = `
       <section class="clue-event-card">
         ${actorHeader}
@@ -587,7 +644,7 @@
       title: "? 카드",
       message: `${playerDisplayWithSubject(player)} ? 카드를 뽑았습니다.`,
       actor: player,
-      dialogueKey: "wait",
+      dialogueKey: "hint",
       cards: [drawn]
     });
     return drawn;
@@ -687,9 +744,9 @@
   function announceSuggestion(player, suggestion) {
     queueClueEvent({
       title: `${playerDisplayName(player)}의 추리`,
-      message: `${withSubject(suggestion.suspect.name)} ${suggestion.weapon.name}로 ${suggestion.room.name}에서 죽였다고 추리합니다.`,
+      message: `${withSubject(suggestion.suspect.name)} ${withInstrument(suggestion.weapon.name)} ${suggestion.room.name}에서 죽였다고 추리합니다.`,
       actor: player,
-      dialogueKey: "wait",
+      dialogueKey: "suggest",
       cards: [suggestion.suspect, suggestion.weapon, suggestion.room]
     });
   }
@@ -699,7 +756,7 @@
       title: "반박 없음",
       message: `${playerDisplayWithTopic(target)} 보여줄 카드가 없다고 합니다.`,
       actor: target,
-      dialogueKey: "wait"
+      dialogueKey: "noCard"
     });
   }
 
@@ -715,7 +772,7 @@
       message,
       detail: revealName ? `확인한 카드: ${shown.name}` : "",
       actor,
-      dialogueKey: "wait",
+      dialogueKey: "showCard",
       cards: revealName ? [shown] : [{ back: true }]
     });
   }
@@ -736,7 +793,7 @@
     const layer = ensureClueChoiceLayer();
     layer.innerHTML = `
       <section class="clue-choice-card">
-        ${clueEventActorHeaderHtml(suggester, "wait")}
+        ${clueEventActorHeaderHtml(suggester, "suggest")}
         <strong>보여줄 카드를 선택하세요</strong>
         <p>${escapeHtml(playerDisplayName(suggester))}의 추리를 반박할 수 있습니다.</p>
         <small>${escapeHtml(pending.suggestion.suspect.name)} / ${escapeHtml(pending.suggestion.room.name)} / ${escapeHtml(pending.suggestion.weapon.name)}</small>
@@ -810,7 +867,7 @@
       title: "반박 실패",
       message: `${playerDisplayName(player)}의 추리를 아무도 반박하지 못했습니다.`,
       actor: player,
-      dialogueKey: "wait"
+      dialogueKey: "noCard"
     });
     return { shown: null };
   }
@@ -1113,9 +1170,9 @@
     closeAccusationDialog();
     queueClueEvent({
       title: `${playerDisplayName(activePlayer())}의 최종 고발`,
-      message: `${withSubject(accusation.suspect.name)} ${accusation.weapon.name}로 ${accusation.room.name}에서 죽였다고 고발합니다.`,
+      message: `${withSubject(accusation.suspect.name)} ${withInstrument(accusation.weapon.name)} ${accusation.room.name}에서 죽였다고 고발합니다.`,
       actor: activePlayer(),
-      dialogueKey: "wait",
+      dialogueKey: "accuse",
       cards: [accusation.suspect, accusation.weapon, accusation.room]
     });
     finishGame(activePlayer(), isCorrectAccusation(accusation), accusation);
@@ -1172,9 +1229,9 @@
       log(`${playerDisplayWithSubject(player)} 최종 추리를 선언했습니다.`);
       queueClueEvent({
         title: `${playerDisplayName(player)}의 최종 고발`,
-        message: `${withSubject(accusation.suspect.name)} ${accusation.weapon.name}로 ${accusation.room.name}에서 죽였다고 고발합니다.`,
+        message: `${withSubject(accusation.suspect.name)} ${withInstrument(accusation.weapon.name)} ${accusation.room.name}에서 죽였다고 고발합니다.`,
         actor: player,
-        dialogueKey: "wait",
+        dialogueKey: "accuse",
         cards: [accusation.suspect, accusation.weapon, accusation.room]
       });
       finishGame(player, isCorrectAccusation(accusation), accusation);
