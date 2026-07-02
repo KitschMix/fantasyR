@@ -78,10 +78,14 @@
   const CLUE_DIALOGUE_CHARACTER_BOOKS = window.CLUE_DIALOGUE_CHARACTER_BOOKS || {};
   const CLUE_DIALOGUE_NAME_ALIASES = { "채호": "재호" };
   const CLUE_DIALOGUE_EVENT_FALLBACKS = {
+    idle: ["idle", "wait"],
     wait: ["wait"],
     start: ["start", "wait"],
-    suggest: ["suggest", "wait"],
+    aiSuggest: ["aiSuggest", "suggest", "wait"],
+    userSuggestReaction: ["userSuggestReaction", "userSuggest", "noCard", "wait"],
     noCard: ["noCard", "wait"],
+    showUserCard: ["showUserCard", "bluff", "showCard", "wait"],
+    userShowCard: ["userShowCard", "showCard", "wait"],
     showCard: ["showCard", "wait"],
     hint: ["hint", "wait"],
     accuse: ["accuse", "wait"],
@@ -164,8 +168,10 @@
     noteMarks: {},
     pendingRefute: null,
     eventQueue: [],
+    currentEvent: null,
     eventShowing: false,
     choiceTimer: 0,
+    idleSpeechTimer: 0,
     piecePositions: {},
     turnSerial: 0,
     lastTurnNoticeKey: "",
@@ -358,16 +364,20 @@
   }
 
   function queueClueEvent(event) {
+    clearIdleSpeechTimer();
     state.eventQueue.push({ cards: [], ...event });
     playNextClueEvent();
   }
 
   function dismissClueEvent() {
     if (!state.eventShowing) return;
+    const afterDismiss = state.currentEvent?.afterDismiss;
     const layer = ensureClueEventLayer();
     layer.classList.remove("open");
     layer.innerHTML = "";
     state.eventShowing = false;
+    state.currentEvent = null;
+    if (typeof afterDismiss === "function") afterDismiss();
     playNextClueEvent();
   }
 
@@ -381,6 +391,7 @@
     }
     const layer = ensureClueEventLayer();
     state.eventShowing = true;
+    state.currentEvent = event;
     clearClueSpeech();
     const actorHeader = clueEventActorHeaderHtml(event.actor, event.dialogueKey);
     layer.innerHTML = `
@@ -398,9 +409,11 @@
   }
 
   function clearClueEventLayers() {
+    clearIdleSpeechTimer();
     if (state.choiceTimer) window.clearTimeout(state.choiceTimer);
     state.choiceTimer = 0;
     state.eventQueue = [];
+    state.currentEvent = null;
     state.eventShowing = false;
     state.pendingRefute = null;
     clueEventLayer?.classList.remove("open");
@@ -415,6 +428,17 @@
     state.players.forEach((player) => {
       player.speech = "";
     });
+  }
+
+  function clearIdleSpeechTimer() {
+    if (state.idleSpeechTimer) {
+      window.clearTimeout(state.idleSpeechTimer);
+      state.idleSpeechTimer = 0;
+    }
+  }
+
+  function clueSpeechBlocked() {
+    return state.eventShowing || state.eventQueue.length || isChoiceOpen();
   }
 
   function showClueSpeech(player, line, duration = 3000) {
@@ -432,10 +456,41 @@
     }, duration));
   }
 
-  function greetCluePlayers() {
-    state.players.forEach((player) => {
-      showClueSpeech(player, "반갑습니다", 3000);
+  function showSingleClueSpeech(player, line, duration = 3600) {
+    clearClueSpeech();
+    showClueSpeech(player, line, duration);
+  }
+
+  function showClueGroupSpeech(players, eventKeyForPlayer, duration = 5200) {
+    clearIdleSpeechTimer();
+    clearClueSpeech();
+    players.forEach((player) => {
+      const eventKey = typeof eventKeyForPlayer === "function" ? eventKeyForPlayer(player) : eventKeyForPlayer;
+      const line = player.human ? "반갑습니다" : pickClueDialogueLine(player, eventKey);
+      showClueSpeech(player, line, duration);
     });
+  }
+
+  function scheduleHumanIdleSpeech(delay = 15000) {
+    clearIdleSpeechTimer();
+    if (!state.started || state.finished || !activePlayer()?.human) return;
+    state.idleSpeechTimer = window.setTimeout(() => {
+      state.idleSpeechTimer = 0;
+      if (!state.started || state.finished || !activePlayer()?.human) return;
+      if (clueSpeechBlocked() || state.players.some((player) => player.speech)) {
+        scheduleHumanIdleSpeech(4000);
+        return;
+      }
+      const speakers = state.players.filter((player) => !player.human && !player.eliminated);
+      if (!speakers.length) return;
+      const speaker = randomItem(speakers);
+      showSingleClueSpeech(speaker, pickClueDialogueLine(speaker, "idle"));
+      scheduleHumanIdleSpeech(15000 + randomMs(3000, 7000));
+    }, delay);
+  }
+
+  function greetCluePlayers() {
+    showClueGroupSpeech(state.players, "start", 4200);
   }
 
   function preloadClueCardImages() {
@@ -746,17 +801,17 @@
       title: `${playerDisplayName(player)}의 추리`,
       message: `${withSubject(suggestion.suspect.name)} ${withInstrument(suggestion.weapon.name)} ${suggestion.room.name}에서 죽였다고 추리합니다.`,
       actor: player,
-      dialogueKey: "suggest",
+      dialogueKey: player.human ? "userSuggest" : "aiSuggest",
       cards: [suggestion.suspect, suggestion.weapon, suggestion.room]
     });
   }
 
-  function announceNoCard(target) {
+  function announceNoCard(target, suggester) {
     queueClueEvent({
       title: "반박 없음",
       message: `${playerDisplayWithTopic(target)} 보여줄 카드가 없다고 합니다.`,
       actor: target,
-      dialogueKey: "noCard"
+      dialogueKey: suggester?.human ? "userSuggestReaction" : "noCard"
     });
   }
 
@@ -772,7 +827,7 @@
       message,
       detail: revealName ? `확인한 카드: ${shown.name}` : "",
       actor,
-      dialogueKey: "showCard",
+      dialogueKey: target.human ? "userShowCard" : player.human ? "showUserCard" : "showCard",
       cards: revealName ? [shown] : [{ back: true }]
     });
   }
@@ -793,7 +848,7 @@
     const layer = ensureClueChoiceLayer();
     layer.innerHTML = `
       <section class="clue-choice-card">
-        ${clueEventActorHeaderHtml(suggester, "suggest")}
+        ${clueEventActorHeaderHtml(suggester, "aiSuggest")}
         <strong>보여줄 카드를 선택하세요</strong>
         <p>${escapeHtml(playerDisplayName(suggester))}의 추리를 반박할 수 있습니다.</p>
         <small>${escapeHtml(pending.suggestion.suspect.name)} / ${escapeHtml(pending.suggestion.room.name)} / ${escapeHtml(pending.suggestion.weapon.name)}</small>
@@ -837,7 +892,7 @@
       if (target.eliminated) continue;
       const matches = matchingCards(target, suggestion);
       if (!matches.length) {
-        announceNoCard(target);
+        announceNoCard(target, player);
         continue;
       }
       if (target.human) {
@@ -867,7 +922,7 @@
       title: "반박 실패",
       message: `${playerDisplayName(player)}의 추리를 아무도 반박하지 못했습니다.`,
       actor: player,
-      dialogueKey: "noCard"
+      dialogueKey: player.human ? "userSuggestReaction" : "noCard"
     });
     return { shown: null };
   }
@@ -923,6 +978,7 @@
   }
 
   function beginClueTurn(playerIndex = state.currentPlayer) {
+    clearIdleSpeechTimer();
     state.currentPlayer = playerIndex;
     state.phase = "awaitRoll";
     clearDiceRollTimer();
@@ -935,11 +991,13 @@
   function showClueTurnNotice(force = false) {
     if (!state.started || state.finished || !activePlayer()) return;
     if (state.eventShowing || state.eventQueue.length || isChoiceOpen()) return;
+    const player = activePlayer();
+    if (player.human) scheduleHumanIdleSpeech();
+    else clearIdleSpeechTimer();
     if (typeof window.showCenterToast !== "function") return;
     const key = `clue-turn:${state.turnSerial}:${state.currentPlayer}`;
     if (!force && state.lastTurnNoticeKey === key) return;
     state.lastTurnNoticeKey = key;
-    const player = activePlayer();
     window.showCenterToast(player.human ? "당신의 턴입니다" : `${playerDisplayName(player)}의 턴.`, 1200, {
       mode: "clue-turn",
       key
@@ -980,6 +1038,18 @@
       && accusation.room.id === state.solution.room.id;
   }
 
+  function finishSpeechKeyForPlayer(speaker, winner, success) {
+    if (success) return speaker === winner ? "win" : "lose";
+    if (winner?.human) return "win";
+    return "lose";
+  }
+
+  function showFinishSpeeches(winner, success) {
+    const speakers = state.players.filter((player) => !player.human);
+    if (!speakers.length) return;
+    showClueGroupSpeech(speakers, (speaker) => finishSpeechKeyForPlayer(speaker, winner, success), 6500);
+  }
+
   function finishGame(player, success, accusation) {
     state.finished = true;
     state.phase = "finished";
@@ -991,7 +1061,8 @@
         message: `정답은 ${state.solution.suspect.name}, ${state.solution.weapon.name}, ${state.solution.room.name}입니다.`,
         actor: player,
         dialogueKey: "win",
-        cards: [state.solution.suspect, state.solution.weapon, state.solution.room]
+        cards: [state.solution.suspect, state.solution.weapon, state.solution.room],
+        afterDismiss: () => showFinishSpeeches(player, true)
       });
       if (typeof window.showCenterToast === "function") {
         window.showCenterToast(`${playerDisplayName(player)} 승리`, 1800, { mode: "clue-finish" });
@@ -1000,12 +1071,13 @@
       player.eliminated = true;
       log(`${playerDisplayName(player)}의 고발 실패: ${accusation.suspect.name}, ${accusation.room.name}, ${accusation.weapon.name}`);
       queueClueEvent({
-        title: "고발 실패",
-        message: `${playerDisplayName(player)}의 최종 고발은 틀렸습니다.`,
-        actor: player,
-        dialogueKey: "lose",
-        cards: [accusation.suspect, accusation.weapon, accusation.room]
-      });
+          title: "고발 실패",
+          message: `${playerDisplayName(player)}의 최종 고발은 틀렸습니다.`,
+          actor: player,
+          dialogueKey: "lose",
+          cards: [accusation.suspect, accusation.weapon, accusation.room],
+          afterDismiss: player.human ? () => showFinishSpeeches(player, false) : null
+        });
       if (player.human) {
         log(`정답은 ${state.solution.suspect.name}, ${state.solution.room.name}, ${state.solution.weapon.name}입니다.`);
         if (typeof window.showCenterToast === "function") {
@@ -1047,6 +1119,7 @@
   function startClueGame() {
     clearAiTimer();
     clearDiceRollTimer();
+    clearIdleSpeechTimer();
     clearClueEventLayers();
     preloadClueCardImages();
     const playerCount = Math.min(6, Math.max(3, Number(els.playerCountSelect?.value || 4)));
@@ -1080,6 +1153,7 @@
   function leaveClueGame() {
     clearAiTimer();
     clearDiceRollTimer();
+    clearIdleSpeechTimer();
     clearClueEventLayers();
     clearClueSpeech();
     closeAccusationDialog();
@@ -1092,6 +1166,7 @@
   function resetToClueSetup() {
     clearAiTimer();
     clearDiceRollTimer();
+    clearIdleSpeechTimer();
     clearClueEventLayers();
     clearClueSpeech();
     closeAccusationDialog();
@@ -1119,6 +1194,7 @@
     state.phase = "chooseMove";
     log(`${activePlayer().name}: ${state.dice.join(" + ")} = ${total}`);
     renderClue();
+    scheduleHumanIdleSpeech();
   }
 
   function moveHumanTo(roomId) {
@@ -1129,6 +1205,7 @@
       drawHintCard(activePlayer());
       state.phase = "waitEnd";
       renderClue();
+      scheduleHumanIdleSpeech();
       return;
     }
     activePlayer().location = destination.id;
@@ -1137,11 +1214,13 @@
       log(`${withSubject(activePlayer().name)} ${destination.name}에 들어갔습니다.`);
       renderClue();
       openAccusationDialog();
+      scheduleHumanIdleSpeech();
       return;
     }
     state.phase = "suggest";
     log(`${withSubject(activePlayer().name)} ${destination.name}에 들어갔습니다.`);
     renderClue();
+    scheduleHumanIdleSpeech();
   }
 
   function makeHumanSuggestion() {
