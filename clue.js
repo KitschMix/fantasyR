@@ -109,6 +109,9 @@
     accuseSuspect: document.querySelector("#clueAccuseSuspect"),
     accuseRoom: document.querySelector("#clueAccuseRoom"),
     accuseWeapon: document.querySelector("#clueAccuseWeapon"),
+    accuseSuspectPicker: document.querySelector("#clueAccuseSuspectPicker"),
+    accuseRoomPicker: document.querySelector("#clueAccuseRoomPicker"),
+    accuseWeaponPicker: document.querySelector("#clueAccuseWeaponPicker"),
     accusationCard: document.querySelector("#clueAccusationCard"),
     makeAccusationButton: document.querySelector("#clueMakeAccusationButton"),
     cancelAccusationButton: document.querySelector("#clueCancelAccusationButton"),
@@ -1216,7 +1219,7 @@
     `;
   }
 
-  function renderCardPicker(picker, select, type, names, enabled) {
+  function renderCardPicker(picker, select, type, names, enabled, onChange = renderSuggestionCards) {
     if (!picker || !select) return;
     picker.classList.remove("open");
     const selectedName = select.value || names[0];
@@ -1247,7 +1250,7 @@
     picker.querySelectorAll(".clue-card-select-option").forEach((option) => {
       option.addEventListener("click", () => {
         select.value = option.dataset.cardName || selectedName;
-        renderSuggestionCards();
+        onChange();
       });
     });
   }
@@ -1267,6 +1270,14 @@
     }
     renderCardPicker(els.suggestSuspectPicker, els.suggestSuspect, "suspect", SUSPECTS, humanCanSuggest);
     renderCardPicker(els.suggestWeaponPicker, els.suggestWeapon, "weapon", WEAPONS, humanCanSuggest);
+  }
+
+  function renderAccusationCards() {
+    const player = activePlayer();
+    const humanCanAccuse = Boolean(player?.human && state.phase === "accuse" && !state.finished);
+    renderCardPicker(els.accuseSuspectPicker, els.accuseSuspect, "suspect", SUSPECTS, humanCanAccuse, renderAccusationCards);
+    renderCardPicker(els.accuseRoomPicker, els.accuseRoom, "room", ROOMS.map((room) => room.name), humanCanAccuse, renderAccusationCards);
+    renderCardPicker(els.accuseWeaponPicker, els.accuseWeapon, "weapon", WEAPONS, humanCanAccuse, renderAccusationCards);
   }
 
   function renderNotes() {
@@ -1380,6 +1391,7 @@
     renderNotes();
     renderControls();
     renderSuggestionCards();
+    renderAccusationCards();
     renderLog();
   }
 
@@ -1425,7 +1437,7 @@
     renderClue();
   });
   els.accusationCard?.addEventListener("click", (event) => {
-    if (event.target.closest("button, select, label")) return;
+    if (event.target.closest("button, select, label, .clue-suggestion-card-panel")) return;
     if (state.phase !== "accuse" || !activePlayer()?.human) return;
     closeAccusationDialog();
     state.phase = "waitEnd";

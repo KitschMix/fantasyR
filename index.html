@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>판타지왕국 PC버전</title>
     <link rel="stylesheet" href="styles.css?v=20260701-hide-coming-soon" />
-    <link rel="stylesheet" href="clue.css?v=20260702-clue-ai-notes" />
+    <link rel="stylesheet" href="clue.css?v=20260702-clue-accuse-cards" />
     <link rel="stylesheet" href="tally-ho.css?v=20260630-tally-hide-opponent" />
     <link rel="stylesheet" href="cant-stop.css?v=20260630-cant-4p-slide" />
   </head>
@@ -500,18 +500,23 @@
               <section class="clue-action-card clue-accusation-card" id="clueAccusationCard" aria-live="polite">
                 <div class="clue-panel-title">최종 추리</div>
                 <small>CLUE 존에 들어왔습니다. 지금 고발하거나 나중에 턴을 넘길 수 있습니다.</small>
-                <label>
-                  용의자
-                  <select id="clueAccuseSuspect"></select>
-                </label>
-                <label>
-                  장소
-                  <select id="clueAccuseRoom"></select>
-                </label>
-                <label>
-                  무기
-                  <select id="clueAccuseWeapon"></select>
-                </label>
+                <div class="clue-suggestion-card-panel clue-accusation-card-panel">
+                  <div class="clue-suggestion-slot">
+                    <span>용의자</span>
+                    <div id="clueAccuseSuspectPicker" class="clue-card-select"></div>
+                    <select id="clueAccuseSuspect" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                  </div>
+                  <div class="clue-suggestion-slot">
+                    <span>장소</span>
+                    <div id="clueAccuseRoomPicker" class="clue-card-select"></div>
+                    <select id="clueAccuseRoom" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                  </div>
+                  <div class="clue-suggestion-slot">
+                    <span>도구</span>
+                    <div id="clueAccuseWeaponPicker" class="clue-card-select"></div>
+                    <select id="clueAccuseWeapon" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                  </div>
+                </div>
                 <button id="clueMakeAccusationButton" class="danger-button" type="button">고발하기</button>
                 <button id="clueCancelAccusationButton" class="secondary-button" type="button">나중에</button>
                 <span class="clue-popup-hint">팝업을 클릭하면 팝업 닫기</span>
@@ -850,7 +855,7 @@
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="dialogues.js?v=20260618-dialogues"></script>
     <script src="script.js?v=20260630-cant-stop-classes"></script>
-    <script src="clue.js?v=20260702-clue-ai-notes"></script>
+    <script src="clue.js?v=20260702-clue-accuse-cards"></script>
     <script src="tally-ho.js?v=20260630-cant-stop-classes"></script>
     <script src="cant-stop.js?v=20260701-cant-turn-ranking"></script>
   </body>
