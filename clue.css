@@ -1165,8 +1165,8 @@ body.clue-active.clue-playing .clue-game-panel {
 
 .clue-note-row-label.highlighted,
 .clue-note-cell.highlighted {
-  background: rgba(242, 207, 120, 0.09);
-  box-shadow: inset 0 0 0 1px rgba(242, 207, 120, 0.11);
+  background: rgba(216, 47, 40, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(216, 47, 40, 0.14);
 }
 
 .clue-note-player-cell {
