@@ -1117,6 +1117,7 @@
     state.reachableRooms = [];
     state.clueZoneAssistEligible = false;
     state.clueZoneAssistApplied = false;
+    state.lastSuggestionIds = new Set();
     state.turnSerial += 1;
   }
 
@@ -1375,13 +1376,16 @@
     if (clueChoiceLayer) clueChoiceLayer.innerHTML = "";
   }
 
-  function suggestionOptionHtml(type, name, selected) {
-    const entry = card(type, name);
-    return `
-      <button class="clue-choice-card-button clue-suggestion-option${selected ? " selected" : ""}" type="button" data-suggestion-type="${escapeHtml(type)}" data-card-name="${escapeHtml(name)}">
-        ${suggestionCardHtml(entry)}
-      </button>
-    `;
+  function renderPopupCardPicker(layer, selected, type, names, enabled = true) {
+    const picker = layer.querySelector(`[data-popup-picker="${type}"]`);
+    const select = layer.querySelector(`[data-popup-select="${type}"]`);
+    if (!picker || !select) return;
+    fillSelect(select, names);
+    select.value = selected[type] || names[0];
+    renderCardPicker(picker, select, type, names, enabled, () => {
+      selected[type] = select.value || names[0];
+      renderPopupCardPicker(layer, selected, type, names, enabled);
+    });
   }
 
   function openSuggestionDialog({ allowRoomPick = false } = {}) {
@@ -1394,24 +1398,36 @@
       room: allowRoomPick ? ROOMS[0].name : currentRoom.name
     };
     const layer = ensureClueChoiceLayer();
-    const roomOptions = allowRoomPick
-      ? ROOMS.map((room) => suggestionOptionHtml("room", room.name, room.name === selected.room)).join("")
-      : suggestionCardHtml(card("room", selected.room));
+    const roomSlot = allowRoomPick
+      ? `
+        <div class="clue-suggestion-slot">
+          <span>장소</span>
+          <div class="clue-card-select" data-popup-picker="room"></div>
+          <select class="visually-hidden-select" data-popup-select="room" tabindex="-1" aria-hidden="true"></select>
+        </div>
+      `
+      : `
+        <div class="clue-suggestion-slot">
+          <span>장소</span>
+          <div class="clue-suggestion-static-card">${suggestionCardHtml(card("room", selected.room))}</div>
+        </div>
+      `;
     layer.innerHTML = `
       <section class="clue-choice-card clue-suggestion-dialog">
         <strong>제안하기</strong>
-        <p>${allowRoomPick ? "장소, 용의자, 도구를 골라 추가 추리를 합니다." : `${selected.room}에서 추리할 카드를 고르세요.`}</p>
-        <div class="clue-suggestion-dialog-section">
-          <b>장소</b>
-          <div class="clue-choice-card-row">${roomOptions}</div>
-        </div>
-        <div class="clue-suggestion-dialog-section">
-          <b>용의자</b>
-          <div class="clue-choice-card-row">${SUSPECTS.map((name) => suggestionOptionHtml("suspect", name, name === selected.suspect)).join("")}</div>
-        </div>
-        <div class="clue-suggestion-dialog-section">
-          <b>도구</b>
-          <div class="clue-choice-card-row">${WEAPONS.map((name) => suggestionOptionHtml("weapon", name, name === selected.weapon)).join("")}</div>
+        <p>${allowRoomPick ? "장소, 용의자, 도구를 골라 추가 추리를 합니다." : `${selected.room}에서 추리합니다. 장소는 현재 방으로 고정됩니다.`}</p>
+        <div class="clue-suggestion-card-panel clue-dialog-card-panel">
+          ${roomSlot}
+          <div class="clue-suggestion-slot">
+            <span>용의자</span>
+            <div class="clue-card-select" data-popup-picker="suspect"></div>
+            <select class="visually-hidden-select" data-popup-select="suspect" tabindex="-1" aria-hidden="true"></select>
+          </div>
+          <div class="clue-suggestion-slot">
+            <span>도구</span>
+            <div class="clue-card-select" data-popup-picker="weapon"></div>
+            <select class="visually-hidden-select" data-popup-select="weapon" tabindex="-1" aria-hidden="true"></select>
+          </div>
         </div>
         <div class="clue-choice-actions">
           <button class="secondary-button" type="button" data-cancel-suggestion>취소</button>
@@ -1420,15 +1436,9 @@
       </section>
     `;
     layer.classList.add("open");
-    layer.querySelectorAll(".clue-suggestion-option").forEach((button) => {
-      button.addEventListener("click", () => {
-        const type = button.dataset.suggestionType;
-        selected[type] = button.dataset.cardName;
-        layer.querySelectorAll(`.clue-suggestion-option[data-suggestion-type="${type}"]`).forEach((option) => {
-          option.classList.toggle("selected", option === button);
-        });
-      });
-    });
+    if (allowRoomPick) renderPopupCardPicker(layer, selected, "room", ROOMS.map((room) => room.name));
+    renderPopupCardPicker(layer, selected, "suspect", SUSPECTS);
+    renderPopupCardPicker(layer, selected, "weapon", WEAPONS);
     layer.querySelector("[data-cancel-suggestion]")?.addEventListener("click", () => {
       closeChoiceOverlay();
       renderClue();
@@ -1750,20 +1760,9 @@
   }
 
   function renderSuggestionCards() {
-    const player = activePlayer();
-    const humanCanSuggest = Boolean(player?.human && state.phase === "suggest" && !state.finished);
-    const currentRoom = player?.human ? ROOM_BY_ID[player.location] : null;
     if (els.suggestionRoomLabel) {
-      els.suggestionRoomLabel.textContent = humanCanSuggest ? "카드를 골라 제안하세요." : "방에 들어가면 카드로 제안할 수 있습니다.";
+      els.suggestionRoomLabel.hidden = true;
     }
-    if (els.suggestionRoomCard) {
-      els.suggestionRoomCard.innerHTML = currentRoom
-        ? suggestionCardHtml(card("room", currentRoom.name))
-        : '<div class="clue-suggestion-empty-card">방 없음</div>';
-      els.suggestionRoomCard.classList.toggle("disabled", !currentRoom);
-    }
-    renderCardPicker(els.suggestSuspectPicker, els.suggestSuspect, "suspect", SUSPECTS, humanCanSuggest);
-    renderCardPicker(els.suggestWeaponPicker, els.suggestWeapon, "weapon", WEAPONS, humanCanSuggest);
   }
 
   function renderAccusationCards() {

@@ -666,6 +666,10 @@ body.clue-active.clue-playing .clue-game-panel {
   gap: 8px;
 }
 
+.clue-suggestion-card-panel[hidden] {
+  display: none !important;
+}
+
 .clue-suggestion-slot {
   position: relative;
   display: grid;
@@ -1086,9 +1090,13 @@ body.clue-active.clue-playing .clue-game-panel {
 }
 
 .clue-suggestion-dialog {
-  width: min(780px, calc(100vw - 32px));
+  width: min(620px, calc(100vw - 32px));
   max-height: min(86vh, 760px);
   overflow: auto;
+}
+
+.clue-dialog-card-panel {
+  margin-top: 2px;
 }
 
 .clue-suggestion-dialog-section {
@@ -1189,8 +1197,8 @@ body.clue-active.clue-playing .clue-game-panel {
 
 .clue-note-row-label.highlighted,
 .clue-note-cell.highlighted {
-  background: rgba(242, 207, 120, 0.2);
-  box-shadow: inset 0 0 0 1px rgba(242, 207, 120, 0.22);
+  background: rgba(242, 207, 120, 0.09);
+  box-shadow: inset 0 0 0 1px rgba(242, 207, 120, 0.11);
 }
 
 .clue-note-player-cell {
