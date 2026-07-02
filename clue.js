@@ -74,6 +74,8 @@
   const DICE_ROLL_FRAME_MS = 58;
   const SHARED_PROFILES = window.FANTASY_SHARED_PROFILES || {};
   const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
+  const CLUE_DIALOGUE_BOOKS = window.CLUE_DIALOGUE_BOOKS || {};
+  const CLUE_DIALOGUE_CHARACTER_BOOKS = window.CLUE_DIALOGUE_CHARACTER_BOOKS || {};
   const PROFILE_ASSET_ROOT = SHARED_PROFILES.root || "assets/profiles/user";
   const HUMAN_PROFILE_STORAGE_KEY = SHARED_NICKNAME_RULES.storageKey || "fantasyKingdom.humanProfile.v1";
 
@@ -148,6 +150,7 @@
 
   let clueEventLayer = null;
   let clueChoiceLayer = null;
+  const clueDialogueUsage = new Map();
   const clueSpeechTimers = new Map();
 
   function profileImageUrl(fileName) {
@@ -226,6 +229,53 @@
     `;
   }
 
+  function clueDialoguePlayerName(player) {
+    return player?.baseName || String(player?.name || "").replace(/\s*\(.+\)\s*$/, "");
+  }
+
+  function clueDialogueBooksForPlayer(player) {
+    return CLUE_DIALOGUE_CHARACTER_BOOKS[clueDialoguePlayerName(player)] || [];
+  }
+
+  function clueDialogueUsageSet(bookKey, eventKey) {
+    const key = `${bookKey}:${eventKey}`;
+    if (!clueDialogueUsage.has(key)) clueDialogueUsage.set(key, new Set());
+    return clueDialogueUsage.get(key);
+  }
+
+  function pickClueDialogueLine(player, eventKey = "wait") {
+    const books = shuffle(clueDialogueBooksForPlayer(player));
+    for (const bookKey of books) {
+      const lines = CLUE_DIALOGUE_BOOKS[bookKey]?.[eventKey] || [];
+      if (!lines.length) continue;
+      const used = clueDialogueUsageSet(bookKey, eventKey);
+      let unused = lines.filter((line) => !used.has(line));
+      if (!unused.length) {
+        used.clear();
+        unused = lines;
+      }
+      const line = randomItem(unused);
+      used.add(line);
+      return line;
+    }
+    if (eventKey !== "wait") return pickClueDialogueLine(player, "wait");
+    return "반갑습니다.";
+  }
+
+  function clueEventActorHeaderHtml(actor, eventKey = "wait") {
+    if (!actor || actor.human) return "";
+    const line = actor.speech || pickClueDialogueLine(actor, eventKey);
+    return `
+      <div class="clue-event-speaker">
+        <img src="${escapeHtml(actor.avatarUrl || profileImageUrl("보통-건일.jpg"))}" alt="" loading="lazy" decoding="async" />
+        <span class="clue-event-speaker-copy">
+          <b>${escapeHtml(playerDisplayName(actor))}</b>
+          <span class="clue-event-speaker-bubble">${escapeHtml(line)}</span>
+        </span>
+      </div>
+    `;
+  }
+
   function ensureClueEventLayer() {
     if (!clueEventLayer) {
       clueEventLayer = document.createElement("div");
@@ -274,8 +324,11 @@
     }
     const layer = ensureClueEventLayer();
     state.eventShowing = true;
+    const actorHeader = clueEventActorHeaderHtml(event.actor, event.dialogueKey);
+    clearClueSpeech();
     layer.innerHTML = `
       <section class="clue-event-card">
+        ${actorHeader}
         <strong>${escapeHtml(event.title || "클루")}</strong>
         <p>${escapeHtml(event.message || "")}</p>
         ${event.detail ? `<small>${escapeHtml(event.detail)}</small>` : ""}
@@ -386,6 +439,7 @@
           id: "human",
           human: true,
           name: currentHumanNickname() || "탐정",
+          baseName: currentHumanNickname() || "탐정",
           avatarUrl: currentHumanAvatarUrl(),
           suspect: names[index],
           color: colors[index % colors.length],
@@ -401,6 +455,7 @@
         id: `ai${index}`,
         human: false,
         name: profile.name || `AI ${index}`,
+        baseName: profile.name || `AI ${index}`,
         avatarUrl: profile.avatarUrl,
         suspect: names[index],
         color: colors[index % colors.length],
@@ -531,6 +586,8 @@
     queueClueEvent({
       title: "? 카드",
       message: `${playerDisplayWithSubject(player)} ? 카드를 뽑았습니다.`,
+      actor: player,
+      dialogueKey: "wait",
       cards: [drawn]
     });
     return drawn;
@@ -631,6 +688,8 @@
     queueClueEvent({
       title: `${playerDisplayName(player)}의 추리`,
       message: `${withSubject(suggestion.suspect.name)} ${suggestion.weapon.name}로 ${suggestion.room.name}에서 죽였다고 추리합니다.`,
+      actor: player,
+      dialogueKey: "wait",
       cards: [suggestion.suspect, suggestion.weapon, suggestion.room]
     });
   }
@@ -638,11 +697,14 @@
   function announceNoCard(target) {
     queueClueEvent({
       title: "반박 없음",
-      message: `${playerDisplayWithTopic(target)} 보여줄 카드가 없다고 합니다.`
+      message: `${playerDisplayWithTopic(target)} 보여줄 카드가 없다고 합니다.`,
+      actor: target,
+      dialogueKey: "wait"
     });
   }
 
   function announceShownCard(target, player, shown, revealName = false) {
+    const actor = target.human ? player : target;
     const message = target.human
       ? `당신이 ${playerDisplayName(player)}에게 카드 1장을 보여줬습니다.`
       : player.human
@@ -652,6 +714,8 @@
       title: "카드 제시",
       message,
       detail: revealName ? `확인한 카드: ${shown.name}` : "",
+      actor,
+      dialogueKey: "wait",
       cards: revealName ? [shown] : [{ back: true }]
     });
   }
@@ -672,6 +736,7 @@
     const layer = ensureClueChoiceLayer();
     layer.innerHTML = `
       <section class="clue-choice-card">
+        ${clueEventActorHeaderHtml(suggester, "wait")}
         <strong>보여줄 카드를 선택하세요</strong>
         <p>${escapeHtml(playerDisplayName(suggester))}의 추리를 반박할 수 있습니다.</p>
         <small>${escapeHtml(pending.suggestion.suspect.name)} / ${escapeHtml(pending.suggestion.room.name)} / ${escapeHtml(pending.suggestion.weapon.name)}</small>
@@ -743,7 +808,9 @@
     log(`${playerDisplayName(player)}의 제안은 아무도 반박하지 못했습니다.`);
     queueClueEvent({
       title: "반박 실패",
-      message: `${playerDisplayName(player)}의 추리를 아무도 반박하지 못했습니다.`
+      message: `${playerDisplayName(player)}의 추리를 아무도 반박하지 못했습니다.`,
+      actor: player,
+      dialogueKey: "wait"
     });
     return { shown: null };
   }
@@ -865,6 +932,8 @@
       queueClueEvent({
         title: `${playerDisplayName(player)} 승리`,
         message: `정답은 ${state.solution.suspect.name}, ${state.solution.weapon.name}, ${state.solution.room.name}입니다.`,
+        actor: player,
+        dialogueKey: "win",
         cards: [state.solution.suspect, state.solution.weapon, state.solution.room]
       });
       if (typeof window.showCenterToast === "function") {
@@ -876,6 +945,8 @@
       queueClueEvent({
         title: "고발 실패",
         message: `${playerDisplayName(player)}의 최종 고발은 틀렸습니다.`,
+        actor: player,
+        dialogueKey: "lose",
         cards: [accusation.suspect, accusation.weapon, accusation.room]
       });
       if (player.human) {
@@ -926,6 +997,7 @@
     state.humanKnown = new Set();
     state.noteMarks = {};
     clearClueSpeech();
+    clueDialogueUsage.clear();
     const { solution, deck } = createGameDeck();
     state.solution = solution;
     state.deck = deck;
@@ -1042,6 +1114,8 @@
     queueClueEvent({
       title: `${playerDisplayName(activePlayer())}의 최종 고발`,
       message: `${withSubject(accusation.suspect.name)} ${accusation.weapon.name}로 ${accusation.room.name}에서 죽였다고 고발합니다.`,
+      actor: activePlayer(),
+      dialogueKey: "wait",
       cards: [accusation.suspect, accusation.weapon, accusation.room]
     });
     finishGame(activePlayer(), isCorrectAccusation(accusation), accusation);
@@ -1099,6 +1173,8 @@
       queueClueEvent({
         title: `${playerDisplayName(player)}의 최종 고발`,
         message: `${withSubject(accusation.suspect.name)} ${accusation.weapon.name}로 ${accusation.room.name}에서 죽였다고 고발합니다.`,
+        actor: player,
+        dialogueKey: "wait",
         cards: [accusation.suspect, accusation.weapon, accusation.room]
       });
       finishGame(player, isCorrectAccusation(accusation), accusation);
