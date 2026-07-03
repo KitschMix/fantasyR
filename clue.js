@@ -1691,7 +1691,7 @@
     els.moveOptions.innerHTML = state.reachableRooms.map((destination) => `
       <button class="clue-move-option${destination.clue ? " clue-zone" : ""}${destination.hint ? " hint-option" : ""}" type="button" data-destination-id="${escapeHtml(destination.id)}">
         <span>${escapeHtml(destination.label || destination.name)}</span>
-        <small>${escapeHtml(destination.reason || (destination.clue ? "최종추리" : destination.hint ? "단서 획득" : "방 이동"))}</small>
+        <small>${escapeHtml(destination.reason || (destination.clue ? "최종추리" : destination.hint ? "? 카드" : "방 이동"))}</small>
       </button>
     `).join("");
     els.moveOptions.querySelectorAll(".clue-move-option").forEach((button) => {

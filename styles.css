@@ -153,8 +153,8 @@ body.app-loading .loading-overlay {
   display: grid;
   place-items: center;
   cursor: pointer;
-  min-width: min(620px, 86vw);
-  padding: 30px 42px;
+  min-width: min(520px, 82vw);
+  padding: 24px 36px;
   border: 2px solid rgba(242, 207, 120, 0.68);
   border-radius: 8px;
   color: #fff8dc;
@@ -174,7 +174,7 @@ body.app-loading .loading-overlay {
 }
 
 .turn-toast strong {
-  font-size: clamp(38px, 5vw, 74px);
+  font-size: clamp(28px, 3.6vw, 52px);
   font-weight: 900;
   line-height: 1.05;
   text-align: center;
@@ -3065,12 +3065,12 @@ select {
   }
 
   .turn-toast {
-    min-width: min(420px, 88vw);
-    padding: 22px 24px;
+    min-width: min(360px, 86vw);
+    padding: 18px 22px;
   }
 
   .turn-toast strong {
-    font-size: clamp(30px, 9vw, 48px);
+    font-size: clamp(24px, 7vw, 36px);
   }
 
   .topbar {
