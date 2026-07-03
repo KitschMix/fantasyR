@@ -176,6 +176,7 @@
     clueZoneAssistApplied: false,
     humanKnown: new Set(),
     noteMarks: {},
+    autoConfirmedNoteKeys: new Set(),
     lastSuggestionIds: new Set(),
     suggestionDialogOpen: false,
     suggestionAllowRoomPick: false,
@@ -796,7 +797,7 @@
     } else if (baseId === "reveal-card") {
       const revealed = revealRandomOpponentCard();
       if (revealed) {
-        state.humanKnown.add(revealed.entry.id);
+        rememberAutoConfirmedCard(revealed.entry, revealed.player);
         queueClueEvent({
           title: "? 카드 사용",
           message: `${playerDisplayWithSubject(revealed.player)} 카드 1장을 공개합니다.`,
@@ -953,7 +954,9 @@
     const peekReveal = Boolean(human?.peekReady && !target.human && !player.human && !revealName);
     if (peekReveal) {
       human.peekReady = false;
-      state.humanKnown.add(shown.id);
+    }
+    if (!target.human && (player.human || peekReveal)) {
+      rememberAutoConfirmedCard(shown, target);
     }
     const message = target.human
       ? `당신이 ${playerDisplayName(player)}에게 카드 1장을 보여줬습니다.`
@@ -1044,7 +1047,7 @@
       const shown = randomItem(matches);
       player.known.add(shown.id);
       if (player.human) {
-        state.humanKnown.add(shown.id);
+        rememberAutoConfirmedCard(shown, target);
         log(`${playerDisplayWithSubject(target)} ${shown.name} 카드를 보여줬습니다.`);
       } else if (target.human) {
         log(`당신이 ${playerDisplayName(player)}에게 ${shown.name} 카드를 보여줬습니다.`);
@@ -1105,6 +1108,22 @@
       seen.add(destination.id);
       return true;
     });
+  }
+
+  function rememberAutoConfirmedCard(entry, owner) {
+    const ownerIndex = state.players.indexOf(owner);
+    if (!entry || ownerIndex < 0) return;
+    state.humanKnown.add(entry.id);
+    state.autoConfirmedNoteKeys.add(`${entry.id}:${ownerIndex}`);
+  }
+
+  function autoConfirmedNoteKeys() {
+    const keys = new Set(state.autoConfirmedNoteKeys);
+    const human = state.players[0];
+    human?.hand?.forEach((entry) => {
+      keys.add(`${entry.id}:0`);
+    });
+    return keys;
   }
 
   function nearbyRoomsForPlayer(player) {
@@ -1272,6 +1291,7 @@
     state.players = buildPlayers(playerCount);
     state.humanKnown = new Set();
     state.noteMarks = {};
+    state.autoConfirmedNoteKeys = new Set();
     state.lastSuggestionIds = new Set();
     clearClueSpeech();
     clueDialogueUsage.clear();
@@ -1399,7 +1419,7 @@
   function openSuggestionDialog({ allowRoomPick = false } = {}) {
     if (state.finished || !activePlayer()?.human) return;
     const currentRoom = ROOM_BY_ID[activePlayer().location];
-    if (!allowRoomPick && (state.phase !== "suggest" || !currentRoom)) return;
+    if (!allowRoomPick && (!["awaitRoll", "suggest"].includes(state.phase) || !currentRoom)) return;
     state.suggestionDialogOpen = true;
     state.suggestionAllowRoomPick = allowRoomPick;
     if (els.suggestRoom) {
@@ -1425,7 +1445,7 @@
   function confirmSuggestionDialog() {
     if (state.finished || !activePlayer()?.human || !state.suggestionDialogOpen) return;
     const currentRoom = ROOM_BY_ID[activePlayer().location];
-    if (!state.suggestionAllowRoomPick && (state.phase !== "suggest" || !currentRoom)) return;
+    if (!state.suggestionAllowRoomPick && (!["awaitRoll", "suggest"].includes(state.phase) || !currentRoom)) return;
     const suggestion = {
       suspect: card("suspect", els.suggestSuspect?.value || SUSPECTS[0]),
       weapon: card("weapon", els.suggestWeapon?.value || WEAPONS[0]),
@@ -1779,6 +1799,7 @@
 
   function renderNotes() {
     if (!els.notes) return;
+    const autoKeys = autoConfirmedNoteKeys();
     const playerHeaders = Array.from({ length: NOTE_COLUMN_COUNT }, (_, column) => {
       const player = state.players[column];
       return `
@@ -1793,13 +1814,18 @@
     const noteRows = ["suspect", "weapon", "room"].map((type) => {
       const rows = DEDUCTION_ROWS.filter((row) => row.card.type === type).map((row) => {
         const highlighted = state.lastSuggestionIds?.has(row.card.id);
-        const cells = Array.from({ length: NOTE_COLUMN_COUNT }, (_, column) => {
+        const cellData = Array.from({ length: NOTE_COLUMN_COUNT }, (_, column) => {
           const key = `${row.card.id}:${column}`;
-          const mark = state.noteMarks[key] || "";
+          const automatic = autoKeys.has(key);
+          const mark = automatic ? "confirmed" : state.noteMarks[key] || "";
+          return { key, mark, automatic, column };
+        });
+        const known = cellData.some((cell) => cell.mark === "confirmed");
+        const cells = cellData.map(({ key, mark, automatic, column }) => {
           const title = `${row.card.name} / 메모칸 ${column + 1} / ${NOTE_LABELS[mark] || "빈칸"}`;
           return `
             <button
-              class="clue-note-cell${mark ? ` ${mark}` : ""}${highlighted ? " highlighted" : ""}"
+              class="clue-note-cell${mark ? ` ${mark}` : ""}${highlighted ? " highlighted" : ""}${automatic ? " automatic" : ""}"
               type="button"
               title="${escapeHtml(title)}"
               aria-label="${escapeHtml(title)}"
@@ -1808,7 +1834,7 @@
           `;
         }).join("");
         return `
-          <span class="clue-note-row-label${highlighted ? " highlighted" : ""}">${escapeHtml(row.card.name)}</span>
+          <span class="clue-note-row-label${highlighted ? " highlighted" : ""}${known ? " known" : ""}">${escapeHtml(row.card.name)}</span>
           ${cells}
         `;
       }).join("");
@@ -1827,6 +1853,7 @@
     els.notes.querySelectorAll(".clue-note-cell").forEach((button) => {
       button.addEventListener("click", () => {
         const key = button.dataset.noteKey;
+        if (autoKeys.has(key)) return;
         const currentIndex = NOTE_STATES.indexOf(state.noteMarks[key] || "");
         const nextState = NOTE_STATES[(currentIndex + 1) % NOTE_STATES.length];
         if (nextState) state.noteMarks[key] = nextState;
@@ -1844,7 +1871,7 @@
     }
     if (els.phaseLabel) {
       const phaseText = {
-        awaitRoll: "주사위를 굴리세요.",
+        awaitRoll: ROOM_BY_ID[player?.location] ? "주사위를 굴리거나 현재 방에서 제안할 수 있습니다." : "주사위를 굴리세요.",
         chooseMove: "갈 수 있는 곳 중 하나를 선택하세요.",
         suggest: `${roomName(player?.location)}에서 제안할 수 있습니다.`,
         chooseRefute: "보여줄 카드를 선택하세요.",
@@ -1856,14 +1883,14 @@
     }
     renderDiceDisplay();
     if (els.rollButton) {
-      els.rollButton.disabled = !humanTurn || state.phase !== "awaitRoll" || state.diceRolling;
+      els.rollButton.disabled = !humanTurn || state.phase !== "awaitRoll" || state.diceRolling || state.suggestionDialogOpen;
     }
     if (els.endTurnButton) {
       els.endTurnButton.disabled = !humanTurn || state.diceRolling || state.phase === "chooseMove" || state.phase === "awaitRoll";
     }
     const currentRoom = ROOM_BY_ID[player?.location];
     if (els.makeSuggestionButton) {
-      els.makeSuggestionButton.disabled = !humanTurn || state.phase !== "suggest" || !currentRoom;
+      els.makeSuggestionButton.disabled = !humanTurn || state.suggestionDialogOpen || !["awaitRoll", "suggest"].includes(state.phase) || !currentRoom;
     }
     if (els.makeAccusationButton) {
       els.makeAccusationButton.disabled = !humanTurn || state.phase !== "accuse";
