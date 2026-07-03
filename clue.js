@@ -403,8 +403,18 @@
 
   function queueClueEvent(event) {
     clearIdleSpeechTimer();
-    state.eventQueue.push({ cards: [], ...event });
+    state.eventQueue.push({
+      cards: [],
+      turnPlayerIndex: state.currentPlayer,
+      ...event
+    });
     playNextClueEvent();
+  }
+
+  function visibleBoardTurnIndex() {
+    if (Number.isInteger(state.currentEvent?.turnPlayerIndex)) return state.currentEvent.turnPlayerIndex;
+    const queuedEvent = state.eventQueue.find((event) => Number.isInteger(event.turnPlayerIndex));
+    return queuedEvent?.turnPlayerIndex ?? state.currentPlayer;
   }
 
   function clueEventNoteColumnIndex(event) {
@@ -450,6 +460,8 @@
         state.lastSuggestionIds = new Set();
         renderNotes();
       }
+      renderPlayers();
+      renderBoard();
       if (state.pendingRefute) showHumanRefutePrompt();
       else showClueTurnNotice();
       return;
@@ -459,6 +471,8 @@
     state.currentEvent = event;
     applyEventAutoConfirm(event);
     state.noteColumnHighlightIndex = clueEventNoteColumnIndex(event);
+    renderPlayers();
+    renderBoard();
     renderNotes();
     clearClueSpeech();
     const actorHeader = clueEventActorHeaderHtml(event.actor, event.dialogueKey);
@@ -1976,9 +1990,10 @@
     if (!els.playersList) return;
     els.playersList.innerHTML = "";
     const fragment = document.createDocumentFragment();
+    const visibleTurnIndex = visibleBoardTurnIndex();
     state.players.forEach((player, index) => {
       const item = document.createElement("section");
-      item.className = `clue-player-card${index === state.currentPlayer && !state.finished ? " active" : ""}`;
+      item.className = `clue-player-card${index === visibleTurnIndex && !state.finished ? " active" : ""}`;
       item.innerHTML = `
         <span class="clue-player-avatar-wrap" style="--player-color:${escapeHtml(player.color)}">
           <img class="clue-player-avatar" src="${escapeHtml(player.avatarUrl || currentHumanAvatarUrl())}" alt="" loading="lazy" decoding="async" />
@@ -1999,6 +2014,8 @@
   function renderBoard() {
     if (!els.board) return;
     els.board.innerHTML = "";
+    const boardTurnIndex = visibleBoardTurnIndex();
+    const boardTurnPlayer = state.players[boardTurnIndex];
     MOVE_DESTINATIONS.forEach((destination) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -2006,7 +2023,7 @@
         "clue-room-button",
         destination.clue ? "clue-zone" : "",
         state.reachableRooms.some((entry) => entry.id === destination.id) && state.phase === "chooseMove" ? "reachable" : "",
-        activePlayer()?.location === destination.id ? "current" : ""
+        boardTurnPlayer?.location === destination.id ? "current" : ""
       ].filter(Boolean).join(" ");
       button.style.setProperty("--room-x", `${destination.x}%`);
       button.style.setProperty("--room-y", `${destination.y}%`);
@@ -2043,7 +2060,7 @@
         piece.style.setProperty("--piece-y", `${point.y}%`);
       });
       state.piecePositions[player.id] = { x: point.x, y: point.y };
-      if (index === state.currentPlayer && !state.finished) {
+      if (index === boardTurnIndex && !state.finished) {
         const avatar = document.createElement("img");
         avatar.className = "clue-board-turn-avatar";
         avatar.src = player.avatarUrl || currentHumanAvatarUrl();
