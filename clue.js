@@ -1244,6 +1244,8 @@
     const weapons = candidateCards(player, "weapon");
     const rooms = candidateCards(player, "room");
     if (!suspects.length || !weapons.length || !rooms.length) return null;
+    const hasCertainCategory = suspects.length === 1 || weapons.length === 1 || rooms.length === 1;
+    if (!hasCertainCategory) return null;
     const candidateTotal = suspects.length + weapons.length + rooms.length;
     const knownCount = player.known?.size || 0;
     const recklessRule = difficulty === "hard"
