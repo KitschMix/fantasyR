@@ -72,10 +72,20 @@
   const AI_DELAY_MS = 1250;
   const DICE_ROLL_DURATION_MS = 650;
   const DICE_ROLL_FRAME_MS = 58;
+  const CLUE_ZOOM_STORAGE_KEY = "fantasyR.clueZoomPercent";
+  const CLUE_ZOOM_MIN_PERCENT = 70;
+  const CLUE_ZOOM_MAX_PERCENT = 220;
+  const CLUE_ZOOM_STEP_PERCENT = 10;
   const SHARED_PROFILES = window.FANTASY_SHARED_PROFILES || {};
   const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
   const CLUE_DIALOGUE_BOOKS = window.CLUE_DIALOGUE_BOOKS || {};
   const CLUE_DIALOGUE_CHARACTER_BOOKS = window.CLUE_DIALOGUE_CHARACTER_BOOKS || {};
+  const AI_DIFFICULTY_LABELS = SHARED_PROFILES.difficultyLabels || {
+    normal: "보통",
+    hard: "어려움",
+    expert: "매우어려움"
+  };
+  const AI_PROFILE_DIFFICULTY_KEYS = SHARED_PROFILES.difficultyKeys || ["normal", "hard", "expert"];
   const CLUE_DIALOGUE_NAME_ALIASES = { "채호": "재호" };
   const CLUE_DIALOGUE_EVENT_FALLBACKS = {
     idle: ["idle", "wait"],
@@ -118,6 +128,9 @@
     backButton: document.querySelector("#clueBackButton"),
     newGameButton: document.querySelector("#clueNewGameButton"),
     rulesButton: document.querySelector("#clueRulesButton"),
+    zoomOutButton: document.querySelector("#clueZoomOutButton"),
+    zoomInButton: document.querySelector("#clueZoomInButton"),
+    zoomLabel: document.querySelector("#clueZoomLabel"),
     rulesDialog: document.querySelector("#clueRulesDialog"),
     playersList: document.querySelector("#cluePlayersList"),
     turnLabel: document.querySelector("#clueTurnLabel"),
@@ -197,6 +210,7 @@
 
   let clueEventLayer = null;
   let clueChoiceLayer = null;
+  let clueZoomPercent = 100;
   const clueDialogueUsage = new Map();
   const clueSpeechTimers = new Map();
 
@@ -391,6 +405,17 @@
     return actorIndex >= 0 ? actorIndex : -1;
   }
 
+  function applyEventAutoConfirm(event) {
+    const confirmations = Array.isArray(event?.autoConfirm)
+      ? event.autoConfirm
+      : event?.autoConfirm
+        ? [event.autoConfirm]
+        : [];
+    confirmations.forEach((confirmation) => {
+      rememberAutoConfirmedCard(confirmation.entry, confirmation.owner);
+    });
+  }
+
   function dismissClueEvent() {
     if (!state.eventShowing) return;
     const afterDismiss = state.currentEvent?.afterDismiss;
@@ -422,6 +447,7 @@
     const layer = ensureClueEventLayer();
     state.eventShowing = true;
     state.currentEvent = event;
+    applyEventAutoConfirm(event);
     state.noteColumnHighlightIndex = clueEventNoteColumnIndex(event);
     renderNotes();
     clearClueSpeech();
@@ -550,10 +576,52 @@
     return Math.floor(min + Math.random() * (max - min + 1));
   }
 
+  function clampNumber(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
   function wait(ms) {
     return new Promise((resolve) => {
       window.setTimeout(resolve, ms);
     });
+  }
+
+  function loadClueZoomPercent() {
+    try {
+      const saved = Number(window.localStorage.getItem(CLUE_ZOOM_STORAGE_KEY));
+      return Number.isFinite(saved) ? clampNumber(saved, CLUE_ZOOM_MIN_PERCENT, CLUE_ZOOM_MAX_PERCENT) : 100;
+    } catch {
+      return 100;
+    }
+  }
+
+  function saveClueZoomPercent(percent) {
+    try {
+      window.localStorage.setItem(CLUE_ZOOM_STORAGE_KEY, String(percent));
+    } catch {
+      // Storage can be blocked in private browsing; the live setting still works.
+    }
+  }
+
+  function renderClueZoomControls() {
+    els.gamePanel?.style.setProperty("--clue-ui-zoom", String(clueZoomPercent / 100));
+    if (els.zoomLabel) els.zoomLabel.textContent = `${clueZoomPercent}%`;
+    if (els.zoomOutButton) els.zoomOutButton.disabled = clueZoomPercent <= CLUE_ZOOM_MIN_PERCENT;
+    if (els.zoomInButton) els.zoomInButton.disabled = clueZoomPercent >= CLUE_ZOOM_MAX_PERCENT;
+  }
+
+  function setClueZoomPercent(percent, persist = true) {
+    clueZoomPercent = clampNumber(Math.round(percent / CLUE_ZOOM_STEP_PERCENT) * CLUE_ZOOM_STEP_PERCENT, CLUE_ZOOM_MIN_PERCENT, CLUE_ZOOM_MAX_PERCENT);
+    renderClueZoomControls();
+    if (persist) saveClueZoomPercent(clueZoomPercent);
+  }
+
+  function adjustClueZoom(delta) {
+    setClueZoomPercent(clueZoomPercent + delta);
+  }
+
+  function initializeClueZoomControls() {
+    setClueZoomPercent(loadClueZoomPercent(), false);
   }
 
   function currentHumanNickname() {
@@ -571,7 +639,13 @@
 
   function aiProfiles() {
     const groups = SHARED_PROFILES.groups || {};
-    return ["normal", "hard", "expert"].flatMap((key) => groups[key] || []);
+    return AI_PROFILE_DIFFICULTY_KEYS.flatMap((key) => {
+      return (groups[key] || []).map((profile) => ({
+        ...profile,
+        difficulty: key,
+        difficultyLabel: AI_DIFFICULTY_LABELS[key] || key
+      }));
+    });
   }
 
   function buildPlayers(count) {
@@ -606,6 +680,8 @@
         name: profile.name || `AI ${index}`,
         baseName: profile.name || `AI ${index}`,
         avatarUrl: profile.avatarUrl,
+        difficulty: profile.difficulty || "normal",
+        difficultyLabel: profile.difficultyLabel || AI_DIFFICULTY_LABELS.normal,
         suspect: names[index],
         color: colors[index % colors.length],
         location: "center",
@@ -816,12 +892,12 @@
     } else if (baseId === "reveal-card") {
       const revealed = revealRandomOpponentCard();
       if (revealed) {
-        rememberAutoConfirmedCard(revealed.entry, revealed.player);
         queueClueEvent({
           title: "? 카드 사용",
           message: `${playerDisplayWithSubject(revealed.player)} 카드 1장을 공개합니다.`,
           detail: `공개한 카드: ${revealed.entry.name}`,
-          cards: [revealed.entry]
+          cards: [revealed.entry],
+          autoConfirm: { entry: revealed.entry, owner: revealed.player }
         });
       } else {
         queueClueEvent({ title: "? 카드 사용", message: "공개할 상대 카드가 없습니다.", cards: [hint] });
@@ -974,9 +1050,9 @@
     if (peekReveal) {
       human.peekReady = false;
     }
-    if (!target.human && (player.human || peekReveal)) {
-      rememberAutoConfirmedCard(shown, target);
-    }
+    const autoConfirm = !target.human && (player.human || peekReveal)
+      ? { entry: shown, owner: target }
+      : null;
     const message = target.human
       ? `당신이 ${playerDisplayName(player)}에게 카드 1장을 보여줬습니다.`
       : player.human
@@ -988,7 +1064,8 @@
       detail: revealName || peekReveal ? `확인한 카드: ${shown.name}` : "",
       actor,
       dialogueKey: target.human ? "userShowCard" : player.human ? "showUserCard" : "showCard",
-      cards: revealName || peekReveal ? [shown] : [{ back: true }]
+      cards: revealName || peekReveal ? [shown] : [{ back: true }],
+      autoConfirm
     });
   }
 
@@ -1044,6 +1121,26 @@
     finishAiTurnAfterSuggestion();
   }
 
+  function aiDifficultyKey(player) {
+    const key = String(player?.difficulty || "normal");
+    return AI_PROFILE_DIFFICULTY_KEYS.includes(key) ? key : "normal";
+  }
+
+  function chooseAiRefuteCard(target, suggester, matches) {
+    if (!matches.length) return null;
+    const difficulty = aiDifficultyKey(target);
+    if (difficulty === "expert") {
+      const humanKnown = matches.filter((entry) => state.humanKnown.has(entry.id));
+      if (humanKnown.length) return randomItem(humanKnown);
+      const suggesterKnown = matches.filter((entry) => suggester?.known?.has(entry.id));
+      if (suggesterKnown.length) return randomItem(suggesterKnown);
+    } else if (difficulty === "hard") {
+      const suggesterKnown = matches.filter((entry) => suggester?.known?.has(entry.id));
+      if (suggesterKnown.length && Math.random() < 0.55) return randomItem(suggesterKnown);
+    }
+    return randomItem(matches);
+  }
+
   function resolveSuggestion(playerIndex, suggestion) {
     const player = state.players[playerIndex];
     const suspectPlayer = state.players.find((entry) => entry.suspect === suggestion.suspect.name);
@@ -1065,10 +1162,9 @@
         showHumanRefutePrompt();
         return { pendingHumanRefute: true };
       }
-      const shown = randomItem(matches);
+      const shown = chooseAiRefuteCard(target, player, matches);
       player.known.add(shown.id);
       if (player.human) {
-        rememberAutoConfirmedCard(shown, target);
         log(`${playerDisplayWithSubject(target)} ${shown.name} 카드를 보여줬습니다.`);
       } else if (target.human) {
         log(`당신이 ${playerDisplayName(player)}에게 ${shown.name} 카드를 보여줬습니다.`);
@@ -1101,15 +1197,32 @@
     if (hint && state.hintDeck.length && Math.random() < 0.3) return hint;
     const roomChoices = reachable.filter((destination) => !destination.clue && !destination.hint);
     if (!roomChoices.length) return hint || randomItem(ROOMS);
+    const difficulty = aiDifficultyKey(player);
+    const ownHiddenRoomIds = player.hand
+      .filter((entry) => entry.type === "room" && !state.humanKnown.has(entry.id))
+      .map((entry) => ROOM_BY_NAME[entry.name]?.id)
+      .filter(Boolean);
+    const bluffRooms = roomChoices.filter((room) => ownHiddenRoomIds.includes(room.id));
+    const bluffChance = difficulty === "expert" ? 0.45 : difficulty === "hard" ? 0.16 : 0.04;
+    if (bluffRooms.length && Math.random() < bluffChance) return randomItem(bluffRooms);
     const unknownRooms = candidateCards(player, "room").map((entry) => ROOM_BY_NAME[entry.name]?.id).filter(Boolean);
     const preferred = roomChoices.filter((room) => unknownRooms.includes(room.id));
     return randomItem(preferred.length ? preferred : roomChoices);
   }
 
+  function chooseAiSuggestionCard(player, type, fallbackNames) {
+    const difficulty = aiDifficultyKey(player);
+    const ownHidden = player.hand.filter((entry) => entry.type === type && !state.humanKnown.has(entry.id));
+    const unknown = candidateCards(player, type);
+    const bluffChance = difficulty === "expert" ? 0.58 : difficulty === "hard" ? 0.18 : 0.04;
+    if (ownHidden.length && Math.random() < bluffChance) return randomItem(ownHidden);
+    return randomItem(unknown) || randomItem(ownHidden) || card(type, randomItem(fallbackNames));
+  }
+
   function aiSuggestion(player, room) {
     return {
-      suspect: randomItem(candidateCards(player, "suspect")) || card("suspect", randomItem(SUSPECTS)),
-      weapon: randomItem(candidateCards(player, "weapon")) || card("weapon", randomItem(WEAPONS)),
+      suspect: chooseAiSuggestionCard(player, "suspect", SUSPECTS),
+      weapon: chooseAiSuggestionCard(player, "weapon", WEAPONS),
       room: card("room", room.name)
     };
   }
@@ -1120,6 +1233,30 @@
     const rooms = candidateCards(player, "room");
     if (suspects.length !== 1 || weapons.length !== 1 || rooms.length !== 1) return null;
     return { suspect: suspects[0], weapon: weapons[0], room: rooms[0] };
+  }
+
+  function buildAiAccusation(player) {
+    const certain = buildCertainAccusation(player);
+    if (certain) return certain;
+    const difficulty = aiDifficultyKey(player);
+    if (difficulty === "expert") return null;
+    const suspects = candidateCards(player, "suspect");
+    const weapons = candidateCards(player, "weapon");
+    const rooms = candidateCards(player, "room");
+    if (!suspects.length || !weapons.length || !rooms.length) return null;
+    const candidateTotal = suspects.length + weapons.length + rooms.length;
+    const knownCount = player.known?.size || 0;
+    const recklessRule = difficulty === "hard"
+      ? { minKnown: 11, maxTotal: 8, chance: 0.32 }
+      : { minKnown: 9, maxTotal: 12, chance: 0.22 };
+    if (knownCount < recklessRule.minKnown || candidateTotal > recklessRule.maxTotal || Math.random() >= recklessRule.chance) {
+      return null;
+    }
+    return {
+      suspect: randomItem(suspects),
+      weapon: randomItem(weapons),
+      room: randomItem(rooms)
+    };
   }
 
   function uniqueDestinations(destinations) {
@@ -1571,7 +1708,7 @@
     const clueAssistReady = player.clueZoneAssistReady;
     const reachable = reachableRoomsForRoll(player, total, clueAssistReady);
     player.clueZoneAssistReady = isNearRoomRoll(total);
-    const accusation = buildCertainAccusation(player);
+    const accusation = buildAiAccusation(player);
     if (accusation && reachable.some((destination) => destination.id === CLUE_ZONE.id)) {
       player.location = CLUE_ZONE.id;
       log(`${playerDisplayName(player)}: ${state.dice.join(" + ")} = ${total}, ${CLUE_ZONE.name} 이동`);
@@ -2007,6 +2144,8 @@
   els.rulesDialog?.addEventListener("click", (event) => {
     if (event.target === els.rulesDialog) els.rulesDialog.close();
   });
+  els.zoomOutButton?.addEventListener("click", () => adjustClueZoom(-CLUE_ZOOM_STEP_PERCENT));
+  els.zoomInButton?.addEventListener("click", () => adjustClueZoom(CLUE_ZOOM_STEP_PERCENT));
   els.rollButton?.addEventListener("click", rollForHuman);
   els.endTurnButton?.addEventListener("click", endHumanTurn);
   els.makeSuggestionButton?.addEventListener("click", makeHumanSuggestion);
@@ -2036,6 +2175,8 @@
     log(`${withSubject(activePlayer().name)} 고발을 미뤘습니다.`);
     renderClue();
   });
+
+  initializeClueZoomControls();
 
   window.ClueGame = {
     start: startClueGame,
