@@ -327,9 +327,9 @@
   function pickClueDialogueLine(player, eventKey = "wait") {
     const books = shuffle(clueDialogueBooksForPlayer(player));
     const keys = CLUE_DIALOGUE_EVENT_FALLBACKS[eventKey] || [eventKey, "wait"];
-    for (const clueOnly of [true, false]) {
-      for (const bookKey of books) {
-        for (const key of keys) {
+    for (const key of keys) {
+      for (const clueOnly of [true, false]) {
+        for (const bookKey of books) {
           const lines = CLUE_DIALOGUE_BOOKS[bookKey]?.[key] || [];
           const line = pickClueDialogueFromLines(bookKey, `${eventKey}:${key}`, lines, clueOnly);
           if (line) return line;
