@@ -179,6 +179,7 @@
     autoConfirmedNoteKeys: new Set(),
     lastSuggestionIds: new Set(),
     clearSuggestionHighlightAfterEvents: false,
+    noteColumnHighlightIndex: -1,
     suggestionDialogOpen: false,
     suggestionAllowRoomPick: false,
     pendingRefute: null,
@@ -384,6 +385,12 @@
     playNextClueEvent();
   }
 
+  function clueEventNoteColumnIndex(event) {
+    if (Number.isInteger(event?.noteColumnIndex)) return event.noteColumnIndex;
+    const actorIndex = state.players.indexOf(event?.actor);
+    return actorIndex >= 0 ? actorIndex : -1;
+  }
+
   function dismissClueEvent() {
     if (!state.eventShowing) return;
     const afterDismiss = state.currentEvent?.afterDismiss;
@@ -392,6 +399,8 @@
     layer.innerHTML = "";
     state.eventShowing = false;
     state.currentEvent = null;
+    state.noteColumnHighlightIndex = -1;
+    renderNotes();
     if (typeof afterDismiss === "function") afterDismiss();
     playNextClueEvent();
   }
@@ -400,6 +409,7 @@
     if (state.eventShowing || isChoiceOpen()) return;
     const event = state.eventQueue.shift();
     if (!event) {
+      state.noteColumnHighlightIndex = -1;
       if (state.clearSuggestionHighlightAfterEvents) {
         state.clearSuggestionHighlightAfterEvents = false;
         state.lastSuggestionIds = new Set();
@@ -412,6 +422,8 @@
     const layer = ensureClueEventLayer();
     state.eventShowing = true;
     state.currentEvent = event;
+    state.noteColumnHighlightIndex = clueEventNoteColumnIndex(event);
+    renderNotes();
     clearClueSpeech();
     const actorHeader = clueEventActorHeaderHtml(event.actor, event.dialogueKey);
     layer.innerHTML = `
@@ -436,6 +448,7 @@
     state.currentEvent = null;
     state.eventShowing = false;
     state.pendingRefute = null;
+    state.noteColumnHighlightIndex = -1;
     clueEventLayer?.classList.remove("open");
     clueChoiceLayer?.classList.remove("open");
     if (clueEventLayer) clueEventLayer.innerHTML = "";
@@ -992,6 +1005,8 @@
     }
     const pending = state.pendingRefute;
     const suggester = state.players[pending.suggesterIndex];
+    state.noteColumnHighlightIndex = pending.suggesterIndex;
+    renderNotes();
     const layer = ensureClueChoiceLayer();
     layer.innerHTML = `
       <section class="clue-choice-card">
@@ -1167,6 +1182,7 @@
     state.clueZoneAssistApplied = false;
     state.lastSuggestionIds = preservedSuggestionIds || new Set();
     state.clearSuggestionHighlightAfterEvents = Boolean(preservedSuggestionIds?.size);
+    state.noteColumnHighlightIndex = -1;
     closeSuggestionDialog();
     state.turnSerial += 1;
   }
@@ -1305,6 +1321,7 @@
     state.autoConfirmedNoteKeys = new Set();
     state.lastSuggestionIds = new Set();
     state.clearSuggestionHighlightAfterEvents = false;
+    state.noteColumnHighlightIndex = -1;
     clearClueSpeech();
     clueDialogueUsage.clear();
     const { solution, deck } = createGameDeck();
@@ -1812,12 +1829,16 @@
   function renderNotes() {
     if (!els.notes) return;
     const autoKeys = autoConfirmedNoteKeys();
+    const highlightedColumn = Number.isInteger(state.noteColumnHighlightIndex)
+      ? state.noteColumnHighlightIndex
+      : -1;
     const playerHeaders = Array.from({ length: NOTE_COLUMN_COUNT }, (_, column) => {
       const player = state.players[column];
+      const columnHighlighted = column === highlightedColumn;
       return `
         <span
-          class="clue-note-player-cell${player ? " filled" : ""}"
-          style="${player ? `--player-color:${escapeHtml(player.color)}` : ""}"
+          class="clue-note-player-cell${player ? " filled" : ""}${columnHighlighted ? " column-highlighted" : ""}"
+          style="${player ? `--player-color:${escapeHtml(player.color)};--note-player-color:${escapeHtml(player.color)}` : ""}"
           title="${player ? escapeHtml(`${column + 1}번 ${playerDisplayName(player)}`) : ""}"
           aria-hidden="true"
         >${player ? column + 1 : ""}</span>
@@ -1834,11 +1855,14 @@
         });
         const known = cellData.some((cell) => cell.mark === "confirmed");
         const cells = cellData.map(({ key, mark, automatic, column }) => {
+          const columnPlayer = state.players[column];
+          const columnHighlighted = column === highlightedColumn;
           const title = `${row.card.name} / 메모칸 ${column + 1} / ${NOTE_LABELS[mark] || "빈칸"}`;
           return `
             <button
-              class="clue-note-cell${mark ? ` ${mark}` : ""}${highlighted ? " highlighted" : ""}${automatic ? " automatic" : ""}"
+              class="clue-note-cell${mark ? ` ${mark}` : ""}${highlighted ? " highlighted" : ""}${columnHighlighted ? " column-highlighted" : ""}${automatic ? " automatic" : ""}"
               type="button"
+              style="${columnPlayer ? `--note-player-color:${escapeHtml(columnPlayer.color)}` : ""}"
               title="${escapeHtml(title)}"
               aria-label="${escapeHtml(title)}"
               data-note-key="${escapeHtml(key)}"

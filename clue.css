@@ -1182,6 +1182,20 @@ body.clue-active.clue-playing .clue-game-panel {
   box-shadow: inset 0 0 0 1px rgba(216, 47, 40, 0.14);
 }
 
+.clue-note-cell.column-highlighted {
+  background: rgba(242, 207, 120, 0.12);
+  box-shadow:
+    inset 0 0 0 1px var(--note-player-color, rgba(242, 207, 120, 0.78)),
+    inset 0 0 14px rgba(242, 207, 120, 0.1);
+}
+
+.clue-note-cell.highlighted.column-highlighted {
+  background: rgba(216, 47, 40, 0.16);
+  box-shadow:
+    inset 0 0 0 1px rgba(216, 47, 40, 0.34),
+    inset 0 0 0 2px var(--note-player-color, rgba(242, 207, 120, 0.78));
+}
+
 .clue-note-row-label.known {
   color: rgba(247, 236, 217, 0.53);
 }
@@ -1200,6 +1214,14 @@ body.clue-active.clue-playing .clue-game-panel {
     linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 48%),
     var(--player-color);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.32);
+}
+
+.clue-note-player-cell.column-highlighted {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.42),
+    0 0 0 2px rgba(242, 207, 120, 0.42),
+    0 0 14px var(--note-player-color, rgba(242, 207, 120, 0.42));
 }
 
 .clue-note-cell {
