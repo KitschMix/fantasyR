@@ -1170,6 +1170,9 @@
     const preservedSuggestionIds = preserveSuggestionHighlight
       ? new Set(state.lastSuggestionIds || [])
       : null;
+    const preservedNoteColumn = preserveSuggestionHighlight && state.eventShowing
+      ? state.noteColumnHighlightIndex
+      : -1;
     clearIdleSpeechTimer();
     state.currentPlayer = playerIndex;
     state.phase = "awaitRoll";
@@ -1182,7 +1185,7 @@
     state.clueZoneAssistApplied = false;
     state.lastSuggestionIds = preservedSuggestionIds || new Set();
     state.clearSuggestionHighlightAfterEvents = Boolean(preservedSuggestionIds?.size);
-    state.noteColumnHighlightIndex = -1;
+    state.noteColumnHighlightIndex = preservedNoteColumn;
     closeSuggestionDialog();
     state.turnSerial += 1;
   }
