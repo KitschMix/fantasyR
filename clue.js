@@ -16,11 +16,17 @@
   ];
   const HINT_ACTION = { id: "hint", name: "? 카드", hint: true };
   const CLUE_ZONE = { id: "clue", name: "CLUE 존", x: 50, y: 58, cost: 6, clue: true };
+  const CENTER = { id: "center", name: "복도", x: 50, y: 50 };
+  const CORRIDOR_ACTION = {
+    ...CENTER,
+    corridor: true,
+    label: "복도 (한턴쉬고 다음턴 아무곳이나 이동 가능)",
+    reason: "아무 행동 없이 턴 종료"
+  };
   const MOVE_DESTINATIONS = [...ROOMS, CLUE_ZONE];
   const CENTRAL_NEAR_ROOM_IDS = ["study", "dining", "hall", "game"];
   const ROOM_BY_ID = Object.fromEntries(ROOMS.map((room) => [room.id, room]));
   const ROOM_BY_NAME = Object.fromEntries(ROOMS.map((room) => [room.name, room]));
-  const CENTER = { id: "center", name: "복도", x: 50, y: 50 };
   const ROOM_LINKS = {
     bedroom: { bathroom: 4, game: 4, center: 4 },
     bathroom: { bedroom: 4, study: 3, center: 3 },
@@ -187,6 +193,8 @@
     reachableRooms: [],
     clueZoneAssistEligible: false,
     clueZoneAssistApplied: false,
+    corridorMoveApplied: false,
+    corridorResting: false,
     humanKnown: new Set(),
     noteMarks: {},
     autoConfirmedNoteKeys: new Set(),
@@ -424,9 +432,11 @@
     layer.innerHTML = "";
     state.eventShowing = false;
     state.currentEvent = null;
-    state.noteColumnHighlightIndex = -1;
-    renderNotes();
     if (typeof afterDismiss === "function") afterDismiss();
+    if (!state.eventQueue.length) {
+      state.noteColumnHighlightIndex = -1;
+      renderNotes();
+    }
     playNextClueEvent();
   }
 
@@ -668,6 +678,7 @@
           known: new Set(),
           speech: "",
           clueZoneAssistReady: false,
+          corridorReady: false,
           extraTurnPending: false,
           peekReady: false,
           eliminated: false
@@ -690,6 +701,7 @@
         known: new Set(),
         speech: "",
         clueZoneAssistReady: false,
+        corridorReady: false,
         extraTurnPending: false,
         peekReady: false,
         eliminated: false
@@ -784,6 +796,7 @@
       player.hintCards = [];
       player.known = new Set();
       player.clueZoneAssistReady = false;
+      player.corridorReady = false;
       player.extraTurnPending = false;
       player.peekReady = false;
     });
@@ -839,8 +852,25 @@
     return human.hintCards.splice(index, 1)[0];
   }
 
+  function removePlayerHintCard(player, predicate) {
+    const index = player?.hintCards?.findIndex(predicate) ?? -1;
+    if (index < 0) return null;
+    return player.hintCards.splice(index, 1)[0];
+  }
+
   function activeHumanCanUseHint() {
     return Boolean(state.started && !state.finished && activePlayer()?.human && state.phase !== "chooseRefute");
+  }
+
+  function hintCardCanBeUsedNow(hintCard) {
+    if (!activeHumanCanUseHint()) return false;
+    const baseId = hintBaseId(hintCard);
+    if (state.corridorResting) {
+      return ["extra-turn", "reveal-card", "peek-card", "dud"].includes(baseId);
+    }
+    if (baseId === "add-six") return state.phase === "chooseMove";
+    if (baseId === "extra-suggestion") return !state.corridorResting;
+    return true;
   }
 
   function revealRandomOpponentCard() {
@@ -850,12 +880,70 @@
     return randomItem(candidates);
   }
 
+  function randomOpponentCardForAi(player, { hiddenOnly = true } = {}) {
+    const candidates = state.players
+      .filter((target) => target !== player && !target.eliminated && target.hand.length)
+      .flatMap((target) => target.hand
+        .filter((entry) => !hiddenOnly || !player.known.has(entry.id))
+        .map((entry) => ({ player: target, entry })));
+    return randomItem(candidates);
+  }
+
+  function aiHintChance(player, hardChance, expertChance) {
+    const difficulty = aiDifficultyKey(player);
+    if (difficulty === "normal") return 0;
+    return difficulty === "expert" ? expertChance : hardChance;
+  }
+
+  function maybeUseAiKnowledgeHint(player) {
+    const chance = aiHintChance(player, 0.34, 0.62);
+    if (!chance || Math.random() >= chance) return false;
+    const revealed = randomOpponentCardForAi(player);
+    if (!revealed) return false;
+    const hint = removePlayerHintCard(player, (entry) => ["reveal-card", "peek-card"].includes(hintBaseId(entry)));
+    if (!hint) return false;
+    const baseId = hintBaseId(hint);
+    player.known.add(revealed.entry.id);
+    if (baseId === "reveal-card") {
+      state.players.forEach((entry) => entry.known.add(revealed.entry.id));
+      queueClueEvent({
+        title: "? 카드 사용",
+        message: `${playerDisplayWithSubject(player)} ${playerDisplayName(revealed.player)}의 카드 1장을 공개합니다.`,
+        detail: `공개한 카드: ${revealed.entry.name}`,
+        actor: player,
+        dialogueKey: "hint",
+        cards: [revealed.entry],
+        autoConfirm: revealed.player.human ? null : { entry: revealed.entry, owner: revealed.player }
+      });
+    } else {
+      queueClueEvent({
+        title: "? 카드 사용",
+        message: `${playerDisplayWithSubject(player)} 다른 사람의 카드 1장을 몰래 확인했습니다.`,
+        actor: player,
+        dialogueKey: "hint",
+        cards: [{ back: true }]
+      });
+    }
+    return true;
+  }
+
   function useHumanHintCard(hintId) {
     if (!activeHumanCanUseHint()) return;
     const human = state.players[0];
     const hint = human?.hintCards?.find((entry) => entry.id === hintId);
     if (!hint) return;
     const baseId = hintBaseId(hint);
+
+    if (!hintCardCanBeUsedNow(hint)) {
+      queueClueEvent({
+        title: "? 카드 사용 불가",
+        message: state.corridorResting
+          ? "복도에서 쉬는 중에는 이동이나 추가 추리 카드는 사용할 수 없습니다."
+          : "지금 사용할 수 없는 ? 카드입니다.",
+        cards: [hint]
+      });
+      return;
+    }
 
     if (baseId === "add-six" && state.phase !== "chooseMove") {
       queueClueEvent({
@@ -1141,6 +1229,84 @@
     return randomItem(matches);
   }
 
+  function maybeApplyAiMovementHint(player, total, reachable, wantsClueZone) {
+    const chance = aiHintChance(player, 0.38, 0.68);
+    if (!chance) return { total, reachable };
+    const canReachClue = reachable.some((destination) => destination.id === CLUE_ZONE.id);
+    const shouldForceOpen = wantsClueZone && !canReachClue;
+    const shouldImproveMove = !shouldForceOpen
+      && Math.random() < chance
+      && !reachable.some((destination) => !destination.hint && !destination.clue && candidateCards(player, "room").some((entry) => entry.name === destination.name));
+    if (!shouldForceOpen && !shouldImproveMove) return { total, reachable };
+
+    const addSix = total < 10 && total + 6 >= 10
+      ? removePlayerHintCard(player, (entry) => hintBaseId(entry) === "add-six")
+      : null;
+    if (addSix) {
+      state.diceBonus += 6;
+      const nextTotal = total + 6;
+      const nextReachable = reachableRoomsForRoll(player, nextTotal, false);
+      queueClueEvent({
+        title: "? 카드 사용",
+        message: `${playerDisplayWithSubject(player)} 주사위 합계에 6을 더했습니다.`,
+        actor: player,
+        dialogueKey: "hint",
+        cards: [addSix]
+      });
+      return { total: nextTotal, reachable: nextReachable };
+    }
+
+    const moveAnywhere = removePlayerHintCard(player, (entry) => hintBaseId(entry) === "move-anywhere");
+    if (moveAnywhere) {
+      queueClueEvent({
+        title: "? 카드 사용",
+        message: `${playerDisplayWithSubject(player)} 원하는 장소로 이동할 수 있게 됐습니다.`,
+        actor: player,
+        dialogueKey: "hint",
+        cards: [moveAnywhere]
+      });
+      return { total, reachable: uniqueDestinations([...ROOMS, CLUE_ZONE]) };
+    }
+
+    return { total, reachable };
+  }
+
+  function maybeUseAiExtraTurn(player) {
+    const chance = aiHintChance(player, 0.18, 0.34);
+    if (!chance || player.extraTurnPending || Math.random() >= chance) return false;
+    const hint = removePlayerHintCard(player, (entry) => hintBaseId(entry) === "extra-turn");
+    if (!hint) return false;
+    player.extraTurnPending = true;
+    queueClueEvent({
+      title: "? 카드 사용",
+      message: `${playerDisplayWithSubject(player)} 이번 턴 뒤 한 번 더 진행합니다.`,
+      actor: player,
+      dialogueKey: "hint",
+      cards: [hint]
+    });
+    return true;
+  }
+
+  function maybeRunAiExtraSuggestion(player) {
+    const chance = aiHintChance(player, 0.12, 0.26);
+    if (!chance || Math.random() >= chance) return null;
+    const hint = removePlayerHintCard(player, (entry) => hintBaseId(entry) === "extra-suggestion");
+    if (!hint) return null;
+    const unknownRoomNames = candidateCards(player, "room").map((entry) => entry.name);
+    const room = ROOM_BY_NAME[randomItem(unknownRoomNames)] || randomItem(ROOMS);
+    queueClueEvent({
+      title: "? 카드 사용",
+      message: `${playerDisplayWithSubject(player)} 추가 추리를 진행합니다.`,
+      actor: player,
+      dialogueKey: "hint",
+      cards: [hint]
+    });
+    const suggestion = aiSuggestion(player, room);
+    log(`${playerDisplayName(player)} 추가 제안: ${suggestion.suspect.name}, ${suggestion.room.name}, ${suggestion.weapon.name}`);
+    announceSuggestion(player, suggestion);
+    return resolveSuggestion(state.currentPlayer, suggestion);
+  }
+
   function resolveSuggestion(playerIndex, suggestion) {
     const player = state.players[playerIndex];
     const suspectPlayer = state.players.find((entry) => entry.suspect === suggestion.suspect.name);
@@ -1194,10 +1360,10 @@
 
   function chooseAiDestination(player, reachable) {
     const hint = reachable.find((destination) => destination.hint);
-    if (hint && state.hintDeck.length && Math.random() < 0.3) return hint;
+    const difficulty = aiDifficultyKey(player);
+    if (difficulty !== "normal" && hint && state.hintDeck.length && Math.random() < (difficulty === "expert" ? 0.42 : 0.24)) return hint;
     const roomChoices = reachable.filter((destination) => !destination.clue && !destination.hint);
     if (!roomChoices.length) return hint || randomItem(ROOMS);
-    const difficulty = aiDifficultyKey(player);
     const ownHiddenRoomIds = player.hand
       .filter((entry) => entry.type === "room" && !state.humanKnown.has(entry.id))
       .map((entry) => ROOM_BY_NAME[entry.name]?.id)
@@ -1336,6 +1502,8 @@
     state.reachableRooms = [];
     state.clueZoneAssistEligible = false;
     state.clueZoneAssistApplied = false;
+    state.corridorMoveApplied = false;
+    state.corridorResting = false;
     state.lastSuggestionIds = preservedSuggestionIds || new Set();
     state.clearSuggestionHighlightAfterEvents = Boolean(preservedSuggestionIds?.size);
     state.noteColumnHighlightIndex = preservedNoteColumn;
@@ -1425,12 +1593,16 @@
     } else {
       player.eliminated = true;
       log(`${playerDisplayName(player)}의 고발 실패: ${accusation.suspect.name}, ${accusation.room.name}, ${accusation.weapon.name}`);
+      const revealSolution = player.human;
       queueClueEvent({
           title: "고발 실패",
-          message: `${playerDisplayName(player)}의 최종 고발은 틀렸습니다.`,
+          message: revealSolution
+            ? `${playerDisplayName(player)}의 최종 고발은 틀렸습니다. 정답은 ${state.solution.suspect.name}, ${state.solution.weapon.name}, ${state.solution.room.name}입니다.`
+            : `${playerDisplayName(player)}의 최종 고발은 틀렸습니다.`,
+          detail: revealSolution ? "정답 카드를 공개합니다." : "",
           actor: player,
           dialogueKey: "lose",
-          cards: [accusation.suspect, accusation.weapon, accusation.room],
+          cards: revealSolution ? [state.solution.suspect, state.solution.weapon, state.solution.room] : [accusation.suspect, accusation.weapon, accusation.room],
           afterDismiss: player.human ? () => showFinishSpeeches(player, false) : null
         });
       if (player.human) {
@@ -1456,10 +1628,12 @@
   }
 
   function reachableRoomsForRoll(player, total, clueZoneAssistEligible = player.clueZoneAssistReady) {
+    if (player?.corridorReady) return [...ROOMS, CLUE_ZONE];
     if (total === 2) return [HINT_ACTION];
-    if (total >= 10) return [HINT_ACTION, ...ROOMS, CLUE_ZONE];
+    if (total >= 10) return [HINT_ACTION, ...ROOMS, CLUE_ZONE, CORRIDOR_ACTION];
     return uniqueDestinations([
       ...nearbyRoomsForPlayer(player),
+      CORRIDOR_ACTION,
       clueZoneAssistEligible ? clueZoneAssistDestination() : null
     ]);
   }
@@ -1551,11 +1725,14 @@
     if (state.finished || state.phase !== "awaitRoll" || !activePlayer()?.human) return;
     const total = currentRollTotal();
     const clueAssistReady = activePlayer().clueZoneAssistReady;
+    const corridorReady = activePlayer().corridorReady;
     state.clueZoneAssistEligible = clueAssistReady;
     state.reachableRooms = reachableRoomsForRoll(activePlayer(), total, clueAssistReady);
-    state.clueZoneAssistApplied = isNearRoomRoll(total) && clueAssistReady;
-    activePlayer().clueZoneAssistReady = isNearRoomRoll(total);
-    if (total === 2) {
+    state.clueZoneAssistApplied = !corridorReady && isNearRoomRoll(total) && clueAssistReady;
+    state.corridorMoveApplied = corridorReady;
+    activePlayer().corridorReady = false;
+    activePlayer().clueZoneAssistReady = !corridorReady && isNearRoomRoll(total);
+    if (total === 2 && !corridorReady) {
       log(`${activePlayer().name}: ${state.dice.join(" + ")} = ${total}, ? 카드 확정`);
       drawHintCard(activePlayer());
       state.phase = "waitEnd";
@@ -1576,6 +1753,17 @@
     if (destination.hint) {
       drawHintCard(activePlayer());
       state.phase = "waitEnd";
+      renderClue();
+      scheduleHumanIdleSpeech();
+      return;
+    }
+    if (destination.corridor) {
+      activePlayer().location = CENTER.id;
+      activePlayer().corridorReady = true;
+      activePlayer().clueZoneAssistReady = false;
+      state.phase = "waitEnd";
+      state.corridorResting = true;
+      log(`${withSubject(activePlayer().name)} 복도에서 한턴 쉽니다. 다음 턴에는 아무곳이나 이동할 수 있습니다.`);
       renderClue();
       scheduleHumanIdleSpeech();
       return;
@@ -1676,7 +1864,11 @@
 
   function finishAiTurnAfterSuggestion() {
     if (state.finished) return;
-    beginClueTurn(nextPlayerIndex(), { preserveSuggestionHighlight: true });
+    const player = activePlayer();
+    if (player && !player.human) maybeUseAiExtraTurn(player);
+    const repeatTurn = Boolean(player && !player.human && player.extraTurnPending);
+    if (repeatTurn) player.extraTurnPending = false;
+    beginClueTurn(repeatTurn ? state.currentPlayer : nextPlayerIndex(), { preserveSuggestionHighlight: true });
     renderClue();
     playNextClueEvent();
     if (!activePlayer().human) scheduleAiTurn();
@@ -1706,11 +1898,17 @@
     const finalDice = rollDice();
     await animateDiceRoll(finalDice);
     if (state.finished || activePlayer() !== player) return;
-    const total = state.dice[0] + state.dice[1];
+    let total = state.dice[0] + state.dice[1];
     const clueAssistReady = player.clueZoneAssistReady;
-    const reachable = reachableRoomsForRoll(player, total, clueAssistReady);
-    player.clueZoneAssistReady = isNearRoomRoll(total);
+    const corridorReady = player.corridorReady;
+    let reachable = reachableRoomsForRoll(player, total, clueAssistReady);
+    player.corridorReady = false;
+    player.clueZoneAssistReady = !corridorReady && isNearRoomRoll(total);
+    maybeUseAiKnowledgeHint(player);
     const accusation = buildAiAccusation(player);
+    const movementHintResult = maybeApplyAiMovementHint(player, total, reachable, Boolean(accusation));
+    total = movementHintResult.total;
+    reachable = movementHintResult.reachable;
     if (accusation && reachable.some((destination) => destination.id === CLUE_ZONE.id)) {
       player.location = CLUE_ZONE.id;
       log(`${playerDisplayName(player)}: ${state.dice.join(" + ")} = ${total}, ${CLUE_ZONE.name} 이동`);
@@ -1740,6 +1938,20 @@
       finishAiTurnAfterSuggestion();
       return;
     }
+    if (room.corridor) {
+      player.location = CENTER.id;
+      player.corridorReady = true;
+      player.clueZoneAssistReady = false;
+      log(`${playerDisplayName(player)}: ${state.dice.join(" + ")} = ${total}, 복도 대기`);
+      showClueCenterNotice(
+        `${playerDisplayName(player)} 복도 대기`,
+        900,
+        `clue-ai-corridor:${state.turnSerial}:${player.id}`
+      );
+      await wait(900);
+      finishAiTurnAfterSuggestion();
+      return;
+    }
     player.location = room.id;
     log(`${playerDisplayName(player)}: ${state.dice.join(" + ")} = ${total}, ${room.name} 이동`);
     if (!await showAiMoveAndThink(player, room.name)) return;
@@ -1749,6 +1961,9 @@
     const result = resolveSuggestion(state.currentPlayer, suggestion);
     if (state.finished) return;
     if (result?.pendingHumanRefute) return;
+    const extraSuggestionResult = maybeRunAiExtraSuggestion(player);
+    if (state.finished) return;
+    if (extraSuggestionResult?.pendingHumanRefute) return;
     finishAiTurnAfterSuggestion();
   }
 
@@ -1800,6 +2015,14 @@
       els.board.append(button);
     });
 
+    const human = state.players[0];
+    if (human) {
+      const locationLabel = document.createElement("span");
+      locationLabel.className = "clue-board-location-label";
+      locationLabel.textContent = `내 위치: ${roomName(human.location)}`;
+      els.board.append(locationLabel);
+    }
+
     const offsets = [[0, 0], [1.4, 0], [-1.4, 0], [0, 1.4], [1.4, 1.4], [-1.4, 1.4]];
     state.players.forEach((player, index) => {
       const point = locationPoint(player.location);
@@ -1820,6 +2043,19 @@
         piece.style.setProperty("--piece-y", `${point.y}%`);
       });
       state.piecePositions[player.id] = { x: point.x, y: point.y };
+      if (index === state.currentPlayer && !state.finished) {
+        const avatar = document.createElement("img");
+        avatar.className = "clue-board-turn-avatar";
+        avatar.src = player.avatarUrl || currentHumanAvatarUrl();
+        avatar.alt = "";
+        avatar.loading = "lazy";
+        avatar.decoding = "async";
+        avatar.style.setProperty("--piece-x", `${point.x}%`);
+        avatar.style.setProperty("--piece-y", `${point.y}%`);
+        avatar.style.setProperty("--piece-offset-x", `${offsetX}%`);
+        avatar.style.setProperty("--piece-offset-y", `${offsetY}%`);
+        els.board.append(avatar);
+      }
     });
   }
 
@@ -1831,11 +2067,13 @@
       const total = currentRollTotal();
       const rangeHint = total === 2
         ? "이동할 수 없습니다. ? 카드를 획득합니다."
-        : total >= 10
-          ? "아무 장소, CLUE 존, ? 카드를 선택할 수 있습니다."
-          : state.clueZoneAssistApplied
-            ? "근처 장소 또는 이전 근처 이동 보정으로 열린 CLUE 존을 선택할 수 있습니다."
-            : "현재 위치와 붙어있는 장소 중 하나를 선택하세요.";
+        : state.corridorMoveApplied
+          ? "복도 효과로 아무 장소나 CLUE 존으로 확정 이동할 수 있습니다."
+          : total >= 10
+            ? "아무 장소, CLUE 존, ? 카드, 복도를 선택할 수 있습니다."
+            : state.clueZoneAssistApplied
+              ? "근처 장소, 복도 또는 이전 근처 이동 보정으로 열린 CLUE 존을 선택할 수 있습니다."
+              : "현재 위치와 붙어있는 장소 또는 복도 중 하나를 선택하세요.";
       els.moveHint.textContent = humanCanChoose
         ? `주사위 합계 ${total}. ${rangeHint}`
         : "주사위를 굴리면 이동 가능한 장소가 표시됩니다.";
@@ -1845,9 +2083,9 @@
       return;
     }
     els.moveOptions.innerHTML = state.reachableRooms.map((destination) => `
-      <button class="clue-move-option${destination.clue ? " clue-zone" : ""}${destination.hint ? " hint-option" : ""}" type="button" data-destination-id="${escapeHtml(destination.id)}">
+      <button class="clue-move-option${destination.clue ? " clue-zone" : ""}${destination.hint ? " hint-option" : ""}${destination.corridor ? " corridor-option" : ""}" type="button" data-destination-id="${escapeHtml(destination.id)}">
         <span>${escapeHtml(destination.label || destination.name)}</span>
-        <small>${escapeHtml(destination.reason || (destination.clue ? "최종추리" : destination.hint ? "? 카드" : "방 이동"))}</small>
+        <small>${escapeHtml(destination.reason || (destination.clue ? "최종추리" : destination.hint ? "? 카드" : destination.corridor ? "한턴 쉬기" : "방 이동"))}</small>
       </button>
     `).join("");
     els.moveOptions.querySelectorAll(".clue-move-option").forEach((button) => {
@@ -1873,7 +2111,7 @@
       ? `
         <div class="clue-hint-hand-title">? 카드</div>
         ${human.hintCards.map((entry) => `
-          <button class="clue-card-chip clue-hint-chip" type="button" data-hint-id="${escapeHtml(entry.id)}" ${activeHumanCanUseHint() ? "" : "disabled"}>
+          <button class="clue-card-chip clue-hint-chip" type="button" data-hint-id="${escapeHtml(entry.id)}" ${hintCardCanBeUsedNow(entry) ? "" : "disabled"}>
             ${cardFigureHtml(entry, "clue-hint-hand-card")}
             <span class="clue-hint-use-label">사용</span>
           </button>
@@ -1991,10 +2229,9 @@
       : -1;
     const playerHeaders = Array.from({ length: NOTE_COLUMN_COUNT }, (_, column) => {
       const player = state.players[column];
-      const columnHighlighted = column === highlightedColumn;
       return `
         <span
-          class="clue-note-player-cell${player ? " filled" : ""}${columnHighlighted ? " column-highlighted" : ""}"
+          class="clue-note-player-cell${player ? " filled" : ""}"
           style="${player ? `--player-color:${escapeHtml(player.color)};--note-player-color:${escapeHtml(player.color)}` : ""}"
           title="${player ? escapeHtml(`${column + 1}번 ${playerDisplayName(player)}`) : ""}"
           aria-hidden="true"
@@ -2074,7 +2311,7 @@
         waitEnd: "턴을 종료하세요.",
         finished: "사건이 끝났습니다."
       };
-      els.phaseLabel.textContent = phaseText[state.phase] || "-";
+      els.phaseLabel.textContent = state.corridorResting ? "복도에서 한턴 쉽니다. 일부 ? 카드와 턴 종료를 할 수 있습니다." : (phaseText[state.phase] || "-");
     }
     renderDiceDisplay();
     if (els.rollButton) {
