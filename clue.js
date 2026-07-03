@@ -1147,6 +1147,20 @@
     return keys;
   }
 
+  function autoExcludedNoteKeys(confirmedKeys) {
+    const keys = new Set();
+    confirmedKeys.forEach((key) => {
+      const separatorIndex = key.lastIndexOf(":");
+      const cardId = key.slice(0, separatorIndex);
+      const ownerIndex = Number(key.slice(separatorIndex + 1));
+      if (!cardId || !Number.isInteger(ownerIndex)) return;
+      state.players.forEach((_, column) => {
+        if (column !== ownerIndex) keys.add(`${cardId}:${column}`);
+      });
+    });
+    return keys;
+  }
+
   function nearbyRoomsForPlayer(player) {
     const linkedRooms = Object.keys(ROOM_LINKS[player.location] || {})
       .filter((id) => id !== "center")
@@ -1832,6 +1846,7 @@
   function renderNotes() {
     if (!els.notes) return;
     const autoKeys = autoConfirmedNoteKeys();
+    const autoExcludedKeys = autoExcludedNoteKeys(autoKeys);
     const highlightedColumn = Number.isInteger(state.noteColumnHighlightIndex)
       ? state.noteColumnHighlightIndex
       : -1;
@@ -1852,8 +1867,10 @@
         const highlighted = state.lastSuggestionIds?.has(row.card.id);
         const cellData = Array.from({ length: NOTE_COLUMN_COUNT }, (_, column) => {
           const key = `${row.card.id}:${column}`;
-          const automatic = autoKeys.has(key);
-          const mark = automatic ? "confirmed" : state.noteMarks[key] || "";
+          const autoConfirmed = autoKeys.has(key);
+          const autoExcluded = autoExcludedKeys.has(key);
+          const automatic = autoConfirmed || autoExcluded;
+          const mark = autoConfirmed ? "confirmed" : autoExcluded ? "excluded" : state.noteMarks[key] || "";
           return { key, mark, automatic, column };
         });
         const known = cellData.some((cell) => cell.mark === "confirmed");
@@ -1892,7 +1909,7 @@
     els.notes.querySelectorAll(".clue-note-cell").forEach((button) => {
       button.addEventListener("click", () => {
         const key = button.dataset.noteKey;
-        if (autoKeys.has(key)) return;
+        if (autoKeys.has(key) || autoExcludedKeys.has(key)) return;
         const currentIndex = NOTE_STATES.indexOf(state.noteMarks[key] || "");
         const nextState = NOTE_STATES[(currentIndex + 1) % NOTE_STATES.length];
         if (nextState) state.noteMarks[key] = nextState;
