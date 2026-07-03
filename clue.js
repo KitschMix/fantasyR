@@ -178,6 +178,7 @@
     noteMarks: {},
     autoConfirmedNoteKeys: new Set(),
     lastSuggestionIds: new Set(),
+    clearSuggestionHighlightAfterEvents: false,
     suggestionDialogOpen: false,
     suggestionAllowRoomPick: false,
     pendingRefute: null,
@@ -399,6 +400,11 @@
     if (state.eventShowing || isChoiceOpen()) return;
     const event = state.eventQueue.shift();
     if (!event) {
+      if (state.clearSuggestionHighlightAfterEvents) {
+        state.clearSuggestionHighlightAfterEvents = false;
+        state.lastSuggestionIds = new Set();
+        renderNotes();
+      }
       if (state.pendingRefute) showHumanRefutePrompt();
       else showClueTurnNotice();
       return;
@@ -1144,7 +1150,11 @@
     });
   }
 
-  function beginClueTurn(playerIndex = state.currentPlayer) {
+  function beginClueTurn(playerIndex = state.currentPlayer, options = {}) {
+    const preserveSuggestionHighlight = Boolean(options.preserveSuggestionHighlight);
+    const preservedSuggestionIds = preserveSuggestionHighlight
+      ? new Set(state.lastSuggestionIds || [])
+      : null;
     clearIdleSpeechTimer();
     state.currentPlayer = playerIndex;
     state.phase = "awaitRoll";
@@ -1155,7 +1165,8 @@
     state.reachableRooms = [];
     state.clueZoneAssistEligible = false;
     state.clueZoneAssistApplied = false;
-    state.lastSuggestionIds = new Set();
+    state.lastSuggestionIds = preservedSuggestionIds || new Set();
+    state.clearSuggestionHighlightAfterEvents = Boolean(preservedSuggestionIds?.size);
     closeSuggestionDialog();
     state.turnSerial += 1;
   }
@@ -1293,6 +1304,7 @@
     state.noteMarks = {};
     state.autoConfirmedNoteKeys = new Set();
     state.lastSuggestionIds = new Set();
+    state.clearSuggestionHighlightAfterEvents = false;
     clearClueSpeech();
     clueDialogueUsage.clear();
     const { solution, deck } = createGameDeck();
@@ -1491,7 +1503,7 @@
 
   function finishAiTurnAfterSuggestion() {
     if (state.finished) return;
-    beginClueTurn(nextPlayerIndex());
+    beginClueTurn(nextPlayerIndex(), { preserveSuggestionHighlight: true });
     renderClue();
     playNextClueEvent();
     if (!activePlayer().human) scheduleAiTurn();
