@@ -372,28 +372,51 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   box-shadow: inset 0 0 8px rgba(217, 166, 60, 0.15);
 }
 
-/* --- Player Tokens on Board --- */
+/* --- Player Tokens on Board (Clue-style smooth animation) --- */
 .monopoly-piece {
   position: absolute;
-  width: 28px;
-  height: 28px;
+  left: calc(var(--piece-x) + var(--piece-offset-x, 0%));
+  top: calc(var(--piece-y) + var(--piece-offset-y, 0%));
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.78);
   border-radius: 50%;
-  border: 3px solid var(--text);
-  font-size: 14px;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #000;
-  z-index: 10;
-  transition: left 0.4s ease, top 0.4s ease;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+  color: #17130f;
+  font-size: 12px;
+  font-weight: 950;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.5);
+  transition: left 420ms ease, top 420ms ease;
   pointer-events: none;
+  z-index: 10;
 }
 
 .monopoly-piece.bankrupt {
   opacity: 0.3;
   filter: grayscale(1);
+}
+
+.monopoly-board-turn-avatar {
+  position: absolute;
+  left: calc(var(--piece-x) + var(--piece-offset-x, 0%));
+  top: calc(var(--piece-y) + var(--piece-offset-y, 0%));
+  z-index: 12;
+  width: 56px;
+  height: 56px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.55);
+  transform: translate(-50%, calc(-100% - 12px));
+  animation: monopoly-avatar-bob 1200ms ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes monopoly-avatar-bob {
+  0%, 100% { transform: translate(-50%, calc(-100% - 10px)); }
+  50% { transform: translate(-50%, calc(-100% - 20px)); }
 }
 
 /* --- Dice Display --- */

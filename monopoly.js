@@ -141,6 +141,40 @@
   const TOKEN_COLORS = ["#e74c3c", "#2ecc71", "#3498db", "#f1c40f"];
   const TOKEN_NAMES = ["빨강", "초록", "파랑", "노랑"];
 
+  const SHARED_PROFILES = window.FANTASY_SHARED_PROFILES || {};
+  const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
+  const PROFILE_ASSET_ROOT = SHARED_PROFILES.root || "assets/profiles/user";
+  const HUMAN_PROFILE_STORAGE_KEY = SHARED_NICKNAME_RULES.storageKey || "fantasyKingdom.humanProfile.v1";
+  const AI_PROFILE_DIFFICULTY_KEYS = SHARED_PROFILES.difficultyKeys || ["normal", "hard", "expert"];
+
+  function profileImageUrl(fileName) {
+    return encodeURI(`${PROFILE_ASSET_ROOT}/${fileName}`);
+  }
+
+  function currentHumanNickname() {
+    try {
+      const profile = JSON.parse(localStorage.getItem(HUMAN_PROFILE_STORAGE_KEY) || "null");
+      return String(profile?.nickname || "").trim();
+    } catch { return ""; }
+  }
+
+  function currentHumanAvatarUrl() {
+    return (SHARED_PROFILES.human?.avatarUrl) || profileImageUrl("유저.jpg");
+  }
+
+  function aiProfiles() {
+    const groups = SHARED_PROFILES.groups || {};
+    return AI_PROFILE_DIFFICULTY_KEYS.flatMap((key) =>
+      (groups[key] || []).map((profile) => ({
+        ...profile,
+        difficulty: key
+      }))
+    );
+  }
+
+  /* ── Piece Positions (for smooth animation) ── */
+  const piecePositions = {};
+
   /* ── Helpers ── */
   function shuffle(arr) {
     const a = [...arr];
@@ -174,7 +208,7 @@
 
   function playerDisplayName(p) {
     if (!p) return "?";
-    return `${p.emoji} ${p.name}(${TOKEN_NAMES[p.index]})`;
+    return `${p.name}(${TOKEN_NAMES[p.index]})`;
   }
 
   /* ── Board Position Calculation ── */
@@ -238,19 +272,48 @@
   function renderPieces() {
     if (!els.piecesContainer) return;
     els.piecesContainer.innerHTML = "";
-    const offsets = [[-8, -8], [8, -8], [-8, 8], [8, 8]];
+    const offsets = [[0, 0], [1.6, 0], [-1.6, 0], [0, 1.6], [1.6, 1.6], [-1.6, 1.6]];
+    const boardTurnPlayer = state.players[state.currentPlayer];
 
     state.players.forEach((player, i) => {
       const pos = tilePosition(player.position);
       const [ox, oy] = offsets[i] || [0, 0];
-      const piece = document.createElement("div");
+      const previous = piecePositions[player.id] || pos;
+
+      // Token circle (Clue-style with CSS variables for smooth animation)
+      const piece = document.createElement("span");
       piece.className = `monopoly-piece${player.bankrupt ? " bankrupt" : ""}`;
       piece.style.background = player.tokenColor;
-      piece.style.left = `calc(${pos.x}% + ${pos.w / 2}% + ${ox}px - 14px)`;
-      piece.style.top = `calc(${pos.y}% + ${pos.h / 2}% + ${oy}px - 14px)`;
-      piece.textContent = player.emoji;
-      piece.title = `${playerDisplayName(player)} — ${tileAt(player.position).name}`;
+      piece.style.setProperty("--piece-x", `${previous.x + previous.w / 2}%`);
+      piece.style.setProperty("--piece-y", `${previous.y + previous.h / 2}%`);
+      piece.style.setProperty("--piece-offset-x", `${ox}%`);
+      piece.style.setProperty("--piece-offset-y", `${oy}%`);
+      piece.textContent = i + 1;
+      piece.title = `${player.name}(${TOKEN_NAMES[i]}) — ${tileAt(player.position).name}`;
       els.piecesContainer.appendChild(piece);
+
+      // Smooth slide to new position
+      window.requestAnimationFrame(() => {
+        piece.style.setProperty("--piece-x", `${pos.x + pos.w / 2}%`);
+        piece.style.setProperty("--piece-y", `${pos.y + pos.h / 2}%`);
+      });
+
+      piecePositions[player.id] = pos;
+
+      // Turn avatar (profile image above token, like Clue)
+      if (i === state.currentPlayer && !state.finished && !player.bankrupt) {
+        const avatar = document.createElement("img");
+        avatar.className = "monopoly-board-turn-avatar";
+        avatar.src = player.avatarUrl || currentHumanAvatarUrl();
+        avatar.alt = "";
+        avatar.loading = "lazy";
+        avatar.decoding = "async";
+        avatar.style.setProperty("--piece-x", `${pos.x + pos.w / 2}%`);
+        avatar.style.setProperty("--piece-y", `${pos.y + pos.h / 2}%`);
+        avatar.style.setProperty("--piece-offset-x", `${ox}%`);
+        avatar.style.setProperty("--piece-offset-y", `${oy}%`);
+        els.piecesContainer.appendChild(avatar);
+      }
     });
   }
 
@@ -262,7 +325,7 @@
       card.className = `monopoly-player-card${i === state.currentPlayer && !state.finished ? " active" : ""}${p.bankrupt ? " bankrupt" : ""}`;
       card.innerHTML = `
         <span class="monopoly-player-avatar-wrap">
-          <span class="monopoly-player-avatar" style="background:${p.tokenColor};display:flex;align-items:center;justify-content:center;font-size:22px">${p.emoji}</span>
+          <img class="monopoly-player-avatar" src="${escapeHtml(p.avatarUrl || currentHumanAvatarUrl())}" alt="" loading="lazy" decoding="async" />
           <span class="monopoly-player-token" style="background:${p.tokenColor}">${i + 1}</span>
         </span>
         <span class="monopoly-player-info">
@@ -933,23 +996,46 @@
   function startGame() {
     clearAiTimer();
     const count = Math.min(4, Math.max(2, Number(els.playerCount?.value || 3)));
-    const humanName = (els.nameInput?.value || "").trim() || "플레이어";
+    const humanName = currentHumanNickname() || (els.nameInput?.value || "").trim() || "플레이어";
+    const pool = shuffle(aiProfiles());
 
-    state.players = Array.from({ length: count }, (_, i) => ({
-      index: i,
-      id: i === 0 ? "human" : `ai${i}`,
-      human: i === 0,
-      name: i === 0 ? humanName : `AI ${i}`,
-      emoji: TOKEN_EMOJIS[i],
-      tokenColor: TOKEN_COLORS[i],
-      money: START_MONEY,
-      position: 0,
-      properties: [],
-      buildings: {},
-      inJail: false,
-      jailTurns: 0,
-      bankrupt: false
-    }));
+    state.players = Array.from({ length: count }, (_, i) => {
+      if (i === 0) {
+        return {
+          index: i,
+          id: "human",
+          human: true,
+          name: humanName,
+          avatarUrl: currentHumanAvatarUrl(),
+          emoji: TOKEN_EMOJIS[i],
+          tokenColor: TOKEN_COLORS[i],
+          money: START_MONEY,
+          position: 0,
+          properties: [],
+          buildings: {},
+          inJail: false,
+          jailTurns: 0,
+          bankrupt: false
+        };
+      }
+      const profile = pool[i - 1] || { name: `AI ${i}`, avatarUrl: profileImageUrl("보통-건일.jpg") };
+      return {
+        index: i,
+        id: `ai${i}`,
+        human: false,
+        name: profile.name || `AI ${i}`,
+        avatarUrl: profile.avatarUrl,
+        emoji: TOKEN_EMOJIS[i],
+        tokenColor: TOKEN_COLORS[i],
+        money: START_MONEY,
+        position: 0,
+        properties: [],
+        buildings: {},
+        inJail: false,
+        jailTurns: 0,
+        bankrupt: false
+      };
+    });
 
     state.currentPlayer = 0;
     state.phase = "awaitRoll";
