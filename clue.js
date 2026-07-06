@@ -832,6 +832,13 @@
     return { solution, deck: shuffle(deck) };
   }
 
+  function formatPlayerNameList(players) {
+    const names = players.map((player) => playerDisplayName(player));
+    if (names.length <= 1) return names[0] || "";
+    if (names.length === 2) return `${names[0]}와 ${names[1]}`;
+    return `${names.slice(0, -1).join(", ")}와 ${names[names.length - 1]}`;
+  }
+
   function dealCards(deck) {
     state.players.forEach((player) => {
       player.hand = [];
@@ -842,12 +849,31 @@
       player.extraTurnPending = false;
       player.peekReady = false;
     });
-    deck.forEach((entry, index) => {
-      const player = state.players[index % state.players.length];
+
+    const playerCount = Math.max(1, state.players.length);
+    const baseCardCount = Math.floor(deck.length / playerCount);
+    const extraCardCount = deck.length % playerCount;
+    const extraPlayers = shuffle(state.players).slice(0, extraCardCount);
+    const extraPlayerIds = new Set(extraPlayers.map((player) => player.id));
+    let deckIndex = 0;
+
+    const giveCard = (player) => {
+      const entry = deck[deckIndex];
+      deckIndex += 1;
+      if (!entry) return;
       player.hand.push(entry);
       player.known.add(entry.id);
       if (player.human) state.humanKnown.add(entry.id);
-    });
+    };
+
+    for (let round = 0; round < baseCardCount; round += 1) {
+      state.players.forEach(giveCard);
+    }
+    state.players
+      .filter((player) => extraPlayerIds.has(player.id))
+      .forEach(giveCard);
+
+    return extraPlayers;
   }
 
   function createHintDeck() {
@@ -1700,7 +1726,7 @@
     state.solution = solution;
     state.deck = deck;
     state.hintDeck = createHintDeck();
-    dealCards(deck);
+    const extraCardPlayers = dealCards(deck);
     state.started = true;
     state.finished = false;
     state.turnSerial = 0;
@@ -1715,6 +1741,13 @@
     els.gamePanel?.classList.remove("hidden");
     renderClue();
     greetCluePlayers();
+    if (extraCardPlayers.length) {
+      const playersText = formatPlayerNameList(extraCardPlayers);
+      queueClueEvent({
+        title: "카드 배분",
+        message: `${playersText}가 남은 카드를 1장씩 더 받았습니다.`
+      });
+    }
     showClueTurnNotice(true);
   }
 
