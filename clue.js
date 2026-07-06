@@ -82,7 +82,7 @@
   const CLUE_ZOOM_MIN_PERCENT = 70;
   const CLUE_ZOOM_MAX_PERCENT = 220;
   const CLUE_ZOOM_STEP_PERCENT = 10;
-  const CLUE_ZOOM_AUTO_MAX_PERCENT = 150;
+  const CLUE_ZOOM_AUTO_MAX_PERCENT = 220;
   const SHARED_PROFILES = window.FANTASY_SHARED_PROFILES || {};
   const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
   const CLUE_DIALOGUE_BOOKS = window.CLUE_DIALOGUE_BOOKS || {};
@@ -625,10 +625,13 @@
     const isPhonePortrait = width <= 700 && height > width;
     if (isPhonePortrait) return 80;
 
-    const fitted = Math.min(width / 1760, height / 960) * 100;
-    const screenLongSide = Math.max(Number(window.screen?.availWidth || 0), Number(window.screen?.availHeight || 0));
-    const boosted = screenLongSide >= 2500 && fitted >= 100 ? fitted + CLUE_ZOOM_STEP_PERCENT : fitted;
-    const stepped = Math.round(boosted / CLUE_ZOOM_STEP_PERCENT) * CLUE_ZOOM_STEP_PERCENT;
+    const isCoarsePointer = Boolean(window.matchMedia?.("(pointer: coarse)")?.matches);
+    const pixelRatio = isCoarsePointer ? 1 : Math.max(1, Number(window.devicePixelRatio || 1));
+    const resolutionRatio = Math.min((width * pixelRatio) / 1920, (height * pixelRatio) / 1080);
+    const percent = resolutionRatio <= 1
+      ? resolutionRatio * 100
+      : 100 + ((Math.min(resolutionRatio, 2) - 1) * 120);
+    const stepped = Math.round(percent / CLUE_ZOOM_STEP_PERCENT) * CLUE_ZOOM_STEP_PERCENT;
     return clampNumber(stepped, CLUE_ZOOM_MIN_PERCENT, Math.min(CLUE_ZOOM_MAX_PERCENT, CLUE_ZOOM_AUTO_MAX_PERCENT));
   }
 

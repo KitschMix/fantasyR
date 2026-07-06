@@ -17,7 +17,7 @@
   const ZOOM_MIN_PERCENT = 70;
   const ZOOM_MAX_PERCENT = 220;
   const ZOOM_STEP_PERCENT = 10;
-  const ZOOM_AUTO_MAX_PERCENT = 150;
+  const ZOOM_AUTO_MAX_PERCENT = 220;
   const DIRS = [
     { key: "north", label: "북", mark: "▲", dr: -1, dc: 0 },
     { key: "east", label: "동", mark: "▶", dr: 0, dc: 1 },
@@ -550,10 +550,13 @@
     const isPhonePortrait = width <= 700 && height > width;
     if (isPhonePortrait) return 90;
 
-    const fitted = Math.min(width / 1680, height / 920) * 100;
-    const screenLongSide = Math.max(Number(window.screen?.availWidth || 0), Number(window.screen?.availHeight || 0));
-    const boosted = screenLongSide >= 2500 && fitted >= 100 ? fitted + ZOOM_STEP_PERCENT : fitted;
-    const stepped = Math.round(boosted / ZOOM_STEP_PERCENT) * ZOOM_STEP_PERCENT;
+    const isCoarsePointer = Boolean(window.matchMedia?.("(pointer: coarse)")?.matches);
+    const pixelRatio = isCoarsePointer ? 1 : Math.max(1, Number(window.devicePixelRatio || 1));
+    const resolutionRatio = Math.min((width * pixelRatio) / 1920, (height * pixelRatio) / 1080);
+    const percent = resolutionRatio <= 1
+      ? resolutionRatio * 100
+      : 100 + ((Math.min(resolutionRatio, 2) - 1) * 120);
+    const stepped = Math.round(percent / ZOOM_STEP_PERCENT) * ZOOM_STEP_PERCENT;
     return clampNumber(stepped, ZOOM_MIN_PERCENT, Math.min(ZOOM_MAX_PERCENT, ZOOM_AUTO_MAX_PERCENT));
   }
 

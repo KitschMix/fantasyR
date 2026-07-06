@@ -269,7 +269,7 @@ const LEADERBOARD_DECK_SELECT = `${LEADERBOARD_BASE_SELECT},hand_cards,score_row
 const HALL_OF_FAME_REQUIRED_DIFFICULTY = "random";
 const UI_SCALE_DEFAULT_PERCENT = 100;
 const UI_SCALE_MIN_PERCENT = 50;
-const UI_SCALE_MAX_PERCENT = 125;
+const UI_SCALE_MAX_PERCENT = 220;
 const UI_SCALE_STEP_PERCENT = 5;
 let activeUiScalePercent = UI_SCALE_DEFAULT_PERCENT;
 
@@ -5781,10 +5781,13 @@ function suggestedInitialUiScalePercent() {
   const isPhonePortrait = width <= 700 && height > width;
   if (isPhonePortrait) return UI_SCALE_DEFAULT_PERCENT;
 
-  const fitted = Math.min(width / 1920, height / 1060) * 100;
-  const screenLongSide = Math.max(Number(window.screen?.availWidth || 0), Number(window.screen?.availHeight || 0));
-  const boosted = screenLongSide >= 2500 && fitted >= 100 ? fitted + 5 : fitted;
-  return clampUiScalePercent(boosted);
+  const isCoarsePointer = Boolean(window.matchMedia?.("(pointer: coarse)")?.matches);
+  const pixelRatio = isCoarsePointer ? 1 : Math.max(1, Number(window.devicePixelRatio || 1));
+  const resolutionRatio = Math.min((width * pixelRatio) / 1920, (height * pixelRatio) / 1080);
+  const percent = resolutionRatio <= 1
+    ? resolutionRatio * 100
+    : 100 + ((Math.min(resolutionRatio, 2) - 1) * 120);
+  return clampUiScalePercent(percent);
 }
 
 function readUiScalePercent() {
