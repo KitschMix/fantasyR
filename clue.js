@@ -82,6 +82,7 @@
   const CLUE_ZOOM_MIN_PERCENT = 70;
   const CLUE_ZOOM_MAX_PERCENT = 220;
   const CLUE_ZOOM_STEP_PERCENT = 10;
+  const CLUE_ZOOM_AUTO_MAX_PERCENT = 150;
   const SHARED_PROFILES = window.FANTASY_SHARED_PROFILES || {};
   const SHARED_NICKNAME_RULES = window.FANTASY_SHARED_NICKNAME_RULES || {};
   const CLUE_DIALOGUE_BOOKS = window.CLUE_DIALOGUE_BOOKS || {};
@@ -610,12 +611,36 @@
     });
   }
 
+  function currentViewportSize() {
+    const viewport = window.visualViewport || {};
+    const root = document.documentElement || {};
+    return {
+      width: Math.max(320, Number(viewport.width || window.innerWidth || root.clientWidth || window.screen?.availWidth || 1366)),
+      height: Math.max(320, Number(viewport.height || window.innerHeight || root.clientHeight || window.screen?.availHeight || 768))
+    };
+  }
+
+  function suggestedInitialClueZoomPercent() {
+    const { width, height } = currentViewportSize();
+    const isPhonePortrait = width <= 700 && height > width;
+    if (isPhonePortrait) return 80;
+
+    const fitted = Math.min(width / 1760, height / 960) * 100;
+    const screenLongSide = Math.max(Number(window.screen?.availWidth || 0), Number(window.screen?.availHeight || 0));
+    const boosted = screenLongSide >= 2500 && fitted >= 100 ? fitted + CLUE_ZOOM_STEP_PERCENT : fitted;
+    const stepped = Math.round(boosted / CLUE_ZOOM_STEP_PERCENT) * CLUE_ZOOM_STEP_PERCENT;
+    return clampNumber(stepped, CLUE_ZOOM_MIN_PERCENT, Math.min(CLUE_ZOOM_MAX_PERCENT, CLUE_ZOOM_AUTO_MAX_PERCENT));
+  }
+
   function loadClueZoomPercent() {
     try {
-      const saved = Number(window.localStorage.getItem(CLUE_ZOOM_STORAGE_KEY));
-      return Number.isFinite(saved) ? clampNumber(saved, CLUE_ZOOM_MIN_PERCENT, CLUE_ZOOM_MAX_PERCENT) : 100;
+      const saved = window.localStorage.getItem(CLUE_ZOOM_STORAGE_KEY);
+      const numeric = Number(saved);
+      return saved !== null && String(saved).trim() !== "" && Number.isFinite(numeric)
+        ? clampNumber(numeric, CLUE_ZOOM_MIN_PERCENT, CLUE_ZOOM_MAX_PERCENT)
+        : suggestedInitialClueZoomPercent();
     } catch {
-      return 100;
+      return suggestedInitialClueZoomPercent();
     }
   }
 

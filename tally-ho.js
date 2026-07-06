@@ -17,6 +17,7 @@
   const ZOOM_MIN_PERCENT = 70;
   const ZOOM_MAX_PERCENT = 220;
   const ZOOM_STEP_PERCENT = 10;
+  const ZOOM_AUTO_MAX_PERCENT = 150;
   const DIRS = [
     { key: "north", label: "북", mark: "▲", dr: -1, dc: 0 },
     { key: "east", label: "동", mark: "▶", dr: 0, dc: 1 },
@@ -535,12 +536,36 @@
     return Math.min(max, Math.max(min, value));
   }
 
+  function currentViewportSize() {
+    const viewport = window.visualViewport || {};
+    const root = document.documentElement || {};
+    return {
+      width: Math.max(320, Number(viewport.width || window.innerWidth || root.clientWidth || window.screen?.availWidth || 1366)),
+      height: Math.max(320, Number(viewport.height || window.innerHeight || root.clientHeight || window.screen?.availHeight || 768))
+    };
+  }
+
+  function suggestedInitialTallyZoomPercent() {
+    const { width, height } = currentViewportSize();
+    const isPhonePortrait = width <= 700 && height > width;
+    if (isPhonePortrait) return 90;
+
+    const fitted = Math.min(width / 1680, height / 920) * 100;
+    const screenLongSide = Math.max(Number(window.screen?.availWidth || 0), Number(window.screen?.availHeight || 0));
+    const boosted = screenLongSide >= 2500 && fitted >= 100 ? fitted + ZOOM_STEP_PERCENT : fitted;
+    const stepped = Math.round(boosted / ZOOM_STEP_PERCENT) * ZOOM_STEP_PERCENT;
+    return clampNumber(stepped, ZOOM_MIN_PERCENT, Math.min(ZOOM_MAX_PERCENT, ZOOM_AUTO_MAX_PERCENT));
+  }
+
   function loadTallyZoomPercent() {
     try {
-      const saved = Number(window.localStorage.getItem(ZOOM_STORAGE_KEY));
-      return Number.isFinite(saved) ? clampNumber(saved, ZOOM_MIN_PERCENT, ZOOM_MAX_PERCENT) : 100;
+      const saved = window.localStorage.getItem(ZOOM_STORAGE_KEY);
+      const numeric = Number(saved);
+      return saved !== null && String(saved).trim() !== "" && Number.isFinite(numeric)
+        ? clampNumber(numeric, ZOOM_MIN_PERCENT, ZOOM_MAX_PERCENT)
+        : suggestedInitialTallyZoomPercent();
     } catch {
-      return 100;
+      return suggestedInitialTallyZoomPercent();
     }
   }
 

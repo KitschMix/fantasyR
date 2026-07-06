@@ -5767,11 +5767,34 @@ function clampUiScalePercent(value) {
   return Math.min(UI_SCALE_MAX_PERCENT, Math.max(UI_SCALE_MIN_PERCENT, stepped));
 }
 
+function currentViewportSize() {
+  const viewport = window.visualViewport || {};
+  const root = document.documentElement || {};
+  return {
+    width: Math.max(320, Number(viewport.width || window.innerWidth || root.clientWidth || window.screen?.availWidth || 1366)),
+    height: Math.max(320, Number(viewport.height || window.innerHeight || root.clientHeight || window.screen?.availHeight || 768))
+  };
+}
+
+function suggestedInitialUiScalePercent() {
+  const { width, height } = currentViewportSize();
+  const isPhonePortrait = width <= 700 && height > width;
+  if (isPhonePortrait) return UI_SCALE_DEFAULT_PERCENT;
+
+  const fitted = Math.min(width / 1920, height / 1060) * 100;
+  const screenLongSide = Math.max(Number(window.screen?.availWidth || 0), Number(window.screen?.availHeight || 0));
+  const boosted = screenLongSide >= 2500 && fitted >= 100 ? fitted + 5 : fitted;
+  return clampUiScalePercent(boosted);
+}
+
 function readUiScalePercent() {
   try {
-    return clampUiScalePercent(window.localStorage?.getItem(UI_SCALE_STORAGE_KEY));
+    const saved = window.localStorage?.getItem(UI_SCALE_STORAGE_KEY);
+    return saved === null || saved === undefined || String(saved).trim() === ""
+      ? suggestedInitialUiScalePercent()
+      : clampUiScalePercent(saved);
   } catch {
-    return UI_SCALE_DEFAULT_PERCENT;
+    return suggestedInitialUiScalePercent();
   }
 }
 
