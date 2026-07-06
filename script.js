@@ -859,7 +859,7 @@ function enterClueSetup() {
 function returnToGameLauncher() {
   resetTurnToastState();
   if (!els.gameLauncher) {
-    window.location.href = "index.html";
+    window.location.href = "./";
     return;
   }
   document.body.classList.add("launcher-active");

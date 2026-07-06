@@ -618,7 +618,7 @@
   function leaveCantStop() {
     clearAiTimer();
     if (STANDALONE_CANT_PAGE) {
-      window.location.href = "index.html";
+      window.location.href = "./";
       return;
     }
     document.body.classList.add("launcher-active");

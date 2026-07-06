@@ -1929,7 +1929,7 @@
     closeSuggestionDialog();
     closeAccusationDialog();
     if (STANDALONE_CLUE_PAGE) {
-      window.location.href = "index.html";
+      window.location.href = "./";
       return;
     }
     document.body.classList.remove("clue-playing", "clue-active");
@@ -2624,7 +2624,7 @@
   els.exitButton?.addEventListener("click", leaveClueGame);
   els.backButton?.addEventListener("click", () => {
     if (STANDALONE_CLUE_PAGE) {
-      window.location.href = "index.html";
+      window.location.href = "./";
       return;
     }
     document.body.classList.remove("clue-playing");
