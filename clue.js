@@ -78,6 +78,12 @@
   const AI_DELAY_MS = 1250;
   const DICE_ROLL_DURATION_MS = 650;
   const DICE_ROLL_FRAME_MS = 58;
+  const AI_EXPECTED_TURNS_PER_PLAYER = 8;
+  const AI_ACCUSATION_RULES = {
+    normal: { baseLimit: 3, lateLimit: 4, dangerLimit: 5, mistakeRate: 0.10, mistakeLimit: 5 },
+    hard: { baseLimit: 2, lateLimit: 3, dangerLimit: 4, mistakeRate: 0.04, mistakeLimit: 4 },
+    expert: { baseLimit: 1, lateLimit: 2, dangerLimit: 3, mistakeRate: 0.01, mistakeLimit: 3 }
+  };
   const CLUE_ZOOM_STORAGE_KEY = "fantasyR.clueZoomPercent";
   const CLUE_ZOOM_MIN_PERCENT = 70;
   const CLUE_ZOOM_MAX_PERCENT = 220;
@@ -202,6 +208,7 @@
     lastSuggestionIds: new Set(),
     clearSuggestionHighlightAfterEvents: false,
     noteColumnHighlightIndex: -1,
+    suggestionHistory: [],
     suggestionDialogOpen: false,
     suggestionAllowRoomPick: false,
     pendingRefute: null,
@@ -1178,8 +1185,23 @@
     return player.hand.filter((entry) => ids.has(entry.id));
   }
 
+  function recordSuggestionHistory(player, suggestion) {
+    if (!player || !suggestion) return;
+    state.suggestionHistory.push({
+      playerId: player.id,
+      turnSerial: state.turnSerial,
+      suspectId: suggestion.suspect.id,
+      weaponId: suggestion.weapon.id,
+      roomId: suggestion.room.id
+    });
+    if (state.suggestionHistory.length > 80) {
+      state.suggestionHistory.splice(0, state.suggestionHistory.length - 80);
+    }
+  }
+
   function announceSuggestion(player, suggestion) {
     state.lastSuggestionIds = new Set([suggestion.suspect.id, suggestion.weapon.id, suggestion.room.id]);
+    recordSuggestionHistory(player, suggestion);
     renderNotes();
     queueClueEvent({
       title: `${playerDisplayName(player)}의 추리`,
@@ -1420,10 +1442,19 @@
   }
 
   function candidateCards(player, type) {
+    return cardPoolForType(type)
+      .filter((entry) => !player.known.has(entry.id));
+  }
+
+  function cardPoolForType(type) {
     const source = type === "suspect" ? SUSPECTS : type === "weapon" ? WEAPONS : ROOMS.map((room) => room.name);
     return source
       .map((name) => card(type, name))
-      .filter((entry) => !player.known.has(entry.id));
+      .filter(Boolean);
+  }
+
+  function knownDecoyCards(player, type) {
+    return cardPoolForType(type).filter((entry) => player.known.has(entry.id));
   }
 
   function chooseAiDestination(player, reachable) {
@@ -1448,17 +1479,49 @@
     const difficulty = aiDifficultyKey(player);
     const ownHidden = player.hand.filter((entry) => entry.type === type && !state.humanKnown.has(entry.id));
     const unknown = candidateCards(player, type);
+    const knownDecoys = knownDecoyCards(player, type);
+    if (difficulty === "normal" && knownDecoys.length && Math.random() < 0.14) return randomItem(knownDecoys);
     const bluffChance = difficulty === "expert" ? 0.58 : difficulty === "hard" ? 0.18 : 0.04;
     if (ownHidden.length && Math.random() < bluffChance) return randomItem(ownHidden);
     return randomItem(unknown) || randomItem(ownHidden) || card(type, randomItem(fallbackNames));
   }
 
+  function suggestionKey(suggestion) {
+    return `${suggestion.suspect.id}|${suggestion.weapon.id}|${suggestion.room.id}`;
+  }
+
+  function ownSuggestionRepeatCount(player, suggestion) {
+    const key = suggestionKey(suggestion);
+    return state.suggestionHistory
+      .filter((entry) => entry.playerId === player.id)
+      .filter((entry) => `${entry.suspectId}|${entry.weaponId}|${entry.roomId}` === key)
+      .length;
+  }
+
+  function scoreAiSuggestion(player, suggestion) {
+    const difficulty = aiDifficultyKey(player);
+    if (difficulty === "normal") return Math.random();
+    let score = Math.random() * (difficulty === "expert" ? 0.3 : 0.8);
+    if (!player.known.has(suggestion.suspect.id)) score += 3;
+    if (!player.known.has(suggestion.weapon.id)) score += 3;
+    if (!player.known.has(suggestion.room.id)) score += 2;
+    const repeatPenalty = difficulty === "expert" ? 7 : 3;
+    score -= ownSuggestionRepeatCount(player, suggestion) * repeatPenalty;
+    return score;
+  }
+
   function aiSuggestion(player, room) {
-    return {
+    const difficulty = aiDifficultyKey(player);
+    const attempts = difficulty === "expert" ? 8 : difficulty === "hard" ? 4 : 1;
+    const options = Array.from({ length: attempts }, () => ({
       suspect: chooseAiSuggestionCard(player, "suspect", SUSPECTS),
       weapon: chooseAiSuggestionCard(player, "weapon", WEAPONS),
       room: card("room", room.name)
-    };
+    }));
+    if (difficulty === "normal") return randomItem(options);
+    return options
+      .map((suggestion) => ({ suggestion, score: scoreAiSuggestion(player, suggestion) }))
+      .sort((left, right) => right.score - left.score)[0]?.suggestion || options[0];
   }
 
   function buildCertainAccusation(player) {
@@ -1469,30 +1532,130 @@
     return { suspect: suspects[0], weapon: weapons[0], room: rooms[0] };
   }
 
-  function buildAiAccusation(player) {
-    const certain = buildCertainAccusation(player);
-    if (certain) return certain;
-    const difficulty = aiDifficultyKey(player);
-    if (difficulty === "expert") return null;
+  function aiGamePhase() {
+    const expectedTurns = Math.max(18, state.players.length * AI_EXPECTED_TURNS_PER_PLAYER);
+    const progress = state.turnSerial / expectedTurns;
+    if (progress >= 0.7) return "late";
+    if (progress >= 0.35) return "mid";
+    return "early";
+  }
+
+  function countBy(items, key) {
+    return items.reduce((counts, item) => {
+      const value = item?.[key];
+      if (value) counts.set(value, (counts.get(value) || 0) + 1);
+      return counts;
+    }, new Map());
+  }
+
+  function maxCount(counts) {
+    return Math.max(0, ...counts.values());
+  }
+
+  function opponentLooksClose(player) {
+    const activeOpponentIds = new Set(state.players
+      .filter((entry) => entry !== player && !entry.eliminated)
+      .map((entry) => entry.id));
+    return state.players.some((opponent) => {
+      if (!activeOpponentIds.has(opponent.id)) return false;
+      const recent = state.suggestionHistory
+        .filter((entry) => entry.playerId === opponent.id)
+        .slice(-6);
+      if (recent.length < 3) return false;
+
+      const suspectCounts = countBy(recent, "suspectId");
+      const weaponCounts = countBy(recent, "weaponId");
+      const roomCounts = countBy(recent, "roomId");
+      if (maxCount(suspectCounts) >= 3 || maxCount(weaponCounts) >= 3 || maxCount(roomCounts) >= 3) {
+        return true;
+      }
+
+      const pairCounts = new Map();
+      recent.forEach((entry) => {
+        [
+          `suspect:${entry.suspectId}|room:${entry.roomId}`,
+          `suspect:${entry.suspectId}|weapon:${entry.weaponId}`,
+          `weapon:${entry.weaponId}|room:${entry.roomId}`
+        ].forEach((key) => {
+          pairCounts.set(key, (pairCounts.get(key) || 0) + 1);
+        });
+      });
+      return maxCount(pairCounts) >= 2;
+    });
+  }
+
+  function aiAccusationCandidates(player) {
     const suspects = candidateCards(player, "suspect");
     const weapons = candidateCards(player, "weapon");
     const rooms = candidateCards(player, "room");
-    if (!suspects.length || !weapons.length || !rooms.length) return null;
-    const hasCertainCategory = suspects.length === 1 || weapons.length === 1 || rooms.length === 1;
-    if (!hasCertainCategory) return null;
-    const candidateTotal = suspects.length + weapons.length + rooms.length;
-    const knownCount = player.known?.size || 0;
-    const recklessRule = difficulty === "hard"
-      ? { minKnown: 11, maxTotal: 8, chance: 0.32 }
-      : { minKnown: 9, maxTotal: 12, chance: 0.22 };
-    if (knownCount < recklessRule.minKnown || candidateTotal > recklessRule.maxTotal || Math.random() >= recklessRule.chance) {
-      return null;
-    }
     return {
-      suspect: randomItem(suspects),
-      weapon: randomItem(weapons),
-      room: randomItem(rooms)
+      suspects,
+      weapons,
+      rooms,
+      count: suspects.length * weapons.length * rooms.length
     };
+  }
+
+  function aiAccusationComboScore(player, combo) {
+    const difficulty = aiDifficultyKey(player);
+    if (difficulty === "normal") return Math.random();
+    const recent = state.suggestionHistory
+      .filter((entry) => entry.playerId !== player.id)
+      .slice(-10);
+    return recent.reduce((score, entry, index) => {
+      const recency = 1 + (index / Math.max(1, recent.length));
+      let matches = 0;
+      if (entry.suspectId === combo.suspect.id) matches += 1;
+      if (entry.weaponId === combo.weapon.id) matches += 1;
+      if (entry.roomId === combo.room.id) matches += 1;
+      if (!matches) return score;
+      const matchScore = matches === 3 ? 6 : matches === 2 ? 3 : 1;
+      return score + (matchScore * recency);
+    }, Math.random() * (difficulty === "expert" ? 0.2 : 0.8));
+  }
+
+  function chooseAiAccusationCombo(player, candidates) {
+    const combos = [];
+    candidates.suspects.forEach((suspect) => {
+      candidates.weapons.forEach((weapon) => {
+        candidates.rooms.forEach((room) => {
+          combos.push({ suspect, weapon, room });
+        });
+      });
+    });
+    if (!combos.length) return null;
+
+    const difficulty = aiDifficultyKey(player);
+    if (difficulty === "normal") return randomItem(combos);
+
+    const scored = combos
+      .map((combo) => ({ combo, score: aiAccusationComboScore(player, combo) }))
+      .sort((left, right) => right.score - left.score);
+    const bestScore = scored[0]?.score ?? 0;
+    const tolerance = difficulty === "expert" ? 0.25 : 0.8;
+    const best = scored.filter((entry) => bestScore - entry.score <= tolerance);
+    return randomItem(best.length ? best : scored)?.combo || randomItem(combos);
+  }
+
+  function buildAiAccusation(player) {
+    const candidates = aiAccusationCandidates(player);
+    if (!candidates.suspects.length || !candidates.weapons.length || !candidates.rooms.length) return null;
+
+    const difficulty = aiDifficultyKey(player);
+    const rule = AI_ACCUSATION_RULES[difficulty] || AI_ACCUSATION_RULES.normal;
+    const phase = aiGamePhase();
+    const danger = opponentLooksClose(player);
+    let shouldAccuse = false;
+
+    if (candidates.count <= rule.baseLimit) shouldAccuse = true;
+    if (phase === "late" && candidates.count <= rule.lateLimit) shouldAccuse = true;
+    if (danger && candidates.count <= rule.dangerLimit) shouldAccuse = true;
+
+    if (!shouldAccuse && candidates.count <= rule.mistakeLimit && Math.random() < rule.mistakeRate) {
+      shouldAccuse = true;
+    }
+
+    return shouldAccuse ? chooseAiAccusationCombo(player, candidates) : null;
   }
 
   function uniqueDestinations(destinations) {
@@ -1720,6 +1883,7 @@
     state.lastSuggestionIds = new Set();
     state.clearSuggestionHighlightAfterEvents = false;
     state.noteColumnHighlightIndex = -1;
+    state.suggestionHistory = [];
     clearClueSpeech();
     clueDialogueUsage.clear();
     const { solution, deck } = createGameDeck();
