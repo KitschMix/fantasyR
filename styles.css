@@ -240,13 +240,17 @@ body.launcher-active .app-shell {
 body.launcher-active .topbar,
 body.launcher-active .setup-panel,
 body.launcher-active .clue-setup-panel,
-body.launcher-active .game-board {
+body.launcher-active .game-board,
+body.launcher-active .monopoly-setup-panel,
+body.launcher-active .monopoly-game-panel {
   display: none !important;
 }
 
 body.clue-active .topbar,
 body.clue-active .setup-panel,
-body.clue-active .game-board {
+body.clue-active .game-board,
+body.clue-active .monopoly-setup-panel,
+body.clue-active .monopoly-game-panel {
   display: none !important;
 }
 
@@ -301,6 +305,15 @@ body:not(.launcher-active) .game-launcher {
   max-height: 132px;
   border-radius: 2px;
   filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.44));
+}
+
+.monopoly-launcher-card {
+  width: min(560px, 76vw);
+}
+
+.monopoly-launcher-card img {
+  max-height: 180px;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.42));
 }
 
 .launcher-device-note {

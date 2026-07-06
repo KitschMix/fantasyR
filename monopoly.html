@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>브루마블</title>
+    <link rel="stylesheet" href="styles.css?v=20260706-brumable" />
+    <link rel="stylesheet" href="monopoly.css?v=20260706-brumable" />
+  </head>
+  <body class="monopoly-active app-loading">
+    <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
+      <div class="loading-box">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <strong>불러오는 중</strong>
+        <small>게임 보드를 준비하고 있습니다.</small>
+      </div>
+    </div>
+    <div id="turnToast" class="turn-toast" role="status" aria-live="assertive" aria-hidden="true">
+      <strong id="turnToastText">플레이어의 턴</strong>
+    </div>
+    <main class="app-shell">
+      <!-- Setup Panel -->
+      <section id="monopolySetupPanel" class="monopoly-setup-panel" aria-label="브루마블 게임 설정">
+        <div class="mode-panel monopoly-panel">
+          <div class="monopoly-panel-top">
+            <h1 class="monopoly-setup-title">🏠 브루마블</h1>
+            <button id="monopolyBackButton" class="secondary-button" type="button">첫 화면</button>
+          </div>
+          <div class="mode-panel-head">
+            <strong>브루마블</strong>
+            <span>보드 게임 설정</span>
+          </div>
+          <div class="monopoly-setup-controls">
+            <label>
+              플레이어 수
+              <select id="monopolyPlayerCountSelect">
+                <option value="2">2명</option>
+                <option value="3" selected>3명</option>
+                <option value="4">4명</option>
+              </select>
+            </label>
+            <label>
+              내 닉네임
+              <input id="monopolyNameInput" type="text" minlength="2" maxlength="12" placeholder="2글자 이상" autocomplete="nickname" />
+            </label>
+            <button id="startMonopolyButton" class="primary-button" type="button">게임 시작</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Game Panel -->
+      <section id="monopolyGamePanel" class="monopoly-game-panel hidden" aria-label="브루마블 플레이 화면">
+        <div class="monopoly-shell">
+          <div class="monopoly-game-top">
+            <h1 class="monopoly-game-title">🏠 브루마블</h1>
+            <div class="monopoly-game-actions">
+              <button id="monopolyNewGameButton" class="secondary-button" type="button">새 게임</button>
+              <button id="monopolyRulesButton" class="icon-button monopoly-help-button" type="button" title="브루마블 도움말" aria-label="브루마블 도움말">?</button>
+              <button id="monopolyExitGameButton" class="secondary-button" type="button">첫 화면</button>
+            </div>
+          </div>
+
+          <div class="monopoly-game-layout">
+            <!-- Left: Players -->
+            <aside class="monopoly-side-panel">
+              <div id="monopolyPlayersList" class="monopoly-players-list"></div>
+              <section class="monopoly-status-card">
+                <span>현재 차례</span>
+                <strong id="monopolyTurnLabel">-</strong>
+                <small id="monopolyPhaseLabel">-</small>
+              </section>
+              <section class="monopoly-actions-card">
+                <button id="monopolyRollButton" class="primary-button" type="button">🎲 주사위 굴리기</button>
+                <button id="monopolyBuyButton" class="primary-button" type="button" disabled>💰 구매</button>
+                <button id="monopolyEndTurnButton" class="secondary-button" type="button" disabled>턴 종료</button>
+                <button id="monopolyManageButton" class="secondary-button" type="button" disabled>🏦 자산 관리</button>
+              </section>
+            </aside>
+
+            <!-- Center: Board -->
+            <div class="monopoly-board-stage">
+              <div id="monopolyBoard" class="monopoly-board" aria-label="브루마블 보드">
+                <div id="monopolyBoardImage" class="monopoly-board-image"></div>
+                <div id="monopolyPieces" class="monopoly-pieces"></div>
+                <div id="monopolyDiceDisplay" class="monopoly-dice-display"></div>
+              </div>
+              <div id="monopolyPropertyInfo" class="monopoly-property-info hidden"></div>
+            </div>
+
+            <!-- Right: Log & Cards -->
+            <aside class="monopoly-control-panel">
+              <section class="monopoly-log-card">
+                <div class="monopoly-panel-title">📋 게임 기록</div>
+                <ol id="monopolyLog" class="monopoly-log"></ol>
+              </section>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rules Dialog -->
+      <dialog id="monopolyRulesDialog" class="monopoly-rules-dialog">
+        <form method="dialog" class="monopoly-rules-help">
+          <h2>🏠 브루마블 도움말</h2>
+          <ul>
+            <li>주사위를 굴려 말을 이동합니다.</li>
+            <li>빈 땅에 도착하면 구매할 수 있습니다.</li>
+            <li>다른 플레이어의 땅에 도착하면 임대료를 지불합니다.</li>
+            <li>같은 색 땅을 모으면 임대료가 올라갑니다.</li>
+            <li>고유 이벤트 칸에서 특수 효과가 발생합니다.</li>
+            <li>자산이 0원이 되면 파산하여 탈락합니다.</li>
+            <li>마지막까지 살아남은 플레이어가 승리합니다!</li>
+          </ul>
+          <button class="primary-button" type="submit">확인</button>
+        </form>
+      </dialog>
+
+      <!-- Property Management Dialog -->
+      <dialog id="monopolyManageDialog" class="monopoly-manage-dialog">
+        <form method="dialog" class="monopoly-manage-form">
+          <h2>🏦 자산 관리</h2>
+          <div id="monopolyManageList" class="monopoly-manage-list"></div>
+          <button class="primary-button" type="submit">닫기</button>
+        </form>
+      </dialog>
+    </main>
+    <script src="shared-ui.js?v=20260706-brumable"></script>
+    <script src="shared-profiles.js?v=20260706-brumable"></script>
+    <script src="monopoly.js?v=20260706-brumable"></script>
+  </body>
+</html>

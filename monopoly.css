@@ -1,0 +1,630 @@
+/* ===== Monopoly / 브루마블 ===== */
+/* Uses styles.css variables: --bg, --surface, --surface-2, --surface-3, --line, --text, --muted, --accent, --focus, --shadow */
+
+/* --- Layout & Panels --- */
+.monopoly-setup-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 28px);
+  padding: 24px;
+}
+
+.monopoly-panel {
+  display: grid;
+  gap: 18px;
+  min-height: 294px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  width: min(520px, 92vw);
+}
+
+.monopoly-panel-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+.monopoly-setup-title {
+  font-size: 36px;
+  color: var(--accent);
+  text-shadow: 0 3px 12px rgba(217, 166, 60, 0.3);
+  margin: 0;
+}
+
+.mode-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(246, 232, 202, 0.12);
+}
+
+.mode-panel-head strong {
+  font-size: 29px;
+}
+
+.mode-panel-head span {
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.monopoly-setup-controls {
+  display: grid;
+  gap: 12px;
+  margin-top: 0;
+}
+
+.monopoly-setup-controls label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.monopoly-setup-controls select,
+.monopoly-setup-controls input {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 15px;
+  font-family: var(--font-ui);
+}
+
+.monopoly-setup-controls select:focus,
+.monopoly-setup-controls input:focus {
+  outline: 2px solid var(--focus);
+  border-color: var(--focus);
+}
+
+body.launcher-active .monopoly-setup-panel,
+body.launcher-active .monopoly-game-panel,
+body.clue-active .monopoly-setup-panel,
+body.clue-active .monopoly-game-panel,
+body.tally-active .monopoly-setup-panel,
+body.tally-active .monopoly-game-panel,
+body.cant-active .monopoly-setup-panel,
+body.cant-active .monopoly-game-panel {
+  display: none !important;
+}
+
+body.monopoly-active .topbar,
+body.monopoly-active .setup-panel,
+body.monopoly-active .clue-setup-panel,
+body.monopoly-active .tally-ho-panel,
+body.monopoly-active .cant-stop-panel,
+body.monopoly-active .game-board {
+  display: none !important;
+}
+
+body:not(.monopoly-active) .monopoly-setup-panel,
+body:not(.monopoly-active) .monopoly-game-panel {
+  display: none !important;
+}
+
+body.monopoly-active.monopoly-playing .monopoly-setup-panel {
+  display: none !important;
+}
+
+body.monopoly-active.monopoly-playing .monopoly-game-panel {
+  display: block;
+}
+
+/* --- Game Panel --- */
+.monopoly-game-panel {
+  min-height: calc(100vh - 28px);
+  padding: 14px;
+}
+
+.monopoly-shell {
+  display: grid;
+  gap: 14px;
+  width: min(1880px, 100%);
+  margin: 0 auto;
+}
+
+.monopoly-game-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.monopoly-game-title {
+  font-size: 28px;
+  color: var(--accent);
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(217, 166, 60, 0.2);
+}
+
+.monopoly-game-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.monopoly-game-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr 280px;
+  gap: 14px;
+  align-items: start;
+}
+
+.monopoly-side-panel,
+.monopoly-control-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* --- Player List --- */
+.monopoly-players-list {
+  display: grid;
+  gap: 8px;
+}
+
+.monopoly-player-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.monopoly-player-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(217, 166, 60, 0.2);
+}
+
+.monopoly-player-card.bankrupt {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
+
+.monopoly-player-avatar-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.monopoly-player-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.monopoly-player-token {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #1a1a1a;
+  font-size: 10px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+}
+
+.monopoly-player-info {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.monopoly-player-info strong {
+  font-size: 14px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.monopoly-player-info small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.monopoly-player-money {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* --- Status Card --- */
+.monopoly-status-card {
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  text-align: center;
+}
+
+.monopoly-status-card span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.monopoly-status-card strong {
+  display: block;
+  font-size: 18px;
+  color: var(--accent);
+  margin: 4px 0;
+}
+
+.monopoly-status-card small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* --- Action Buttons --- */
+.monopoly-actions-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+/* --- Board --- */
+.monopoly-board-stage {
+  display: grid;
+  gap: 12px;
+}
+
+.monopoly-board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 700px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 2px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.monopoly-board-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.monopoly-pieces {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* --- Board Tiles --- */
+.monopoly-tile {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  cursor: default;
+  transition: box-shadow 0.2s;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+}
+
+.monopoly-tile .tile-color-bar {
+  width: 100%;
+  height: 6px;
+  flex-shrink: 0;
+}
+
+.monopoly-tile .tile-name {
+  font-size: 10px;
+  padding: 2px 3px;
+  line-height: 1.2;
+  word-break: keep-all;
+}
+
+.monopoly-tile .tile-price {
+  font-size: 9px;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.monopoly-tile.corner {
+  background: var(--surface-2);
+  font-size: 12px;
+  border-color: rgba(217, 166, 60, 0.2);
+}
+
+.monopoly-tile.event-tile {
+  background: rgba(50, 45, 60, 0.9);
+  border-color: rgba(100, 90, 120, 0.3);
+}
+
+.monopoly-tile.owned {
+  box-shadow: inset 0 0 8px rgba(217, 166, 60, 0.15);
+}
+
+/* --- Player Tokens on Board --- */
+.monopoly-piece {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid var(--text);
+  font-size: 14px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  z-index: 10;
+  transition: left 0.4s ease, top 0.4s ease;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.monopoly-piece.bankrupt {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+/* --- Dice Display --- */
+.monopoly-dice-display {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 16px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.monopoly-die {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f0c96a, #d9962e);
+  color: #1f180b;
+  font-size: 32px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(246, 232, 202, 0.3);
+}
+
+.monopoly-die.rolling {
+  animation: monopolyDiceRoll 0.12s ease-in-out infinite alternate;
+}
+
+@keyframes monopolyDiceRoll {
+  0% { transform: rotate(-8deg) scale(1.05); }
+  100% { transform: rotate(8deg) scale(0.95); }
+}
+
+.monopoly-dice-bonus {
+  font-size: 20px;
+  color: var(--accent);
+  align-self: center;
+  font-weight: 900;
+}
+
+/* --- Property Info Popup --- */
+.monopoly-property-info {
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.monopoly-property-info.hidden {
+  display: none;
+}
+
+.monopoly-property-info h3 {
+  color: var(--accent);
+  margin: 0 0 8px;
+}
+
+.monopoly-property-info p {
+  color: var(--muted);
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+/* --- Log --- */
+.monopoly-log-card {
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.monopoly-panel-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.monopoly-log {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  display: grid;
+  gap: 4px;
+}
+
+.monopoly-log li {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  line-height: 1.4;
+}
+
+.monopoly-log li:first-child {
+  color: var(--text);
+  background: var(--surface-3);
+}
+
+/* --- Manage Dialog --- */
+.monopoly-manage-dialog {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0;
+  max-width: 500px;
+  width: 90vw;
+}
+
+.monopoly-manage-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.monopoly-manage-form {
+  padding: 24px;
+}
+
+.monopoly-manage-form h2 {
+  color: var(--accent);
+  margin: 0 0 16px;
+}
+
+.monopoly-manage-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.monopoly-manage-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.monopoly-manage-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.monopoly-manage-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.monopoly-manage-item-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.monopoly-manage-item-rent {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.monopoly-manage-sell-btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--danger);
+  background: rgba(211, 107, 88, 0.15);
+  color: var(--danger);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: var(--font-ui);
+}
+
+.monopoly-manage-sell-btn:hover {
+  background: rgba(211, 107, 88, 0.3);
+}
+
+/* --- Rules Dialog --- */
+.monopoly-rules-dialog {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0;
+  max-width: 520px;
+  width: 90vw;
+}
+
+.monopoly-rules-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.monopoly-rules-help {
+  padding: 24px;
+}
+
+.monopoly-rules-help h2 {
+  color: var(--accent);
+  margin: 0 0 12px;
+}
+
+.monopoly-rules-help li {
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* --- Responsive --- */
+@media (max-width: 1200px) {
+  .monopoly-game-layout {
+    grid-template-columns: 220px 1fr 240px;
+  }
+}
+
+@media (max-width: 960px) {
+  .monopoly-game-layout {
+    grid-template-columns: 1fr;
+  }
+  .monopoly-board {
+    max-width: 500px;
+  }
+}

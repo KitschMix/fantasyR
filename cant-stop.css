@@ -12,7 +12,9 @@ body.cant-active .topbar,
 body.cant-active .setup-panel,
 body.cant-active .clue-setup-panel,
 body.cant-active .tally-ho-panel,
-body.cant-active .game-board {
+body.cant-active .game-board,
+body.cant-active .monopoly-setup-panel,
+body.cant-active .monopoly-game-panel {
   display: none !important;
 }
 

@@ -7,7 +7,9 @@
 
 body:not(.clue-active) .clue-game-panel,
 body.clue-active .tally-ho-panel,
-body.clue-active .cant-stop-panel {
+body.clue-active .cant-stop-panel,
+body.clue-active .monopoly-setup-panel,
+body.clue-active .monopoly-game-panel {
   display: none !important;
 }
 

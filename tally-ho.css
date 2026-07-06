@@ -11,7 +11,9 @@ body.launcher-active .tally-ho-panel,
 body.tally-active .topbar,
 body.tally-active .setup-panel,
 body.tally-active .clue-setup-panel,
-body.tally-active .game-board {
+body.tally-active .game-board,
+body.tally-active .monopoly-setup-panel,
+body.tally-active .monopoly-game-panel {
   display: none !important;
 }
 
