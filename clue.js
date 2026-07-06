@@ -1694,6 +1694,10 @@
         if (column !== ownerIndex) keys.add(`${cardId}:${column}`);
       });
     });
+    DEDUCTION_ROWS.forEach((row) => {
+      const humanKey = `${row.card.id}:0`;
+      if (!confirmedKeys.has(humanKey)) keys.add(humanKey);
+    });
     return keys;
   }
 
