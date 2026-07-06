@@ -1,4 +1,4 @@
-/* ===== 브루마블 (Monopoly-style Board Game) ===== */
+/* ===== 부루마불 (World-tour Board Game) ===== */
 (function () {
   "use strict";
 
@@ -7,45 +7,45 @@
   // 20=Free Parking, 21-29=bottom row (right→left), 30=GoToJail, 31-39=left col (bottom→top)
   const TILES = [
     { id: 0,  name: "출발",           type: "corner",   corner: "go" },
-    { id: 1,  name: "강남역",         type: "property", color: "#8B4513", price: 60,  rent: [2, 10, 30, 90, 160, 250] },
+    { id: 1,  name: "타이베이",       type: "property", color: "#8B4513", price: 60,  rent: [2, 10, 30, 90, 160, 250] },
     { id: 2,  name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 3,  name: "홍대입구",       type: "property", color: "#8B4513", price: 60,  rent: [4, 20, 60, 180, 320, 450] },
-    { id: 4,  name: "소득세",         type: "event",    event: "tax", amount: 200 },
-    { id: 5,  name: "서울역",         type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 6,  name: "잠실",           type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 90, 270, 400, 550] },
-    { id: 7,  name: "기회",           type: "event",    event: "chance" },
-    { id: 8,  name: "코엑스",         type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 90, 270, 400, 550] },
-    { id: 9,  name: "올림픽공원",     type: "property", color: "#ADD8E6", price: 120, rent: [8, 40, 100, 300, 450, 600] },
+    { id: 3,  name: "베이징",         type: "property", color: "#8B4513", price: 60,  rent: [4, 20, 60, 180, 320, 450] },
+    { id: 4,  name: "여행세",         type: "event",    event: "tax", amount: 200 },
+    { id: 5,  name: "김포공항",       type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
+    { id: 6,  name: "홍콩",           type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 90, 270, 400, 550] },
+    { id: 7,  name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 8,  name: "마닐라",         type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 90, 270, 400, 550] },
+    { id: 9,  name: "싱가포르",       type: "property", color: "#ADD8E6", price: 120, rent: [8, 40, 100, 300, 450, 600] },
     { id: 10, name: "무인도",         type: "corner",   corner: "jail" },
-    { id: 11, name: "이태원",         type: "property", color: "#FF69B4", price: 140, rent: [10, 50, 150, 450, 625, 750] },
-    { id: 12, name: "전기회사",       type: "property", color: "#808080", price: 150, rent: [4, 10] },
-    { id: 13, name: "명동",           type: "property", color: "#FF69B4", price: 140, rent: [10, 50, 150, 450, 625, 750] },
-    { id: 14, name: "종로",           type: "property", color: "#FF69B4", price: 160, rent: [12, 60, 180, 500, 700, 900] },
-    { id: 15, name: "용산역",         type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 16, name: "여의도",         type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
+    { id: 11, name: "카이로",         type: "property", color: "#FF69B4", price: 140, rent: [10, 50, 150, 450, 625, 750] },
+    { id: 12, name: "세계여행권",     type: "property", color: "#808080", price: 150, rent: [4, 10] },
+    { id: 13, name: "이스탄불",       type: "property", color: "#FF69B4", price: 140, rent: [10, 50, 150, 450, 625, 750] },
+    { id: 14, name: "아테네",         type: "property", color: "#FF69B4", price: 160, rent: [12, 60, 180, 500, 700, 900] },
+    { id: 15, name: "두바이공항",     type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
+    { id: 16, name: "로마",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
     { id: 17, name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 18, name: "판교",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
-    { id: 19, name: "분당",           type: "property", color: "#FFA500", price: 200, rent: [16, 80, 220, 600, 800, 1000] },
-    { id: 20, name: "무료주차",       type: "corner",   corner: "parking" },
-    { id: 21, name: "건대입구",       type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
-    { id: 22, name: "기회",           type: "event",    event: "chance" },
-    { id: 23, name: "왕십리",         type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
-    { id: 24, name: "성수",           type: "property", color: "#FF0000", price: 240, rent: [20, 100, 300, 750, 925, 1100] },
-    { id: 25, name: "수원역",         type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 26, name: "교대",           type: "property", color: "#FFD700", price: 260, rent: [22, 110, 330, 800, 975, 1150] },
-    { id: 27, name: "서초",           type: "property", color: "#FFD700", price: 260, rent: [22, 110, 330, 800, 975, 1150] },
-    { id: 28, name: "수도회사",       type: "property", color: "#808080", price: 150, rent: [4, 10] },
-    { id: 29, name: "강남대로",       type: "property", color: "#FFD700", price: 280, rent: [24, 120, 360, 850, 1025, 1200] },
-    { id: 30, name: "감옥으로",       type: "corner",   corner: "goToJail" },
-    { id: 31, name: "삼성동",         type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
-    { id: 32, name: "도곡",           type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
-    { id: 33, name: "기회",           type: "event",    event: "chance" },
-    { id: 34, name: "대치",           type: "property", color: "#008000", price: 320, rent: [28, 150, 450, 1000, 1200, 1400] },
-    { id: 35, name: "부산역",         type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
+    { id: 18, name: "파리",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
+    { id: 19, name: "런던",           type: "property", color: "#FFA500", price: 200, rent: [16, 80, 220, 600, 800, 1000] },
+    { id: 20, name: "우주여행",       type: "corner",   corner: "parking" },
+    { id: 21, name: "뉴욕",           type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
+    { id: 22, name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 23, name: "워싱턴",         type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
+    { id: 24, name: "토론토",         type: "property", color: "#FF0000", price: 240, rent: [20, 100, 300, 750, 925, 1100] },
+    { id: 25, name: "JFK공항",        type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
+    { id: 26, name: "리우",           type: "property", color: "#FFD700", price: 260, rent: [22, 110, 330, 800, 975, 1150] },
+    { id: 27, name: "부에노스",       type: "property", color: "#FFD700", price: 260, rent: [22, 110, 330, 800, 975, 1150] },
+    { id: 28, name: "항공패스",       type: "property", color: "#808080", price: 150, rent: [4, 10] },
+    { id: 29, name: "멕시코시티",     type: "property", color: "#FFD700", price: 280, rent: [24, 120, 360, 850, 1025, 1200] },
+    { id: 30, name: "무인도로",       type: "corner",   corner: "goToJail" },
+    { id: 31, name: "시드니",         type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
+    { id: 32, name: "오클랜드",       type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
+    { id: 33, name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 34, name: "하와이",         type: "property", color: "#008000", price: 320, rent: [28, 150, 450, 1000, 1200, 1400] },
+    { id: 35, name: "나리타공항",     type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
     { id: 36, name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 37, name: "청담동",         type: "property", color: "#4B0082", price: 350, rent: [35, 175, 500, 1100, 1300, 1500] },
-    { id: 38, name: "초과세금",       type: "event",    event: "tax", amount: 100 },
-    { id: 39, name: "한남동",         type: "property", color: "#4B0082", price: 400, rent: [50, 200, 600, 1400, 1700, 2000] }
+    { id: 37, name: "제주",           type: "property", color: "#4B0082", price: 350, rent: [35, 175, 500, 1100, 1300, 1500] },
+    { id: 38, name: "특별여행세",     type: "event",    event: "tax", amount: 100 },
+    { id: 39, name: "서울",           type: "property", color: "#4B0082", price: 400, rent: [50, 200, 600, 1400, 1700, 2000] }
   ];
 
   const COLOR_GROUPS = {};
@@ -60,10 +60,10 @@
 
   const CHANCE_CARDS = [
     { text: "출발 지점으로 이동하세요.", action: "moveTo", target: 0, collect: true },
-    { text: "감옥으로 가세요. 출발 지점을 지나도 받지 못합니다.", action: "goToJail" },
-    { text: "강남역으로 이동하세요.", action: "moveTo", target: 1 },
-    { text: "여의도로 이동하세요.", action: "moveTo", target: 16 },
-    { text: "청담동으로 이동하세요.", action: "moveTo", target: 37 },
+    { text: "무인도로 가세요. 출발 지점을 지나도 받지 못합니다.", action: "goToJail" },
+    { text: "타이베이로 이동하세요.", action: "moveTo", target: 1 },
+    { text: "로마로 이동하세요.", action: "moveTo", target: 16 },
+    { text: "제주로 이동하세요.", action: "moveTo", target: 37 },
     { text: "모든 플레이어에게 50원을 지불하세요.", action: "payAll", amount: 50 },
     { text: "은행에서 150원을 받습니다.", action: "collect", amount: 150 },
     { text: "은행에서 100원을 받습니다.", action: "collect", amount: 100 },
@@ -494,7 +494,7 @@
     player.inJail = true;
     player.jailTurns = JAIL_TURNS;
     state.lastDoubleCount = 0;
-    addLog(`🚔 ${playerDisplayName(player)} 감옥에 갇혔습니다!`);
+    addLog(`🏝️ ${playerDisplayName(player)} 무인도로 이동했습니다!`);
   }
 
   /* ── Event Handling ── */
@@ -551,7 +551,7 @@
     let card;
     if (tile.event === "chance") {
       card = drawChance();
-      addLog(`🎴 기회 카드: ${card.text}`);
+      addLog(`🔑 황금열쇠 카드: ${card.text}`);
     } else if (tile.event === "fund") {
       card = drawFund();
       addLog(`🎴 사회복지기금 카드: ${card.text}`);
@@ -634,7 +634,7 @@
         addLog(`🔒 ${playerDisplayName(player)} 무인도에 방문 중.`);
         break;
       case "parking":
-        addLog(`🅿️ ${playerDisplayName(player)} 무료주차.`);
+        addLog(`🚀 ${playerDisplayName(player)} 우주여행 칸에 도착.`);
         break;
       case "goToJail":
         sendToJail(player);
@@ -961,7 +961,7 @@
     state.turnCount = 1;
     state.lastDoubleCount = 0;
 
-    addLog(`🏠 브루마블 게임 시작! ${count}명 참가.`);
+    addLog(`🌐 부루마불 게임 시작! ${count}명 참가.`);
     addLog(`💰 각 플레이어 ₩${START_MONEY} 보유.`);
 
     document.body.classList.add("monopoly-playing");
@@ -992,9 +992,9 @@
       if (profile?.nickname && els.nameInput) els.nameInput.value = profile.nickname;
     } catch {}
 
-    // Board background
+    // Board background is drawn with CSS so the UI does not depend on a missing image asset.
     if (els.boardImage) {
-      els.boardImage.style.backgroundImage = "url('assets/boards/monopoly-board.webp')";
+      els.boardImage.style.backgroundImage = "none";
     }
 
     // Event listeners

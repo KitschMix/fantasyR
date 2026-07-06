@@ -1,4 +1,4 @@
-/* ===== Monopoly / 브루마블 ===== */
+/* ===== Monopoly / 부루마불 ===== */
 /* Uses styles.css variables: --bg, --surface, --surface-2, --surface-3, --line, --text, --muted, --accent, --focus, --shadow */
 
 /* --- Layout & Panels --- */
@@ -626,5 +626,458 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   }
   .monopoly-board {
     max-width: 500px;
+  }
+}
+
+/* --- Burumabul Visual System --- */
+body.monopoly-active {
+  --monopoly-blue: #0d6eb8;
+  --monopoly-blue-deep: #063d68;
+  --monopoly-sky: #dff2ff;
+  --monopoly-paper: #fff7e5;
+  --monopoly-paper-2: #f3e5c6;
+  --monopoly-red: #d94b36;
+  --monopoly-gold: #f4c340;
+  --monopoly-green: #2d9a67;
+  --bg: #f0ead8;
+  --surface: rgba(255, 249, 233, 0.96);
+  --surface-2: rgba(243, 229, 198, 0.94);
+  --surface-3: rgba(223, 242, 255, 0.96);
+  --line: rgba(13, 110, 184, 0.28);
+  --text: #17314a;
+  --muted: #65798a;
+  --accent: var(--monopoly-blue);
+  --focus: var(--monopoly-gold);
+  --shadow: 0 20px 42px rgba(6, 41, 68, 0.18);
+  background:
+    linear-gradient(90deg, rgba(13, 110, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(13, 110, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(135deg, #fff9ea 0%, #eef7fb 44%, #f6edd7 100%);
+  background-size: 44px 44px, 44px 44px, auto;
+}
+
+body.monopoly-active .loading-overlay {
+  background: rgba(8, 34, 55, 0.72);
+}
+
+body.monopoly-active .loading-box,
+body.monopoly-active .turn-toast {
+  border-color: rgba(13, 110, 184, 0.34);
+  color: var(--text);
+  background: rgba(255, 249, 233, 0.96);
+}
+
+body.monopoly-active .loading-spinner {
+  border-color: rgba(13, 110, 184, 0.18);
+  border-top-color: var(--monopoly-blue);
+}
+
+body.monopoly-active .app-shell {
+  min-height: 0;
+  min-width: 0;
+  padding: 8px;
+}
+
+body.monopoly-active .primary-button,
+body.monopoly-active .secondary-button,
+body.monopoly-active .icon-button {
+  min-height: 44px;
+  border-radius: 6px;
+  font-size: 17px;
+}
+
+body.monopoly-active .primary-button {
+  color: #ffffff;
+  background: linear-gradient(180deg, #1688d4, #0b5e9b);
+  border: 1px solid rgba(4, 62, 105, 0.4);
+  box-shadow: 0 10px 20px rgba(13, 110, 184, 0.22);
+}
+
+body.monopoly-active .secondary-button,
+body.monopoly-active .icon-button {
+  color: var(--monopoly-blue-deep);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(13, 110, 184, 0.24);
+}
+
+body.monopoly-active .secondary-button:hover,
+body.monopoly-active .icon-button:hover {
+  border-color: rgba(13, 110, 184, 0.52);
+  background: #ffffff;
+}
+
+body.monopoly-active .monopoly-setup-panel {
+  min-height: calc(100vh - 16px);
+}
+
+body.monopoly-active .monopoly-panel {
+  position: relative;
+  width: min(620px, 92vw);
+  gap: 20px;
+  padding: 26px 28px 28px;
+  overflow: hidden;
+  border: 2px solid rgba(13, 110, 184, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 247, 229, 0.94)),
+    var(--monopoly-paper);
+  box-shadow: 0 22px 48px rgba(4, 51, 86, 0.2);
+}
+
+body.monopoly-active .monopoly-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 7px;
+  background: linear-gradient(90deg, var(--monopoly-blue), var(--monopoly-red), var(--monopoly-gold), var(--monopoly-green));
+}
+
+body.monopoly-active .monopoly-panel-top,
+body.monopoly-active .monopoly-game-top {
+  align-items: center;
+}
+
+body.monopoly-active .monopoly-setup-title,
+body.monopoly-active .monopoly-game-title {
+  display: grid;
+  align-items: center;
+  margin: 0;
+  line-height: 1;
+}
+
+.monopoly-title-logo {
+  display: block;
+  width: min(342px, 64vw);
+  max-height: 148px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 18px rgba(4, 51, 86, 0.2));
+}
+
+.monopoly-title-logo-small {
+  width: 198px;
+  max-height: 70px;
+}
+
+body.monopoly-active .monopoly-panel .mode-panel-head {
+  align-items: end;
+  padding: 14px 0 16px;
+  border-top: 1px solid rgba(13, 110, 184, 0.14);
+  border-bottom: 1px solid rgba(13, 110, 184, 0.16);
+}
+
+body.monopoly-active .monopoly-panel .mode-panel-head strong {
+  color: var(--monopoly-blue-deep);
+  font-size: 27px;
+}
+
+body.monopoly-active .monopoly-panel .mode-panel-head span {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+body.monopoly-active .monopoly-setup-controls {
+  gap: 14px;
+}
+
+body.monopoly-active .monopoly-setup-controls label {
+  color: var(--monopoly-blue-deep);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+body.monopoly-active .monopoly-setup-controls select,
+body.monopoly-active .monopoly-setup-controls input {
+  min-height: 50px;
+  border: 1px solid rgba(13, 110, 184, 0.22);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text);
+  font-size: 16px;
+}
+
+body.monopoly-active .monopoly-game-panel {
+  min-height: 0;
+  padding: 8px;
+}
+
+body.monopoly-active .monopoly-shell {
+  width: min(1740px, 100%);
+  gap: 12px;
+}
+
+body.monopoly-active .monopoly-game-top {
+  min-height: 62px;
+  padding: 6px 10px 8px;
+  border: 1px solid rgba(13, 110, 184, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 249, 233, 0.76);
+  box-shadow: 0 10px 26px rgba(4, 51, 86, 0.12);
+}
+
+body.monopoly-active .monopoly-game-actions {
+  gap: 9px;
+}
+
+body.monopoly-active .monopoly-game-layout {
+  grid-template-columns: 280px minmax(560px, 1fr) 320px;
+  gap: 12px;
+}
+
+body.monopoly-active .monopoly-side-panel,
+body.monopoly-active .monopoly-control-panel {
+  gap: 8px;
+}
+
+body.monopoly-active .monopoly-players-list {
+  gap: 6px;
+}
+
+body.monopoly-active .monopoly-player-card {
+  padding: 8px 10px;
+}
+
+body.monopoly-active .monopoly-status-card,
+body.monopoly-active .monopoly-actions-card {
+  padding: 10px;
+}
+
+body.monopoly-active .monopoly-actions-card {
+  gap: 6px;
+}
+
+body.monopoly-active .monopoly-player-card,
+body.monopoly-active .monopoly-status-card,
+body.monopoly-active .monopoly-actions-card,
+body.monopoly-active .monopoly-property-info,
+body.monopoly-active .monopoly-log-card,
+body.monopoly-active .monopoly-manage-dialog,
+body.monopoly-active .monopoly-rules-dialog {
+  border: 1px solid rgba(13, 110, 184, 0.22);
+  background: rgba(255, 249, 233, 0.92);
+  box-shadow: 0 10px 22px rgba(6, 41, 68, 0.08);
+}
+
+body.monopoly-active .monopoly-player-card.active {
+  border-color: var(--monopoly-blue);
+  box-shadow: 0 0 0 3px rgba(13, 110, 184, 0.14), 0 12px 24px rgba(6, 41, 68, 0.12);
+}
+
+body.monopoly-active .monopoly-player-token {
+  border-color: #ffffff;
+}
+
+body.monopoly-active .monopoly-player-info strong,
+body.monopoly-active .monopoly-status-card strong,
+body.monopoly-active .monopoly-property-info h3,
+body.monopoly-active .monopoly-panel-title,
+body.monopoly-active .monopoly-manage-form h2,
+body.monopoly-active .monopoly-rules-help h2 {
+  color: var(--monopoly-blue-deep);
+}
+
+body.monopoly-active .monopoly-player-money {
+  color: var(--monopoly-red);
+}
+
+body.monopoly-active .monopoly-board {
+  max-width: min(720px, calc(100vh - 142px));
+  border: 6px solid var(--monopoly-blue);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(13, 110, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(13, 110, 184, 0.05) 1px, transparent 1px),
+    #fff4d8;
+  background-size: 26px 26px, 26px 26px, auto;
+  box-shadow:
+    0 0 0 4px var(--monopoly-gold),
+    0 18px 42px rgba(6, 41, 68, 0.24);
+}
+
+body.monopoly-active .monopoly-board-image {
+  z-index: 0;
+  background:
+    linear-gradient(45deg, rgba(13, 110, 184, 0.09) 25%, transparent 25%, transparent 75%, rgba(13, 110, 184, 0.09) 75%),
+    linear-gradient(45deg, rgba(217, 75, 54, 0.08) 25%, transparent 25%, transparent 75%, rgba(217, 75, 54, 0.08) 75%);
+  background-position: 0 0, 18px 18px;
+  background-size: 36px 36px;
+  opacity: 0.5;
+}
+
+body.monopoly-active .monopoly-board-center {
+  position: absolute;
+  inset: 18%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 24px;
+  border: 2px solid rgba(13, 110, 184, 0.22);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(223, 242, 255, 0.72)),
+    rgba(255, 247, 229, 0.74);
+  box-shadow: inset 0 0 0 4px rgba(244, 195, 64, 0.18);
+  pointer-events: none;
+}
+
+body.monopoly-active .monopoly-board-center img {
+  width: min(285px, 72%);
+  max-height: 150px;
+  object-fit: contain;
+  filter: drop-shadow(0 9px 14px rgba(4, 51, 86, 0.14));
+}
+
+body.monopoly-active .monopoly-board-center span {
+  display: block;
+  padding: 4px 12px;
+  border-top: 2px solid rgba(217, 75, 54, 0.5);
+  border-bottom: 2px solid rgba(13, 110, 184, 0.5);
+  color: var(--monopoly-blue-deep);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+body.monopoly-active .monopoly-pieces,
+body.monopoly-active .monopoly-dice-display {
+  z-index: 8;
+}
+
+body.monopoly-active .monopoly-tile {
+  z-index: 3;
+  border: 1px solid rgba(13, 110, 184, 0.32);
+  border-radius: 3px;
+  color: var(--text);
+  background: rgba(255, 249, 233, 0.96);
+  box-shadow: inset 0 -2px 0 rgba(13, 110, 184, 0.08);
+}
+
+body.monopoly-active .monopoly-tile .tile-color-bar {
+  height: 8px;
+  border-bottom: 1px solid rgba(23, 49, 74, 0.18);
+}
+
+body.monopoly-active .monopoly-tile .tile-name {
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+body.monopoly-active .monopoly-tile .tile-price {
+  color: var(--monopoly-red);
+  font-weight: 900;
+}
+
+body.monopoly-active .monopoly-tile.corner {
+  color: #ffffff;
+  border-color: rgba(244, 195, 64, 0.72);
+  background:
+    linear-gradient(180deg, #1688d4, #0b5e9b);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.16);
+}
+
+body.monopoly-active .monopoly-tile.corner .tile-name {
+  color: #ffffff;
+  font-size: 12px;
+}
+
+body.monopoly-active .monopoly-tile.event-tile {
+  color: #4c3300;
+  border-color: rgba(191, 134, 0, 0.44);
+  background:
+    linear-gradient(180deg, #ffeaa6, #ffd363);
+}
+
+body.monopoly-active .monopoly-tile.event-tile .tile-name {
+  color: #4c3300;
+}
+
+body.monopoly-active .monopoly-tile.owned {
+  box-shadow: inset 0 0 0 2px rgba(13, 110, 184, 0.12), inset 0 -2px 0 rgba(13, 110, 184, 0.08);
+}
+
+body.monopoly-active .monopoly-piece {
+  border-color: #ffffff;
+  box-shadow: 0 5px 12px rgba(6, 41, 68, 0.28);
+}
+
+body.monopoly-active .monopoly-die {
+  border-radius: 8px;
+  color: #ffffff;
+  background: linear-gradient(180deg, #d94b36, #a82d23);
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 20px rgba(6, 41, 68, 0.25);
+}
+
+body.monopoly-active .monopoly-log li {
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+body.monopoly-active .monopoly-log li:first-child {
+  color: var(--text);
+  background: rgba(223, 242, 255, 0.82);
+}
+
+body.monopoly-active .monopoly-manage-sell-btn {
+  border-color: rgba(217, 75, 54, 0.42);
+  background: rgba(217, 75, 54, 0.1);
+  color: var(--monopoly-red);
+}
+
+body.monopoly-active .monopoly-rules-help li {
+  color: var(--text);
+}
+
+@media (max-width: 1200px) {
+  body.monopoly-active .monopoly-game-layout {
+    grid-template-columns: 240px minmax(480px, 1fr) 260px;
+  }
+
+  .monopoly-title-logo-small {
+    width: 196px;
+  }
+}
+
+@media (max-width: 960px) {
+  body.monopoly-active .monopoly-game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  body.monopoly-active .monopoly-board {
+    max-width: min(560px, 96vw);
+  }
+
+  body.monopoly-active .monopoly-game-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  body.monopoly-active .monopoly-panel {
+    padding: 22px 18px 20px;
+  }
+
+  body.monopoly-active .monopoly-panel-top,
+  body.monopoly-active .monopoly-panel .mode-panel-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .monopoly-title-logo {
+    width: min(300px, 78vw);
+  }
+
+  .monopoly-title-logo-small {
+    width: min(210px, 70vw);
+  }
+
+  body.monopoly-active .monopoly-game-actions {
+    flex-wrap: wrap;
+  }
+
+  body.monopoly-active .monopoly-board-center {
+    inset: 22%;
+    padding: 12px;
   }
 }

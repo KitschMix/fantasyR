@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>브루마블</title>
+    <title>부루마불</title>
     <link rel="stylesheet" href="styles.css?v=20260706-brumable" />
     <link rel="stylesheet" href="monopoly.css?v=20260706-brumable" />
   </head>
@@ -20,15 +20,17 @@
     </div>
     <main class="app-shell">
       <!-- Setup Panel -->
-      <section id="monopolySetupPanel" class="monopoly-setup-panel" aria-label="브루마블 게임 설정">
+      <section id="monopolySetupPanel" class="monopoly-setup-panel" aria-label="부루마불 게임 설정">
         <div class="mode-panel monopoly-panel">
           <div class="monopoly-panel-top">
-            <h1 class="monopoly-setup-title">🏠 브루마블</h1>
+            <h1 class="monopoly-setup-title">
+              <img class="monopoly-title-logo" src="assets/titles/brumable-logo.webp" alt="부루마불" />
+            </h1>
             <button id="monopolyBackButton" class="secondary-button" type="button">첫 화면</button>
           </div>
           <div class="mode-panel-head">
-            <strong>브루마블</strong>
-            <span>보드 게임 설정</span>
+            <strong>세계 여행 보드게임</strong>
+            <span>2~4인 · 주사위 · 도시 투자</span>
           </div>
           <div class="monopoly-setup-controls">
             <label>
@@ -49,13 +51,15 @@
       </section>
 
       <!-- Game Panel -->
-      <section id="monopolyGamePanel" class="monopoly-game-panel hidden" aria-label="브루마블 플레이 화면">
+      <section id="monopolyGamePanel" class="monopoly-game-panel hidden" aria-label="부루마불 플레이 화면">
         <div class="monopoly-shell">
           <div class="monopoly-game-top">
-            <h1 class="monopoly-game-title">🏠 브루마블</h1>
+            <h1 class="monopoly-game-title">
+              <img class="monopoly-title-logo monopoly-title-logo-small" src="assets/titles/brumable-logo.webp" alt="부루마불" />
+            </h1>
             <div class="monopoly-game-actions">
               <button id="monopolyNewGameButton" class="secondary-button" type="button">새 게임</button>
-              <button id="monopolyRulesButton" class="icon-button monopoly-help-button" type="button" title="브루마블 도움말" aria-label="브루마블 도움말">?</button>
+              <button id="monopolyRulesButton" class="icon-button monopoly-help-button" type="button" title="부루마불 도움말" aria-label="부루마불 도움말">?</button>
               <button id="monopolyExitGameButton" class="secondary-button" type="button">첫 화면</button>
             </div>
           </div>
@@ -79,8 +83,12 @@
 
             <!-- Center: Board -->
             <div class="monopoly-board-stage">
-              <div id="monopolyBoard" class="monopoly-board" aria-label="브루마블 보드">
+              <div id="monopolyBoard" class="monopoly-board" aria-label="부루마불 보드">
                 <div id="monopolyBoardImage" class="monopoly-board-image"></div>
+                <div class="monopoly-board-center" aria-hidden="true">
+                  <img src="assets/titles/brumable-logo.webp" alt="" />
+                  <span>WORLD TOUR</span>
+                </div>
                 <div id="monopolyPieces" class="monopoly-pieces"></div>
                 <div id="monopolyDiceDisplay" class="monopoly-dice-display"></div>
               </div>
@@ -101,13 +109,13 @@
       <!-- Rules Dialog -->
       <dialog id="monopolyRulesDialog" class="monopoly-rules-dialog">
         <form method="dialog" class="monopoly-rules-help">
-          <h2>🏠 브루마블 도움말</h2>
+          <h2>부루마불 도움말</h2>
           <ul>
             <li>주사위를 굴려 말을 이동합니다.</li>
             <li>빈 땅에 도착하면 구매할 수 있습니다.</li>
             <li>다른 플레이어의 땅에 도착하면 임대료를 지불합니다.</li>
             <li>같은 색 땅을 모으면 임대료가 올라갑니다.</li>
-            <li>고유 이벤트 칸에서 특수 효과가 발생합니다.</li>
+            <li>황금열쇠와 사회복지기금 칸에서 특수 효과가 발생합니다.</li>
             <li>자산이 0원이 되면 파산하여 탈락합니다.</li>
             <li>마지막까지 살아남은 플레이어가 승리합니다!</li>
           </ul>
