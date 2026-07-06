@@ -135,6 +135,7 @@
     exitButton: document.querySelector("#tallyExitButton"),
     log: document.querySelector("#tallyLog")
   };
+  const STANDALONE_TALLY_PAGE = !els.enterButton;
 
   const state = {
     board: [],
@@ -762,6 +763,10 @@
 
   function leaveTallyHo() {
     clearAiTurnTimer();
+    if (STANDALONE_TALLY_PAGE) {
+      window.location.href = "index.html";
+      return;
+    }
     document.body.classList.add("launcher-active");
     document.body.classList.remove("tally-active");
     els.panel?.classList.add("hidden");
@@ -1533,6 +1538,10 @@
   els.flipButton?.addEventListener("click", handleFlipButton);
   els.exitButton?.addEventListener("click", handleExitButton);
   initializeTallyZoomControls();
+
+  if (STANDALONE_TALLY_PAGE) {
+    enterTallyHo();
+  }
 
   window.TallyHoGame = {
     enter: enterTallyHo,

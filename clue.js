@@ -182,6 +182,7 @@
     notes: document.querySelector("#clueNotes"),
     log: document.querySelector("#clueLog")
   };
+  const STANDALONE_CLUE_PAGE = !els.enterButton;
 
   const state = {
     started: false,
@@ -1927,6 +1928,10 @@
     clearClueSpeech();
     closeSuggestionDialog();
     closeAccusationDialog();
+    if (STANDALONE_CLUE_PAGE) {
+      window.location.href = "index.html";
+      return;
+    }
     document.body.classList.remove("clue-playing", "clue-active");
     document.body.classList.add("launcher-active");
     els.setupPanel?.classList.add("hidden");
@@ -2618,6 +2623,10 @@
   els.newGameButton?.addEventListener("click", resetToClueSetup);
   els.exitButton?.addEventListener("click", leaveClueGame);
   els.backButton?.addEventListener("click", () => {
+    if (STANDALONE_CLUE_PAGE) {
+      window.location.href = "index.html";
+      return;
+    }
     document.body.classList.remove("clue-playing");
     els.gamePanel?.classList.add("hidden");
   });
@@ -2662,6 +2671,14 @@
   });
 
   initializeClueZoomControls();
+
+  if (STANDALONE_CLUE_PAGE) {
+    document.body.classList.remove("launcher-active", "tally-active", "cant-active");
+    document.body.classList.add("clue-active");
+    document.body.classList.remove("clue-playing");
+    els.gamePanel?.classList.add("hidden");
+    els.setupPanel?.classList.remove("hidden");
+  }
 
   window.ClueGame = {
     start: startClueGame,

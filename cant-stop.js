@@ -118,6 +118,7 @@
     stopButton: document.querySelector("#cantStopButton"),
     log: document.querySelector("#cantLog")
   };
+  const STANDALONE_CANT_PAGE = !els.enterButton;
 
   const state = {
     view: "setup",
@@ -616,6 +617,10 @@
 
   function leaveCantStop() {
     clearAiTimer();
+    if (STANDALONE_CANT_PAGE) {
+      window.location.href = "index.html";
+      return;
+    }
     document.body.classList.add("launcher-active");
     document.body.classList.remove("cant-active");
     els.panel?.classList.add("hidden");
@@ -1335,6 +1340,10 @@
   });
   els.rollButton?.addEventListener("click", rollForCurrentActor);
   els.stopButton?.addEventListener("click", stopCurrentTurn);
+
+  if (STANDALONE_CANT_PAGE) {
+    enterCantStop();
+  }
 
   window.CantStopGame = {
     enter: enterCantStop,

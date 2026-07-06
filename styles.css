@@ -270,8 +270,10 @@ body:not(.launcher-active) .game-launcher {
   padding: 0;
   border: 0;
   color: var(--text);
+  cursor: pointer;
   background: transparent;
   box-shadow: none;
+  text-decoration: none;
 }
 
 .game-launcher-card:hover,

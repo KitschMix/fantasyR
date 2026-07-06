@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>클루</title>
+    <link rel="stylesheet" href="styles.css?v=20260706-split-pages" />
+    <link rel="stylesheet" href="clue.css?v=20260706-split-pages" />
+  </head>
+  <body class="clue-active app-loading">
+    <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
+          <div class="loading-box">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <strong>불러오는 중</strong>
+            <small>카드 이미지와 온라인 정보를 준비하고 있습니다.</small>
+          </div>
+        </div>
+    <div id="turnToast" class="turn-toast" role="status" aria-live="assertive" aria-hidden="true">
+          <strong id="turnToastText">플레이어의 턴</strong>
+        </div>
+    <main class="app-shell">
+      <section id="clueSetupPanel" class="clue-setup-panel" aria-label="클루 게임 설정">
+              <div class="mode-panel clue-panel">
+                <div class="clue-panel-top">
+                  <img class="clue-setup-logo" src="assets/titles/title-clue.jpg" alt="클루" />
+                  <button id="clueBackButton" class="secondary-button" type="button">첫 화면</button>
+                </div>
+                <div class="mode-panel-head">
+                  <strong>클루</strong>
+                  <span>초기 설정</span>
+                </div>
+                <div class="clue-setup-controls">
+                  <label>
+                    플레이어 수
+                    <select id="cluePlayerCountSelect">
+                      <option value="3">3명</option>
+                      <option value="4" selected>4명</option>
+                      <option value="5">5명</option>
+                      <option value="6">6명</option>
+                    </select>
+                  </label>
+                  <label>
+                    용의자 카드
+                    <select disabled>
+                      <option>기본 6명</option>
+                    </select>
+                  </label>
+                  <label>
+                    장소 카드
+                    <select disabled>
+                      <option>저택 9곳</option>
+                    </select>
+                  </label>
+                  <label>
+                    도구 카드
+                    <select disabled>
+                      <option>기본 6종</option>
+                    </select>
+                  </label>
+                  <button id="startClueButton" class="primary-button" type="button">게임 시작</button>
+                </div>
+              </div>
+            </section>
+
+      <section id="clueGamePanel" class="clue-game-panel hidden" aria-label="클루 플레이 화면">
+              <div class="clue-shell">
+                <div class="clue-game-top">
+                  <img class="clue-game-logo" src="assets/titles/title-clue.jpg" alt="클루" />
+                  <div class="clue-game-actions">
+                    <button id="clueNewGameButton" class="secondary-button" type="button">새 게임</button>
+                    <button id="clueRulesButton" class="icon-button clue-help-button" type="button" title="클루 도움말" aria-label="클루 도움말">?</button>
+                    <div class="clue-zoom-controls" aria-label="클루 확대 축소">
+                      <button id="clueZoomOutButton" class="icon-button clue-zoom-button" type="button" title="축소" aria-label="축소">-</button>
+                      <span id="clueZoomLabel" class="clue-zoom-label">100%</span>
+                      <button id="clueZoomInButton" class="icon-button clue-zoom-button" type="button" title="확대" aria-label="확대">+</button>
+                    </div>
+                    <button id="clueExitGameButton" class="secondary-button" type="button">첫 화면</button>
+                  </div>
+                </div>
+
+                <div class="clue-game-layout">
+                  <aside class="clue-side-panel">
+                    <div id="cluePlayersList" class="clue-players-list"></div>
+                    <section class="clue-status-card">
+                      <span>현재 차례</span>
+                      <strong id="clueTurnLabel">-</strong>
+                      <small id="cluePhaseLabel">주사위를 굴리세요.</small>
+                    </section>
+                    <section class="clue-hand-card">
+                      <div class="clue-panel-title">내 카드</div>
+                      <div id="clueHandList" class="clue-hand-list"></div>
+                    </section>
+                  </aside>
+
+                  <div class="clue-board-stage">
+                    <div class="clue-board-column">
+                      <div id="clueBoard" class="clue-board" aria-label="클루 보드"></div>
+                      <div class="clue-dice-bar">
+                        <div id="clueDice" class="clue-dice">-</div>
+                        <button id="clueRollButton" class="primary-button" type="button"><span>주사위</span><span>굴리기</span></button>
+                        <button id="clueEndTurnButton" class="secondary-button" type="button">턴 종료</button>
+                      </div>
+                    </div>
+                    <section class="clue-action-card clue-move-card">
+                      <div class="clue-panel-title">내 주사위로 갈 수 있는 곳</div>
+                      <small id="clueMoveHint">주사위를 굴리면 이동 가능한 장소가 표시됩니다.</small>
+                      <div id="clueMoveOptions" class="clue-move-options"></div>
+                    </section>
+                  </div>
+
+                  <aside class="clue-control-panel">
+                    <section class="clue-action-card">
+                      <div class="clue-panel-title">제안</div>
+                      <button id="clueMakeSuggestionButton" class="primary-button" type="button">제안하기</button>
+                    </section>
+
+                    <section class="clue-action-card clue-accusation-card clue-suggestion-modal-card" id="clueSuggestionModalCard" aria-live="polite">
+                      <div class="clue-panel-title">제안하기</div>
+                      <small id="clueSuggestionModalHint">현재 장소를 기준으로 추리합니다.</small>
+                      <div class="clue-suggestion-card-panel clue-accusation-card-panel">
+                        <div class="clue-suggestion-slot">
+                          <span>장소</span>
+                          <div id="clueSuggestRoomStaticCard" class="clue-suggestion-static-card"></div>
+                          <div id="clueSuggestRoomPicker" class="clue-card-select" hidden></div>
+                          <select id="clueSuggestRoom" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                        </div>
+                        <div class="clue-suggestion-slot">
+                          <span>용의자</span>
+                          <div id="clueSuggestSuspectPicker" class="clue-card-select"></div>
+                          <select id="clueSuggestSuspect" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                        </div>
+                        <div class="clue-suggestion-slot">
+                          <span>도구</span>
+                          <div id="clueSuggestWeaponPicker" class="clue-card-select"></div>
+                          <select id="clueSuggestWeapon" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                        </div>
+                      </div>
+                      <button id="clueConfirmSuggestionButton" class="primary-button" type="button">제안하기</button>
+                      <button id="clueCancelSuggestionButton" class="secondary-button" type="button">취소</button>
+                      <span class="clue-popup-hint">팝업을 클릭하면 팝업 닫기</span>
+                    </section>
+
+                    <section class="clue-action-card clue-accusation-card" id="clueAccusationCard" aria-live="polite">
+                      <div class="clue-panel-title">최종 추리</div>
+                      <small>CLUE 존에 들어왔습니다. 지금 고발하거나 나중에 턴을 넘길 수 있습니다.</small>
+                      <div class="clue-suggestion-card-panel clue-accusation-card-panel">
+                        <div class="clue-suggestion-slot">
+                          <span>용의자</span>
+                          <div id="clueAccuseSuspectPicker" class="clue-card-select"></div>
+                          <select id="clueAccuseSuspect" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                        </div>
+                        <div class="clue-suggestion-slot">
+                          <span>장소</span>
+                          <div id="clueAccuseRoomPicker" class="clue-card-select"></div>
+                          <select id="clueAccuseRoom" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                        </div>
+                        <div class="clue-suggestion-slot">
+                          <span>도구</span>
+                          <div id="clueAccuseWeaponPicker" class="clue-card-select"></div>
+                          <select id="clueAccuseWeapon" class="visually-hidden-select" tabindex="-1" aria-hidden="true"></select>
+                        </div>
+                      </div>
+                      <button id="clueMakeAccusationButton" class="danger-button" type="button">고발하기</button>
+                      <button id="clueCancelAccusationButton" class="secondary-button" type="button">나중에</button>
+                      <span class="clue-popup-hint">팝업을 클릭하면 팝업 닫기</span>
+                    </section>
+
+                    <section class="clue-action-card clue-notes-card">
+                      <div class="clue-panel-title">추리 노트</div>
+                      <div id="clueNotes" class="clue-notes"></div>
+                    </section>
+
+                    <ol id="clueLog" class="clue-log"></ol>
+                  </aside>
+                </div>
+              </div>
+            </section>
+
+      <dialog id="clueRulesDialog" class="clue-rules-dialog">
+              <form method="dialog" class="clue-rules-help">
+                <h2>클루 도움말</h2>
+                <ul>
+                  <li>사건 봉투에는 용의자, 장소, 무기 카드가 각각 1장씩 숨겨집니다.</li>
+                  <li>내 차례에 주사위를 굴리면 갈 수 있는 장소가 목록으로 표시됩니다.</li>
+                  <li>방에 들어가면 그 방을 장소로 하여 용의자와 무기를 제안합니다.</li>
+                  <li>다른 플레이어가 해당 카드 중 하나를 가지고 있으면 한 장을 보여줍니다.</li>
+                  <li>정답을 확신하면 CLUE 존에 들어가 최종 추리로 고발합니다. 맞히면 승리, 틀리면 패배합니다.</li>
+                  <li>추리판의 빈칸을 누르면 의심, 확정, 제외 표시가 순서대로 바뀝니다.</li>
+                </ul>
+                <button class="primary-button" type="submit">확인</button>
+              </form>
+            </dialog>
+    </main>
+    <script src="shared-ui.js?v=20260706-split-pages"></script>
+    <script src="shared-profiles.js?v=20260706-split-pages"></script>
+    <script src="clue-dialogues.js?v=20260703-clue-dialogue-events"></script>
+    <script src="clue.js?v=20260706-split-pages"></script>
+  </body>
+</html>

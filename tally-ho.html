@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>탤리 호</title>
+    <link rel="stylesheet" href="styles.css?v=20260706-split-pages" />
+    <link rel="stylesheet" href="tally-ho.css?v=20260706-split-pages" />
+  </head>
+  <body class="tally-active app-loading">
+    <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
+          <div class="loading-box">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <strong>불러오는 중</strong>
+            <small>카드 이미지와 온라인 정보를 준비하고 있습니다.</small>
+          </div>
+        </div>
+    <div id="turnToast" class="turn-toast" role="status" aria-live="assertive" aria-hidden="true">
+          <strong id="turnToastText">플레이어의 턴</strong>
+        </div>
+    <main class="app-shell">
+      <section id="tallyHoPanel" class="tally-ho-panel" aria-label="탤리 호 게임">
+              <div class="tally-shell">
+                <div class="tally-top">
+                  <img class="tally-title-art" src="assets/titles/title-tally-ho.png" alt="Tally Ho! 탤리 호" />
+                  <div class="tally-top-actions">
+                    <button id="tallyNewGameButton" class="secondary-button" type="button">새 게임</button>
+                    <button id="tallyRulesButton" class="icon-button tally-help-button" type="button" title="탤리 호 도움말" aria-label="탤리 호 도움말">?</button>
+                    <div class="tally-zoom-controls" aria-label="탤리 호 확대 축소">
+                      <button id="tallyZoomOutButton" class="icon-button tally-zoom-button" type="button" title="축소" aria-label="축소">-</button>
+                      <span id="tallyZoomLabel" class="tally-zoom-label">100%</span>
+                      <button id="tallyZoomInButton" class="icon-button tally-zoom-button" type="button" title="확대" aria-label="확대">+</button>
+                    </div>
+                    <button id="tallyBackButton" class="secondary-button" type="button">첫 화면</button>
+                  </div>
+                </div>
+                <section id="tallySetupView" class="tally-setup-view" aria-label="탤리 호 시작 설정">
+                  <div class="tally-setup-grid">
+                    <div class="mode-panel single-panel tally-single-panel">
+                      <div class="mode-panel-head">
+                        <strong>싱글플레이</strong>
+                        <span>AI와 바로 시작</span>
+                      </div>
+                      <div class="setup-controls">
+                        <div class="nickname-control">
+                          <label>
+                            내 닉네임
+                            <input id="tallyNameInput" type="text" minlength="2" maxlength="12" required placeholder="2글자 이상" autocomplete="nickname" />
+                          </label>
+                          <button id="tallyConfirmNicknameButton" class="secondary-button" type="button">확인</button>
+                          <small id="tallyNicknameStatus">닉네임은 판타지왕국과 공유되며, 하루에 한 번만 변경할 수 있습니다.</small>
+                        </div>
+                        <label class="setup-tooltip" data-tooltip="보통: 가볍게 수를 고릅니다. 어려움: 점수와 포획을 계산합니다. 매우어려움: 탈출과 후속 포획까지 더 적극적으로 봅니다. 완전랜덤: 프로필과 실제 난이도가 섞입니다.">
+                          AI 난이도
+                          <select id="tallyDifficultySelect">
+                            <option value="normal">보통</option>
+                            <option value="hard">어려움</option>
+                            <option value="expert">매우어려움</option>
+                            <option value="random">완전랜덤</option>
+                          </select>
+                        </label>
+                        <div class="tally-profile-preview" aria-label="탤리 호 플레이어">
+                          <div class="tally-profile-card">
+                            <img id="tallyHumanAvatar" src="assets/profiles/user/유저.jpg" alt="" />
+                            <span>플레이어</span>
+                            <strong id="tallyHumanPreviewName">닉네임 필요</strong>
+                          </div>
+                        </div>
+                        <button id="tallyStartButton" class="primary-button" type="button">게임 시작</button>
+                      </div>
+                    </div>
+                    <div class="mode-panel online-panel tally-online-panel">
+                      <div class="mode-panel-head online-panel-head">
+                        <strong>멀티플레이</strong>
+                        <span class="online-status">준비중</span>
+                      </div>
+                      <div class="online-controls">
+                        <label>
+                          닉네임
+                          <input id="tallyOnlineNameInput" type="text" maxlength="12" placeholder="공유 닉네임 사용" disabled />
+                        </label>
+                        <button class="secondary-button" type="button" disabled>방 만들기</button>
+                        <label>
+                          방 코드
+                          <input type="text" maxlength="6" placeholder="추후 지원" disabled />
+                        </label>
+                        <button class="secondary-button" type="button" disabled>입장</button>
+                      </div>
+                      <div class="tally-online-placeholder">
+                        <strong>온라인 방 코드 멀티는 아직 준비중입니다.</strong>
+                        <small>구조만 먼저 잡아두고, 이후 Supabase 동기화를 붙이면 바로 확장할 수 있습니다.</small>
+                      </div>
+                    </div>
+                    <div class="mode-panel leaderboard-panel tally-leaderboard-panel">
+                      <div class="mode-panel-head">
+                        <strong>탤리 호 랭킹</strong>
+                        <button id="tallyRefreshLeaderboardButton" class="secondary-button leaderboard-refresh-button" type="button">새로고침</button>
+                      </div>
+                      <div class="leaderboard-board">
+                        <section class="leaderboard-column" aria-label="동물 팀 랭킹">
+                          <h3>동물 팀 랭킹</h3>
+                          <ol id="tallyAnimalLeaderboardList" class="leaderboard-list"></ol>
+                        </section>
+                        <section class="leaderboard-column" aria-label="사냥꾼 팀 랭킹">
+                          <h3>사냥꾼 팀 랭킹</h3>
+                          <ol id="tallyHunterLeaderboardList" class="leaderboard-list"></ol>
+                        </section>
+                      </div>
+                      <div id="tallyLeaderboardStatus" class="leaderboard-status">랭킹을 불러오는 중입니다.</div>
+                    </div>
+                  </div>
+                </section>
+                <section id="tallyGameView" class="tally-game-view hidden" aria-label="탤리 호 플레이 화면">
+                  <div class="tally-layout">
+                    <aside class="tally-score-panel">
+                      <section class="tally-player-card blue" id="tallyBlueCard">
+                        <div class="tally-player-head">
+                          <img id="tallyBlueOwnerAvatar" src="assets/tally-ho/tiles/bear.webp" alt="" />
+                          <span id="tallyBlueOwnerLabel">동물팀 · 미정</span>
+                          <small id="tallyBlueTeamLabel">파랑</small>
+                        </div>
+                        <strong id="tallyBlueScore">0점</strong>
+                        <small id="tallyBluePieces">곰 · 여우</small>
+                        <div id="tallyBlueCaptured" class="tally-captured"></div>
+                      </section>
+                      <section class="tally-player-card brown" id="tallyBrownCard">
+                        <div class="tally-player-head">
+                          <img id="tallyBrownOwnerAvatar" src="assets/tally-ho/tiles/hunter.webp" alt="" />
+                          <span id="tallyBrownOwnerLabel">사냥꾼팀 · 미정</span>
+                          <small id="tallyBrownTeamLabel">갈색</small>
+                        </div>
+                        <strong id="tallyBrownScore">0점</strong>
+                        <small id="tallyBrownPieces">사냥꾼 · 나무꾼</small>
+                        <div id="tallyBrownCaptured" class="tally-captured"></div>
+                      </section>
+                      <div class="tally-phase-card">
+                        <span>현재 차례</span>
+                        <strong id="tallyTurnLabel">-</strong>
+                        <small id="tallyPhaseLabel">대기</small>
+                      </div>
+                    </aside>
+
+                    <section class="tally-board-wrap">
+                      <div id="tallyBoard" class="tally-board" aria-label="탤리 호 보드"></div>
+                    </section>
+
+                    <aside class="tally-side-panel">
+                      <section id="tallySelectedPanel" class="tally-selected-panel">
+                        <span>선택</span>
+                        <strong>타일을 선택하세요</strong>
+                        <small>뒤집거나 이동할 수 있습니다.</small>
+                      </section>
+                      <section class="tally-actions-panel">
+                        <button id="tallyFlipButton" class="primary-button" type="button" disabled>뒤집기</button>
+                        <button id="tallyExitButton" class="secondary-button" type="button" disabled>탈출</button>
+                      </section>
+                      <ol id="tallyLog" class="tally-log" aria-label="탤리 호 기록"></ol>
+                    </aside>
+                  </div>
+                </section>
+              </div>
+            </section>
+
+      <dialog id="tallyRulesDialog" class="rules-dialog tally-rules-dialog">
+              <form method="dialog">
+                <div class="dialog-header">
+                  <h2>탤리 호 규칙</h2>
+                  <button class="icon-button" value="close" title="닫기" aria-label="닫기">×</button>
+                </div>
+                <div class="rules-help tally-rules-help">
+                  <section class="rules-section">
+                    <h3>시작</h3>
+                    <ul>
+                      <li>7×7 보드에 48개 타일을 뒷면으로 놓고, 가운데 한 칸은 비워둡니다.</li>
+                      <li>처음 공개된 유색 타일로 진영이 정해집니다. 곰/여우는 동물팀, 사냥꾼/나무꾼은 사냥꾼팀입니다.</li>
+                      <li>중립 타일이 먼저 나오면 진영은 아직 정해지지 않고 계속 진행합니다.</li>
+                    </ul>
+                  </section>
+                  <section class="rules-section">
+                    <h3>차례</h3>
+                    <ul>
+                      <li>차례에는 뒷면 타일 1개를 공개하거나, 공개된 타일 1개를 이동합니다.</li>
+                      <li>곰과 나무꾼은 상하좌우 1칸 이동합니다.</li>
+                      <li>여우, 사냥꾼, 꿩, 오리는 상하좌우로 원하는 만큼 이동하지만 다른 타일은 뛰어넘을 수 없습니다.</li>
+                    </ul>
+                  </section>
+                  <section class="rules-section">
+                    <h3>포획</h3>
+                    <ul>
+                      <li>곰은 사냥꾼과 나무꾼을 잡습니다.</li>
+                      <li>여우는 꿩과 오리를 잡습니다.</li>
+                      <li>나무꾼은 나무를 베어 점수로 가져갑니다.</li>
+                      <li>사냥꾼은 자신이 바라보는 방향으로 곰, 여우, 꿩, 오리를 잡습니다.</li>
+                    </ul>
+                  </section>
+                  <section class="rules-section">
+                    <h3>종료</h3>
+                    <ul>
+                      <li>모든 타일이 공개되면 각 진영은 마지막 5턴씩 진행합니다.</li>
+                      <li>마지막 단계에서는 가장자리 출구로 자기 유색 타일을 탈출시켜 점수로 가져갈 수 있습니다.</li>
+                      <li>획득한 타일 점수가 더 높은 쪽이 승리합니다.</li>
+                    </ul>
+                  </section>
+                </div>
+              </form>
+            </dialog>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
+    <script src="shared-ui.js?v=20260706-split-pages"></script>
+    <script src="shared-profiles.js?v=20260706-split-pages"></script>
+    <script src="tally-ho.js?v=20260706-split-pages"></script>
+  </body>
+</html>

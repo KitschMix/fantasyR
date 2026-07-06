@@ -858,6 +858,10 @@ function enterClueSetup() {
 
 function returnToGameLauncher() {
   resetTurnToastState();
+  if (!els.gameLauncher) {
+    window.location.href = "index.html";
+    return;
+  }
   document.body.classList.add("launcher-active");
   document.body.classList.remove("clue-active", "clue-playing", "tally-active", "cant-active");
   els.clueSetupPanel?.classList.add("hidden");
