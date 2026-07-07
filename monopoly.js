@@ -1465,13 +1465,10 @@
     // Doubles = extra turn
     if (state.dice[0] === state.dice[1] && !p.inJail && !p.bankrupt && state.lastDoubleCount < 3) {
       addLog(`🔄 ${playerDisplayName(p)} 더블로 한 번 더!`);
-      
       const emoji = p.human ? "🎲" : "🤖";
-      await showNotice(`${emoji} <strong>${playerDisplayName(p)}</strong>의<br>더블 추가 턴!`, 1000);
-      
+      await showNotice(`${emoji} <strong>${playerDisplayName(p)}</strong>의<br>더블 추가 턴!`, 1200);
       state.phase = "awaitRoll";
       renderAll();
-      showTurnToast(p, true);
       if (!p.human) scheduleAiTurn();
       return;
     }
@@ -1486,14 +1483,13 @@
       return;
     }
 
-    // Show turn change notice popup!
+    // Show turn change notice popup
     const emoji = np.human ? "🎲" : "🤖";
-    await showNotice(`${emoji} <strong>${playerDisplayName(np)}</strong>의<br>차례입니다!`, 1000);
+    await showNotice(`${emoji} <strong>${playerDisplayName(np)}</strong>의<br>차례입니다!`, 1200);
 
     if (np.spaceTravelReady) {
       state.phase = "spaceTravel";
       renderAll();
-      showTurnToast(np);
       if (np.human) {
         if (typeof window.showCenterToast === "function") {
           window.showCenterToast("🚀 우주여행 차례! 이동할 칸을 클릭하세요.", 3000, { mode: "monopoly" });
@@ -1508,7 +1504,6 @@
 
     state.phase = "awaitRoll";
     renderAll();
-    showTurnToast(np);
     if (!np.human) scheduleAiTurn();
   }
 
@@ -1820,10 +1815,9 @@
     els.gamePanel?.classList.remove("hidden");
     renderAll();
     const firstPlayer = state.players[0];
-    showTurnToast(firstPlayer);
     // Show first turn popup notice
     setTimeout(() => {
-      showNotice(`🎲 <strong>${playerDisplayName(firstPlayer)}</strong>의<br>차례입니다!`, 1000);
+      showNotice(`🎲 <strong>${playerDisplayName(firstPlayer)}</strong>의<br>차례입니다!`, 1200);
     }, 400);
   }
 
