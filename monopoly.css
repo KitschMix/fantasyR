@@ -129,6 +129,14 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   gap: 14px;
   width: min(1880px, 100%);
   margin: 0 auto;
+  zoom: var(--monopoly-ui-zoom, 1);
+  transform-origin: top center;
+}
+
+@supports not (zoom: 1) {
+  .monopoly-shell {
+    transform: scale(var(--monopoly-ui-zoom, 1));
+  }
 }
 
 .monopoly-game-top {
@@ -156,13 +164,6 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   grid-template-columns: 260px 1fr 280px;
   gap: 12px;
   align-items: stretch;
-  zoom: var(--monopoly-ui-zoom, 1);
-}
-@supports not (zoom: 1) {
-  .monopoly-game-layout {
-    transform: scale(var(--monopoly-ui-zoom, 1));
-    transform-origin: top center;
-  }
 }
 
 .monopoly-side-panel,
