@@ -6,6 +6,7 @@
     <title>스시고</title>
     <link rel="stylesheet" href="styles.css?v=20260707-sushi" />
     <link rel="stylesheet" href="sushi-go.css?v=20260707-sushi" />
+    <link rel="stylesheet" href="tutorial.css?v=20260707-tutorial" />
   </head>
   <body class="sushi-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -52,6 +53,7 @@
             </div>
             <div class="sushi-game-actions">
               <button id="sushiNewGameButton" class="secondary-button" type="button">새 게임</button>
+              <button id="sushiTutorialButton" class="secondary-button" type="button">📖 튜토리얼</button>
               <button id="sushiRulesButton" class="icon-button sushi-help-button" type="button" title="도움말" aria-label="스시고 도움말">?</button>
               <button id="sushiExitButton" class="secondary-button" type="button">첫 화면</button>
             </div>
@@ -118,6 +120,21 @@
           </ul>
           <button class="primary-button" type="submit">확인</button>
         </form>
+      </dialog>
+
+      <!-- Tutorial Dialog -->
+      <dialog id="sushiTutorialDialog" class="sushi-tutorial-dialog">
+        <div class="tutorial-content">
+          <div class="tutorial-header">
+            <h2 id="sushiTutorialTitle">📖 스시고! 튜토리얼</h2>
+            <span id="sushiTutorialStep" class="tutorial-step">1/7</span>
+          </div>
+          <div id="sushiTutorialBody" class="tutorial-body"></div>
+          <div class="tutorial-nav">
+            <button id="sushiTutorialPrev" class="secondary-button" type="button" disabled>← 이전</button>
+            <button id="sushiTutorialNext" class="primary-button" type="button">다음 →</button>
+          </div>
+        </div>
       </dialog>
     </main>
     <script src="shared-ui.js?v=20260707-sushi"></script>

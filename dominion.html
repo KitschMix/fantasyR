@@ -6,6 +6,7 @@
     <title>도미니언</title>
     <link rel="stylesheet" href="styles.css?v=20260707-dominion" />
     <link rel="stylesheet" href="dominion.css?v=20260707-dominion" />
+    <link rel="stylesheet" href="tutorial.css?v=20260707-tutorial" />
   </head>
   <body class="dominion-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -47,8 +48,7 @@
           <div class="dominion-game-top">
             <h1 class="dominion-game-title">👑 도미니언</h1>
             <div class="dominion-game-actions">
-              <button id="dominionNewGameButton" class="secondary-button" type="button">새 게임</button>
-              <button id="dominionRulesButton" class="icon-button dominion-help-button" type="button" title="도움말" aria-label="도미니언 도움말">?</button>
+              <button id="dominionNewGameButton" class="secondary-button" type="button">새 게임</button>            <button id="dominionTutorialButton" class="secondary-button" type="button">📖 튜토리얼</button>              <button id="dominionRulesButton" class="icon-button dominion-help-button" type="button" title="도움말" aria-label="도미니언 도움말">?</button>
               <button id="dominionExitButton" class="secondary-button" type="button">첫 화면</button>
             </div>
           </div>
@@ -106,6 +106,21 @@
           </ul>
           <button class="primary-button" type="submit">확인</button>
         </form>
+      </dialog>
+
+      <!-- Tutorial Dialog -->
+      <dialog id="dominionTutorialDialog" class="dominion-tutorial-dialog">
+        <div class="tutorial-content">
+          <div class="tutorial-header">
+            <h2 id="dominionTutorialTitle">📖 도미니언 튜토리얼</h2>
+            <span id="dominionTutorialStep" class="tutorial-step">1/7</span>
+          </div>
+          <div id="dominionTutorialBody" class="tutorial-body"></div>
+          <div class="tutorial-nav">
+            <button id="dominionTutorialPrev" class="secondary-button" type="button" disabled>← 이전</button>
+            <button id="dominionTutorialNext" class="primary-button" type="button">다음 →</button>
+          </div>
+        </div>
       </dialog>
     </main>
     <script src="shared-ui.js?v=20260707-dominion"></script>

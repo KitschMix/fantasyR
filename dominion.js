@@ -848,6 +848,103 @@
   function leaveGame() { window.location.href = "./"; }
 
   /* ── Init ── */
+  /* ── Tutorial ── */
+  const TUTORIAL_STEPS = [
+    {
+      title: "게임 목표",
+      html: `<span class="tutorial-emoji">👑</span>
+        <h3>도미니언에 오신 것을 환영합니다!</h3>
+        <p>게임 종료 시 <strong>가장 많은 승점(VP)</strong>을 가진 플레이어가 승리합니다.</p>
+        <div class="tutorial-highlight">목표: Province(6점)를 많이 사고, Estate/Duchy도 확보하세요.</div>`
+    },
+    {
+      title: "턴 순서",
+      html: `<span class="tutorial-emoji">🔄</span>
+        <h3>턴은 3단계로 진행됩니다</h3>
+        <ul>
+          <li><strong>행동 단계:</strong> 행동 카드를 1장 사용합니다</li>
+          <li><strong>구매 단계:</strong> 보물을 사용해 카드를 구매합니다</li>
+          <li><strong>정리 단계:</strong> 패를 버리고 5장을 새로 뽑습니다</li>
+        </ul>
+        <div class="tutorial-highlight">핵심: 좋은 카드를 많이 사서 덱을 강화하세요!</div>`
+    },
+    {
+      title: "보물 카드",
+      html: `<span class="tutorial-emoji">💰</span>
+        <h3>보물 카드로 카드를 구매합니다</h3>
+        <ul>
+          <li>🟤 <strong>Copper</strong> — 1코인</li>
+          <li>⚪ <strong>Silver</strong> — 2코인 (₩3에 구매)</li>
+          <li>🟡 <strong>Gold</strong> — 3코인 (₩6에 구매)</li>
+        </ul>
+        <div class="tutorial-highlight">구매 단계에서 보물 카드를 클릭하면 자동으로 코인이 됩니다.<br>"전부 사용" 버튼으로 한 번에 사용할 수도 있어요.</div>`
+    },
+    {
+      title: "승점 카드",
+      html: `<span class="tutorial-emoji">🏆</span>
+        <h3>승점 카드로 점수를 얻습니다</h3>
+        <ul>
+          <li>🏠 <strong>Estate</strong> — 1점 (₩2)</li>
+          <li>🏰 <strong>Duchy</strong> — 3점 (₩5)</li>
+          <li>👑 <strong>Province</strong> — 6점 (₩8)</li>
+          <li>💀 <strong>Curse</strong> — -1점 (상대가 부여)</li>
+        </ul>
+        <div class="tutorial-highlight">승점 카드는 게임 중 아무 효과가 없지만, 최종 점수에 필수입니다!</div>`
+    },
+    {
+      title: "행동 카드",
+      html: `<span class="tutorial-emoji">🃏</span>
+        <h3>행동 카드로 덱을 강화하세요</h3>
+        <p>공급처에서 행동 카드를 사서 덱에 넣으면, 턴마다 더 많은 일을 할 수 있습니다.</p>
+        <ul>
+          <li>🏘️ <strong>Village</strong> (+1카드 +2행동) — 행동 연쇄의 핵심</li>
+          <li>🔨 <strong>Smithy</strong> (+3카드) — 패를 많이 뽑음</li>
+          <li>🏪 <strong>Market</strong> (+1카드 +1행동 +1구매 +1코인) — 만능 카드</li>
+          <li>⛪ <strong>Chapel</strong> (최대 4장 트래시) — 약한 카드를 제거</li>
+        </ul>`
+    },
+    {
+      title: "특수 카드",
+      html: `<span class="tutorial-emoji">⚡</span>
+        <h3>특수 능력 카드 활용</h3>
+        <ul>
+          <li>🍷 <strong>Cellar</strong> — 원하는 만큼 버리고 같은 수 뽑기</li>
+          <li>🛠️ <strong>Workshop</strong> — 4이하 카드 1장 무료 획득</li>
+          <li>♻️ <strong>Remodel</strong> — 1장 트래시 후 +2비용 카드 획득</li>
+          <li>⛏️ <strong>Mine</strong> — 보물 업그레이드 (Copper→Silver→Gold)</li>
+          <li>🧙 <strong>Witch</strong> — +2카드 + 상대에게 Curse 부여</li>
+        </ul>`
+    },
+    {
+      title: "게임 종료 & 승리",
+      html: `<span class="tutorial-emoji">🏁</span>
+        <h3>게임이 끝나는 조건</h3>
+        <ul>
+          <li><strong>Province 카드</strong>가 모두 소진되면 즉시 종료</li>
+          <li>공급처 <strong>3줄</strong>이 소진되어도 종료</li>
+        </ul>
+        <p>덱에 있는 모든 카드(패 + 덱 + 버림)의 VP를 합산해서 가장 높은 사람이 승리!</p>
+        <div class="tutorial-highlight"><strong>전략 팁:</strong> 초반에는 Silver/Gold를 사서 코인을 늦고, 중반에 Province를 사기 시작하세요. Chapel로 약한 카드를 제거하면 덱이 강해집니다!</div>`
+    }
+  ];
+
+  let tutorialStep = 0;
+
+  function showTutorial(step) {
+    tutorialStep = Math.max(0, Math.min(step, TUTORIAL_STEPS.length - 1));
+    const s = TUTORIAL_STEPS[tutorialStep];
+    const titleEl = document.querySelector("#dominionTutorialTitle");
+    const stepEl = document.querySelector("#dominionTutorialStep");
+    const bodyEl = document.querySelector("#dominionTutorialBody");
+    const prevBtn = document.querySelector("#dominionTutorialPrev");
+    const nextBtn = document.querySelector("#dominionTutorialNext");
+    if (titleEl) titleEl.textContent = `📖 ${s.title}`;
+    if (stepEl) stepEl.textContent = `${tutorialStep + 1}/${TUTORIAL_STEPS.length}`;
+    if (bodyEl) bodyEl.innerHTML = s.html;
+    if (prevBtn) prevBtn.disabled = tutorialStep === 0;
+    if (nextBtn) nextBtn.textContent = tutorialStep === TUTORIAL_STEPS.length - 1 ? "완료" : "다음 →";
+  }
+
   function init() {
     els.startButton?.addEventListener("click", startGame);
     els.newGameButton?.addEventListener("click", resetToSetup);
@@ -862,6 +959,20 @@
       if (!p?.human) return;
       if (state.phase === "action") { state.phase = "buy"; renderAll(); return; }
       if (state.phase === "buy") endBuyPhase();
+    });
+
+    // Tutorial
+    const tutorialBtn = document.querySelector("#dominionTutorialButton");
+    const tutorialDialog = document.querySelector("#dominionTutorialDialog");
+    const tutorialPrev = document.querySelector("#dominionTutorialPrev");
+    const tutorialNext = document.querySelector("#dominionTutorialNext");
+    tutorialBtn?.addEventListener("click", () => {
+      if (typeof tutorialDialog?.showModal === "function") { showTutorial(0); tutorialDialog.showModal(); }
+    });
+    tutorialPrev?.addEventListener("click", () => showTutorial(tutorialStep - 1));
+    tutorialNext?.addEventListener("click", () => {
+      if (tutorialStep >= TUTORIAL_STEPS.length - 1) tutorialDialog?.close();
+      else showTutorial(tutorialStep + 1);
     });
 
     document.body.classList.remove("app-loading");

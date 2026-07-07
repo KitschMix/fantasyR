@@ -457,6 +457,97 @@
   function leaveGame() { window.location.href = "./"; }
 
   /* ── Init ── */
+  /* ── Tutorial ── */
+  const TUTORIAL_STEPS = [
+    {
+      title: "게임 목표",
+      html: `<span class="tutorial-emoji">🍣</span>
+        <h3>스시고!에 오신 것을 환영합니다!</h3>
+        <p>3라운드 동안 스시 카드를 골라 <strong>가장 많은 점수</strong>를 획득하세요!</p>
+        <div class="tutorial-highlight">매 턴 카드 1장을 고르고, 나머지는 왼쪽 사람에게 넘깁니다.</div>`
+    },
+    {
+      title: "드래프팅",
+      html: `<span class="tutorial-emoji">🔄</span>
+        <h3>카드 드래프팅이란?</h3>
+        <p>손패에서 <strong>1장</strong>을 선택하면, 나머지 카드가 왼쪽 플레이어에게 전달됩니다.</p>
+        <p>왼쪽에서는 받은 카드에서 또 1장을 고르고, 나머지를 넘깁니다.</p>
+        <div class="tutorial-highlight">카드가 모두 없어지면 라운드 종료!<br>상대가 뭘 고르는지 보면서 전략을 세우세요.</div>`
+    },
+    {
+      title: "회전 초밥 & 와사비",
+      html: `<span class="tutorial-emoji">🍣</span>
+        <h3>회전 초밥으로 즉시 점수!</h3>
+        <ul>
+          <li>🥚 <strong>계란 초밥</strong> — 1점</li>
+          <li>🍣 <strong>연어 초밥</strong> — 2점</li>
+          <li>🐙 <strong>문어 초밥</strong> — 3점</li>
+        </ul>
+        <p>🟢 <strong>와사비</strong>를 먼저 놓으면, 다음 초밥 점수가 <strong>3배!</strong></p>
+        <div class="tutorial-highlight">와사비 → 문어 초밥 = 3×3 = <strong>9점!</strong></div>`
+    },
+    {
+      title: "모으는 카드",
+      html: `<span class="tutorial-emoji">📦</span>
+        <h3>많이 모을수록 강해지는 카드들</h3>
+        <ul>
+          <li>🍤 <strong>새우튀김</strong> — 2장 = 5점</li>
+          <li>🐟 <strong>사시미</strong> — 3장 = 10점</li>
+          <li>🥟 <strong>만두</strong> — 1장=1점, 2장=3점, 3장=5점, 4장=8점, 5장=11점</li>
+        </ul>
+        <div class="tutorial-highlight">만두는 5장 모으면 11점! 하지만 상대도 노릴 수 있어요.</div>`
+    },
+    {
+      title: "김밥 & 푸딩",
+      html: `<span class="tutorial-emoji">🍱</span>
+        <h3>김밥과 푸딩은 특별합니다</h3>
+        <p>🍱 <strong>김밥</strong> — 라운드 종료 시 가장 많이 가진 사람 <strong>6점</strong>, 2등 <strong>3점</strong></p>
+        <p>🍮 <strong>푸딩</strong> — 3라운드 전체가 끝난 후 가장 많은 사람 <strong>+6점</strong>, 가장 적은 사람 <strong>-6점</strong></p>
+        <div class="tutorial-highlight">푸딩은 3라운드 동안 누적됩니다. 너무 많이 버리면 -6점!</div>`
+    },
+    {
+      title: "전략 팁",
+      html: `<span class="tutorial-emoji">💡</span>
+        <h3>승리를 위한 전략</h3>
+        <ul>
+          <li><strong>상대 파악:</strong> 상대가 뭘 고르는지 보면 전략이 보여요</li>
+          <li><strong>포기:</strong> 사시미 1장은 0점. 못 모을 것 같으면 과감히 버리세요</li>
+          <li><strong>와사비 타이밍:</strong> 와사비 놓고 다음 턴에 초밥이 안 오면 낭비!</li>
+          <li><strong>김밥 견제:</strong> 상대가 김밥을 많이 모으면 1장을 뺏어오세요</li>
+          <li><strong>푸딩 관리:</strong> 최소 2~3장은 확보해두세요</li>
+        </ul>`
+    },
+    {
+      title: "게임 흐름",
+      html: `<span class="tutorial-emoji">🎮</span>
+        <h3>게임은 이렇게 진행됩니다</h3>
+        <ol>
+          <li><strong>라운드 시작:</strong> 카드가 배분됩니다 (인원수에 따라 8~10장)</li>
+          <li><strong>드래프팅:</strong> 카드를 1장씩 선택하며 손패가 줄어듭니다</li>
+          <li><strong>라운드 종료:</strong> 점수 계산 + 김밥 보너스</li>
+          <li><strong>3라운드 후:</strong> 푸딩 점수 반영 → 최종 승자 결정!</li>
+        </ol>
+        <div class="tutorial-highlight">자, 이제 게임을 시작해볼까요? 🍣</div>`
+    }
+  ];
+
+  let tutorialStep = 0;
+
+  function showTutorial(step) {
+    tutorialStep = Math.max(0, Math.min(step, TUTORIAL_STEPS.length - 1));
+    const s = TUTORIAL_STEPS[tutorialStep];
+    const titleEl = document.querySelector("#sushiTutorialTitle");
+    const stepEl = document.querySelector("#sushiTutorialStep");
+    const bodyEl = document.querySelector("#sushiTutorialBody");
+    const prevBtn = document.querySelector("#sushiTutorialPrev");
+    const nextBtn = document.querySelector("#sushiTutorialNext");
+    if (titleEl) titleEl.textContent = `📖 ${s.title}`;
+    if (stepEl) stepEl.textContent = `${tutorialStep + 1}/${TUTORIAL_STEPS.length}`;
+    if (bodyEl) bodyEl.innerHTML = s.html;
+    if (prevBtn) prevBtn.disabled = tutorialStep === 0;
+    if (nextBtn) nextBtn.textContent = tutorialStep === TUTORIAL_STEPS.length - 1 ? "완료" : "다음 →";
+  }
+
   function init() {
     els.startButton?.addEventListener("click", startGame);
     els.newGameButton?.addEventListener("click", resetToSetup);
@@ -466,6 +557,20 @@
     els.rulesDialog?.addEventListener("click", e => { if (e.target === els.rulesDialog) els.rulesDialog.close(); });
     els.nextRoundBtn?.addEventListener("click", nextRound);
     els.playAgainBtn?.addEventListener("click", startGame);
+
+    // Tutorial
+    const tutorialBtn = document.querySelector("#sushiTutorialButton");
+    const tutorialDialog = document.querySelector("#sushiTutorialDialog");
+    const tutorialPrev = document.querySelector("#sushiTutorialPrev");
+    const tutorialNext = document.querySelector("#sushiTutorialNext");
+    tutorialBtn?.addEventListener("click", () => {
+      if (typeof tutorialDialog?.showModal === "function") { showTutorial(0); tutorialDialog.showModal(); }
+    });
+    tutorialPrev?.addEventListener("click", () => showTutorial(tutorialStep - 1));
+    tutorialNext?.addEventListener("click", () => {
+      if (tutorialStep >= TUTORIAL_STEPS.length - 1) tutorialDialog?.close();
+      else showTutorial(tutorialStep + 1);
+    });
 
     document.body.classList.remove("app-loading");
     document.querySelector("#loadingOverlay")?.classList.add("hidden");
