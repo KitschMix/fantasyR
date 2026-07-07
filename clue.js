@@ -999,14 +999,14 @@
 
   function revealRandomOpponentCard() {
     const candidates = state.players
-      .filter((player) => !player.human && !player.eliminated && player.hand.length)
+      .filter((player) => !player.human && player.hand.length)
       .flatMap((player) => player.hand.map((entry) => ({ player, entry })));
     return randomItem(candidates);
   }
 
   function randomOpponentCardForAi(player, { hiddenOnly = true } = {}) {
     const candidates = state.players
-      .filter((target) => target !== player && !target.eliminated && target.hand.length)
+      .filter((target) => target !== player && target.hand.length)
       .flatMap((target) => target.hand
         .filter((entry) => !hiddenOnly || !player.known.has(entry.id))
         .map((entry) => ({ player: target, entry })));
@@ -1440,7 +1440,6 @@
 
     for (let offset = 1; offset < state.players.length; offset += 1) {
       const target = state.players[(playerIndex + offset) % state.players.length];
-      if (target.eliminated) continue;
       const matches = matchingCards(target, suggestion);
       if (!matches.length) {
         announceNoCard(target, player);
@@ -2303,7 +2302,7 @@
           <strong>${escapeHtml(playerDisplayName(player))}</strong>
           <small>${player.eliminated ? "추리 게임 탈락" : `${escapeHtml(player.suspect)} · ${escapeHtml(roomName(player.location))}`}</small>
         </span>
-        <b>${player.eliminated ? "탈락" : `${player.hand.length}장`}</b>
+        <b>${player.hand.length}장</b>
         ${!player.eliminated && player.speech ? `<span class="clue-speech-bubble">${escapeHtml(player.speech)}</span>` : ""}
       `;
       fragment.append(item);
