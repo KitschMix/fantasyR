@@ -326,11 +326,11 @@ body:not(.launcher-active) .game-launcher {
 }
 
 .dominion-launcher-card {
-  width: min(560px, 76vw);
+  width: min(640px, 80vw);
 }
 
 .dominion-launcher-card img {
-  max-height: 160px;
+  max-height: 148px;
   filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.42));
 }
 
@@ -339,7 +339,7 @@ body:not(.launcher-active) .game-launcher {
 }
 
 .sushi-launcher-card img {
-  max-height: 160px;
+  max-height: 168px;
   filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.42));
 }
 
