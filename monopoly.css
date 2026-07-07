@@ -163,7 +163,7 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   display: grid;
   grid-template-columns: 220px 1fr 220px;
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .monopoly-side-panel,
@@ -295,8 +295,9 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 
 /* --- Board --- */
 .monopoly-board-stage {
-  display: grid;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .monopoly-board {
@@ -902,6 +903,7 @@ body.monopoly-active .monopoly-game-actions {
 body.monopoly-active .monopoly-game-layout {
   grid-template-columns: 220px 1fr 220px;
   gap: 12px;
+  align-items: stretch;
 }
 
 body.monopoly-active .monopoly-side-panel,
@@ -1490,13 +1492,15 @@ body.monopoly-active .monopoly-game-layout {
   display: grid;
   grid-template-columns: 220px 1fr 220px;
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
 }
 
 body.monopoly-active .monopoly-side-panel {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  height: 100%;
+  overflow: hidden;
 }
 
 body.monopoly-active .monopoly-log-card {
@@ -1525,12 +1529,14 @@ body.monopoly-active .monopoly-log {
 body.monopoly-active .monopoly-control-panel {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 body.monopoly-active .monopoly-all-properties-card {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  height: 100%;
   overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--line);
