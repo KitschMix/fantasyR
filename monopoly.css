@@ -161,8 +161,8 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 
 .monopoly-game-layout {
   display: grid;
-  grid-template-columns: 260px 1fr 280px;
-  gap: 14px;
+  grid-template-columns: 220px 1fr 220px;
+  gap: 12px;
   align-items: start;
 }
 
@@ -303,7 +303,6 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  max-width: 850px;
   margin: 0 auto;
   border-radius: 8px;
   overflow: hidden;
@@ -710,9 +709,6 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   .monopoly-game-layout {
     grid-template-columns: 1fr;
   }
-  .monopoly-board {
-    max-width: 500px;
-  }
 }
 
 /* --- Burumabul Visual System --- */
@@ -904,7 +900,7 @@ body.monopoly-active .monopoly-game-actions {
 }
 
 body.monopoly-active .monopoly-game-layout {
-  grid-template-columns: 280px minmax(560px, 1fr) 320px;
+  grid-template-columns: 220px 1fr 220px;
   gap: 12px;
 }
 
@@ -1492,7 +1488,7 @@ body.monopoly-active .monopoly-rules-help li {
 /* --- Panel Layout and Alignment Optimization --- */
 body.monopoly-active .monopoly-game-layout {
   display: grid;
-  grid-template-columns: 280px minmax(560px, 1fr) 280px;
+  grid-template-columns: 220px 1fr 220px;
   gap: 12px;
   align-items: start;
 }
@@ -1501,8 +1497,6 @@ body.monopoly-active .monopoly-side-panel {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* Match board height via aspect-ratio constraint of center column */
-  max-height: 850px;
 }
 
 body.monopoly-active .monopoly-log-card {
@@ -1531,8 +1525,6 @@ body.monopoly-active .monopoly-log {
 body.monopoly-active .monopoly-control-panel {
   display: flex;
   flex-direction: column;
-  /* Match the board square height */
-  max-height: 850px;
 }
 
 body.monopoly-active .monopoly-all-properties-card {
