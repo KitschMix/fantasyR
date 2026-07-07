@@ -382,27 +382,17 @@ body:not(.cant-active) .cant-stop-panel {
 }
 
 .cant-board-token.runner::after {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border-radius: 50%;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.cant-board-token.player-human.runner::after {
-  background: #5ed0ff;
-}
-
-.cant-board-token.player-ai1.runner::after {
-  background: #ff9d5e;
-}
-
-.cant-board-token.player-ai2.runner::after {
-  background: #84dd6a;
-}
-
-.cant-board-token.player-ai3.runner::after {
-  background: #c891ff;
+  content: "⛏️" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
 }
 
 .cant-board-token.claimed {

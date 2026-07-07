@@ -1340,11 +1340,24 @@
     }
     if (els.phaseLabel) {
       const active = activeTempColumns();
-      els.phaseLabel.textContent = state.finished
-        ? "먼저 기둥 3개를 완주했습니다."
-        : active.length
-          ? `이번 턴 도전: ${active.join(", ")} (임시 마커 ${active.length}/3개 사용)`
-          : "주사위를 굴리세요.";
+      if (state.finished) {
+        els.phaseLabel.innerHTML = "먼저 기둥 3개를 완주했습니다.";
+      } else {
+        const spentCount = active.length;
+        let pickaxeHtml = '<div style="margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 6px;">';
+        for (let i = 0; i < 3; i++) {
+          if (i < spentCount) {
+            pickaxeHtml += '<span class="cant-pickaxe spent" style="opacity: 0.22; filter: grayscale(1) contrast(0.5); font-size: 22px; transition: opacity 0.3s ease;">⛏️</span>';
+          } else {
+            pickaxeHtml += '<span class="cant-pickaxe" style="opacity: 1.0; filter: drop-shadow(0 0 6px rgba(242, 207, 120, 0.8)); font-size: 22px; transition: opacity 0.3s ease;">⛏️</span>';
+          }
+        }
+        pickaxeHtml += '</div>';
+        
+        els.phaseLabel.innerHTML = active.length
+          ? `이번 턴 도전: ${active.join(", ")} ${pickaxeHtml}`
+          : `주사위를 굴리세요. ${pickaxeHtml}`;
+      }
     }
   }
 
