@@ -1425,10 +1425,9 @@
         cell.dataset.row = String(row);
         cell.dataset.col = String(col);
         if (isExitCell(row, col)) cell.classList.add("exit");
-        if (isBlockedCell(row, col)) cell.classList.add("center-blocked");
         if (!tile) {
           cell.classList.add("empty");
-          cell.setAttribute("aria-label", isBlockedCell(row, col) ? "막힌 중앙 칸" : "빈칸");
+          cell.setAttribute("aria-label", "빈칸");
         } else {
           const selectable = !aiTurn && !state.finished && (!tile.faceUp || canSelectMovableTile(tile));
           const tileEl = document.createElement("span");
