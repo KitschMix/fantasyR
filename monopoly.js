@@ -464,10 +464,26 @@
     const ownerEl = hoverCard.querySelector("#hoverCardOwner");
     const ownerRow = hoverCard.querySelector("#hoverCardOwnerRow");
 
+    // Reset styles
+    hoverCard.style.background = "";
+    hoverCard.classList.remove("has-bg-image");
     if (header) {
       header.textContent = tile.name;
       header.style.backgroundColor = tile.color || "#808080";
+      header.style.display = "";
     }
+
+    // Set custom backgrounds for Singapore and Manila
+    if (tile.name === "싱가포르") {
+      hoverCard.style.background = "url('assets/monopoly/singapore.jpg') no-repeat center center / cover";
+      hoverCard.classList.add("has-bg-image");
+      if (header) header.style.display = "none";
+    } else if (tile.name === "마닐라") {
+      hoverCard.style.background = "url('assets/monopoly/manila.jpg') no-repeat center center / cover";
+      hoverCard.classList.add("has-bg-image");
+      if (header) header.style.display = "none";
+    }
+
     if (priceEl) priceEl.textContent = `₩${tile.price || 0}`;
     if (rent0El) rent0El.textContent = `₩${tile.rent ? tile.rent[0] : 0}`;
     
@@ -906,12 +922,35 @@
       const ownerEl = dialog.querySelector("#monopolyPropertyOwner");
       const footer = dialog.querySelector("#monopolyPropertyFooter");
 
+      const popup = dialog.querySelector(".monopoly-property-popup");
+
+      // Reset popup styles
+      if (popup) {
+        popup.style.background = "";
+      }
+      dialog.classList.remove("has-bg-image");
       if (header) {
         header.style.backgroundColor = tile.color || "#808080";
+        header.style.display = "";
       }
       if (name) {
         name.textContent = tile.name;
+        name.style.display = "";
       }
+
+      // Set custom landing backgrounds for Singapore and Manila
+      if (tile.name === "싱가포르") {
+        if (popup) popup.style.background = "url('assets/monopoly/singapore.jpg') no-repeat center center / cover";
+        dialog.classList.add("has-bg-image");
+        if (header) header.style.display = "none";
+        if (name) name.style.display = "none"; // Gold text already on image
+      } else if (tile.name === "마닐라") {
+        if (popup) popup.style.background = "url('assets/monopoly/manila.jpg') no-repeat center center / cover";
+        dialog.classList.add("has-bg-image");
+        if (header) header.style.display = "none";
+        if (name) name.style.display = "none"; // Gold text already on image
+      }
+
       if (priceEl) priceEl.textContent = `₩${tile.price || 0}`;
       if (rent0El) rent0El.textContent = `₩${tile.rent ? tile.rent[0] : 0}`;
       

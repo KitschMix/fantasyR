@@ -1652,3 +1652,43 @@ body.monopoly-active .monopoly-all-properties-list {
   font-size: 14px;
   font-weight: bold;
 }
+
+/* --- Proportional Custom Scenic Background Overlays for Singapore & Manila --- */
+.monopoly-board-hover-card.has-bg-image {
+  justify-content: flex-end;
+}
+
+.monopoly-board-hover-card.has-bg-image .hover-card-body {
+  background: rgba(255, 252, 245, 0.94);
+  backdrop-filter: blur(2px);
+  margin: 12px 14px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 14px 12px;
+  flex-grow: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.monopoly-property-dialog.has-bg-image .monopoly-property-popup {
+  min-height: 480px;
+  justify-content: flex-end;
+}
+
+.monopoly-property-dialog.has-bg-image .property-popup-body {
+  background: rgba(255, 252, 245, 0.94);
+  backdrop-filter: blur(2px);
+  margin: 12px 16px 8px;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  flex-grow: 0;
+}
+
+.monopoly-property-dialog.has-bg-image .property-popup-footer {
+  background: rgba(255, 252, 245, 0.94);
+  backdrop-filter: blur(2px);
+  margin: 0 16px 16px;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
