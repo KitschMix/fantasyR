@@ -119,21 +119,9 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 
 /* --- Game Panel --- */
 .monopoly-game-panel {
+  --monopoly-ui-zoom: 1;
   min-height: calc(100vh - 28px);
   padding: 14px;
-}
-
-/* Zoom applies only to the board area, not the whole layout */
-.monopoly-board-stage {
-  --monopoly-ui-zoom: 1;
-  zoom: var(--monopoly-ui-zoom);
-}
-
-@supports not (zoom: 1) {
-  .monopoly-board-stage {
-    transform: scale(var(--monopoly-ui-zoom));
-    transform-origin: top center;
-  }
 }
 
 .monopoly-shell {
@@ -165,9 +153,16 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 
 .monopoly-game-layout {
   display: grid;
-  grid-template-columns: 220px 1fr 220px;
+  grid-template-columns: 260px 1fr 280px;
   gap: 12px;
   align-items: stretch;
+  zoom: var(--monopoly-ui-zoom, 1);
+}
+@supports not (zoom: 1) {
+  .monopoly-game-layout {
+    transform: scale(var(--monopoly-ui-zoom, 1));
+    transform-origin: top center;
+  }
 }
 
 .monopoly-side-panel,
@@ -907,7 +902,7 @@ body.monopoly-active .monopoly-game-actions {
 }
 
 body.monopoly-active .monopoly-game-layout {
-  grid-template-columns: 220px 1fr 220px;
+  grid-template-columns: 260px 1fr 280px;
   gap: 12px;
   align-items: stretch;
 }
@@ -1497,7 +1492,7 @@ body.monopoly-active .monopoly-rules-help li {
 /* --- Panel Layout and Alignment Optimization --- */
 body.monopoly-active .monopoly-game-layout {
   display: grid;
-  grid-template-columns: 220px 1fr 220px;
+  grid-template-columns: 260px 1fr 280px;
   gap: 12px;
   align-items: stretch;
 }
