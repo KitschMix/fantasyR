@@ -853,7 +853,7 @@
     applyOption(option);
   }
 
-  const DICE_ROLL_DURATION_MS = 650;
+  const DICE_ROLL_DURATION_MS = 1200;
   const DICE_ROLL_FRAME_MS = 58;
   let diceRollTimer = 0;
 
@@ -875,7 +875,7 @@
       const start = Date.now();
       const tick = () => {
         const elapsed = Date.now() - start;
-        const stopTimes = [350, 450, 550, 650];
+        const stopTimes = [300, 600, 900, 1200];
         
         if (elapsed >= DICE_ROLL_DURATION_MS) {
           state.dice = finalDice;
