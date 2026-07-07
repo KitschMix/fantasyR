@@ -419,8 +419,8 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 
 @keyframes monopoly-piece-bounce-v {
   0% { transform: translate(-50%, -50%) scale(1); }
-  40% { transform: translate(-50%, -50%) translateX(-22px) scale(1.28); }
-  75% { transform: translate(-50%, -50%) translateX(3px) scale(0.94); }
+  40% { transform: translate(-50%, -50%) translateY(-22px) scale(1.28); }
+  75% { transform: translate(-50%, -50%) translateY(3px) scale(0.94); }
   100% { transform: translate(-50%, -50%) scale(1); }
 }
 
@@ -470,8 +470,8 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 
 @keyframes monopoly-avatar-bounce-v {
   0% { transform: translate(-50%, calc(-100% - 6px)) scale(1); }
-  40% { transform: translate(-50%, calc(-100% - 6px)) translateX(-22px) scale(1.22); }
-  75% { transform: translate(-50%, calc(-100% - 6px)) translateX(3px) scale(0.95); }
+  40% { transform: translate(-50%, calc(-100% - 6px)) translateY(-22px) scale(1.22); }
+  75% { transform: translate(-50%, calc(-100% - 6px)) translateY(3px) scale(0.95); }
   100% { transform: translate(-50%, calc(-100% - 6px)) scale(1); }
 }
 
