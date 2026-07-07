@@ -216,10 +216,10 @@
   // Board is a grid: corners are bigger, sides have tiles in between
   // Positions are in % of the board
   function tilePosition(index) {
-    const CORNER_SIZE = 13; // % of board for corner tiles
+    const CORNER_SIZE = 13.5; // % of board for corner tiles (perfectly sized to leave exactly 73% for 9 side tiles)
     const SIDE_TILES = 9;
-    const avail = 100 - CORNER_SIZE;
-    const step = avail / SIDE_TILES;
+    const avail = 100 - 2 * CORNER_SIZE; // 100 - 27 = 73%
+    const step = avail / SIDE_TILES; // 73 / 9 = 8.1111...%
 
     if (index === 0)  return { x: 100 - CORNER_SIZE, y: 100 - CORNER_SIZE, w: CORNER_SIZE, h: CORNER_SIZE }; // GO (bottom-right)
     if (index <= 9)   return { x: 100 - CORNER_SIZE - index * step, y: 100 - CORNER_SIZE, w: step, h: CORNER_SIZE }; // bottom row, right→left
