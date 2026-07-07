@@ -6,7 +6,7 @@
   const CARD_DEFS = [
     { type: "nigiri",   name: "계란 초밥",   emoji: "🥚", points: 1, copies: 5 },
     { type: "nigiri",   name: "연어 초밥",   emoji: "🍣", points: 2, copies: 5 },
-    { type: "nigri",    name: "문어 초밥",   emoji: "🐙", points: 3, copies: 3 },
+    { type: "nigiri",    name: "문어 초밥",   emoji: "🐙", points: 3, copies: 3 },
     { type: "maki",     name: "김밥 3",      emoji: "🍱", points: 0, maki: 3, copies: 8 },
     { type: "maki",     name: "김밥 2",      emoji: "🍙", points: 0, maki: 2, copies: 5 },
     { type: "maki",     name: "김밥 1",      emoji: "🍘", points: 0, maki: 1, copies: 4 },
