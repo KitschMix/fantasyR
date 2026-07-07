@@ -302,28 +302,64 @@
   }
 
   function pickCard(playerIndex, cardIndex) {
-    if (!selectCardForPlayer(playerIndex, cardIndex)) return;
-
-    // AI picks for this turn
-    for (let i = 1; i < state.players.length; i++) {
-      if (state.hands[i] && state.hands[i].length > 0) {
-        const aiIdx = aiSelectCard(i);
-        selectCardForPlayer(i, aiIdx);
+    // Animate the picked card
+    if (playerIndex === 0) {
+      const cardEls = els.hand?.querySelectorAll(".sushi-card");
+      const targetEl = cardEls?.[cardIndex];
+      if (targetEl) {
+        targetEl.classList.add("picked");
       }
     }
 
-    // Pass hands left
-    const firstHand = state.hands.shift();
-    state.hands.push(firstHand);
+    // Wait for animation then process
+    setTimeout(() => {
+      if (!selectCardForPlayer(playerIndex, cardIndex)) return;
 
-    // Check if round over
-    if (state.hands[0].length === 0) {
-      renderAll();
-      endRound();
-      return;
-    }
+      // Animate passing (remaining hand slides left)
+      if (playerIndex === 0 && els.hand) {
+        els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
+          el.style.animationDelay = `${i * 40}ms`;
+          el.classList.add("passing");
+        });
+      }
 
-    renderAll();
+      // AI picks for this turn
+      for (let i = 1; i < state.players.length; i++) {
+        if (state.hands[i] && state.hands[i].length > 0) {
+          const aiIdx = aiSelectCard(i);
+          selectCardForPlayer(i, aiIdx);
+        }
+      }
+
+      // Pass hands left after animation
+      setTimeout(() => {
+        const firstHand = state.hands.shift();
+        state.hands.push(firstHand);
+
+        // Check if round over
+        if (state.hands[0].length === 0) {
+          renderAll();
+          // Animate round end
+          if (els.hand) {
+            els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
+              el.style.animationDelay = `${i * 60}ms`;
+              el.classList.add("round-end");
+            });
+          }
+          setTimeout(() => endRound(), 600);
+          return;
+        }
+
+        renderAll();
+        // Animate new hand appearing
+        if (els.hand) {
+          els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
+            el.style.animationDelay = `${i * 50}ms`;
+            el.classList.add("dealing");
+          });
+        }
+      }, 400);
+    }, 450);
   }
 
   function startDrafting() {

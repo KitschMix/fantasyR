@@ -26,7 +26,7 @@
     { id: 17, name: "사회복지기금",   type: "event",    event: "fund" },
     { id: 18, name: "파리",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
     { id: 19, name: "런던",           type: "property", color: "#FFA500", price: 200, rent: [16, 80, 220, 600, 800, 1000] },
-    { id: 20, name: "우주여행",       type: "corner",   corner: "parking" },
+    { id: 20, name: "사회복지기금",   type: "corner",   corner: "fund" },
     { id: 21, name: "뉴욕",           type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
     { id: 22, name: "황금열쇠",       type: "event",    event: "chance" },
     { id: 23, name: "워싱턴",         type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
@@ -36,7 +36,7 @@
     { id: 27, name: "부에노스",       type: "property", color: "#FFD700", price: 260, rent: [22, 110, 330, 800, 975, 1150] },
     { id: 28, name: "항공패스",       type: "property", color: "#808080", price: 150, rent: [4, 10] },
     { id: 29, name: "멕시코시티",     type: "property", color: "#FFD700", price: 280, rent: [24, 120, 360, 850, 1025, 1200] },
-    { id: 30, name: "무인도행",       type: "corner",   corner: "goToJail" },
+    { id: 30, name: "우주여행",       type: "corner",   corner: "parking" },
     { id: 31, name: "시드니",         type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
     { id: 32, name: "오클랜드",       type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
     { id: 33, name: "황금열쇠",       type: "event",    event: "chance" },
@@ -195,7 +195,8 @@
     log: [],
     turnCount: 0,
     aiTimer: 0,
-    lastDoubleCount: 0
+    lastDoubleCount: 0,
+    socialFundPool: 0
   };
 
   const TOKEN_EMOJIS = ["🔴", "🟢", "🔵", "🟡"];
@@ -901,6 +902,8 @@
     from.money -= actual;
     if (to && !to.bankrupt) {
       to.money += actual;
+    } else if (!to) {
+      state.socialFundPool += actual;
     }
     return actual;
   }
@@ -1138,9 +1141,9 @@
       isChance = false;
       addLog(`🎴 사회복지기금 카드: ${card.text}`);
     } else if (tile.event === "tax") {
-      const tax = tile.amount || 100;
-      player.money -= tax;
-      addLog(`💸 ${playerDisplayName(player)} 세금 ₩${tax} 지불`);
+      const tax = (tile.amount || 100) * (tile.amount ? 1 : SCALE_FACTOR);
+      payMoney(player, null, tax);
+      addLog(`💸 ${playerDisplayName(player)} 세금 ₩${tax.toLocaleString()} 지불 (사회복지기금 적립)`);
       if (player.money <= 0) goBankrupt(player, null);
       state.phase = "buyDecision";
       renderControls();
@@ -1282,12 +1285,19 @@
       case "jail":
         addLog(`🔒 ${playerDisplayName(player)} 무인도에 방문 중.`);
         break;
+      case "fund":
+        if (state.socialFundPool > 0) {
+          const reward = state.socialFundPool;
+          collectMoney(player, reward);
+          addLog(`💰 ${playerDisplayName(player)} 사회복지기금 수령! 적립금 ₩${reward.toLocaleString()} 획득!`);
+          state.socialFundPool = 0;
+        } else {
+          addLog(`💰 ${playerDisplayName(player)} 사회복지기금 수령처에 도착했으나 적립금이 없습니다.`);
+        }
+        break;
       case "parking":
         player.spaceTravelReady = true;
         addLog(`🚀 ${playerDisplayName(player)} 우주여행 정류소에 도착! 다음 턴에 원하는 칸으로 이동할 수 있습니다.`);
-        break;
-      case "goToJail":
-        await sendToJail(player);
         break;
     }
     state.phase = "buyDecision";
@@ -1762,6 +1772,7 @@
     state.log = [];
     state.turnCount = 1;
     state.lastDoubleCount = 0;
+    state.socialFundPool = 50 * SCALE_FACTOR; // Starting 기금 50만 원
 
     addLog(`🌐 부루마불 게임 시작! ${count}명 참가.`);
     addLog(`💰 각 플레이어 ₩${START_MONEY} 보유.`);
