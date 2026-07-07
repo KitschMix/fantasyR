@@ -222,7 +222,8 @@
     turnSerial: 0,
     lastTurnNoticeKey: "",
     log: [],
-    aiTimer: 0
+    aiTimer: 0,
+    forceNextAiRandomAccusation: false
   };
 
   let clueEventLayer = null;
@@ -1659,6 +1660,14 @@
     return shouldAccuse ? chooseAiAccusationCombo(player, candidates) : null;
   }
 
+  function buildRandomAccusation() {
+    return {
+      suspect: card("suspect", randomItem(SUSPECTS)),
+      weapon: card("weapon", randomItem(WEAPONS)),
+      room: card("room", randomItem(ROOMS).name)
+    };
+  }
+
   function uniqueDestinations(destinations) {
     const seen = new Set();
     return destinations.filter((destination) => {
@@ -1900,6 +1909,7 @@
     state.finished = false;
     state.turnSerial = 0;
     state.lastTurnNoticeKey = "";
+    state.forceNextAiRandomAccusation = false;
     beginClueTurn(0);
     state.piecePositions = {};
     state.log = [];
@@ -2094,8 +2104,12 @@
     finishGame(activePlayer(), isCorrectAccusation(accusation), accusation);
   }
 
-  function endHumanTurn() {
+  function endHumanTurn(event = null) {
     if (state.finished || !activePlayer()?.human || state.phase === "chooseMove" || state.phase === "awaitRoll") return;
+    if (event?.shiftKey) {
+      state.forceNextAiRandomAccusation = true;
+      log("치트: 다음 AI가 바로 아무 고발을 합니다.");
+    }
     const player = activePlayer();
     closeAccusationDialog();
     if (player.extraTurnPending) {
@@ -2143,6 +2157,20 @@
     clearAiTimer();
     if (state.finished || activePlayer()?.human) return;
     const player = activePlayer();
+    if (state.forceNextAiRandomAccusation) {
+      state.forceNextAiRandomAccusation = false;
+      const accusation = buildRandomAccusation();
+      log(`${playerDisplayWithSubject(player)} 치트 효과로 즉시 고발합니다.`);
+      queueClueEvent({
+        title: `${playerDisplayName(player)}의 최종 고발`,
+        message: `${withSubject(accusation.suspect.name)} ${withInstrument(accusation.weapon.name)} ${accusation.room.name}에서 죽였다고 고발합니다.`,
+        actor: player,
+        dialogueKey: "accuse",
+        cards: [accusation.suspect, accusation.weapon, accusation.room]
+      });
+      finishGame(player, isCorrectAccusation(accusation), accusation);
+      return;
+    }
     const finalDice = rollDice();
     await animateDiceRoll(finalDice);
     if (state.finished || activePlayer() !== player) return;
