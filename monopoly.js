@@ -93,6 +93,30 @@
   const DICE_ROLL_DURATION = 600;
   const DICE_FRAME_MS = 60;
 
+  const SCENIC_BG_MAPPING = {
+    "JFK공항": "jfk_airport.jpg",
+    "김포공항": "gimpo_airport.jpg",
+    "나리타공항": "narita_airport.jpg",
+    "두바이공항": "dubai_airport.jpg",
+    "런던": "london.jpg",
+    "로마": "rome.jpg",
+    "리우": "rio.jpg",
+    "마닐라": "manila.jpg",
+    "멕시코시티": "mexicocity.jpg",
+    "부에노스": "buenos_aires.jpg",
+    "서울": "seoul.jpg",
+    "시드니": "sydney.jpg",
+    "싱가포르": "singapore.jpg",
+    "아테네": "athens.jpg",
+    "오클랜드": "auckland.jpg",
+    "이스탄불": "istanbul.jpg",
+    "제주": "jeju.jpg",
+    "카이로": "cairo.jpg",
+    "파리": "paris.jpg",
+    "하와이": "hawaii.jpg",
+    "홍콩": "hongkong.jpg"
+  };
+
   // Scale TILES, CHANCE_CARDS, FUND_CARDS
   TILES.forEach(t => {
     if (t.price) t.price *= SCALE_FACTOR;
@@ -494,13 +518,10 @@
       header.style.display = "";
     }
 
-    // Set custom backgrounds for Singapore and Manila
-    if (tile.name === "싱가포르") {
-      hoverCard.style.background = "url('assets/monopoly/singapore.jpg') no-repeat center center / cover";
-      hoverCard.classList.add("has-bg-image");
-      if (header) header.style.display = "none";
-    } else if (tile.name === "마닐라") {
-      hoverCard.style.background = "url('assets/monopoly/manila.jpg') no-repeat center center / cover";
+    // Set custom backgrounds for scenic tiles
+    const bgImage = SCENIC_BG_MAPPING[tile.name];
+    if (bgImage) {
+      hoverCard.style.background = `url('assets/monopoly/${bgImage}') no-repeat center center / cover`;
       hoverCard.classList.add("has-bg-image");
       if (header) header.style.display = "none";
     }
@@ -959,14 +980,10 @@
         name.style.display = "";
       }
 
-      // Set custom landing backgrounds for Singapore and Manila
-      if (tile.name === "싱가포르") {
-        if (popup) popup.style.background = "url('assets/monopoly/singapore.jpg') no-repeat center center / cover";
-        dialog.classList.add("has-bg-image");
-        if (header) header.style.display = "none";
-        if (name) name.style.display = "none"; // Gold text already on image
-      } else if (tile.name === "마닐라") {
-        if (popup) popup.style.background = "url('assets/monopoly/manila.jpg') no-repeat center center / cover";
+      // Set custom landing backgrounds for scenic tiles
+      const bgImage = SCENIC_BG_MAPPING[tile.name];
+      if (bgImage) {
+        if (popup) popup.style.background = `url('assets/monopoly/${bgImage}') no-repeat center center / cover`;
         dialog.classList.add("has-bg-image");
         if (header) header.style.display = "none";
         if (name) name.style.display = "none"; // Gold text already on image
