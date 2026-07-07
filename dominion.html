@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>도미니언</title>
     <link rel="stylesheet" href="styles.css?v=20260707-dominion" />
-    <link rel="stylesheet" href="dominion.css?v=20260707-dominion" />
+    <link rel="stylesheet" href="dominion.css?v=20260707-dominion-zoom" />
     <link rel="stylesheet" href="tutorial.css?v=20260707-tutorial" />
   </head>
   <body class="dominion-active app-loading">
@@ -21,7 +21,7 @@
       <section id="dominionSetupPanel" class="dominion-setup-panel" aria-label="도미니언 설정">
         <div class="mode-panel dominion-panel">
           <div class="dominion-panel-top">
-            <h1 class="dominion-setup-title">👑 도미니언</h1>
+            <img class="dominion-setup-logo" src="assets/titles/title-dominion.webp" alt="도미니언" />
             <button id="dominionBackButton" class="secondary-button" type="button">첫 화면</button>
           </div>
           <div class="mode-panel-head">
@@ -46,9 +46,16 @@
       <section id="dominionGamePanel" class="dominion-game-panel hidden" aria-label="도미니언 플레이">
         <div class="dominion-shell">
           <div class="dominion-game-top">
-            <h1 class="dominion-game-title">👑 도미니언</h1>
+            <img class="dominion-game-logo" src="assets/titles/title-dominion.webp" alt="도미니언" />
             <div class="dominion-game-actions">
-              <button id="dominionNewGameButton" class="secondary-button" type="button">새 게임</button>            <button id="dominionTutorialButton" class="secondary-button" type="button">📖 튜토리얼</button>              <button id="dominionRulesButton" class="icon-button dominion-help-button" type="button" title="도움말" aria-label="도미니언 도움말">?</button>
+              <div class="dominion-zoom-controls" aria-label="도미니언 확대 축소">
+                <button id="dominionZoomOutButton" class="icon-button dominion-zoom-button" type="button" title="축소" aria-label="축소">-</button>
+                <span id="dominionZoomLabel" class="dominion-zoom-label">100%</span>
+                <button id="dominionZoomInButton" class="icon-button dominion-zoom-button" type="button" title="확대" aria-label="확대">+</button>
+              </div>
+              <button id="dominionNewGameButton" class="secondary-button" type="button">새 게임</button>
+              <button id="dominionTutorialButton" class="secondary-button" type="button">📖 튜토리얼</button>
+              <button id="dominionRulesButton" class="icon-button dominion-help-button" type="button" title="도움말" aria-label="도미니언 도움말">?</button>
               <button id="dominionExitButton" class="secondary-button" type="button">첫 화면</button>
             </div>
           </div>
@@ -135,6 +142,6 @@
     </main>
     <script src="shared-ui.js?v=20260707-dominion"></script>
     <script src="shared-profiles.js?v=20260707-dominion"></script>
-    <script src="dominion.js?v=20260707-dominion"></script>
+    <script src="dominion.js?v=20260707-dominion-zoom"></script>
   </body>
 </html>
