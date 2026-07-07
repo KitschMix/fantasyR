@@ -373,8 +373,36 @@ body:not(.cant-active) .cant-stop-panel {
 }
 
 .cant-board-token.runner {
-  outline: 3px solid rgba(242, 207, 120, 0.94);
-  outline-offset: 2px;
+  background: #ffffff !important;
+  border: 2px solid rgba(0, 0, 0, 0.6) !important;
+  box-shadow:
+    0 0 0 3px rgba(242, 207, 120, 0.94),
+    0 4px 10px rgba(0, 0, 0, 0.4) !important;
+  outline: none !important;
+}
+
+.cant-board-token.runner::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.cant-board-token.player-human.runner::after {
+  background: #5ed0ff;
+}
+
+.cant-board-token.player-ai1.runner::after {
+  background: #ff9d5e;
+}
+
+.cant-board-token.player-ai2.runner::after {
+  background: #84dd6a;
+}
+
+.cant-board-token.player-ai3.runner::after {
+  background: #c891ff;
 }
 
 .cant-board-token.claimed {

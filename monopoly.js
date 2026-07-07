@@ -273,47 +273,40 @@
     if (!els.piecesContainer) return;
     els.piecesContainer.innerHTML = "";
     const offsets = [[0, 0], [1.6, 0], [-1.6, 0], [0, 1.6], [1.6, 1.6], [-1.6, 1.6]];
-    const boardTurnPlayer = state.players[state.currentPlayer];
 
     state.players.forEach((player, i) => {
       const pos = tilePosition(player.position);
       const [ox, oy] = offsets[i] || [0, 0];
-      const previous = piecePositions[player.id] || pos;
+      const c = { x: pos.x + pos.w / 2, y: pos.y + pos.h / 2 };
 
-      // Token circle (Clue-style with CSS variables for smooth animation)
+      // Token circle
       const piece = document.createElement("span");
       piece.className = `monopoly-piece${player.bankrupt ? " bankrupt" : ""}`;
+      piece.dataset.playerId = player.id;
       piece.style.background = player.tokenColor;
-      piece.style.setProperty("--piece-x", `${previous.x + previous.w / 2}%`);
-      piece.style.setProperty("--piece-y", `${previous.y + previous.h / 2}%`);
+      piece.style.setProperty("--piece-x", `${c.x}%`);
+      piece.style.setProperty("--piece-y", `${c.y}%`);
       piece.style.setProperty("--piece-offset-x", `${ox}%`);
       piece.style.setProperty("--piece-offset-y", `${oy}%`);
       piece.textContent = i + 1;
       piece.title = `${player.name}(${TOKEN_NAMES[i]}) — ${tileAt(player.position).name}`;
       els.piecesContainer.appendChild(piece);
 
-      // Smooth slide to new position
-      window.requestAnimationFrame(() => {
-        piece.style.setProperty("--piece-x", `${pos.x + pos.w / 2}%`);
-        piece.style.setProperty("--piece-y", `${pos.y + pos.h / 2}%`);
-      });
-
       piecePositions[player.id] = pos;
 
-      // Turn avatar (profile image above token, like Clue)
-      if (i === state.currentPlayer && !state.finished && !player.bankrupt) {
-        const avatar = document.createElement("img");
-        avatar.className = "monopoly-board-turn-avatar";
-        avatar.src = player.avatarUrl || currentHumanAvatarUrl();
-        avatar.alt = "";
-        avatar.loading = "lazy";
-        avatar.decoding = "async";
-        avatar.style.setProperty("--piece-x", `${pos.x + pos.w / 2}%`);
-        avatar.style.setProperty("--piece-y", `${pos.y + pos.h / 2}%`);
-        avatar.style.setProperty("--piece-offset-x", `${ox}%`);
-        avatar.style.setProperty("--piece-offset-y", `${oy}%`);
-        els.piecesContainer.appendChild(avatar);
-      }
+      // Avatar always attached to token (current player gets bob animation)
+      const avatar = document.createElement("img");
+      avatar.className = `monopoly-board-turn-avatar${i === state.currentPlayer && !state.finished ? " active" : ""}`;
+      avatar.dataset.playerId = player.id;
+      avatar.src = player.avatarUrl || currentHumanAvatarUrl();
+      avatar.alt = "";
+      avatar.loading = "lazy";
+      avatar.decoding = "async";
+      avatar.style.setProperty("--piece-x", `${c.x}%`);
+      avatar.style.setProperty("--piece-y", `${c.y}%`);
+      avatar.style.setProperty("--piece-offset-x", `${ox}%`);
+      avatar.style.setProperty("--piece-offset-y", `${oy}%`);
+      els.piecesContainer.appendChild(avatar);
     });
   }
 
@@ -344,10 +337,26 @@
       els.diceDisplay.innerHTML = "";
       return;
     }
-    els.diceDisplay.innerHTML = `
-      <div class="monopoly-die${state.diceRolling ? " rolling" : ""}">${state.dice[0]}</div>
-      <div class="monopoly-die${state.diceRolling ? " rolling" : ""}">${state.dice[1]}</div>
-    `;
+    if (state.diceRolling) {
+      // Random bounce positions and rotations during roll
+      const rx1 = (Math.random() - 0.5) * 40;
+      const ry1 = (Math.random() - 0.5) * 40;
+      const rr1 = (Math.random() - 0.5) * 50;
+      const rx2 = (Math.random() - 0.5) * 40;
+      const ry2 = (Math.random() - 0.5) * 40;
+      const rr2 = (Math.random() - 0.5) * 50;
+      const sc1 = 0.85 + Math.random() * 0.3;
+      const sc2 = 0.85 + Math.random() * 0.3;
+      els.diceDisplay.innerHTML = `
+        <div class="monopoly-die rolling" style="transform:translate(${rx1}px,${ry1}px) rotate(${rr1}deg) scale(${sc1})">${state.dice[0]}</div>
+        <div class="monopoly-die rolling" style="transform:translate(${rx2}px,${ry2}px) rotate(${rr2}deg) scale(${sc2})">${state.dice[1]}</div>
+      `;
+    } else {
+      els.diceDisplay.innerHTML = `
+        <div class="monopoly-die">${state.dice[0]}</div>
+        <div class="monopoly-die">${state.dice[1]}</div>
+      `;
+    }
   }
 
   function renderControls() {
@@ -427,10 +436,9 @@
     renderDice();
   }
 
-  /* ── Dice Animation ── */
-  function rollDice() {
-    return [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
-  }
+  /* ── Dice Animation (bouncy physics-style) ── */
+  const DICE_BOUNCE_DURATION = 1400;
+  const DICE_BOUNCE_FRAME_MS = 50;
 
   function animateDice(finalDice) {
     return new Promise(resolve => {
@@ -440,7 +448,8 @@
       renderControls();
       const start = performance.now();
       const tick = () => {
-        if (performance.now() - start >= DICE_ROLL_DURATION) {
+        const elapsed = performance.now() - start;
+        if (elapsed >= DICE_BOUNCE_DURATION) {
           state.dice = finalDice;
           state.diceRolling = false;
           renderDice();
@@ -448,12 +457,78 @@
           resolve();
           return;
         }
+        // Slow down the random cycling as we approach the end
+        const progress = elapsed / DICE_BOUNCE_DURATION;
+        const frameDelay = DICE_BOUNCE_FRAME_MS + progress * 120;
         state.dice = rollDice();
         renderDice();
-        setTimeout(tick, DICE_FRAME_MS);
+        setTimeout(tick, frameDelay);
       };
-      setTimeout(tick, DICE_FRAME_MS);
+      setTimeout(tick, DICE_BOUNCE_FRAME_MS);
     });
+  }
+
+  /* ── Step-by-step Movement Animation ── */
+  const STEP_MOVE_MS = 280;
+  const STEP_BOUNCE_MS = 200;
+  const STEP_PAUSE_MS = 80;
+
+  function tileCenter(index) {
+    const pos = tilePosition(index);
+    return { x: pos.x + pos.w / 2, y: pos.y + pos.h / 2 };
+  }
+
+  async function animatePlayerMove(player, fromTile, toTile) {
+    if (!els.piecesContainer) return;
+    // Find the piece and avatar elements for this player
+    const piece = els.piecesContainer.querySelector(`.monopoly-piece[data-player-id="${player.id}"]`);
+    const avatar = els.piecesContainer.querySelector(`.monopoly-board-turn-avatar[data-player-id="${player.id}"]`);
+    if (!piece) return;
+
+    const steps = [];
+    let cur = fromTile;
+    for (let i = 0; i < 40; i++) {
+      cur = (cur + 1) % 40;
+      steps.push(cur);
+      if (cur === toTile) break;
+    }
+
+    for (const stepTile of steps) {
+      const c = tileCenter(stepTile);
+      // Slide to next tile
+      piece.style.setProperty("--piece-x", `${c.x}%`);
+      piece.style.setProperty("--piece-y", `${c.y}%`);
+      if (avatar) {
+        avatar.style.setProperty("--piece-x", `${c.x}%`);
+        avatar.style.setProperty("--piece-y", `${c.y}%`);
+      }
+      await wait(STEP_MOVE_MS);
+      // Bounce (뽀잉)
+      piece.classList.add("bounce");
+      if (avatar) avatar.classList.add("bounce");
+      await wait(STEP_BOUNCE_MS);
+      piece.classList.remove("bounce");
+      if (avatar) avatar.classList.remove("bounce");
+      await wait(STEP_PAUSE_MS);
+    }
+    // Update stored position
+    piecePositions[player.id] = tilePosition(toTile);
+  }
+
+  async function animateTeleport(player, target) {
+    if (!els.piecesContainer) return;
+    const piece = els.piecesContainer.querySelector(`.monopoly-piece[data-player-id="${player.id}"]`);
+    const avatar = els.piecesContainer.querySelector(`.monopoly-board-turn-avatar[data-player-id="${player.id}"]`);
+    if (!piece) return;
+    const c = tileCenter(target);
+    piece.style.setProperty("--piece-x", `${c.x}%`);
+    piece.style.setProperty("--piece-y", `${c.y}%`);
+    if (avatar) {
+      avatar.style.setProperty("--piece-x", `${c.x}%`);
+      avatar.style.setProperty("--piece-y", `${c.y}%`);
+    }
+    piecePositions[player.id] = tilePosition(target);
+    await wait(300);
   }
 
   /* ── Card Decks ── */
@@ -532,27 +607,32 @@
   }
 
   /* ── Movement ── */
-  function movePlayer(player, steps) {
+  async function movePlayer(player, steps) {
     const oldPos = player.position;
-    player.position = (player.position + steps) % 40;
+    const newPos = (player.position + steps) % 40;
     // Pass GO
-    if (player.position < oldPos && steps > 0) {
+    if (newPos < oldPos && steps > 0) {
       collectMoney(player, GO_SALARY);
       addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY} 획득!`);
     }
+    // Animate step by step
+    await animatePlayerMove(player, oldPos, newPos);
+    player.position = newPos;
   }
 
-  function teleportPlayer(player, target, passGo) {
+  async function teleportPlayer(player, target, passGo) {
     const oldPos = player.position;
-    player.position = target;
     if (passGo && (target < oldPos || target === 0)) {
       collectMoney(player, GO_SALARY);
       addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY} 획득!`);
     }
+    await animateTeleport(player, target);
+    player.position = target;
   }
 
   /* ── Jail Logic ── */
-  function sendToJail(player) {
+  async function sendToJail(player) {
+    await animateTeleport(player, 10);
     player.position = 10;
     player.inJail = true;
     player.jailTurns = JAIL_TURNS;
@@ -641,13 +721,13 @@
   async function executeCard(player, card) {
     switch (card.action) {
       case "moveTo":
-        teleportPlayer(player, card.target, card.collect);
+        await teleportPlayer(player, card.target, card.collect);
         renderAll();
         await wait(500);
         await handleTileLanding(player);
         return;
       case "goToJail":
-        sendToJail(player);
+        await sendToJail(player);
         renderAll();
         state.phase = "buyDecision";
         renderControls();
@@ -700,7 +780,7 @@
         addLog(`🚀 ${playerDisplayName(player)} 우주여행 칸에 도착.`);
         break;
       case "goToJail":
-        sendToJail(player);
+        await sendToJail(player);
         break;
     }
     state.phase = "buyDecision";
@@ -761,8 +841,7 @@
       if (dice[0] === dice[1]) {
         player.inJail = false;
         addLog(`🎲 ${playerDisplayName(player)} 더블로 탈옥!`);
-        movePlayer(player, dice[0] + dice[1]);
-        renderAll();
+        await movePlayer(player, dice[0] + dice[1]);
         await wait(600);
         await handleTileLanding(player);
         return;
@@ -786,7 +865,7 @@
       state.lastDoubleCount++;
       addLog(`🎲 ${playerDisplayName(player)} 더블! (${dice[0]}+${dice[1]})`);
       if (state.lastDoubleCount >= 3) {
-        sendToJail(player);
+        await sendToJail(player);
         state.lastDoubleCount = 0;
         endTurn();
         return;
@@ -795,7 +874,7 @@
       state.lastDoubleCount = 0;
     }
 
-    movePlayer(player, dice[0] + dice[1]);
+    await movePlayer(player, dice[0] + dice[1]);
     addLog(`🎲 ${playerDisplayName(player)} ${dice[0]}+${dice[1]}=${dice[0] + dice[1]} → ${tileAt(player.position).name}`);
     renderAll();
     await wait(600);
@@ -880,8 +959,7 @@
       if (dice[0] === dice[1]) {
         player.inJail = false;
         addLog(`🎲 더블로 탈옥!`);
-        movePlayer(player, dice[0] + dice[1]);
-        renderAll();
+        await movePlayer(player, dice[0] + dice[1]);
         await wait(600);
         await handleTileLanding(player);
         return;
@@ -909,7 +987,7 @@
       state.lastDoubleCount++;
       addLog(`🎲 더블! (${dice[0]}+${dice[1]})`);
       if (state.lastDoubleCount >= 3) {
-        sendToJail(player);
+        await sendToJail(player);
         state.lastDoubleCount = 0;
         state.phase = "buyDecision";
         renderAll();
@@ -920,7 +998,7 @@
       state.lastDoubleCount = 0;
     }
 
-    movePlayer(player, dice[0] + dice[1]);
+    await movePlayer(player, dice[0] + dice[1]);
     addLog(`🎲 ${dice[0]}+${dice[1]}=${dice[0] + dice[1]} → ${tileAt(player.position).name}`);
     state.phase = "rolled";
     renderAll();

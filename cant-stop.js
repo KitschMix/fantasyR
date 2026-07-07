@@ -1280,7 +1280,7 @@
       els.phaseLabel.textContent = state.finished
         ? "먼저 기둥 3개를 완주했습니다."
         : active.length
-          ? `이번 턴 도전: ${active.join(", ")}`
+          ? `이번 턴 도전: ${active.join(", ")} (임시 마커 ${active.length}/3개 사용)`
           : "주사위를 굴리세요.";
     }
   }
