@@ -112,7 +112,6 @@
     piecesContainer:  $("#monopolyPieces"),
     diceDisplay:      $("#monopolyDiceDisplay"),
     rollButton:       $("#monopolyRollButton"),
-    buyButton:        $("#monopolyBuyButton"),
     endTurnButton:    $("#monopolyEndTurnButton"),
     manageButton:     $("#monopolyManageButton"),
     propertyInfo:     $("#monopolyPropertyInfo"),
@@ -569,12 +568,6 @@
     if (els.rollButton) {
       els.rollButton.disabled = !humanTurn || state.phase !== "awaitRoll" || state.diceRolling;
     }
-    if (els.buyButton) {
-      const tile = p ? tileAt(p.position) : null;
-      const canBuy = humanTurn && state.phase === "buyDecision" && tile?.type === "property" && !state.players.some(pl => pl.properties.includes(p.position));
-      els.buyButton.disabled = !canBuy;
-      els.buyButton.textContent = canBuy ? `💰 구매 (₩${tile.price})` : "💰 구매";
-    }
     if (els.endTurnButton) {
       els.endTurnButton.disabled = !humanTurn || (state.phase !== "buyDecision" && state.phase !== "rolled");
     }
@@ -898,34 +891,137 @@
     }
   }
 
-  async function handlePropertyLanding(player, tile) {
-    const owner = getOwner(tile.id);
-    if (!owner || owner === player) {
-      // Unowned or own property
-      if (!owner) {
-        if (player.human) {
-          state.phase = "buyDecision";
-          addLog(`📍 ${playerDisplayName(player)} ${tile.name}에 도착. 구매 가능 (₩${tile.price})`);
-          renderControls();
-          return; // Wait for human decision
-        } else {
-          // AI buy decision
-          aiBuyDecision(player, tile);
-          return;
+  function showPropertyPopup(player, tile) {
+    return new Promise(resolve => {
+      const dialog = document.querySelector("#monopolyPropertyDialog");
+      if (!dialog) {
+        resolve();
+        return;
+      }
+      const header = dialog.querySelector("#monopolyPropertyHeader");
+      const name = dialog.querySelector("#monopolyPropertyName");
+      const priceEl = dialog.querySelector("#monopolyPropertyPrice");
+      const rent0El = dialog.querySelector("#monopolyPropertyRent0");
+      const rentMonEl = dialog.querySelector("#monopolyPropertyRentMon");
+      const ownerEl = dialog.querySelector("#monopolyPropertyOwner");
+      const footer = dialog.querySelector("#monopolyPropertyFooter");
+
+      if (header) {
+        header.style.backgroundColor = tile.color || "#808080";
+      }
+      if (name) {
+        name.textContent = tile.name;
+      }
+      if (priceEl) priceEl.textContent = `₩${tile.price || 0}`;
+      if (rent0El) rent0El.textContent = `₩${tile.rent ? tile.rent[0] : 0}`;
+      
+      const rentMon = tile.rent ? (tile.rent[1] || tile.rent[0] * 2) : 0;
+      if (rentMonEl) rentMonEl.textContent = `₩${rentMon}`;
+
+      const owner = getOwner(tile.id);
+      if (owner) {
+        ownerEl.textContent = owner.human ? "나" : owner.name;
+        ownerEl.style.color = owner.tokenColor;
+      } else {
+        ownerEl.textContent = "없음";
+        ownerEl.style.color = "var(--text-muted)";
+      }
+
+      footer.innerHTML = "";
+
+      const closeDialog = () => {
+        dialog.close();
+        renderAll();
+        resolve();
+      };
+
+      if (owner && owner !== player) {
+        // Rent payment
+        const rent = getRent(tile, player.position);
+        const payBtn = document.createElement("button");
+        payBtn.className = "primary-button";
+        payBtn.type = "button";
+        payBtn.textContent = `임대료 지불 (₩${rent})`;
+        payBtn.addEventListener("click", () => {
+          const paid = payMoney(player, owner, rent);
+          addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid} 지불 (${tile.name})`);
+          if (player.money <= 0) {
+            goBankrupt(player, owner);
+          }
+          closeDialog();
+        });
+        footer.appendChild(payBtn);
+
+        if (!player.human) {
+          setTimeout(() => {
+            if (dialog.open) payBtn.click();
+          }, 1500);
+        }
+      } else if (!owner) {
+        // Buy or pass
+        const buyBtn = document.createElement("button");
+        buyBtn.className = "primary-button";
+        buyBtn.type = "button";
+        buyBtn.textContent = `구매 (₩${tile.price})`;
+        if (player.money < tile.price) {
+          buyBtn.disabled = true;
+          buyBtn.textContent = "잔액 부족";
+        }
+
+        const passBtn = document.createElement("button");
+        passBtn.className = "secondary-button";
+        passBtn.type = "button";
+        passBtn.textContent = "구매 안 하기";
+
+        buyBtn.addEventListener("click", () => {
+          buyProperty(player);
+          closeDialog();
+        });
+
+        passBtn.addEventListener("click", () => {
+          addLog(`🚫 ${playerDisplayName(player)} ${tile.name} 구매를 포기.`);
+          closeDialog();
+        });
+
+        footer.appendChild(buyBtn);
+        footer.appendChild(passBtn);
+
+        if (!player.human) {
+          setTimeout(() => {
+            if (dialog.open) {
+              const wantsToBuy = player.money >= tile.price + 200 || (player.money >= tile.price && state.turnCount > 15);
+              if (wantsToBuy && !buyBtn.disabled) {
+                buyBtn.click();
+              } else {
+                passBtn.click();
+              }
+            }
+          }, 1500);
+        }
+      } else {
+        // Own property
+        const okBtn = document.createElement("button");
+        okBtn.className = "primary-button";
+        okBtn.type = "button";
+        okBtn.textContent = "확인";
+        okBtn.addEventListener("click", closeDialog);
+        footer.appendChild(okBtn);
+
+        addLog(`📍 ${playerDisplayName(player)} 자기 땅 ${tile.name}에 도착.`);
+
+        if (!player.human) {
+          setTimeout(() => {
+            if (dialog.open) okBtn.click();
+          }, 1500);
         }
       }
-      addLog(`📍 ${playerDisplayName(player)} 자기 땅 ${tile.name}에 도착.`);
-      state.phase = "buyDecision";
-      renderControls();
-      return;
-    }
-    // Pay rent
-    const rent = getRent(tile, player.position);
-    const paid = payMoney(player, owner, rent);
-    addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid} 지불 (${tile.name})`);
-    if (player.money <= 0) {
-      goBankrupt(player, owner);
-    }
+
+      dialog.showModal();
+    });
+  }
+
+  async function handlePropertyLanding(player, tile) {
+    await showPropertyPopup(player, tile);
     state.phase = "buyDecision";
     renderControls();
   }
@@ -1325,14 +1421,6 @@
     renderControls();
   }
 
-  function humanBuy() {
-    const player = activePlayer();
-    if (!player?.human || state.phase !== "buyDecision") return;
-    buyProperty(player);
-    state.phase = "buyDecision";
-    renderAll();
-    renderControls();
-  }
 
   function humanEndTurn() {
     const player = activePlayer();
@@ -1573,7 +1661,6 @@
       if (e.target === els.rulesDialog) els.rulesDialog.close();
     });
     els.rollButton?.addEventListener("click", humanRoll);
-    els.buyButton?.addEventListener("click", humanBuy);
     els.endTurnButton?.addEventListener("click", humanEndTurn);
     els.manageButton?.addEventListener("click", openManageDialog);
     els.manageDialog?.addEventListener("click", e => {

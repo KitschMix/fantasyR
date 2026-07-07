@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>부루마불</title>
     <link rel="stylesheet" href="styles.css?v=20260706-brumable" />
-    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v18" />
+    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v19" />
   </head>
   <body class="monopoly-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -98,7 +98,6 @@
 
                   <div class="monopoly-board-center-controls">
                     <button id="monopolyRollButton" class="primary-button" type="button">🎲 주사위 굴리기</button>
-                    <button id="monopolyBuyButton" class="primary-button" type="button" disabled>💰 구매</button>
                     <button id="monopolyEndTurnButton" class="secondary-button" type="button" disabled>턴 종료</button>
                     <button id="monopolyManageButton" class="secondary-button" type="button" disabled>🏦 자산 관리</button>
                   </div>
@@ -178,9 +177,28 @@
           </div>
         </div>
       </dialog>
+
+      <!-- Property Popup Dialog (부동산 정보 및 구매/지불) -->
+      <dialog id="monopolyPropertyDialog" class="monopoly-property-dialog">
+        <div class="monopoly-property-popup">
+          <div id="monopolyPropertyHeader" class="property-popup-header">부동산 정보</div>
+          <div class="property-popup-body">
+            <h2 id="monopolyPropertyName" class="property-popup-name">도시 이름</h2>
+            <div class="property-popup-details">
+              <div class="property-popup-row"><strong>구매가</strong> <span id="monopolyPropertyPrice">₩0</span></div>
+              <div class="property-popup-row"><strong>기본 임대료</strong> <span id="monopolyPropertyRent0">₩0</span></div>
+              <div class="property-popup-row"><strong>독점 임대료</strong> <span id="monopolyPropertyRentMon">₩0</span></div>
+              <div class="property-popup-row" id="monopolyPropertyOwnerRow"><strong>소유주</strong> <span id="monopolyPropertyOwner">없음</span></div>
+            </div>
+          </div>
+          <div class="property-popup-footer" id="monopolyPropertyFooter">
+            <!-- Buttons dynamically generated -->
+          </div>
+        </div>
+      </dialog>
     </main>
     <script src="shared-ui.js?v=20260706-brumable"></script>
     <script src="shared-profiles.js?v=20260706-brumable"></script>
-    <script src="monopoly.js?v=20260707-brumable-v18"></script>
+    <script src="monopoly.js?v=20260707-brumable-v19"></script>
   </body>
 </html>
