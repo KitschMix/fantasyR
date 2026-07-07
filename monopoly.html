@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>부루마불</title>
     <link rel="stylesheet" href="styles.css?v=20260706-brumable" />
-    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v9" />
+    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v10" />
   </head>
   <body class="monopoly-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -111,7 +111,10 @@
 
           <!-- My Assets Grid (Fantasy Kingdom card style) -->
           <div id="monopolyMyAssetsArea" class="monopoly-my-assets-area hidden">
-            <h2 class="monopoly-my-assets-title">내가 보유한 부동산</h2>
+            <div class="monopoly-assets-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap; gap: 12px;">
+              <h2 class="monopoly-my-assets-title" style="margin: 0; border: none; padding: 0; font-size: 16px; font-weight: bold; color: var(--text);">보유 부동산 정보</h2>
+              <div id="monopolyAssetPlayerTabs" class="monopoly-asset-player-tabs" style="display: flex; gap: 8px;"></div>
+            </div>
             <div id="monopolyMyAssetsGrid" class="monopoly-my-assets-grid"></div>
           </div>
         </div>
@@ -159,6 +162,6 @@
     </main>
     <script src="shared-ui.js?v=20260706-brumable"></script>
     <script src="shared-profiles.js?v=20260706-brumable"></script>
-    <script src="monopoly.js?v=20260707-brumable-v9"></script>
+    <script src="monopoly.js?v=20260707-brumable-v10"></script>
   </body>
 </html>

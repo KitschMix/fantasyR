@@ -366,35 +366,68 @@
   function renderMyAssets() {
     const area = document.querySelector("#monopolyMyAssetsArea");
     const grid = document.querySelector("#monopolyMyAssetsGrid");
-    if (!area || !grid) return;
+    const tabsContainer = document.querySelector("#monopolyAssetPlayerTabs");
+    if (!area || !grid || !tabsContainer) return;
 
     const human = state.players.find(p => p.human);
-    if (!human || human.bankrupt || state.phase === "idle" || state.phase === "finished") {
+    if (!human || state.phase === "idle" || state.phase === "finished") {
       area.classList.add("hidden");
       return;
     }
 
     area.classList.remove("hidden");
+
+    // Default selection to human (index 0) if undefined or selected player went bankrupt
+    if (state.selectedAssetPlayerIndex === undefined || !state.players[state.selectedAssetPlayerIndex] || state.players[state.selectedAssetPlayerIndex].bankrupt) {
+      state.selectedAssetPlayerIndex = human.index;
+    }
+
+    // Render Tabs for non-bankrupt players
+    tabsContainer.innerHTML = state.players.map(p => {
+      if (p.bankrupt) return "";
+      const isActive = p.index === state.selectedAssetPlayerIndex;
+      const activeStyle = isActive 
+        ? `border: 2px solid ${p.tokenColor}; background: ${p.tokenColor}15; font-weight: 800; color: var(--text);` 
+        : `border: 1px solid var(--line); background: var(--surface-3); opacity: 0.75; color: var(--text);`;
+        
+      return `
+        <button class="monopoly-asset-tab-btn" data-player-index="${p.index}" style="padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; ${activeStyle}">
+          <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${p.tokenColor}"></span>
+          ${p.human ? "나" : p.name} (${p.properties.length})
+        </button>
+      `;
+    }).join("");
+
+    // Bind tab clicks
+    tabsContainer.querySelectorAll(".monopoly-asset-tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.selectedAssetPlayerIndex = parseInt(btn.getAttribute("data-player-index"), 10);
+        renderMyAssets();
+      });
+    });
+
+    const targetPlayer = state.players[state.selectedAssetPlayerIndex];
     grid.innerHTML = "";
 
-    if (human.properties.length === 0) {
-      grid.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); opacity: 0.7;">아직 보유한 부동산이 없습니다. 땅을 구매해 보세요!</span>`;
+    if (targetPlayer.properties.length === 0) {
+      const displayLabel = targetPlayer.human ? "내가" : `${targetPlayer.name}이(가)`;
+      grid.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); opacity: 0.7;">아직 ${displayLabel} 보유한 부동산이 없습니다.</span>`;
       return;
     }
 
-    human.properties.forEach(tileId => {
+    targetPlayer.properties.forEach(tileId => {
       const tile = tileAt(tileId);
-      const isMon = tile.color !== "#808080" && tile.color !== "#4682B4" && isMonopoly(human, tile.color);
+      const isMon = tile.color !== "#808080" && tile.color !== "#4682B4" && isMonopoly(targetPlayer, tile.color);
       
       let groupStatus = "";
       if (tile.color === "#4682B4") {
-        const owned = RAILROAD_IDS.filter(id => human.properties.includes(id)).length;
+        const owned = RAILROAD_IDS.filter(id => targetPlayer.properties.includes(id)).length;
         groupStatus = `철도 ${owned}/4`;
       } else if (tile.color === "#808080") {
-        const owned = UTILITY_IDS.filter(id => human.properties.includes(id)).length;
+        const owned = UTILITY_IDS.filter(id => targetPlayer.properties.includes(id)).length;
         groupStatus = `관공서 ${owned}/2`;
       } else {
-        const owned = getColorGroupOwned(human, tile.color).length;
+        const owned = getColorGroupOwned(targetPlayer, tile.color).length;
         const total = (COLOR_GROUPS[tile.color] || []).length;
         groupStatus = isMon ? "⭐ 독점" : `보유 ${owned}/${total}`;
       }
@@ -408,7 +441,7 @@
         <div class="asset-card-color-bar" style="background-color: ${tile.color || '#ccc'}"></div>
         <div class="asset-card-content">
           <div class="asset-card-name">${escapeHtml(tile.name)}</div>
-          <div class="asset-card-rent">통행료: ₩${getRent(tile, human.position)}</div>
+          <div class="asset-card-rent">통행료: ₩${getRent(tile, targetPlayer.position)}</div>
           <div class="asset-card-group-status${monClass}">${groupStatus}</div>
         </div>
       `;
@@ -1303,6 +1336,7 @@
     });
 
     state.currentPlayer = 0;
+    state.selectedAssetPlayerIndex = 0;
     state.phase = "awaitRoll";
     state.dice = [];
     state.diceRolling = false;
