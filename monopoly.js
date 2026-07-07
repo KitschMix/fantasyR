@@ -548,11 +548,11 @@
       if (header) header.style.display = "none";
     }
 
-    if (priceEl) priceEl.textContent = `₩${tile.price || 0}`;
-    if (rent0El) rent0El.textContent = `₩${tile.rent ? tile.rent[0] : 0}`;
+    if (priceEl) priceEl.textContent = `₩${(tile.price || 0).toLocaleString()}`;
+    if (rent0El) rent0El.textContent = `₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}`;
     
     let rentMon = tile.rent ? (tile.rent[1] || tile.rent[0] * 2) : 0;
-    if (rentMonEl) rentMonEl.textContent = `₩${rentMon}`;
+    if (rentMonEl) rentMonEl.textContent = `₩${rentMon.toLocaleString()}`;
     
     const owner = getOwner(tileId);
     if (owner) {
@@ -1015,11 +1015,11 @@
         if (name) name.style.display = "none"; // Gold text already on image
       }
 
-      if (priceEl) priceEl.textContent = `₩${tile.price || 0}`;
-      if (rent0El) rent0El.textContent = `₩${tile.rent ? tile.rent[0] : 0}`;
+      if (priceEl) priceEl.textContent = `₩${(tile.price || 0).toLocaleString()}`;
+      if (rent0El) rent0El.textContent = `₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}`;
       
       const rentMon = tile.rent ? (tile.rent[1] || tile.rent[0] * 2) : 0;
-      if (rentMonEl) rentMonEl.textContent = `₩${rentMon}`;
+      if (rentMonEl) rentMonEl.textContent = `₩${rentMon.toLocaleString()}`;
 
       const owner = getOwner(tile.id);
       if (owner) {
@@ -1044,10 +1044,10 @@
         const payBtn = document.createElement("button");
         payBtn.className = "primary-button";
         payBtn.type = "button";
-        payBtn.textContent = `임대료 지불 (₩${rent})`;
+        payBtn.textContent = `임대료 지불 (₩${rent.toLocaleString()})`;
         payBtn.addEventListener("click", () => {
           const paid = payMoney(player, owner, rent);
-          addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid} 지불 (${tile.name})`);
+          addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid.toLocaleString()} 지불 (${tile.name})`);
           if (player.money <= 0) {
             goBankrupt(player, owner);
           }
@@ -1065,7 +1065,7 @@
         const buyBtn = document.createElement("button");
         buyBtn.className = "primary-button";
         buyBtn.type = "button";
-        buyBtn.textContent = `구매 (₩${tile.price})`;
+        buyBtn.textContent = `구매 (₩${tile.price.toLocaleString()})`;
         if (player.money < tile.price) {
           buyBtn.disabled = true;
           buyBtn.textContent = "잔액 부족";
@@ -1198,7 +1198,7 @@
           const houses = player.properties.reduce((sum, id) => sum + (player.buildings?.[id] || 0), 0);
           payAmount = houses * card.house;
         }
-        buttonText = payAmount > 0 ? `지불하기 (₩${payAmount})` : "지불하기";
+        buttonText = payAmount > 0 ? `지불하기 (₩${payAmount.toLocaleString()})` : "지불하기";
       } else if (card.action === "collect" || card.action === "collectAll") {
         buttonText = "수령하기";
       }
@@ -1243,31 +1243,31 @@
         return;
       case "collect":
         collectMoney(player, card.amount);
-        addLog(`💰 ${playerDisplayName(player)} ₩${card.amount} 획득`);
+        addLog(`💰 ${playerDisplayName(player)} ₩${card.amount.toLocaleString()} 획득`);
         break;
       case "pay":
         player.money -= card.amount;
-        addLog(`💸 ${playerDisplayName(player)} ₩${card.amount} 지불`);
+        addLog(`💸 ${playerDisplayName(player)} ₩${card.amount.toLocaleString()} 지불`);
         if (player.money <= 0) goBankrupt(player, null);
         break;
       case "payAll":
         state.players.filter(p => p !== player && !p.bankrupt).forEach(op => {
           payMoney(player, op, card.amount);
         });
-        addLog(`💸 ${playerDisplayName(player)} 모든 플레이어에게 ₩${card.amount} 지불`);
+        addLog(`💸 ${playerDisplayName(player)} 모든 플레이어에게 ₩${card.amount.toLocaleString()} 지불`);
         if (player.money <= 0) goBankrupt(player, null);
         break;
       case "collectAll":
         state.players.filter(p => p !== player && !p.bankrupt).forEach(op => {
           payMoney(op, player, card.amount);
         });
-        addLog(`💰 ${playerDisplayName(player)} 모든 플레이어에게서 ₩${card.amount} 수집`);
+        addLog(`💰 ${playerDisplayName(player)} 모든 플레이어에게서 ₩${card.amount.toLocaleString()} 수집`);
         break;
       case "buildingCost": {
         const houses = player.properties.reduce((sum, id) => sum + (player.buildings?.[id] || 0), 0);
         const cost = houses * card.house;
         player.money -= cost;
-        if (cost > 0) addLog(`💸 ${playerDisplayName(player)} 건설비용 ₩${cost} 지불`);
+        if (cost > 0) addLog(`💸 ${playerDisplayName(player)} 건설비용 ₩${cost.toLocaleString()} 지불`);
         if (player.money <= 0) goBankrupt(player, null);
         break;
       }
@@ -1318,7 +1318,12 @@
     player.properties.sort((a, b) => a - b);
     if (!player.buildings) player.buildings = {};
     player.buildings[tile.id] = 0;
-    addLog(`🏠 ${playerDisplayName(player)} ${tile.name} 구매! (₩${tile.price})`);
+    addLog(`🏠 ${playerDisplayName(player)} ${tile.name} 구매! (₩${tile.price.toLocaleString()})`);
+
+    // Show purchase popup notice
+    setTimeout(() => {
+      showNotice(`🏠 <strong>${playerDisplayName(player)}</strong>이(가)<br><strong>${tile.name}</strong>을(를) 구입했습니다!`, 1500);
+    }, 100);
 
     // Check monopoly
     if (tile.color !== "#808080" && tile.color !== "#4682B4" && isMonopoly(player, tile.color)) {
@@ -1327,11 +1332,11 @@
   }
 
   /* ── AI Logic ── */
-  function aiBuyDecision(player, tile) {
+  async function aiBuyDecision(player, tile) {
     if (tile.type !== "property" || getOwner(tile.id)) {
       state.phase = "buyDecision";
       renderAll();
-      endTurn();
+      await endTurn();
       return;
     }
     // AI buys if affordable and money > 200 * SCALE_FACTOR (keep reserve)
@@ -1342,7 +1347,7 @@
     }
     state.phase = "buyDecision";
     renderAll();
-    endTurn();
+    await endTurn();
   }
 
   async function runAiTurn() {
@@ -1452,7 +1457,7 @@
     return false;
   }
 
-  function endTurn() {
+  async function endTurn() {
     if (state.phase === "finished") return;
     if (checkWinner()) return;
 
@@ -1460,6 +1465,10 @@
     // Doubles = extra turn
     if (state.dice[0] === state.dice[1] && !p.inJail && !p.bankrupt && state.lastDoubleCount < 3) {
       addLog(`🔄 ${playerDisplayName(p)} 더블로 한 번 더!`);
+      
+      const emoji = p.human ? "🎲" : "🤖";
+      await showNotice(`${emoji} <strong>${playerDisplayName(p)}</strong>의<br>더블 추가 턴!`, 1000);
+      
       state.phase = "awaitRoll";
       renderAll();
       showTurnToast(p, true);
@@ -1473,9 +1482,13 @@
     state.lastDoubleCount = 0;
     const np = activePlayer();
     if (np.bankrupt) {
-      endTurn();
+      await endTurn();
       return;
     }
+
+    // Show turn change notice popup!
+    const emoji = np.human ? "🎲" : "🤖";
+    await showNotice(`${emoji} <strong>${playerDisplayName(np)}</strong>의<br>차례입니다!`, 1000);
 
     if (np.spaceTravelReady) {
       state.phase = "spaceTravel";
@@ -1548,6 +1561,31 @@
     if (activePlayer() === player && state.phase === "buyDecision") {
       endTurn();
     }
+  }
+
+  function showNotice(message, duration = 1200) {
+    return new Promise(resolve => {
+      const dialog = document.querySelector("#monopolyNoticeDialog");
+      const text = document.querySelector("#monopolyNoticeText");
+      const btn = document.querySelector("#monopolyNoticeButton");
+      if (!dialog || !text || !btn) {
+        resolve();
+        return;
+      }
+      text.innerHTML = message;
+      dialog.showModal();
+
+      let timeoutId;
+      const closeNotice = () => {
+        btn.removeEventListener("click", closeNotice);
+        clearTimeout(timeoutId);
+        if (dialog.open) dialog.close();
+        resolve();
+      };
+
+      btn.addEventListener("click", closeNotice);
+      timeoutId = setTimeout(closeNotice, duration);
+    });
   }
 
   function showJailEscapePopup(player) {
@@ -1661,10 +1699,10 @@
   }
 
 
-  function humanEndTurn() {
+  async function humanEndTurn() {
     const player = activePlayer();
     if (!player?.human) return;
-    endTurn();
+    await endTurn();
   }
 
   /* ── Manage Dialog ── */
@@ -1682,10 +1720,10 @@
             <span class="monopoly-manage-color" style="background:${tile.color}"></span>
             <span>
               <span class="monopoly-manage-item-name">${escapeHtml(tile.name)}</span><br>
-              <span class="monopoly-manage-item-rent">임대료: ₩${rent}</span>
+              <span class="monopoly-manage-item-rent">임대료: ₩${rent.toLocaleString()}</span>
             </span>
           </div>
-          <button class="monopoly-manage-sell-btn" data-sell-id="${id}">매각 (₩${Math.floor(tile.price / 2)})</button>
+          <button class="monopoly-manage-sell-btn" data-sell-id="${id}">매각 (₩${Math.floor(tile.price / 2).toLocaleString()})</button>
         </div>
       `;
     }).join("");
@@ -1711,7 +1749,7 @@
     player.properties.splice(idx, 1);
     player.money += sellPrice;
     if (player.buildings) delete player.buildings[tileId];
-    addLog(`🏷️ ${playerDisplayName(player)} ${tile.name} 매각 (₩${sellPrice})`);
+    addLog(`🏷️ ${playerDisplayName(player)} ${tile.name} 매각 (₩${sellPrice.toLocaleString()})`);
     renderAll();
   }
 
@@ -1775,13 +1813,18 @@
     state.socialFundPool = 50 * SCALE_FACTOR; // Starting 기금 50만 원
 
     addLog(`🌐 부루마불 게임 시작! ${count}명 참가.`);
-    addLog(`💰 각 플레이어 ₩${START_MONEY} 보유.`);
+    addLog(`💰 각 플레이어 ₩${START_MONEY.toLocaleString()} 보유.`);
 
     document.body.classList.add("monopoly-playing");
     els.setupPanel?.classList.add("hidden");
     els.gamePanel?.classList.remove("hidden");
     renderAll();
-    showTurnToast(state.players[0]);
+    const firstPlayer = state.players[0];
+    showTurnToast(firstPlayer);
+    // Show first turn popup notice
+    setTimeout(() => {
+      showNotice(`🎲 <strong>${playerDisplayName(firstPlayer)}</strong>의<br>차례입니다!`, 1000);
+    }, 400);
   }
 
   function resetToSetup() {
