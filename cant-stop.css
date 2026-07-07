@@ -416,22 +416,48 @@ body:not(.cant-active) .cant-stop-panel {
   gap: 8px;
 }
 
-.cant-dice.rolling .cant-die {
-  animation: cant-die-roll 130ms linear infinite;
+.cant-die.rolling:nth-child(1) {
+  animation: cant-die-roll-1 110ms linear infinite;
+  animation-delay: 0s;
 }
 
-@keyframes cant-die-roll {
-  0% {
-    transform: translateY(0) rotate(0deg);
-  }
+.cant-die.rolling:nth-child(2) {
+  animation: cant-die-roll-2 140ms linear infinite;
+  animation-delay: 0.03s;
+}
 
-  50% {
-    transform: translateY(-4px) rotate(5deg);
-  }
+.cant-die.rolling:nth-child(3) {
+  animation: cant-die-roll-3 125ms linear infinite;
+  animation-delay: 0.015s;
+}
 
-  100% {
-    transform: translateY(0) rotate(-4deg);
-  }
+.cant-die.rolling:nth-child(4) {
+  animation: cant-die-roll-4 135ms linear infinite;
+  animation-delay: 0.045s;
+}
+
+@keyframes cant-die-roll-1 {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(6deg); }
+  100% { transform: translateY(0) rotate(-4deg); }
+}
+
+@keyframes cant-die-roll-2 {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(-6deg); }
+  100% { transform: translateY(0) rotate(5deg); }
+}
+
+@keyframes cant-die-roll-3 {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(4deg); }
+  100% { transform: translateY(0) rotate(-5deg); }
+}
+
+@keyframes cant-die-roll-4 {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(-4deg); }
+  100% { transform: translateY(0) rotate(6deg); }
 }
 
 .cant-die {

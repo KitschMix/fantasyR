@@ -143,7 +143,8 @@
     log: [],
     aiTimer: 0,
     leaderboardSubmitted: false,
-    diceRolling: false
+    diceRolling: false,
+    diceRollingStates: [false, false, false, false]
   };
   let cantSupabaseClient = null;
   const nicknameForceChangeState = {
@@ -867,21 +868,39 @@
     return new Promise((resolve) => {
       clearDiceRollTimer();
       state.diceRolling = true;
+      state.diceRollingStates = [true, true, true, true];
       state.dice = rollDice();
       renderCant();
 
       const start = Date.now();
       const tick = () => {
         const elapsed = Date.now() - start;
+        const stopTimes = [350, 450, 550, 650];
+        
         if (elapsed >= DICE_ROLL_DURATION_MS) {
           state.dice = finalDice;
           state.diceRolling = false;
+          state.diceRollingStates = [false, false, false, false];
           clearDiceRollTimer();
           renderCant();
           resolve();
           return;
         }
-        state.dice = rollDice();
+
+        const currentDice = [...state.dice];
+        const tempRoll = rollDice();
+        const rollingStates = [false, false, false, false];
+        for (let i = 0; i < 4; i++) {
+          if (elapsed >= stopTimes[i]) {
+            currentDice[i] = finalDice[i];
+            rollingStates[i] = false;
+          } else {
+            currentDice[i] = tempRoll[i];
+            rollingStates[i] = true;
+          }
+        }
+        state.dice = currentDice;
+        state.diceRollingStates = rollingStates;
         renderCant();
         diceRollTimer = window.setTimeout(tick, DICE_ROLL_FRAME_MS);
       };
@@ -1172,8 +1191,9 @@
     els.dice.classList.toggle("rolling", state.diceRolling);
     state.dice.forEach((value, index) => {
       const selectedOrder = state.selectedDice.indexOf(index);
+      const isRolling = state.diceRollingStates?.[index] ?? false;
       const die = document.createElement(isManualDiceChoice() ? "button" : "span");
-      die.className = `cant-die${selectedOrder >= 0 ? " selected" : ""}`;
+      die.className = `cant-die${selectedOrder >= 0 ? " selected" : ""}${isRolling ? " rolling" : ""}`;
       die.textContent = value;
       if (selectedOrder >= 0) {
         die.setAttribute("data-order", String(selectedOrder + 1));
