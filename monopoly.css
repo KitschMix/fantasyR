@@ -403,15 +403,15 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 
 @keyframes monopoly-piece-bounce-h {
   0% { transform: translate(-50%, -50%); }
-  30% { transform: translate(-50%, calc(-50% - 4px)); }
-  70% { transform: translate(-50%, calc(-50% + 2px)); }
+  30% { transform: translate(-50%, calc(-50% - 6px)); }
+  70% { transform: translate(-50%, calc(-50% + 3px)); }
   100% { transform: translate(-50%, -50%); }
 }
 
 @keyframes monopoly-piece-bounce-v {
   0% { transform: translate(-50%, -50%); }
-  30% { transform: translate(calc(-50% - 4px), -50%); }
-  70% { transform: translate(calc(-50% + 2px), -50%); }
+  30% { transform: translate(calc(-50% - 6px), -50%); }
+  70% { transform: translate(calc(-50% + 3px), -50%); }
   100% { transform: translate(-50%, -50%); }
 }
 
@@ -454,15 +454,15 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 
 @keyframes monopoly-avatar-bounce-h {
   0% { transform: translate(-50%, calc(-100% - 6px)); }
-  30% { transform: translate(-50%, calc(-100% - 10px)); }
+  30% { transform: translate(-50%, calc(-100% - 12px)); }
   70% { transform: translate(-50%, calc(-100% - 3px)); }
   100% { transform: translate(-50%, calc(-100% - 6px)); }
 }
 
 @keyframes monopoly-avatar-bounce-v {
   0% { transform: translate(-50%, calc(-100% - 6px)); }
-  30% { transform: translate(calc(-50% - 4px), calc(-100% - 6px)); }
-  70% { transform: translate(calc(-50% + 2px), calc(-100% - 6px)); }
+  30% { transform: translate(calc(-50% - 6px), calc(-100% - 6px)); }
+  70% { transform: translate(calc(-50% + 3px), calc(-100% - 6px)); }
   100% { transform: translate(-50%, calc(-100% - 6px)); }
 }
 

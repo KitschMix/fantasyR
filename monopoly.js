@@ -484,10 +484,12 @@
 
   async function animatePlayerMove(player, fromTile, toTile) {
     if (!els.piecesContainer) return;
-    // Find the piece and avatar elements for this player
     const piece = els.piecesContainer.querySelector(`.monopoly-piece[data-player-id="${player.id}"]`);
     const avatar = els.piecesContainer.querySelector(`.monopoly-board-turn-avatar[data-player-id="${player.id}"]`);
     if (!piece) return;
+
+    const ox = parseFloat(piece.style.getPropertyValue("--piece-offset-x")) || 0;
+    const oy = parseFloat(piece.style.getPropertyValue("--piece-offset-y")) || 0;
 
     const steps = [];
     let cur = fromTile;
@@ -502,16 +504,17 @@
       const prevTile = si === 0 ? fromTile : steps[si - 1];
       const c = tileCenter(stepTile);
       const pc = tileCenter(prevTile);
-      // Determine direction: horizontal or vertical
       const dx = Math.abs(c.x - pc.x);
       const dy = Math.abs(c.y - pc.y);
       const direction = dx > dy ? "h" : "v";
-      // Slide to next tile
-      piece.style.setProperty("--piece-x", `${c.x}%`);
-      piece.style.setProperty("--piece-y", `${c.y}%`);
+      // Set left/top directly for reliable transition
+      const targetLeft = `calc(${c.x}% + ${ox}%)`;
+      const targetTop = `calc(${c.y}% + ${oy}%)`;
+      piece.style.left = targetLeft;
+      piece.style.top = targetTop;
       if (avatar) {
-        avatar.style.setProperty("--piece-x", `${c.x}%`);
-        avatar.style.setProperty("--piece-y", `${c.y}%`);
+        avatar.style.left = targetLeft;
+        avatar.style.top = targetTop;
       }
       await wait(STEP_MOVE_MS);
       // Bounce perpendicular to movement direction
@@ -522,7 +525,10 @@
       if (avatar) avatar.classList.remove("bounce-h", "bounce-v");
       await wait(STEP_PAUSE_MS);
     }
-    // Update stored position
+    // Sync CSS variables to final position
+    const fc = tileCenter(toTile);
+    piece.style.setProperty("--piece-x", `${fc.x}%`);
+    piece.style.setProperty("--piece-y", `${fc.y}%`);
     piecePositions[player.id] = tilePosition(toTile);
   }
 
@@ -531,12 +537,18 @@
     const piece = els.piecesContainer.querySelector(`.monopoly-piece[data-player-id="${player.id}"]`);
     const avatar = els.piecesContainer.querySelector(`.monopoly-board-turn-avatar[data-player-id="${player.id}"]`);
     if (!piece) return;
+    const ox = parseFloat(piece.style.getPropertyValue("--piece-offset-x")) || 0;
+    const oy = parseFloat(piece.style.getPropertyValue("--piece-offset-y")) || 0;
     const c = tileCenter(target);
+    const targetLeft = `calc(${c.x}% + ${ox}%)`;
+    const targetTop = `calc(${c.y}% + ${oy}%)`;
+    piece.style.left = targetLeft;
+    piece.style.top = targetTop;
     piece.style.setProperty("--piece-x", `${c.x}%`);
     piece.style.setProperty("--piece-y", `${c.y}%`);
     if (avatar) {
-      avatar.style.setProperty("--piece-x", `${c.x}%`);
-      avatar.style.setProperty("--piece-y", `${c.y}%`);
+      avatar.style.left = targetLeft;
+      avatar.style.top = targetTop;
     }
     piecePositions[player.id] = tilePosition(target);
     await wait(300);
