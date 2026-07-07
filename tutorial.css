@@ -104,3 +104,78 @@
 .sushi-tutorial-dialog::backdrop {
   background: rgba(0, 0, 0, 0.6);
 }
+
+/* --- Interactive Tutorial Overlay --- */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  pointer-events: none;
+}
+
+.tutorial-overlay.hidden {
+  display: none;
+}
+
+.tutorial-tooltip {
+  position: absolute;
+  z-index: 3001;
+  max-width: 340px;
+  min-width: 240px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+  animation: tutorialFadeIn 0.3s ease-out;
+}
+
+@keyframes tutorialFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tutorial-tooltip-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.tutorial-tooltip-body {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.tutorial-tooltip-btn {
+  width: 100%;
+  font-size: 14px;
+  min-height: 40px;
+}
+
+.tutorial-highlight-ring {
+  position: absolute;
+  z-index: 2999;
+  border: 3px solid var(--focus);
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(242, 207, 120, 0.4), inset 0 0 20px rgba(242, 207, 120, 0.1);
+  pointer-events: none;
+  transition: all 0.4s ease;
+  animation: tutorialPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes tutorialPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(242, 207, 120, 0.4), inset 0 0 20px rgba(242, 207, 120, 0.1); }
+  50% { box-shadow: 0 0 30px rgba(242, 207, 120, 0.6), inset 0 0 30px rgba(242, 207, 120, 0.2); }
+}
+
+.tutorial-dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2998;
+  pointer-events: auto;
+}
