@@ -41,7 +41,7 @@
 - Git push completed to `origin/main`.
 - Vercel reported success for commit `06dc1bf`:
   - `Deployment has completed`
-  - deployment URL observed: `https://fantasy-j75glzq36-kitschmixs-projects.vercel.app`
+  - deployment URL observed: `https://fantasyr.vercel.app`
 - GitHub Pages deployment also ran, but failed with:
   - `Deployment failed, try again later.`
 - Existing GitHub Pages URL was still serving older content during verification:
@@ -50,4 +50,4 @@
 ## Follow-Up
 
 - If GitHub Pages is the public target, rerun or inspect the Pages deployment job.
-- If Vercel is the public target, verify whether the production domain is protected or routed differently, since direct asset/page requests returned Vercel shell HTML during checks.
+- We verified that the live Vercel URL `https://fantasyr.vercel.app` is successfully deploying changes from `main` without login block redirects.
