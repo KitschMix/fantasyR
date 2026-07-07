@@ -78,6 +78,8 @@
   const AI_DELAY_MS = 1250;
   const DICE_ROLL_DURATION_MS = 650;
   const DICE_ROLL_FRAME_MS = 58;
+  const ACCUSATION_REVEAL_STEP_MS = 1000;
+  const ACCUSATION_REVEAL_PAUSE_MS = 1000;
   const AI_EXPECTED_TURNS_PER_PLAYER = 8;
   const AI_ACCUSATION_RULES = {
     normal: { baseLimit: 3, lateLimit: 4, dangerLimit: 5, mistakeRate: 0.10, mistakeLimit: 5 },
@@ -216,6 +218,8 @@
     eventQueue: [],
     currentEvent: null,
     eventShowing: false,
+    eventRevealReadyAt: 0,
+    eventRevealReadyTimer: 0,
     choiceTimer: 0,
     idleSpeechTimer: 0,
     piecePositions: {},
@@ -415,10 +419,17 @@
     clearIdleSpeechTimer();
     state.eventQueue.push({
       cards: [],
+      sequentialReveal: false,
       turnPlayerIndex: state.currentPlayer,
       ...event
     });
     playNextClueEvent();
+  }
+
+  function clueEventRevealDuration(cards) {
+    const count = Array.isArray(cards) ? cards.length : 0;
+    if (!count) return 0;
+    return ACCUSATION_REVEAL_STEP_MS + ((count - 1) * (ACCUSATION_REVEAL_STEP_MS + ACCUSATION_REVEAL_PAUSE_MS));
   }
 
   function visibleBoardTurnIndex() {
@@ -448,6 +459,9 @@
     if (!state.eventShowing) return;
     const afterDismiss = state.currentEvent?.afterDismiss;
     const layer = ensureClueEventLayer();
+    if (state.eventRevealReadyTimer) window.clearTimeout(state.eventRevealReadyTimer);
+    state.eventRevealReadyTimer = 0;
+    state.eventRevealReadyAt = 0;
     layer.classList.remove("open");
     layer.innerHTML = "";
     state.eventShowing = false;
@@ -486,18 +500,40 @@
     renderNotes();
     clearClueSpeech();
     const actorHeader = clueEventActorHeaderHtml(event.actor, event.dialogueKey);
+    if (state.eventRevealReadyTimer) window.clearTimeout(state.eventRevealReadyTimer);
+    state.eventRevealReadyTimer = 0;
+    state.eventRevealReadyAt = 0;
+    const revealSequence = Boolean(event.sequentialReveal && event.cards?.length);
+    const revealDuration = revealSequence ? clueEventRevealDuration(event.cards) : 0;
+    const cardRowClass = `clue-event-card-row${revealSequence ? " clue-accusation-reveal-row" : ""}`;
+    const cardImageClass = `clue-event-card-image${revealSequence ? " clue-accusation-reveal-card" : ""}`;
     layer.innerHTML = `
-      <section class="clue-event-card">
+      <section class="clue-event-card${revealSequence ? " clue-accusation-reveal-event" : ""}">
         ${actorHeader}
         <strong>${escapeHtml(event.title || "클루")}</strong>
         <p>${escapeHtml(event.message || "")}</p>
         ${event.detail ? `<small>${escapeHtml(event.detail)}</small>` : ""}
-        ${event.cards?.length ? `<div class="clue-event-card-row">${event.cards.map((entry) => cardFigureHtml(entry)).join("")}</div>` : ""}
-        <span class="clue-popup-hint">팝업을 클릭하면 팝업 닫기</span>
+        ${event.cards?.length ? `<div class="${cardRowClass}">${event.cards.map((entry) => cardFigureHtml(entry, cardImageClass)).join("")}</div>` : ""}
+        <span class="clue-popup-hint">${revealSequence ? "카드 공개 중..." : "팝업을 클릭하면 팝업 닫기"}</span>
       </section>
     `;
     layer.classList.add("open");
-    layer.querySelector(".clue-event-card")?.addEventListener("click", dismissClueEvent);
+    const eventCard = layer.querySelector(".clue-event-card");
+    if (revealSequence) {
+      state.eventRevealReadyAt = window.performance.now() + revealDuration;
+      state.eventRevealReadyTimer = window.setTimeout(() => {
+        if (state.currentEvent === event && state.eventShowing) {
+          eventCard?.classList.add("reveal-complete");
+          eventCard?.querySelector(".clue-popup-hint")?.replaceChildren("팝업을 클릭하면 팝업 닫기");
+        }
+        state.eventRevealReadyTimer = 0;
+        state.eventRevealReadyAt = 0;
+      }, revealDuration);
+    }
+    eventCard?.addEventListener("click", () => {
+      if (state.eventRevealReadyAt && window.performance.now() < state.eventRevealReadyAt) return;
+      dismissClueEvent();
+    });
   }
 
   function clearClueEventLayers() {
@@ -507,6 +543,9 @@
     state.eventQueue = [];
     state.currentEvent = null;
     state.eventShowing = false;
+    if (state.eventRevealReadyTimer) window.clearTimeout(state.eventRevealReadyTimer);
+    state.eventRevealReadyTimer = 0;
+    state.eventRevealReadyAt = 0;
     state.pendingRefute = null;
     state.noteColumnHighlightIndex = -1;
     clueEventLayer?.classList.remove("open");
@@ -1830,6 +1869,7 @@
         actor: player,
         dialogueKey: "win",
         cards: [state.solution.suspect, state.solution.weapon, state.solution.room],
+        sequentialReveal: true,
         afterDismiss: () => showFinishSpeeches(player, true)
       });
       if (typeof window.showCenterToast === "function") {
@@ -1848,6 +1888,7 @@
           actor: player,
           dialogueKey: "lose",
           cards: revealSolution ? [state.solution.suspect, state.solution.weapon, state.solution.room] : [accusation.suspect, accusation.weapon, accusation.room],
+          sequentialReveal: true,
           afterDismiss: player.human ? () => showFinishSpeeches(player, false) : null
         });
       if (player.human) {
@@ -2099,7 +2140,8 @@
       message: `${withSubject(accusation.suspect.name)} ${withInstrument(accusation.weapon.name)} ${accusation.room.name}에서 죽였다고 고발합니다.`,
       actor: activePlayer(),
       dialogueKey: "accuse",
-      cards: [accusation.suspect, accusation.weapon, accusation.room]
+      cards: [accusation.suspect, accusation.weapon, accusation.room],
+      sequentialReveal: true
     });
     finishGame(activePlayer(), isCorrectAccusation(accusation), accusation);
   }
@@ -2166,7 +2208,8 @@
         message: `${withSubject(accusation.suspect.name)} ${withInstrument(accusation.weapon.name)} ${accusation.room.name}에서 죽였다고 고발합니다.`,
         actor: player,
         dialogueKey: "accuse",
-        cards: [accusation.suspect, accusation.weapon, accusation.room]
+        cards: [accusation.suspect, accusation.weapon, accusation.room],
+        sequentialReveal: true
       });
       finishGame(player, isCorrectAccusation(accusation), accusation);
       return;
@@ -2195,7 +2238,8 @@
         message: `${withSubject(accusation.suspect.name)} ${withInstrument(accusation.weapon.name)} ${accusation.room.name}에서 죽였다고 고발합니다.`,
         actor: player,
         dialogueKey: "accuse",
-        cards: [accusation.suspect, accusation.weapon, accusation.room]
+        cards: [accusation.suspect, accusation.weapon, accusation.room],
+        sequentialReveal: true
       });
       finishGame(player, isCorrectAccusation(accusation), accusation);
       return;

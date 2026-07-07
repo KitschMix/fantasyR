@@ -1149,6 +1149,110 @@ body.clue-active.clue-playing .clue-game-panel {
   width: 88px;
 }
 
+.clue-event-card.clue-accusation-reveal-event {
+  width: min(760px, calc(100vw - 32px));
+  gap: 12px;
+  padding: 18px;
+}
+
+.clue-accusation-reveal-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 176px));
+  gap: 16px;
+}
+
+.clue-accusation-reveal-row .clue-accusation-reveal-card {
+  width: min(176px, calc((100vw - 104px) / 3));
+  border-color: rgba(242, 207, 120, 0.46);
+  background: #050505;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.48);
+  transform-origin: center;
+  animation: clue-accusation-card-rise 1000ms ease-out var(--clue-reveal-delay, 0ms) both;
+}
+
+.clue-accusation-reveal-row .clue-accusation-reveal-card:nth-child(1) {
+  --clue-reveal-delay: 0ms;
+}
+
+.clue-accusation-reveal-row .clue-accusation-reveal-card:nth-child(2) {
+  --clue-reveal-delay: 2000ms;
+}
+
+.clue-accusation-reveal-row .clue-accusation-reveal-card:nth-child(3) {
+  --clue-reveal-delay: 4000ms;
+}
+
+.clue-accusation-reveal-row .clue-accusation-reveal-card img {
+  filter: brightness(0.04) saturate(0.2);
+  animation: clue-accusation-image-reveal 1000ms ease-out var(--clue-reveal-delay, 0ms) both;
+}
+
+.clue-accusation-reveal-row .clue-accusation-reveal-card span {
+  opacity: 0;
+  animation: clue-accusation-label-reveal 220ms ease-out calc(var(--clue-reveal-delay, 0ms) + 760ms) both;
+}
+
+.clue-accusation-reveal-row .clue-accusation-reveal-card::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  background: #020202;
+  opacity: 0.98;
+  pointer-events: none;
+  animation: clue-accusation-cover-reveal 1000ms ease-out var(--clue-reveal-delay, 0ms) both;
+}
+
+@keyframes clue-accusation-card-rise {
+  from {
+    transform: translateY(6px) scale(0.97);
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes clue-accusation-image-reveal {
+  0% {
+    filter: brightness(0.04) saturate(0.2);
+  }
+
+  45% {
+    filter: brightness(0.55) saturate(0.9);
+  }
+
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes clue-accusation-cover-reveal {
+  0% {
+    opacity: 0.98;
+  }
+
+  70% {
+    opacity: 0.22;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes clue-accusation-label-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .clue-event-card-image.clue-hint-card-image {
   width: min(220px, 58vw);
 }
@@ -1509,6 +1613,20 @@ body.clue-active.clue-playing .clue-game-panel {
 
   .clue-event-card-image {
     width: 62px;
+  }
+
+  .clue-event-card.clue-accusation-reveal-event {
+    max-height: min(78vh, 620px);
+    gap: 8px;
+  }
+
+  .clue-accusation-reveal-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .clue-accusation-reveal-row .clue-accusation-reveal-card {
+    width: 100%;
   }
 
   .clue-choice-card-button {
