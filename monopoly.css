@@ -393,13 +393,23 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   z-index: 10;
 }
 
-.monopoly-piece.bounce {
-  animation: monopoly-piece-bounce 200ms ease-out;
+.monopoly-piece.bounce-h {
+  animation: monopoly-piece-bounce-h 200ms ease-out;
 }
 
-@keyframes monopoly-piece-bounce {
+.monopoly-piece.bounce-v {
+  animation: monopoly-piece-bounce-v 200ms ease-out;
+}
+
+@keyframes monopoly-piece-bounce-h {
   0% { transform: translate(-50%, -50%) scale(1); }
-  40% { transform: translate(-50%, -50%) scale(1.35) translateY(-6px); }
+  40% { transform: translate(-50%, -50%) scale(1.2) translateY(-8px); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes monopoly-piece-bounce-v {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  40% { transform: translate(-50%, -50%) scale(1.2) translateX(-8px); }
   100% { transform: translate(-50%, -50%) scale(1); }
 }
 
@@ -432,13 +442,23 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   animation: monopoly-avatar-bob 1200ms ease-in-out infinite;
 }
 
-.monopoly-board-turn-avatar.bounce {
-  animation: monopoly-avatar-bounce 200ms ease-out;
+.monopoly-board-turn-avatar.bounce-h {
+  animation: monopoly-avatar-bounce-h 200ms ease-out;
 }
 
-@keyframes monopoly-avatar-bounce {
+.monopoly-board-turn-avatar.bounce-v {
+  animation: monopoly-avatar-bounce-v 200ms ease-out;
+}
+
+@keyframes monopoly-avatar-bounce-h {
   0% { transform: translate(-50%, calc(-100% - 6px)) scale(1); }
-  40% { transform: translate(-50%, calc(-100% - 14px)) scale(1.2); }
+  40% { transform: translate(-50%, calc(-100% - 16px)) scale(1.15); }
+  100% { transform: translate(-50%, calc(-100% - 6px)) scale(1); }
+}
+
+@keyframes monopoly-avatar-bounce-v {
+  0% { transform: translate(-50%, calc(-100% - 6px)) scale(1); }
+  40% { transform: translate(calc(-50% - 8px), calc(-100% - 6px)) scale(1.15); }
   100% { transform: translate(-50%, calc(-100% - 6px)) scale(1); }
 }
 

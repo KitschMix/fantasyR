@@ -497,8 +497,15 @@
       if (cur === toTile) break;
     }
 
-    for (const stepTile of steps) {
+    for (let si = 0; si < steps.length; si++) {
+      const stepTile = steps[si];
+      const prevTile = si === 0 ? fromTile : steps[si - 1];
       const c = tileCenter(stepTile);
+      const pc = tileCenter(prevTile);
+      // Determine direction: horizontal or vertical
+      const dx = Math.abs(c.x - pc.x);
+      const dy = Math.abs(c.y - pc.y);
+      const direction = dx > dy ? "h" : "v";
       // Slide to next tile
       piece.style.setProperty("--piece-x", `${c.x}%`);
       piece.style.setProperty("--piece-y", `${c.y}%`);
@@ -507,12 +514,12 @@
         avatar.style.setProperty("--piece-y", `${c.y}%`);
       }
       await wait(STEP_MOVE_MS);
-      // Bounce (뽀잉)
-      piece.classList.add("bounce");
-      if (avatar) avatar.classList.add("bounce");
+      // Bounce perpendicular to movement direction
+      piece.classList.add(direction === "h" ? "bounce-h" : "bounce-v");
+      if (avatar) avatar.classList.add(direction === "h" ? "bounce-h" : "bounce-v");
       await wait(STEP_BOUNCE_MS);
-      piece.classList.remove("bounce");
-      if (avatar) avatar.classList.remove("bounce");
+      piece.classList.remove("bounce-h", "bounce-v");
+      if (avatar) avatar.classList.remove("bounce-h", "bounce-v");
       await wait(STEP_PAUSE_MS);
     }
     // Update stored position
