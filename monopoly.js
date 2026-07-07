@@ -84,12 +84,33 @@
     { text: "출발 지점으로 이동하세요.", action: "moveTo", target: 0, collect: true }
   ];
 
-  const START_MONEY = 1500;
-  const GO_SALARY = 200;
+  const SCALE_FACTOR = 10000;
+  const START_MONEY = 1500 * SCALE_FACTOR;
+  const GO_SALARY = 200 * SCALE_FACTOR;
+  const JAIL_FINE = 50 * SCALE_FACTOR;
   const JAIL_TURNS = 3;
   const AI_THINK_DELAY = 1200;
   const DICE_ROLL_DURATION = 600;
   const DICE_FRAME_MS = 60;
+
+  // Scale TILES, CHANCE_CARDS, FUND_CARDS
+  TILES.forEach(t => {
+    if (t.price) t.price *= SCALE_FACTOR;
+    if (t.rent) t.rent = t.rent.map(r => r * SCALE_FACTOR);
+    if (t.amount) t.amount *= SCALE_FACTOR;
+  });
+
+  CHANCE_CARDS.forEach(card => {
+    if (card.amount) card.amount *= SCALE_FACTOR;
+    if (card.house) card.house *= SCALE_FACTOR;
+    if (card.hotel) card.hotel *= SCALE_FACTOR;
+    card.text = card.text.replace(/(\d+)원/g, "$1만 원");
+  });
+
+  FUND_CARDS.forEach(card => {
+    if (card.amount) card.amount *= SCALE_FACTOR;
+    card.text = card.text.replace(/(\d+)원/g, "$1만 원");
+  });
 
   /* ── DOM Refs ── */
   const $ = (sel) => document.querySelector(sel);
@@ -259,7 +280,7 @@
       }
       html += `<span class="tile-name">${escapeHtml(tile.name)}</span>`;
       if (tile.price) {
-        html += `<span class="tile-price">₩${tile.price}</span>`;
+        html += `<span class="tile-price">₩${tile.price.toLocaleString()}</span>`;
       }
       div.innerHTML = html;
       if (tile.type !== "property") {
@@ -442,7 +463,7 @@
         <div class="asset-card-color-bar" style="background-color: ${tile.color || '#ccc'}"></div>
         <div class="asset-card-content">
           <div class="asset-card-name">${escapeHtml(tile.name)}</div>
-          <div class="asset-card-rent">통행료: ₩${getRent(tile, targetPlayer.position)}</div>
+          <div class="asset-card-rent">통행료: ₩${getRent(tile, targetPlayer.position).toLocaleString()}</div>
           <div class="asset-card-group-status${monClass}">${groupStatus}</div>
         </div>
       `;
@@ -544,7 +565,7 @@
           <div class="property-list-item ${ownedClass}" data-tile-index="${index}">
             <span class="property-item-name">${escapeHtml(tile.name)}</span>
             <div class="property-item-right">
-              <span class="property-item-rent">₩${tile.rent ? tile.rent[0] : 0}</span>
+              <span class="property-item-rent">₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}</span>
               ${badge}
             </div>
           </div>
@@ -604,14 +625,14 @@
       ? 0
       : (COLOR_GROUPS[tile.color] || []).filter(id => state.players.some(p => p.properties.includes(id))).length;
 
-    let rentInfo = `기본 임대료: ₩${tile.rent[0]}`;
+    let rentInfo = `기본 임대료: ₩${tile.rent[0].toLocaleString()}`;
     if (tile.rent.length > 1) {
-      rentInfo += `<br>건축 단계: ${tile.rent.slice(1).map((r, i) => `Lv${i + 1}: ₩${r}`).join(", ")}`;
+      rentInfo += `<br>건축 단계: ${tile.rent.slice(1).map((r, i) => `Lv${i + 1}: ₩${r.toLocaleString()}`).join(", ")}`;
     }
 
     els.propertyInfo.innerHTML = `
       <h3><span style="display:inline-block;width:14px;height:14px;background:${tile.color};border-radius:3px;margin-right:6px"></span>${escapeHtml(tile.name)}</h3>
-      <p>가격: ₩${tile.price}</p>
+      <p>가격: ₩${tile.price.toLocaleString()}</p>
       <p>${rentInfo}</p>
       ${owner ? `<p style="color:${owner.tokenColor}">소유자: ${playerDisplayName(owner)}</p>` : "<p>소유자: 없음</p>"}
     `;
@@ -814,13 +835,13 @@
     // Railroad
     if (tile.color === "#4682B4") {
       const owned = RAILROAD_IDS.filter(id => owner.properties.includes(id)).length;
-      return 25 * Math.pow(2, owned - 1); // 25, 50, 100, 200
+      return 25 * SCALE_FACTOR * Math.pow(2, owned - 1); // 25, 50, 100, 200 scaled
     }
     // Utility
     if (tile.color === "#808080") {
       const owned = UTILITY_IDS.filter(id => owner.properties.includes(id)).length;
       const roll = state.dice[0] + state.dice[1];
-      return owned === 2 ? roll * 10 : roll * 4;
+      return owned === 2 ? roll * 10 * SCALE_FACTOR : roll * 4 * SCALE_FACTOR;
     }
     // Regular property
     const baseRent = tile.rent[0];
@@ -1028,7 +1049,7 @@
         if (!player.human) {
           setTimeout(() => {
             if (dialog.open) {
-              const wantsToBuy = player.money >= tile.price + 200 || (player.money >= tile.price && state.turnCount > 15);
+              const wantsToBuy = player.money >= tile.price + 200 * SCALE_FACTOR || (player.money >= tile.price && state.turnCount > 15);
               if (wantsToBuy && !buyBtn.disabled) {
                 buyBtn.click();
               } else {
@@ -1262,8 +1283,8 @@
       endTurn();
       return;
     }
-    // AI buys if affordable and money > 200 (keep reserve)
-    if (player.money >= tile.price + 200 || player.money >= tile.price && state.turnCount > 15) {
+    // AI buys if affordable and money > 200 * SCALE_FACTOR (keep reserve)
+    if (player.money >= tile.price + 200 * SCALE_FACTOR || player.money >= tile.price && state.turnCount > 15) {
       buyProperty(player);
     } else {
       addLog(`🚫 ${playerDisplayName(player)} ${tile.name} 구매를 포기.`);
@@ -1295,8 +1316,8 @@
         return;
       } else if (player.jailTurns <= 0) {
         player.inJail = false;
-        payMoney(player, null, 50);
-        addLog(`💸 ${playerDisplayName(player)} 벌금 ₩50 내고 출소.`);
+        payMoney(player, null, JAIL_FINE);
+        addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
       } else {
         addLog(`🔒 ${playerDisplayName(player)} 구금 중 (${player.jailTurns}턴 남음)`);
       }
@@ -1418,8 +1439,8 @@
         return;
       } else if (player.jailTurns <= 0) {
         player.inJail = false;
-        payMoney(player, null, 50);
-        addLog(`💸 벌금 ₩50 내고 출소.`);
+        payMoney(player, null, JAIL_FINE);
+        addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
       } else {
         addLog(`🔒 구금 중 (${player.jailTurns}턴 남음)`);
         state.phase = "buyDecision";
