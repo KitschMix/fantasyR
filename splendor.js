@@ -179,15 +179,17 @@
   function tokenCount(playerCount) { return playerCount === 2 ? 4 : playerCount === 3 ? 5 : 7; }
 
   /* ── Gem Color Helpers ── */
+  const GEM_ICONS = { diamond: "💎", sapphire: "🔷", emerald: "🟢", ruby: "🔴", onyx: "⬛", gold: "⭐" };
+
   function gemPip(gem, count) {
-    return `<span class="splendor-cost-pip" style="background:${GEM_COLORS[gem]}">${count}</span>`;
+    return `<span class="splendor-cost-pip" style="background:${GEM_COLORS[gem]}">${GEM_ICONS[gem]}${count}</span>`;
   }
   function gemMini(gem, count) {
-    return `<span class="splendor-mini-gem" style="background:${GEM_COLORS[gem]}">${count}</span>`;
+    return `<span class="splendor-mini-gem" style="background:${GEM_COLORS[gem]}">${GEM_ICONS[gem]}${count}</span>`;
   }
   function tokenEl(gem, count, disabled) {
     return `<span class="splendor-token${disabled ? " disabled" : ""}" data-gem="${gem}" style="background:${GEM_COLORS[gem]}" title="${GEM_LABELS[gem]} ${count}개">
-      ${count}<span class="splendor-token-count">${count}</span>
+      ${GEM_ICONS[gem]}<span class="splendor-token-count">${count}</span>
     </span>`;
   }
 
@@ -196,31 +198,34 @@
     const costHtml = Object.entries(card.cost)
       .filter(([, n]) => n > 0)
       .map(([g, n]) => gemPip(g, n)).join("");
+    const tierColors = { 1: "#6a8a6a", 2: "#8a6a3a", 3: "#5a3a6a" };
     return `<div class="splendor-card${reserved ? " splendor-card-reserved" : ""}${state.selectedCard?.tier === tier && state.selectedCard?.index === index ? " selected" : ""}"
-      data-tier="${tier}" data-index="${index}" ${reserved ? 'data-reserved="1"' : ""}>
+      data-tier="${tier}" data-index="${index}" ${reserved ? 'data-reserved="1"' : ""}
+      style="border-top: 4px solid ${tierColors[tier] || "var(--line)"}">
       <div class="splendor-card-top">
-        <span class="splendor-card-points">${card.points || ""}</span>
-        <span class="splendor-card-bonus" style="background:${GEM_COLORS[card.bonus]}" title="${GEM_LABELS[card.bonus]} 보너스"></span>
+        <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
+        <span class="splendor-card-bonus" style="background:${GEM_COLORS[card.bonus]}" title="${GEM_LABELS[card.bonus]} 보너스">${GEM_ICONS[card.bonus]}</span>
       </div>
-      <div></div>
+      <div style="display:flex;align-items:center;justify-content:center;font-size:20px;opacity:0.5">${GEM_ICONS[card.bonus]}</div>
       <div class="splendor-card-cost">${costHtml}</div>
     </div>`;
   }
 
   function cardBackHtml(tier) {
     const deck = state.tiers[tier];
+    const tierEmoji = { 1: "🥉", 2: "🥈", 3: "🥇" };
     return `<div class="splendor-card-back" data-tier="${tier}">
-      💎<span class="splendor-deck-count">${deck.length}</span>
+      ${tierEmoji[tier] || "💎"}<span class="splendor-deck-count">${deck.length}</span>
     </div>`;
   }
 
   /* ── Noble Rendering ── */
   function nobleHtml(noble) {
     const reqHtml = Object.entries(noble.requires)
-      .map(([g, n]) => `<span class="splendor-noble-req-gem" style="background:${GEM_COLORS[g]}">${n}</span>`).join("");
+      .map(([g, n]) => `<span class="splendor-noble-req-gem" style="background:${GEM_COLORS[g]}">${GEM_ICONS[g]}${n}</span>`).join("");
     return `<div class="splendor-noble">
       <span class="splendor-noble-emoji">👑</span>
-      <span class="splendor-noble-points">${noble.points}</span>
+      <span class="splendor-noble-points">★${noble.points}</span>
       <div class="splendor-noble-req">${reqHtml}</div>
     </div>`;
   }

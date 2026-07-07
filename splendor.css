@@ -199,13 +199,14 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
-  color: #17130f;
-  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 /* --- Nobles --- */
@@ -217,48 +218,52 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-noble {
-  width: 100px;
-  height: 100px;
-  border-radius: 8px;
-  background: var(--surface-2);
+  width: 110px;
+  min-height: 110px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
   border: 2px solid var(--accent);
   display: grid;
   place-items: center;
-  padding: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
   position: relative;
 }
 
 .splendor-noble-emoji {
-  font-size: 28px;
+  font-size: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
 }
 
 .splendor-noble-points {
   position: absolute;
-  top: 4px;
-  right: 6px;
+  top: 6px;
+  right: 8px;
   font-size: 14px;
   font-weight: 900;
   color: var(--accent);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .splendor-noble-req {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 3px;
   justify-content: center;
 }
 
 .splendor-noble-req-gem {
-  width: 14px;
-  height: 14px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   font-size: 8px;
   font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #17130f;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 /* --- Card Tiers --- */
@@ -292,28 +297,30 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 /* --- Development Cards --- */
 .splendor-card {
-  width: 110px;
-  min-height: 130px;
-  border-radius: 8px;
-  background: var(--surface);
+  width: 120px;
+  min-height: 140px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, var(--surface) 0%, var(--surface-2) 100%);
   border: 1px solid var(--line);
   display: grid;
   grid-template-rows: auto 1fr auto;
-  padding: 8px;
+  padding: 10px;
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .splendor-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.5);
   border-color: var(--accent);
 }
 
 .splendor-card.selected {
   border-color: var(--focus);
-  box-shadow: 0 0 16px rgba(242,207,120,0.3);
+  box-shadow: 0 0 20px rgba(242,207,120,0.4);
+  transform: translateY(-2px);
 }
 
 .splendor-card-reserved {
@@ -328,104 +335,125 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-card-points {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 900;
   color: var(--accent);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  letter-spacing: -1px;
 }
 
 .splendor-card-bonus {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 900;
-  color: #17130f;
-  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  border: 2px solid rgba(255,255,255,0.5);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 .splendor-card-cost {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 4px;
   align-self: end;
 }
 
 .splendor-cost-pip {
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 900;
-  color: #17130f;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
 }
 
 .splendor-card-back {
-  width: 110px;
-  min-height: 130px;
-  border-radius: 8px;
-  background: var(--surface-3);
-  border: 1px solid var(--line);
+  width: 120px;
+  min-height: 140px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, var(--surface-3) 0%, var(--surface-2) 100%);
+  border: 2px solid var(--line);
   display: grid;
   place-items: center;
-  font-size: 28px;
+  font-size: 32px;
   cursor: default;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  position: relative;
 }
 
 .splendor-deck-count {
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--muted);
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--accent);
   position: absolute;
-  bottom: 4px;
-  right: 8px;
+  bottom: 8px;
+  right: 10px;
+  background: var(--surface);
+  border-radius: 999px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
 }
 
 /* --- Token Bank --- */
 .splendor-tokens {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 14px;
+  border-radius: 10px;
   background: var(--surface);
   border: 1px solid var(--line);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .splendor-token {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 900;
-  color: #17130f;
-  border: 2px solid rgba(255,255,255,0.4);
+  color: #fff;
+  border: 3px solid rgba(255,255,255,0.5);
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
   position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 .splendor-token:hover:not(.disabled) {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transform: scale(1.15);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
 }
 
 .splendor-token.selected {
-  box-shadow: 0 0 0 3px var(--focus);
-  transform: scale(1.1);
+  box-shadow: 0 0 0 4px var(--focus), 0 6px 18px rgba(0,0,0,0.4);
+  transform: scale(1.15);
 }
 
 .splendor-token.disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
 .splendor-token-count {
