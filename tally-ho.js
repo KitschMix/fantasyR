@@ -160,6 +160,7 @@
     aiProfile: null,
     leaderboardSubmitted: false,
     aiTimer: 0,
+    aiCueTimer: 0,
     aiActing: false,
     log: []
   };
@@ -610,6 +611,14 @@
     return row >= 0 && row < SIZE && col >= 0 && col < SIZE;
   }
 
+  function isCenterCell(row, col) {
+    return row === CENTER && col === CENTER;
+  }
+
+  function isBlockedCell(row, col) {
+    return isCenterCell(row, col);
+  }
+
   function opponent(side = state.currentSide) {
     return SIDES[side].opponent;
   }
@@ -801,6 +810,11 @@
       window.clearTimeout(state.aiTimer);
       state.aiTimer = 0;
     }
+    if (state.aiCueTimer) {
+      window.clearTimeout(state.aiCueTimer);
+      state.aiCueTimer = 0;
+    }
+    els.board?.classList.remove("ai-turn-cue");
     state.aiActing = false;
   }
 
@@ -813,6 +827,22 @@
     if (typeof window.showCenterToast === "function") {
       window.showCenterToast(message, duration, { mode: "tally" });
     }
+  }
+
+  function playAiTurnCue() {
+    if (!isAiTurn() || !els.board) return;
+    toast(`${actorLabel("ai")}의 턴`, 950);
+    if (state.aiCueTimer) {
+      window.clearTimeout(state.aiCueTimer);
+      state.aiCueTimer = 0;
+    }
+    els.board.classList.remove("ai-turn-cue");
+    void els.board.offsetWidth;
+    els.board.classList.add("ai-turn-cue");
+    state.aiCueTimer = window.setTimeout(() => {
+      state.aiCueTimer = 0;
+      els.board?.classList.remove("ai-turn-cue");
+    }, 980);
   }
 
   function isNeutralMover(tile) {
@@ -917,6 +947,8 @@
           }
           break;
         }
+
+        if (isBlockedCell(nextRow, nextCol)) break;
 
         if (isPreviousSpace(tile, nextRow, nextCol)) break;
 
@@ -1029,7 +1061,7 @@
     return DIRS.reduce((sum, dir) => {
       const nextRow = row + dir.dr;
       const nextCol = col + dir.dc;
-      return sum + (inBounds(nextRow, nextCol) && !state.board[nextRow][nextCol] ? 1 : 0);
+      return sum + (inBounds(nextRow, nextCol) && !isBlockedCell(nextRow, nextCol) && !state.board[nextRow][nextCol] ? 1 : 0);
     }, 0);
   }
 
@@ -1041,6 +1073,7 @@
         const nextRow = row + (dir.dr * step);
         const nextCol = col + (dir.dc * step);
         if (!inBounds(nextRow, nextCol)) break;
+        if (isBlockedCell(nextRow, nextCol)) break;
         const occupant = state.board[nextRow][nextCol];
         if (!occupant || occupant.id === mover.id) continue;
         if (!occupant.faceUp) break;
@@ -1244,6 +1277,7 @@
 
     renderTally();
     scheduleAiTurn();
+    playAiTurnCue();
   }
 
   function flipTile(row, col) {
@@ -1267,6 +1301,7 @@
     const from = state.selected;
     const tile = state.board[from.row][from.col];
     if (!tile) return;
+    if (!target.exit && isBlockedCell(target.row, target.col)) return;
 
     if (target.exit) {
       state.board[from.row][from.col] = null;
@@ -1295,6 +1330,10 @@
 
   function handleCellClick(row, col) {
     if (state.finished || isAiTurn()) return;
+    if (isBlockedCell(row, col)) {
+      toast("정중앙 칸은 지나갈 수 없습니다.", 1400);
+      return;
+    }
     const target = selectedTargets().find((entry) => entry.row === row && entry.col === col && !entry.exit);
     if (target) {
       moveSelectedTo(target);
@@ -1386,9 +1425,10 @@
         cell.dataset.row = String(row);
         cell.dataset.col = String(col);
         if (isExitCell(row, col)) cell.classList.add("exit");
+        if (isBlockedCell(row, col)) cell.classList.add("center-blocked");
         if (!tile) {
           cell.classList.add("empty");
-          cell.setAttribute("aria-label", "빈칸");
+          cell.setAttribute("aria-label", isBlockedCell(row, col) ? "막힌 중앙 칸" : "빈칸");
         } else {
           const selectable = !aiTurn && !state.finished && (!tile.faceUp || canSelectMovableTile(tile));
           const tileEl = document.createElement("span");
