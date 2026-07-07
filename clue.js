@@ -201,8 +201,6 @@
     diceRolling: false,
     diceRollTimer: 0,
     reachableRooms: [],
-    clueZoneAssistEligible: false,
-    clueZoneAssistApplied: false,
     corridorMoveApplied: false,
     corridorResting: false,
     humanKnown: new Set(),
@@ -379,7 +377,7 @@
   }
 
   function clueEventActorHeaderHtml(actor, eventKey = "wait") {
-    if (!actor || actor.human) return "";
+    if (!actor || actor.human || actor.eliminated) return "";
     const line = pickClueDialogueLine(actor, eventKey);
     return `
       <div class="clue-event-speaker">
@@ -431,6 +429,11 @@
     const count = Array.isArray(cards) ? cards.length : 0;
     if (!count) return 0;
     return ACCUSATION_REVEAL_STEP_MS + ((count - 1) * (ACCUSATION_REVEAL_STEP_MS + ACCUSATION_REVEAL_PAUSE_MS));
+  }
+
+  function showClueEventRevealComplete(eventCard) {
+    eventCard?.classList.add("reveal-complete");
+    eventCard?.querySelector(".clue-popup-hint")?.replaceChildren("팝업을 클릭하면 팝업 닫기");
   }
 
   function visibleBoardTurnIndex() {
@@ -524,8 +527,7 @@
       state.eventRevealReadyAt = window.performance.now() + revealDuration;
       state.eventRevealReadyTimer = window.setTimeout(() => {
         if (state.currentEvent === event && state.eventShowing) {
-          eventCard?.classList.add("reveal-complete");
-          eventCard?.querySelector(".clue-popup-hint")?.replaceChildren("팝업을 클릭하면 팝업 닫기");
+          showClueEventRevealComplete(eventCard);
         }
         state.eventRevealReadyTimer = 0;
         state.eventRevealReadyAt = 0;
@@ -563,6 +565,14 @@
     });
   }
 
+  function clearPlayerSpeech(player) {
+    if (!player) return;
+    const timer = clueSpeechTimers.get(player.id);
+    if (timer) window.clearTimeout(timer);
+    clueSpeechTimers.delete(player.id);
+    player.speech = "";
+  }
+
   function clearIdleSpeechTimer() {
     if (state.idleSpeechTimer) {
       window.clearTimeout(state.idleSpeechTimer);
@@ -575,7 +585,7 @@
   }
 
   function showClueSpeech(player, line, duration = 3000) {
-    if (!player || !line) return;
+    if (!player || player.eliminated || !line) return;
     const timer = clueSpeechTimers.get(player.id);
     if (timer) window.clearTimeout(timer);
     player.speech = line;
@@ -597,7 +607,7 @@
   function showClueGroupSpeech(players, eventKeyForPlayer, duration = 5200) {
     clearIdleSpeechTimer();
     clearClueSpeech();
-    players.forEach((player) => {
+    players.filter((player) => !player.eliminated).forEach((player) => {
       const eventKey = typeof eventKeyForPlayer === "function" ? eventKeyForPlayer(player) : eventKeyForPlayer;
       const line = player.human ? "반갑습니다" : pickClueDialogueLine(player, eventKey);
       showClueSpeech(player, line, duration);
@@ -768,7 +778,6 @@
           hintCards: [],
           known: new Set(),
           speech: "",
-          clueZoneAssistReady: false,
           corridorReady: false,
           extraTurnPending: false,
           peekReady: false,
@@ -791,7 +800,6 @@
         hintCards: [],
         known: new Set(),
         speech: "",
-        clueZoneAssistReady: false,
         corridorReady: false,
         extraTurnPending: false,
         peekReady: false,
@@ -893,7 +901,6 @@
       player.hand = [];
       player.hintCards = [];
       player.known = new Set();
-      player.clueZoneAssistReady = false;
       player.corridorReady = false;
       player.extraTurnPending = false;
       player.peekReady = false;
@@ -1081,7 +1088,7 @@
       queueClueEvent({ title: "? 카드 사용", message: "이번 턴을 끝낸 뒤 한 번 더 진행합니다.", cards: [hint] });
     } else if (baseId === "add-six") {
       state.diceBonus += 6;
-      state.reachableRooms = reachableRoomsForRoll(human, currentRollTotal(), state.clueZoneAssistEligible);
+      state.reachableRooms = reachableRoomsForRoll(human, currentRollTotal());
       queueClueEvent({ title: "? 카드 사용", message: "이번 주사위 합계에 6을 더했습니다.", cards: [hint] });
     } else if (baseId === "move-anywhere") {
       state.phase = "chooseMove";
@@ -1140,19 +1147,6 @@
 
   function currentRollTotal() {
     return state.dice.length ? state.dice[0] + state.dice[1] + state.diceBonus : 0;
-  }
-
-  function isNearRoomRoll(total) {
-    return total >= 3 && total <= 9;
-  }
-
-  function clueZoneAssistDestination() {
-    return {
-      ...CLUE_ZONE,
-      assist: true,
-      label: "CLUE 존 (두 번째 기회)",
-      reason: "이전 턴에 근처 방 구간이 나와서 개방"
-    };
   }
 
   function clearDiceRollTimer() {
@@ -1785,8 +1779,6 @@
     state.dicePreview = [];
     state.diceBonus = 0;
     state.reachableRooms = [];
-    state.clueZoneAssistEligible = false;
-    state.clueZoneAssistApplied = false;
     state.corridorMoveApplied = false;
     state.corridorResting = false;
     state.lastSuggestionIds = preservedSuggestionIds || new Set();
@@ -1853,7 +1845,7 @@
   }
 
   function showFinishSpeeches(winner, success) {
-    const speakers = state.players.filter((player) => !player.human);
+    const speakers = state.players.filter((player) => !player.human && !player.eliminated);
     if (!speakers.length) return;
     showClueGroupSpeech(speakers, (speaker) => finishSpeechKeyForPlayer(speaker, winner, success), 6500);
   }
@@ -1878,18 +1870,16 @@
       }
     } else {
       player.eliminated = true;
+      clearPlayerSpeech(player);
       log(`${playerDisplayName(player)}의 고발 실패: ${accusation.suspect.name}, ${accusation.room.name}, ${accusation.weapon.name}`);
       const revealSolution = player.human;
       queueClueEvent({
           title: "고발 실패",
-          message: revealSolution
-            ? `${playerDisplayName(player)}의 최종 고발은 틀렸습니다. 정답은 ${state.solution.suspect.name}, ${state.solution.weapon.name}, ${state.solution.room.name}입니다.`
-            : `${playerDisplayName(player)}의 최종 고발은 틀렸습니다.`,
-          detail: revealSolution ? "정답 카드를 공개합니다." : "",
+          message: `${playerDisplayName(player)}의 최종 고발은 틀렸습니다. ${playerDisplayWithTopic(player)} 추리 게임에서 탈락합니다.`,
+          detail: revealSolution ? `정답은 ${state.solution.suspect.name}, ${state.solution.weapon.name}, ${state.solution.room.name}입니다.` : "",
           actor: player,
           dialogueKey: "lose",
           cards: revealSolution ? [state.solution.suspect, state.solution.weapon, state.solution.room] : [accusation.suspect, accusation.weapon, accusation.room],
-          sequentialReveal: true,
           afterDismiss: player.human ? () => showFinishSpeeches(player, false) : null
         });
       if (player.human) {
@@ -1914,14 +1904,13 @@
     }
   }
 
-  function reachableRoomsForRoll(player, total, clueZoneAssistEligible = player.clueZoneAssistReady) {
+  function reachableRoomsForRoll(player, total) {
     if (player?.corridorReady) return [...ROOMS, CLUE_ZONE];
     if (total === 2) return [HINT_ACTION];
     if (total >= 10) return [HINT_ACTION, ...ROOMS, CLUE_ZONE, CORRIDOR_ACTION];
     return uniqueDestinations([
       ...nearbyRoomsForPlayer(player),
-      CORRIDOR_ACTION,
-      clueZoneAssistEligible ? clueZoneAssistDestination() : null
+      CORRIDOR_ACTION
     ]);
   }
 
@@ -2028,14 +2017,10 @@
     await animateDiceRoll(finalDice);
     if (state.finished || state.phase !== "awaitRoll" || !activePlayer()?.human) return;
     const total = currentRollTotal();
-    const clueAssistReady = activePlayer().clueZoneAssistReady;
     const corridorReady = activePlayer().corridorReady;
-    state.clueZoneAssistEligible = clueAssistReady;
-    state.reachableRooms = reachableRoomsForRoll(activePlayer(), total, clueAssistReady);
-    state.clueZoneAssistApplied = !corridorReady && isNearRoomRoll(total) && clueAssistReady;
+    state.reachableRooms = reachableRoomsForRoll(activePlayer(), total);
     state.corridorMoveApplied = corridorReady;
     activePlayer().corridorReady = false;
-    activePlayer().clueZoneAssistReady = !corridorReady && isNearRoomRoll(total);
     if (total === 2 && !corridorReady) {
       log(`${activePlayer().name}: ${state.dice.join(" + ")} = ${total}, ? 카드 확정`);
       drawHintCard(activePlayer());
@@ -2064,7 +2049,6 @@
     if (destination.corridor) {
       activePlayer().location = CENTER.id;
       activePlayer().corridorReady = true;
-      activePlayer().clueZoneAssistReady = false;
       state.phase = "waitEnd";
       state.corridorResting = true;
       log(`${withSubject(activePlayer().name)} 복도에서 ? 카드를 받고 한턴 쉽니다. 다음 턴에는 아무곳이나 이동할 수 있습니다.`);
@@ -2075,7 +2059,6 @@
     }
     activePlayer().location = destination.id;
     if (destination.clue) {
-      if (destination.assist) activePlayer().clueZoneAssistReady = false;
       state.phase = "accuse";
       log(`${withSubject(activePlayer().name)} ${destination.name}에 들어갔습니다.`);
       renderClue();
@@ -2226,11 +2209,9 @@
     await animateDiceRoll(finalDice);
     if (state.finished || activePlayer() !== player) return;
     let total = state.dice[0] + state.dice[1];
-    const clueAssistReady = player.clueZoneAssistReady;
     const corridorReady = player.corridorReady;
-    let reachable = reachableRoomsForRoll(player, total, clueAssistReady);
+    let reachable = reachableRoomsForRoll(player, total);
     player.corridorReady = false;
-    player.clueZoneAssistReady = !corridorReady && isNearRoomRoll(total);
     maybeUseAiKnowledgeHint(player);
     const accusation = buildAiAccusation(player);
     const movementHintResult = maybeApplyAiMovementHint(player, total, reachable, Boolean(accusation));
@@ -2269,7 +2250,6 @@
     if (room.corridor) {
       player.location = CENTER.id;
       player.corridorReady = true;
-      player.clueZoneAssistReady = false;
       log(`${playerDisplayName(player)}: ${state.dice.join(" + ")} = ${total}, 복도 대기 및 ? 카드 획득`);
       showClueCenterNotice(
         `${playerDisplayName(player)} 복도에서 ? 카드 획득`,
@@ -2309,7 +2289,11 @@
     const visibleTurnIndex = visibleBoardTurnIndex();
     state.players.forEach((player, index) => {
       const item = document.createElement("section");
-      item.className = `clue-player-card${index === visibleTurnIndex && !state.finished ? " active" : ""}`;
+      item.className = [
+        "clue-player-card",
+        index === visibleTurnIndex && !state.finished && !player.eliminated ? "active" : "",
+        player.eliminated ? "eliminated" : ""
+      ].filter(Boolean).join(" ");
       item.innerHTML = `
         <span class="clue-player-avatar-wrap" style="--player-color:${escapeHtml(player.color)}">
           <img class="clue-player-avatar" src="${escapeHtml(player.avatarUrl || currentHumanAvatarUrl())}" alt="" loading="lazy" decoding="async" />
@@ -2317,10 +2301,10 @@
         </span>
         <span class="clue-player-info">
           <strong>${escapeHtml(playerDisplayName(player))}</strong>
-          <small>${escapeHtml(player.suspect)} · ${escapeHtml(roomName(player.location))}</small>
+          <small>${player.eliminated ? "추리 게임 탈락" : `${escapeHtml(player.suspect)} · ${escapeHtml(roomName(player.location))}`}</small>
         </span>
-        <b>${player.hand.length}장</b>
-        ${player.speech ? `<span class="clue-speech-bubble">${escapeHtml(player.speech)}</span>` : ""}
+        <b>${player.eliminated ? "탈락" : `${player.hand.length}장`}</b>
+        ${!player.eliminated && player.speech ? `<span class="clue-speech-bubble">${escapeHtml(player.speech)}</span>` : ""}
       `;
       fragment.append(item);
     });
@@ -2332,6 +2316,12 @@
     els.board.innerHTML = "";
     const boardTurnIndex = visibleBoardTurnIndex();
     const boardTurnPlayer = state.players[boardTurnIndex];
+    const currentBoardPlayer = activePlayer();
+    const boardFocusPlayer = boardTurnPlayer && !boardTurnPlayer.eliminated
+      ? boardTurnPlayer
+      : currentBoardPlayer && !currentBoardPlayer.eliminated
+        ? currentBoardPlayer
+        : null;
     MOVE_DESTINATIONS.forEach((destination) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -2339,7 +2329,7 @@
         "clue-room-button",
         destination.clue ? "clue-zone" : "",
         state.reachableRooms.some((entry) => entry.id === destination.id) && state.phase === "chooseMove" ? "reachable" : "",
-        boardTurnPlayer?.location === destination.id ? "current" : ""
+        boardFocusPlayer?.location === destination.id ? "current" : ""
       ].filter(Boolean).join(" ");
       button.style.setProperty("--room-x", `${destination.x}%`);
       button.style.setProperty("--room-y", `${destination.y}%`);
@@ -2358,6 +2348,7 @@
 
     const offsets = [[0, 0], [1.4, 0], [-1.4, 0], [0, 1.4], [1.4, 1.4], [-1.4, 1.4]];
     state.players.forEach((player, index) => {
+      if (player.eliminated) return;
       const point = locationPoint(player.location);
       const [offsetX, offsetY] = offsets[index] || [0, 0];
       const previous = state.piecePositions[player.id] || point;
@@ -2404,9 +2395,7 @@
           ? "복도 효과로 아무 장소나 CLUE 존으로 확정 이동할 수 있습니다."
           : total >= 10
             ? "아무 장소, CLUE 존, ? 카드, ? 카드를 받는 복도를 선택할 수 있습니다."
-            : state.clueZoneAssistApplied
-              ? "근처 장소, ? 카드를 받는 복도 또는 이전 근처 이동 보정으로 열린 CLUE 존을 선택할 수 있습니다."
-              : "현재 위치와 붙어있는 장소 또는 ? 카드를 받는 복도 중 하나를 선택하세요.";
+            : "현재 위치와 붙어있는 장소 또는 ? 카드를 받는 복도 중 하나를 선택하세요.";
       els.moveHint.textContent = humanCanChoose
         ? `주사위 합계 ${total}. ${rangeHint}`
         : "주사위를 굴리면 이동 가능한 장소가 표시됩니다.";

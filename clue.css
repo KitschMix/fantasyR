@@ -131,6 +131,26 @@ body.clue-active.clue-playing .clue-game-panel {
   box-shadow: 0 0 0 2px rgba(216, 47, 40, 0.2), 0 18px 46px rgba(0, 0, 0, 0.3);
 }
 
+.clue-player-card.eliminated {
+  border-color: rgba(246, 232, 202, 0.08);
+  background: rgba(15, 14, 13, 0.82);
+  box-shadow: none;
+  opacity: 0.54;
+  filter: grayscale(0.8);
+}
+
+.clue-player-card.eliminated .clue-player-avatar-wrap,
+.clue-player-card.eliminated .clue-player-token {
+  border-color: rgba(185, 178, 165, 0.34);
+  box-shadow: none;
+}
+
+.clue-player-card.eliminated .clue-player-info strong,
+.clue-player-card.eliminated .clue-player-info small,
+.clue-player-card.eliminated > b {
+  color: rgba(247, 236, 217, 0.56);
+}
+
 .clue-player-avatar-wrap {
   position: relative;
   display: grid;
@@ -1153,6 +1173,17 @@ body.clue-active.clue-playing .clue-game-panel {
   width: min(760px, calc(100vw - 32px));
   gap: 12px;
   padding: 18px;
+}
+
+.clue-event-card.clue-accusation-reveal-event p {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+
+.clue-event-card.clue-accusation-reveal-event.reveal-complete p {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .clue-accusation-reveal-row {
