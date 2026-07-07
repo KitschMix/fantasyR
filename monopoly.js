@@ -128,6 +128,7 @@
     phase: "idle",       // idle, awaitRoll, rolled, buyDecision, jailed, finished
     dice: [],
     diceRolling: false,
+    diceRollingStates: [false, false],
     diceTimer: 0,
     chanceDeck: [],
     fundDeck: [],
@@ -337,26 +338,29 @@
       els.diceDisplay.innerHTML = "";
       return;
     }
-    if (state.diceRolling) {
-      // Random bounce positions and rotations during roll
-      const rx1 = (Math.random() - 0.5) * 40;
-      const ry1 = (Math.random() - 0.5) * 40;
-      const rr1 = (Math.random() - 0.5) * 50;
-      const rx2 = (Math.random() - 0.5) * 40;
-      const ry2 = (Math.random() - 0.5) * 40;
-      const rr2 = (Math.random() - 0.5) * 50;
-      const sc1 = 0.85 + Math.random() * 0.3;
-      const sc2 = 0.85 + Math.random() * 0.3;
-      els.diceDisplay.innerHTML = `
-        <div class="monopoly-die rolling" style="transform:translate(${rx1}px,${ry1}px) rotate(${rr1}deg) scale(${sc1})">${state.dice[0]}</div>
-        <div class="monopoly-die rolling" style="transform:translate(${rx2}px,${ry2}px) rotate(${rr2}deg) scale(${sc2})">${state.dice[1]}</div>
-      `;
-    } else {
-      els.diceDisplay.innerHTML = `
-        <div class="monopoly-die">${state.dice[0]}</div>
-        <div class="monopoly-die">${state.dice[1]}</div>
-      `;
-    }
+
+    const rx1 = (Math.random() - 0.5) * 40;
+    const ry1 = (Math.random() - 0.5) * 40;
+    const rr1 = (Math.random() - 0.5) * 50;
+    const sc1 = 0.85 + Math.random() * 0.3;
+
+    const rx2 = (Math.random() - 0.5) * 40;
+    const ry2 = (Math.random() - 0.5) * 40;
+    const rr2 = (Math.random() - 0.5) * 50;
+    const sc2 = 0.85 + Math.random() * 0.3;
+
+    const isRolling1 = state.diceRolling && (!state.diceRollingStates || state.diceRollingStates[0]);
+    const isRolling2 = state.diceRolling && (!state.diceRollingStates || state.diceRollingStates[1]);
+
+    const html1 = isRolling1
+      ? `<div class="monopoly-die rolling" style="transform:translate(${rx1}px,${ry1}px) rotate(${rr1}deg) scale(${sc1})">${state.dice[0]}</div>`
+      : `<div class="monopoly-die">${state.dice[0]}</div>`;
+
+    const html2 = isRolling2
+      ? `<div class="monopoly-die rolling" style="transform:translate(${rx2}px,${ry2}px) rotate(${rr2}deg) scale(${sc2})">${state.dice[1]}</div>`
+      : `<div class="monopoly-die">${state.dice[1]}</div>`;
+
+    els.diceDisplay.innerHTML = html1 + html2;
   }
 
   function renderControls() {
@@ -448,24 +452,46 @@
     return new Promise(resolve => {
       state.dice = [];
       state.diceRolling = true;
+      state.diceRollingStates = [true, true];
       renderDice();
       renderControls();
       const start = performance.now();
       const tick = () => {
         const elapsed = performance.now() - start;
-        if (elapsed >= DICE_BOUNCE_DURATION) {
+        const stopTimes = [800, 1100];
+        const duration = 1100;
+
+        if (elapsed >= duration) {
           state.dice = finalDice;
           state.diceRolling = false;
+          state.diceRollingStates = [false, false];
           renderDice();
           renderControls();
           resolve();
           return;
         }
-        // Slow down the random cycling as we approach the end
-        const progress = elapsed / DICE_BOUNCE_DURATION;
-        const frameDelay = DICE_BOUNCE_FRAME_MS + progress * 120;
-        state.dice = rollDice();
+
+        const tempRoll = rollDice();
+        const currentDice = [...state.dice];
+        const rollingStates = [true, true];
+
+        for (let i = 0; i < 2; i++) {
+          if (elapsed >= stopTimes[i]) {
+            currentDice[i] = finalDice[i];
+            rollingStates[i] = false;
+          } else {
+            currentDice[i] = tempRoll[i];
+            rollingStates[i] = true;
+          }
+        }
+
+        state.dice = currentDice;
+        state.diceRollingStates = rollingStates;
         renderDice();
+
+        // Slow down the random cycling as we approach the end
+        const progress = elapsed / duration;
+        const frameDelay = DICE_BOUNCE_FRAME_MS + progress * 100;
         setTimeout(tick, frameDelay);
       };
       setTimeout(tick, DICE_BOUNCE_FRAME_MS);
