@@ -20,8 +20,8 @@
   const CORRIDOR_ACTION = {
     ...CENTER,
     corridor: true,
-    label: "복도 (한턴쉬고 다음턴 아무곳이나 이동 가능)",
-    reason: "아무 행동 없이 턴 종료"
+    label: "복도(물음표 카드 한장 받기)",
+    reason: "다음턴 아무곳이나 이동 가능"
   };
   const MOVE_DESTINATIONS = [...ROOMS, CLUE_ZONE];
   const CENTRAL_NEAR_ROOM_IDS = ["study", "dining", "hall", "game"];
@@ -214,6 +214,7 @@
     suggestionHistory: [],
     suggestionDialogOpen: false,
     suggestionAllowRoomPick: false,
+    suggestionMoveSuspectToken: true,
     pendingRefute: null,
     eventQueue: [],
     currentEvent: null,
@@ -826,7 +827,7 @@
       id: "extra-suggestion",
       name: "한 번 더 추리합니다.",
       title: ["한 번 더", "추리합니다."],
-      body: ["자기 말이나 다른 사람의 말", "또는 토큰을 이동하지 않고", "원하는 장소, 사람, 도구를 정해", "추리할 수 있습니다.", "지금 사용합니다."],
+      body: ["말이나 토큰을 이동하지 않고", "현재 장소에서 사람과 도구를 정해", "한 번 더 추리할 수 있습니다.", "지금 사용합니다."],
       copies: 2
     },
     {
@@ -985,7 +986,7 @@
       return ["extra-turn", "reveal-card", "peek-card", "dud"].includes(baseId);
     }
     if (baseId === "add-six") return state.phase === "chooseMove";
-    if (baseId === "extra-suggestion") return !state.corridorResting;
+    if (baseId === "extra-suggestion") return Boolean(ROOM_BY_ID[activePlayer()?.location]);
     return true;
   }
 
@@ -1089,9 +1090,9 @@
     } else if (baseId === "extra-suggestion") {
       queueClueEvent({
         title: "? 카드 사용",
-        message: "원하는 장소를 골라 한 번 더 추리할 수 있습니다.",
+        message: "현재 장소에서 한 번 더 추리할 수 있습니다.",
         cards: [hint],
-        afterDismiss: () => openSuggestionDialog({ allowRoomPick: true })
+        afterDismiss: () => openSuggestionDialog({ allowAnyPhase: true, moveSuspectToken: false })
       });
     } else if (baseId === "reveal-card") {
       const revealed = revealRandomOpponentCard();
@@ -1421,10 +1422,10 @@
   function maybeRunAiExtraSuggestion(player) {
     const chance = aiHintChance(player, 0.12, 0.26);
     if (!chance || Math.random() >= chance) return null;
+    const currentRoom = ROOM_BY_ID[player.location];
+    if (!currentRoom) return null;
     const hint = removePlayerHintCard(player, (entry) => hintBaseId(entry) === "extra-suggestion");
     if (!hint) return null;
-    const unknownRoomNames = candidateCards(player, "room").map((entry) => entry.name);
-    const room = ROOM_BY_NAME[randomItem(unknownRoomNames)] || randomItem(ROOMS);
     queueClueEvent({
       title: "? 카드 사용",
       message: `${playerDisplayWithSubject(player)} 추가 추리를 진행합니다.`,
@@ -1432,16 +1433,16 @@
       dialogueKey: "hint",
       cards: [hint]
     });
-    const suggestion = aiSuggestion(player, room);
+    const suggestion = aiSuggestion(player, currentRoom);
     log(`${playerDisplayName(player)} 추가 제안: ${suggestion.suspect.name}, ${suggestion.room.name}, ${suggestion.weapon.name}`);
     announceSuggestion(player, suggestion);
-    return resolveSuggestion(state.currentPlayer, suggestion);
+    return resolveSuggestion(state.currentPlayer, suggestion, { moveSuspectToken: false });
   }
 
-  function resolveSuggestion(playerIndex, suggestion) {
+  function resolveSuggestion(playerIndex, suggestion, { moveSuspectToken = true } = {}) {
     const player = state.players[playerIndex];
     const suspectPlayer = state.players.find((entry) => entry.suspect === suggestion.suspect.name);
-    if (suspectPlayer) suspectPlayer.location = ROOM_BY_NAME[suggestion.room.name]?.id || suspectPlayer.location;
+    if (moveSuspectToken && suspectPlayer) suspectPlayer.location = ROOM_BY_NAME[suggestion.room.name]?.id || suspectPlayer.location;
 
     for (let offset = 1; offset < state.players.length; offset += 1) {
       const target = state.players[(playerIndex + offset) % state.players.length];
@@ -1939,6 +1940,9 @@
     state.clearSuggestionHighlightAfterEvents = false;
     state.noteColumnHighlightIndex = -1;
     state.suggestionHistory = [];
+    state.suggestionDialogOpen = false;
+    state.suggestionAllowRoomPick = false;
+    state.suggestionMoveSuspectToken = true;
     clearClueSpeech();
     clueDialogueUsage.clear();
     const { solution, deck } = createGameDeck();
@@ -2014,6 +2018,7 @@
   function closeSuggestionDialog() {
     state.suggestionDialogOpen = false;
     state.suggestionAllowRoomPick = false;
+    state.suggestionMoveSuspectToken = true;
     els.suggestionDialogCard?.classList.remove("open");
   }
 
@@ -2062,7 +2067,8 @@
       activePlayer().clueZoneAssistReady = false;
       state.phase = "waitEnd";
       state.corridorResting = true;
-      log(`${withSubject(activePlayer().name)} 복도에서 한턴 쉽니다. 다음 턴에는 아무곳이나 이동할 수 있습니다.`);
+      log(`${withSubject(activePlayer().name)} 복도에서 ? 카드를 받고 한턴 쉽니다. 다음 턴에는 아무곳이나 이동할 수 있습니다.`);
+      drawHintCard(activePlayer());
       renderClue();
       scheduleHumanIdleSpeech();
       return;
@@ -2088,12 +2094,13 @@
     if (clueChoiceLayer) clueChoiceLayer.innerHTML = "";
   }
 
-  function openSuggestionDialog({ allowRoomPick = false } = {}) {
+  function openSuggestionDialog({ allowRoomPick = false, allowAnyPhase = false, moveSuspectToken = true } = {}) {
     if (state.finished || !activePlayer()?.human) return;
     const currentRoom = ROOM_BY_ID[activePlayer().location];
-    if (!allowRoomPick && (!["awaitRoll", "suggest"].includes(state.phase) || !currentRoom)) return;
+    if (!allowRoomPick && (!currentRoom || (!allowAnyPhase && !["awaitRoll", "suggest"].includes(state.phase)))) return;
     state.suggestionDialogOpen = true;
     state.suggestionAllowRoomPick = allowRoomPick;
+    state.suggestionMoveSuspectToken = moveSuspectToken;
     if (els.suggestRoom) {
       fillSelect(els.suggestRoom, ROOMS.map((room) => room.name));
       els.suggestRoom.value = allowRoomPick ? (els.suggestRoom.value || ROOMS[0].name) : currentRoom.name;
@@ -2102,10 +2109,10 @@
     els.suggestionDialogCard?.classList.add("open");
   }
 
-  function confirmHumanSuggestion(suggestion) {
+  function confirmHumanSuggestion(suggestion, { moveSuspectToken = true } = {}) {
     log(`${activePlayer().name} 제안: ${suggestion.suspect.name}, ${suggestion.room.name}, ${suggestion.weapon.name}`);
     announceSuggestion(activePlayer(), suggestion);
-    resolveSuggestion(state.currentPlayer, suggestion);
+    resolveSuggestion(state.currentPlayer, suggestion, { moveSuspectToken });
     state.phase = "waitEnd";
     renderClue();
   }
@@ -2123,8 +2130,9 @@
       weapon: card("weapon", els.suggestWeapon?.value || WEAPONS[0]),
       room: card("room", state.suggestionAllowRoomPick ? (els.suggestRoom?.value || ROOMS[0].name) : currentRoom.name)
     };
+    const moveSuspectToken = state.suggestionMoveSuspectToken;
     closeSuggestionDialog();
-    confirmHumanSuggestion(suggestion);
+    confirmHumanSuggestion(suggestion, { moveSuspectToken });
   }
 
   function makeHumanAccusation() {
@@ -2262,13 +2270,15 @@
       player.location = CENTER.id;
       player.corridorReady = true;
       player.clueZoneAssistReady = false;
-      log(`${playerDisplayName(player)}: ${state.dice.join(" + ")} = ${total}, 복도 대기`);
+      log(`${playerDisplayName(player)}: ${state.dice.join(" + ")} = ${total}, 복도 대기 및 ? 카드 획득`);
       showClueCenterNotice(
-        `${playerDisplayName(player)} 복도 대기`,
+        `${playerDisplayName(player)} 복도에서 ? 카드 획득`,
         900,
         `clue-ai-corridor:${state.turnSerial}:${player.id}`
       );
       await wait(900);
+      if (state.finished || activePlayer() !== player) return;
+      drawHintCard(player);
       finishAiTurnAfterSuggestion();
       return;
     }
@@ -2393,10 +2403,10 @@
         : state.corridorMoveApplied
           ? "복도 효과로 아무 장소나 CLUE 존으로 확정 이동할 수 있습니다."
           : total >= 10
-            ? "아무 장소, CLUE 존, ? 카드, 복도를 선택할 수 있습니다."
+            ? "아무 장소, CLUE 존, ? 카드, ? 카드를 받는 복도를 선택할 수 있습니다."
             : state.clueZoneAssistApplied
-              ? "근처 장소, 복도 또는 이전 근처 이동 보정으로 열린 CLUE 존을 선택할 수 있습니다."
-              : "현재 위치와 붙어있는 장소 또는 복도 중 하나를 선택하세요.";
+              ? "근처 장소, ? 카드를 받는 복도 또는 이전 근처 이동 보정으로 열린 CLUE 존을 선택할 수 있습니다."
+              : "현재 위치와 붙어있는 장소 또는 ? 카드를 받는 복도 중 하나를 선택하세요.";
       els.moveHint.textContent = humanCanChoose
         ? `주사위 합계 ${total}. ${rangeHint}`
         : "주사위를 굴리면 이동 가능한 장소가 표시됩니다.";
@@ -2408,7 +2418,7 @@
     els.moveOptions.innerHTML = state.reachableRooms.map((destination) => `
       <button class="clue-move-option${destination.clue ? " clue-zone" : ""}${destination.hint ? " hint-option" : ""}${destination.corridor ? " corridor-option" : ""}" type="button" data-destination-id="${escapeHtml(destination.id)}">
         <span>${escapeHtml(destination.label || destination.name)}</span>
-        <small>${escapeHtml(destination.reason || (destination.clue ? "최종추리" : destination.hint ? "? 카드" : destination.corridor ? "한턴 쉬기" : "방 이동"))}</small>
+        <small>${escapeHtml(destination.reason || (destination.clue ? "최종추리" : destination.hint ? "? 카드" : destination.corridor ? "? 카드 + 다음턴 자유 이동" : "방 이동"))}</small>
       </button>
     `).join("");
     els.moveOptions.querySelectorAll(".clue-move-option").forEach((button) => {
@@ -2634,7 +2644,7 @@
         waitEnd: "턴을 종료하세요.",
         finished: "사건이 끝났습니다."
       };
-      els.phaseLabel.textContent = state.corridorResting ? "복도에서 한턴 쉽니다. 일부 ? 카드와 턴 종료를 할 수 있습니다." : (phaseText[state.phase] || "-");
+      els.phaseLabel.textContent = state.corridorResting ? "복도에서 ? 카드를 받고 한턴 쉽니다. 턴을 종료하세요." : (phaseText[state.phase] || "-");
     }
     renderDiceDisplay();
     if (els.rollButton) {
