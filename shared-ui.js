@@ -47,7 +47,7 @@
     }
 
     toast.dataset.mode = options.mode || "default";
-    text.textContent = message;
+    text.innerHTML = message;
     toast.classList.remove("visible");
     toast.setAttribute("aria-hidden", "false");
     void toast.offsetWidth;

@@ -1237,7 +1237,7 @@
       addLog(`🔄 ${playerDisplayName(p)} 더블로 한 번 더!`);
       state.phase = "awaitRoll";
       renderAll();
-      showTurnToast(p);
+      showTurnToast(p, true);
       if (!p.human) scheduleAiTurn();
       return;
     }
@@ -1464,12 +1464,17 @@
   }
 
   /* ── Center Toast (Turn Popups) ── */
-  function showTurnToast(player) {
+  function showTurnToast(player, isDouble = false) {
     if (typeof window.showCenterToast !== "function") return;
     const displayName = player.human
       ? "당신의 턴입니다"
       : `${player.name}(${TOKEN_NAMES[player.index]})의 턴`;
-    window.showCenterToast(displayName, 1200, { mode: "monopoly" });
+
+    const message = isDouble
+      ? `<div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px; color: #ffeb3b; font-weight: bold; letter-spacing: 1px;">(DOUBLE!)</div>${displayName}`
+      : displayName;
+
+    window.showCenterToast(message, 1200, { mode: "monopoly" });
   }
 
   /* ── Zoom Controls ── */

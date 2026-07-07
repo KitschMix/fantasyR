@@ -496,15 +496,15 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   width: 64px;
   height: 64px;
   border-radius: 14px;
-  background: linear-gradient(145deg, #f0c96a, #d9962e);
-  color: #1f180b;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  color: #111111;
   font-size: 32px;
   font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  border: 2px solid rgba(246, 232, 202, 0.3);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.22);
+  border: 2px solid #dddddd;
   transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -1485,4 +1485,73 @@ body.monopoly-active .monopoly-rules-help li {
   border-radius: 6px !important;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
   margin: 0 !important;
+}
+
+/* --- Panel Layout and Alignment Optimization --- */
+body.monopoly-active .monopoly-game-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(560px, 1fr) 320px;
+  gap: 12px;
+  align-items: stretch; /* Stretch columns to match tallest height */
+}
+
+body.monopoly-active .monopoly-side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+body.monopoly-active .monopoly-log-card {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-height: 180px;
+  max-height: 280px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+body.monopoly-active .monopoly-log {
+  overflow-y: auto;
+  flex-grow: 1;
+  font-size: 11px;
+  margin: 0;
+  padding-left: 14px;
+  line-height: 1.4;
+  scrollbar-width: thin;
+}
+
+body.monopoly-active .monopoly-control-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+body.monopoly-active .monopoly-all-properties-card {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+body.monopoly-active .monopoly-all-properties-list {
+  overflow-y: auto;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+  scrollbar-width: thin;
 }

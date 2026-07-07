@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>부루마불</title>
     <link rel="stylesheet" href="styles.css?v=20260706-brumable" />
-    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v11" />
+    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v12" />
   </head>
   <body class="monopoly-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -71,18 +71,18 @@
 
           <div class="monopoly-game-layout">
             <!-- Left: Players & Log -->
-            <aside class="monopoly-side-panel" style="display: flex; flex-direction: column; gap: 12px;">
+            <aside class="monopoly-side-panel">
               <div id="monopolyPlayersList" class="monopoly-players-list"></div>
-              <section class="monopoly-status-card" style="margin: 0;">
+              <section class="monopoly-status-card">
                 <span>현재 차례</span>
                 <strong id="monopolyTurnLabel">-</strong>
                 <small id="monopolyPhaseLabel">-</small>
               </section>
 
               <!-- Compact Game Log here -->
-              <section class="monopoly-log-card" style="display: flex; flex-direction: column; flex-grow: 1; min-height: 180px; max-height: 280px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: var(--shadow-sm);">
-                <div class="monopoly-panel-title" style="font-size: 14px; font-weight: 800; margin-bottom: 6px;">📋 게임 기록</div>
-                <ol id="monopolyLog" class="monopoly-log" style="overflow-y: auto; flex-grow: 1; font-size: 11px; margin: 0; padding-left: 14px; line-height: 1.4; scrollbar-width: thin;"></ol>
+              <section class="monopoly-log-card">
+                <div class="monopoly-panel-title">📋 게임 기록</div>
+                <ol id="monopolyLog" class="monopoly-log"></ol>
               </section>
             </aside>
 
@@ -120,10 +120,10 @@
             </div>
 
             <!-- Right: All Properties Status List -->
-            <aside class="monopoly-control-panel" style="display: flex; flex-direction: column;">
-              <section class="monopoly-all-properties-card" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: var(--shadow-sm); max-height: 100%;">
-                <div class="monopoly-panel-title" style="font-size: 14px; font-weight: 800; margin-bottom: 8px; border-bottom: 2px solid var(--accent); padding-bottom: 4px;">🏰 전체 부동산 현황</div>
-                <div id="monopolyAllPropertiesList" class="monopoly-all-properties-list" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; scrollbar-width: thin;"></div>
+            <aside class="monopoly-control-panel">
+              <section class="monopoly-all-properties-card">
+                <div class="monopoly-panel-title">🏰 전체 부동산 현황</div>
+                <div id="monopolyAllPropertiesList" class="monopoly-all-properties-list"></div >
               </section>
             </aside>
           </div>
@@ -181,6 +181,6 @@
     </main>
     <script src="shared-ui.js?v=20260706-brumable"></script>
     <script src="shared-profiles.js?v=20260706-brumable"></script>
-    <script src="monopoly.js?v=20260707-brumable-v11"></script>
+    <script src="monopoly.js?v=20260707-brumable-v12"></script>
   </body>
 </html>
