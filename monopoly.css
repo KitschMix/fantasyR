@@ -1693,3 +1693,13 @@ body.monopoly-active .monopoly-all-properties-list {
   padding: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+
+body[data-monopoly-phase="spaceTravel"] .monopoly-tile {
+  cursor: pointer;
+}
+body[data-monopoly-phase="spaceTravel"] .monopoly-tile:hover {
+  outline: 4px solid #4caf50 !important;
+  outline-offset: -4px;
+  z-index: 5;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+}

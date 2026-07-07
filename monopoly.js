@@ -36,7 +36,7 @@
     { id: 27, name: "부에노스",       type: "property", color: "#FFD700", price: 260, rent: [22, 110, 330, 800, 975, 1150] },
     { id: 28, name: "항공패스",       type: "property", color: "#808080", price: 150, rent: [4, 10] },
     { id: 29, name: "멕시코시티",     type: "property", color: "#FFD700", price: 280, rent: [24, 120, 360, 850, 1025, 1200] },
-    { id: 30, name: "무인도로",       type: "corner",   corner: "goToJail" },
+    { id: 30, name: "무인도행",       type: "corner",   corner: "goToJail" },
     { id: 31, name: "시드니",         type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
     { id: 32, name: "오클랜드",       type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
     { id: 33, name: "황금열쇠",       type: "event",    event: "chance" },
@@ -288,7 +288,7 @@
     if (index === 20) return { x: 0, y: 0, w: CORNER_SIZE, h: CORNER_SIZE }; // Free Parking (top-left)
     if (index <= 29)  return { x: CORNER_SIZE + (index - 21) * step, y: 0, w: step, h: CORNER_SIZE }; // top row, left→right
     if (index === 30) return { x: 100 - CORNER_SIZE, y: 0, w: CORNER_SIZE, h: CORNER_SIZE }; // Go To Jail (top-right)
-    if (index <= 39)  return { x: 100 - CORNER_SIZE, y: CORNER_SIZE + (39 - index) * step, w: CORNER_SIZE, h: step }; // right col, top→bottom
+    if (index <= 39)  return { x: 100 - CORNER_SIZE, y: CORNER_SIZE + (index - 31) * step, w: CORNER_SIZE, h: step }; // right col, top→bottom
     return { x: 50, y: 50, w: 0, h: 0 };
   }
 
@@ -328,6 +328,11 @@
       }
       div.addEventListener("mouseenter", () => showHoverCard(i));
       div.addEventListener("mouseleave", hideHoverCard);
+      div.addEventListener("click", () => {
+        if (state.phase === "spaceTravel" && activePlayer().human) {
+          executeSpaceTravel(activePlayer(), i);
+        }
+      });
       els.board.appendChild(div);
     });
   }
@@ -634,6 +639,7 @@
         awaitRoll: "주사위를 굴리세요",
         rolled: "이동 완료",
         buyDecision: "구매 여부를 결정하세요",
+        spaceTravel: "🚀 이동할 칸을 클릭하세요",
         jailed: `${p?.jailTurns || 0}턴 남음`,
         finished: "게임이 끝났습니다"
       };
@@ -682,6 +688,7 @@
   }
 
   function renderAll() {
+    document.body.setAttribute("data-monopoly-phase", state.phase);
     renderBoard();
     renderPieces();
     renderPlayers();
@@ -920,7 +927,7 @@
     // Pass GO
     if (newPos < oldPos && steps > 0) {
       collectMoney(player, GO_SALARY);
-      addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY} 획득!`);
+      addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
     }
     // Animate step by step
     await animatePlayerMove(player, oldPos, newPos);
@@ -929,9 +936,9 @@
 
   async function teleportPlayer(player, target, passGo) {
     const oldPos = player.position;
-    if (passGo && (target < oldPos || target === 0)) {
+    if (target < oldPos || target === 0) {
       collectMoney(player, GO_SALARY);
-      addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY} 획득!`);
+      addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
     }
     await animateTeleport(player, target);
     player.position = target;
@@ -1276,7 +1283,8 @@
         addLog(`🔒 ${playerDisplayName(player)} 무인도에 방문 중.`);
         break;
       case "parking":
-        addLog(`🚀 ${playerDisplayName(player)} 우주여행 칸에 도착.`);
+        player.spaceTravelReady = true;
+        addLog(`🚀 ${playerDisplayName(player)} 우주여행 정류소에 도착! 다음 턴에 원하는 칸으로 이동할 수 있습니다.`);
         break;
       case "goToJail":
         await sendToJail(player);
@@ -1453,14 +1461,30 @@
     state.currentPlayer = next;
     state.turnCount++;
     state.lastDoubleCount = 0;
-    state.phase = "awaitRoll";
-    renderAll();
-
     const np = activePlayer();
     if (np.bankrupt) {
       endTurn();
       return;
     }
+
+    if (np.spaceTravelReady) {
+      state.phase = "spaceTravel";
+      renderAll();
+      showTurnToast(np);
+      if (np.human) {
+        if (typeof window.showCenterToast === "function") {
+          window.showCenterToast("🚀 우주여행 차례! 이동할 칸을 클릭하세요.", 3000, { mode: "monopoly" });
+        } else {
+          addLog("🚀 우주여행 차례입니다. 이동하고 싶은 칸을 클릭하세요!");
+        }
+      } else {
+        scheduleAiSpaceTravel();
+      }
+      return;
+    }
+
+    state.phase = "awaitRoll";
+    renderAll();
     showTurnToast(np);
     if (!np.human) scheduleAiTurn();
   }
@@ -1469,6 +1493,51 @@
     clearAiTimer();
     if (state.phase === "finished") return;
     state.aiTimer = setTimeout(runAiTurn, AI_THINK_DELAY);
+  }
+
+  function scheduleAiSpaceTravel() {
+    clearAiTimer();
+    if (state.phase === "finished") return;
+    state.aiTimer = setTimeout(runAiSpaceTravel, AI_THINK_DELAY);
+  }
+
+  async function executeSpaceTravel(player, destIndex) {
+    state.phase = "rolled"; // Lock actions
+    player.spaceTravelReady = false;
+    
+    addLog(`🚀 ${playerDisplayName(player)} 우주선 탑승! ${tileAt(destIndex).name}으로 이동합니다.`);
+    
+    // Pass GO logic during Space Travel
+    if (destIndex < 20) {
+      collectMoney(player, GO_SALARY);
+      addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
+    }
+    
+    await animateTeleport(player, destIndex);
+    player.position = destIndex;
+    renderAll();
+    await wait(800);
+    await handleTileLanding(player);
+    renderControls();
+  }
+
+  async function runAiSpaceTravel() {
+    const player = activePlayer();
+    if (!player || player.human || !player.spaceTravelReady) return;
+    
+    let dest = 0;
+    // AI chooses the most expensive unowned property it can afford, otherwise goes to GO (0)
+    const affordables = TILES.filter(t => t.type === "property" && !getOwner(t.id) && player.money >= t.price)
+                             .sort((a, b) => b.price - a.price);
+    if (affordables.length > 0) {
+      dest = affordables[0].id;
+    }
+    
+    await executeSpaceTravel(player, dest);
+    
+    if (activePlayer() === player && state.phase === "buyDecision") {
+      endTurn();
+    }
   }
 
   function showJailEscapePopup(player) {
@@ -1659,6 +1728,7 @@
           buildings: {},
           inJail: false,
           jailTurns: 0,
+          spaceTravelReady: false,
           bankrupt: false
         };
       }
@@ -1677,6 +1747,7 @@
         buildings: {},
         inJail: false,
         jailTurns: 0,
+        spaceTravelReady: false,
         bankrupt: false
       };
     });
