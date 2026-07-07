@@ -402,15 +402,17 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 }
 
 @keyframes monopoly-piece-bounce-h {
-  0% { transform: translate(-50%, -50%) scale(1); }
-  40% { transform: translate(-50%, -50%) scale(1.2) translateY(-8px); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+  0% { transform: translate(-50%, -50%); }
+  30% { transform: translate(-50%, calc(-50% - 4px)); }
+  70% { transform: translate(-50%, calc(-50% + 2px)); }
+  100% { transform: translate(-50%, -50%); }
 }
 
 @keyframes monopoly-piece-bounce-v {
-  0% { transform: translate(-50%, -50%) scale(1); }
-  40% { transform: translate(-50%, -50%) scale(1.2) translateX(-8px); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+  0% { transform: translate(-50%, -50%); }
+  30% { transform: translate(calc(-50% - 4px), -50%); }
+  70% { transform: translate(calc(-50% + 2px), -50%); }
+  100% { transform: translate(-50%, -50%); }
 }
 
 .monopoly-piece.bankrupt {
@@ -451,15 +453,17 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 }
 
 @keyframes monopoly-avatar-bounce-h {
-  0% { transform: translate(-50%, calc(-100% - 6px)) scale(1); }
-  40% { transform: translate(-50%, calc(-100% - 16px)) scale(1.15); }
-  100% { transform: translate(-50%, calc(-100% - 6px)) scale(1); }
+  0% { transform: translate(-50%, calc(-100% - 6px)); }
+  30% { transform: translate(-50%, calc(-100% - 10px)); }
+  70% { transform: translate(-50%, calc(-100% - 3px)); }
+  100% { transform: translate(-50%, calc(-100% - 6px)); }
 }
 
 @keyframes monopoly-avatar-bounce-v {
-  0% { transform: translate(-50%, calc(-100% - 6px)) scale(1); }
-  40% { transform: translate(calc(-50% - 8px), calc(-100% - 6px)) scale(1.15); }
-  100% { transform: translate(-50%, calc(-100% - 6px)) scale(1); }
+  0% { transform: translate(-50%, calc(-100% - 6px)); }
+  30% { transform: translate(calc(-50% - 4px), calc(-100% - 6px)); }
+  70% { transform: translate(calc(-50% + 2px), calc(-100% - 6px)); }
+  100% { transform: translate(-50%, calc(-100% - 6px)); }
 }
 
 @keyframes monopoly-avatar-bob {
