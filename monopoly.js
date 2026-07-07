@@ -976,6 +976,7 @@
       addLog(`🔄 ${playerDisplayName(p)} 더블로 한 번 더!`);
       state.phase = "awaitRoll";
       renderAll();
+      showTurnToast(p);
       if (!p.human) scheduleAiTurn();
       return;
     }
@@ -992,6 +993,7 @@
       endTurn();
       return;
     }
+    showTurnToast(np);
     if (!np.human) scheduleAiTurn();
   }
 
@@ -1187,6 +1189,7 @@
     els.setupPanel?.classList.add("hidden");
     els.gamePanel?.classList.remove("hidden");
     renderAll();
+    showTurnToast(state.players[0]);
   }
 
   function resetToSetup() {
@@ -1196,6 +1199,70 @@
     els.gamePanel?.classList.add("hidden");
     els.setupPanel?.classList.remove("hidden");
     state.phase = "idle";
+  }
+
+  /* ── Zoom Controls ── */
+  const MONOPOLY_ZOOM_STORAGE_KEY = "fantasyR.monopolyZoomPercent";
+  const MONOPOLY_ZOOM_MIN_PERCENT = 70;
+  const MONOPOLY_ZOOM_MAX_PERCENT = 200;
+  const MONOPOLY_ZOOM_STEP_PERCENT = 10;
+  let monopolyZoomPercent = 100;
+
+  function loadMonopolyZoomPercent() {
+    try {
+      const saved = window.localStorage.getItem(MONOPOLY_ZOOM_STORAGE_KEY);
+      const numeric = parseInt(saved, 10);
+      return (!isNaN(numeric) && numeric >= MONOPOLY_ZOOM_MIN_PERCENT && numeric <= MONOPOLY_ZOOM_MAX_PERCENT)
+        ? numeric
+        : 100;
+    } catch {
+      return 100;
+    }
+  }
+
+  function saveMonopolyZoomPercent(percent) {
+    try {
+      window.localStorage.setItem(MONOPOLY_ZOOM_STORAGE_KEY, String(percent));
+    } catch {}
+  }
+
+  function renderMonopolyZoomControls() {
+    if (els.gamePanel) {
+      els.gamePanel.style.setProperty("--monopoly-ui-zoom", String(monopolyZoomPercent / 100));
+    }
+    if (els.zoomLabel) {
+      els.zoomLabel.textContent = `${monopolyZoomPercent}%`;
+    }
+    if (els.zoomOutButton) {
+      els.zoomOutButton.disabled = monopolyZoomPercent <= MONOPOLY_ZOOM_MIN_PERCENT;
+    }
+    if (els.zoomInButton) {
+      els.zoomInButton.disabled = monopolyZoomPercent >= MONOPOLY_ZOOM_MAX_PERCENT;
+    }
+  }
+
+  function setMonopolyZoomPercent(percent, persist = true) {
+    monopolyZoomPercent = Math.max(MONOPOLY_ZOOM_MIN_PERCENT, Math.min(MONOPOLY_ZOOM_MAX_PERCENT, Math.round(percent / MONOPOLY_ZOOM_STEP_PERCENT) * MONOPOLY_ZOOM_STEP_PERCENT));
+    renderMonopolyZoomControls();
+    if (persist) saveMonopolyZoomPercent(monopolyZoomPercent);
+  }
+
+  function adjustMonopolyZoom(delta) {
+    setMonopolyZoomPercent(monopolyZoomPercent + delta);
+  }
+
+  function initializeMonopolyZoomControls() {
+    els.zoomOutButton = $("#monopolyZoomOutButton");
+    els.zoomInButton = $("#monopolyZoomInButton");
+    els.zoomLabel = $("#monopolyZoomLabel");
+    
+    if (els.zoomOutButton) {
+      els.zoomOutButton.addEventListener("click", () => adjustMonopolyZoom(-MONOPOLY_ZOOM_STEP_PERCENT));
+    }
+    if (els.zoomInButton) {
+      els.zoomInButton.addEventListener("click", () => adjustMonopolyZoom(MONOPOLY_ZOOM_STEP_PERCENT));
+    }
+    setMonopolyZoomPercent(loadMonopolyZoomPercent(), false);
   }
 
   function leaveGame() {
@@ -1236,6 +1303,9 @@
     els.manageDialog?.addEventListener("click", e => {
       if (e.target === els.manageDialog) els.manageDialog.close();
     });
+
+    // Initialize zoom
+    initializeMonopolyZoomControls();
 
     // Hide loading
     document.body.classList.remove("app-loading");
