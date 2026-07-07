@@ -1054,12 +1054,6 @@
           closeDialog();
         });
         footer.appendChild(payBtn);
-
-        if (!player.human) {
-          setTimeout(() => {
-            if (dialog.open) payBtn.click();
-          }, 1500);
-        }
       } else if (!owner) {
         // Buy or pass
         const buyBtn = document.createElement("button");
@@ -1088,19 +1082,6 @@
 
         footer.appendChild(buyBtn);
         footer.appendChild(passBtn);
-
-        if (!player.human) {
-          setTimeout(() => {
-            if (dialog.open) {
-              const wantsToBuy = player.money >= tile.price + 200 * SCALE_FACTOR || (player.money >= tile.price && state.turnCount > 15);
-              if (wantsToBuy && !buyBtn.disabled) {
-                buyBtn.click();
-              } else {
-                passBtn.click();
-              }
-            }
-          }, 1500);
-        }
       } else {
         // Own property
         const okBtn = document.createElement("button");
@@ -1111,12 +1092,6 @@
         footer.appendChild(okBtn);
 
         addLog(`📍 ${playerDisplayName(player)} 자기 땅 ${tile.name}에 도착.`);
-
-        if (!player.human) {
-          setTimeout(() => {
-            if (dialog.open) okBtn.click();
-          }, 1500);
-        }
       }
 
       dialog.showModal();
@@ -1124,6 +1099,11 @@
   }
 
   async function handlePropertyLanding(player, tile) {
+    if (!player.human) {
+      // AI: 팝업 없이 자동 구매 판단 (사람이 취소할 수 없도록)
+      await aiBuyDecision(player, tile);
+      return;
+    }
     await showPropertyPopup(player, tile);
     state.phase = "buyDecision";
     renderControls();
