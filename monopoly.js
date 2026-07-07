@@ -1201,6 +1201,15 @@
     state.phase = "idle";
   }
 
+  /* ── Center Toast (Turn Popups) ── */
+  function showTurnToast(player) {
+    if (typeof window.showCenterToast !== "function") return;
+    const displayName = player.human
+      ? "당신의 턴입니다"
+      : `${player.name}(${TOKEN_NAMES[player.index]})의 턴`;
+    window.showCenterToast(displayName, 1200, { mode: "monopoly" });
+  }
+
   /* ── Zoom Controls ── */
   const MONOPOLY_ZOOM_STORAGE_KEY = "fantasyR.monopolyZoomPercent";
   const MONOPOLY_ZOOM_MIN_PERCENT = 70;

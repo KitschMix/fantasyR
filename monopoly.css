@@ -119,8 +119,17 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 
 /* --- Game Panel --- */
 .monopoly-game-panel {
+  --monopoly-ui-zoom: 1;
+  zoom: var(--monopoly-ui-zoom);
   min-height: calc(100vh - 28px);
   padding: 14px;
+}
+
+@supports not (zoom: 1) {
+  .monopoly-game-panel {
+    transform: scale(var(--monopoly-ui-zoom));
+    transform-origin: top center;
+  }
 }
 
 .monopoly-shell {
