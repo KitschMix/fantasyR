@@ -416,6 +416,24 @@ body:not(.cant-active) .cant-stop-panel {
   gap: 8px;
 }
 
+.cant-dice.rolling .cant-die {
+  animation: cant-die-roll 130ms linear infinite;
+}
+
+@keyframes cant-die-roll {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-4px) rotate(5deg);
+  }
+
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+}
+
 .cant-die {
   position: relative;
   display: grid;

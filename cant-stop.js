@@ -142,7 +142,8 @@
     turnNumber: 1,
     log: [],
     aiTimer: 0,
-    leaderboardSubmitted: false
+    leaderboardSubmitted: false,
+    diceRolling: false
   };
   let cantSupabaseClient = null;
   const nicknameForceChangeState = {
@@ -851,11 +852,52 @@
     applyOption(option);
   }
 
-  function rollForCurrentActor() {
-    if (state.finished || state.phase === "choice") return;
-    state.dice = rollDice();
-    state.options = buildRollOptions(state.dice);
+  const DICE_ROLL_DURATION_MS = 650;
+  const DICE_ROLL_FRAME_MS = 58;
+  let diceRollTimer = 0;
+
+  function clearDiceRollTimer() {
+    if (diceRollTimer) {
+      window.clearTimeout(diceRollTimer);
+      diceRollTimer = 0;
+    }
+  }
+
+  function animateDiceRoll(finalDice) {
+    return new Promise((resolve) => {
+      clearDiceRollTimer();
+      state.diceRolling = true;
+      state.dice = rollDice();
+      renderCant();
+
+      const start = Date.now();
+      const tick = () => {
+        const elapsed = Date.now() - start;
+        if (elapsed >= DICE_ROLL_DURATION_MS) {
+          state.dice = finalDice;
+          state.diceRolling = false;
+          clearDiceRollTimer();
+          renderCant();
+          resolve();
+          return;
+        }
+        state.dice = rollDice();
+        renderCant();
+        diceRollTimer = window.setTimeout(tick, DICE_ROLL_FRAME_MS);
+      };
+      diceRollTimer = window.setTimeout(tick, DICE_ROLL_FRAME_MS);
+    });
+  }
+
+  async function rollForCurrentActor() {
+    if (state.finished || state.phase === "choice" || state.diceRolling) return;
+    const finalDice = rollDice();
+    const options = buildRollOptions(finalDice);
     clearManualDiceSelection();
+    
+    await animateDiceRoll(finalDice);
+
+    state.options = options;
     if (!state.options.length) {
       bustCurrentTurn();
       return;
@@ -1127,6 +1169,7 @@
       return;
     }
     els.dice.innerHTML = "";
+    els.dice.classList.toggle("rolling", state.diceRolling);
     state.dice.forEach((value, index) => {
       const selectedOrder = state.selectedDice.indexOf(index);
       const die = document.createElement(isManualDiceChoice() ? "button" : "span");
@@ -1288,11 +1331,11 @@
   function renderControls() {
     const humanTurn = state.currentActor === "human" && !state.finished;
     if (els.rollButton) {
-      els.rollButton.disabled = !humanTurn || (state.phase !== "idle" && state.phase !== "decision");
+      els.rollButton.disabled = !humanTurn || (state.phase !== "idle" && state.phase !== "decision") || state.diceRolling;
       els.rollButton.textContent = state.phase === "decision" ? "더 굴리기" : "굴리기";
     }
     if (els.stopButton) {
-      els.stopButton.disabled = !humanTurn || state.phase !== "decision" || activeTempColumns().length === 0;
+      els.stopButton.disabled = !humanTurn || state.phase !== "decision" || activeTempColumns().length === 0 || state.diceRolling;
     }
   }
 
