@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>부루마불</title>
     <link rel="stylesheet" href="styles.css?v=20260706-brumable" />
-    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v8" />
+    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v9" />
   </head>
   <body class="monopoly-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -142,9 +142,23 @@
           <button class="primary-button" type="submit">닫기</button>
         </form>
       </dialog>
+
+      <!-- Card Popup Dialog (황금열쇠 / 사회복지기금) -->
+      <dialog id="monopolyCardDialog" class="monopoly-card-dialog">
+        <div class="monopoly-card-popup">
+          <div id="monopolyCardHeader" class="monopoly-card-header">황금열쇠</div>
+          <div class="monopoly-card-body">
+            <div id="monopolyCardIcon" class="monopoly-card-icon">🔑</div>
+            <p id="monopolyCardText" class="monopoly-card-text">출발지로 이동하세요.</p>
+          </div>
+          <div class="monopoly-card-footer">
+            <button id="monopolyCardActionButton" class="primary-button" type="button">확인</button>
+          </div>
+        </div>
+      </dialog>
     </main>
     <script src="shared-ui.js?v=20260706-brumable"></script>
     <script src="shared-profiles.js?v=20260706-brumable"></script>
-    <script src="monopoly.js?v=20260707-brumable-v8"></script>
+    <script src="monopoly.js?v=20260707-brumable-v9"></script>
   </body>
 </html>

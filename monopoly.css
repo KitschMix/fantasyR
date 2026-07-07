@@ -1262,3 +1262,93 @@ body.monopoly-active .monopoly-rules-help li {
   color: #d9a63c;
   border: 1px solid rgba(217, 166, 60, 0.24);
 }
+
+/* --- Card Dialog (Golden Key / Fund Card Popup) --- */
+.monopoly-card-dialog {
+  border: none;
+  background: transparent;
+  padding: 0;
+  overflow: visible;
+}
+
+.monopoly-card-dialog::backdrop {
+  background: rgba(8, 34, 55, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+.monopoly-card-popup {
+  width: min(340px, 90vw);
+  background: #fff9e9;
+  border: 3px solid #d9a63c;
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: monopoly-card-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+@keyframes monopoly-card-pop {
+  0% { transform: scale(0.7) rotate(-5deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.monopoly-card-header {
+  padding: 14px;
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(135deg, #e5a93b, #c38c26);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.monopoly-card-popup.chance-card {
+  border-color: #d9a63c;
+}
+.monopoly-card-popup.chance-card .monopoly-card-header {
+  background: linear-gradient(135deg, #e5a93b, #c38c26);
+}
+
+.monopoly-card-popup.fund-card {
+  border-color: #4682b4;
+}
+.monopoly-card-popup.fund-card .monopoly-card-header {
+  background: linear-gradient(135deg, #4682b4, #2c587c);
+}
+
+.monopoly-card-body {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: #24170d;
+}
+
+.monopoly-card-icon {
+  font-size: 48px;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
+}
+
+.monopoly-card-text {
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+  word-break: keep-all;
+}
+
+.monopoly-card-footer {
+  padding: 14px 20px;
+  border-top: 1px dashed rgba(36, 23, 13, 0.12);
+  display: flex;
+  justify-content: center;
+  background: rgba(36, 23, 13, 0.02);
+}
+
+.monopoly-card-footer button {
+  width: 100%;
+}

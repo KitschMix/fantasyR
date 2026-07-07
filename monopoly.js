@@ -801,11 +801,14 @@
 
   async function handleEventTile(player, tile) {
     let card;
+    let isChance = false;
     if (tile.event === "chance") {
       card = drawChance();
+      isChance = true;
       addLog(`🔑 황금열쇠 카드: ${card.text}`);
     } else if (tile.event === "fund") {
       card = drawFund();
+      isChance = false;
       addLog(`🎴 사회복지기금 카드: ${card.text}`);
     } else if (tile.event === "tax") {
       const tax = tile.amount || 100;
@@ -823,8 +826,75 @@
       return;
     }
 
-    await wait(800);
-    await executeCard(player, card);
+    await showCardPopup(player, card, isChance);
+  }
+
+  function showCardPopup(player, card, isChance) {
+    return new Promise(resolve => {
+      const dialog = document.querySelector("#monopolyCardDialog");
+      const popup = dialog?.querySelector(".monopoly-card-popup");
+      const header = document.querySelector("#monopolyCardHeader");
+      const icon = document.querySelector("#monopolyCardIcon");
+      const text = document.querySelector("#monopolyCardText");
+      const btn = document.querySelector("#monopolyCardActionButton");
+
+      if (!dialog || !popup || !header || !icon || !text || !btn) {
+        executeCard(player, card).then(resolve);
+        return;
+      }
+
+      if (isChance) {
+        popup.className = "monopoly-card-popup chance-card";
+        header.textContent = "황금열쇠";
+        icon.textContent = "🔑";
+      } else {
+        popup.className = "monopoly-card-popup fund-card";
+        header.textContent = "사회복지기금";
+        icon.textContent = "🎴";
+      }
+
+      text.textContent = card.text;
+
+      let buttonText = "확인";
+      const isPayAction = card.action === "pay" || card.action === "payAll" || card.action === "buildingCost";
+      
+      if (isPayAction) {
+        let payAmount = 0;
+        if (card.action === "pay") {
+          payAmount = card.amount;
+        } else if (card.action === "payAll") {
+          payAmount = card.amount * state.players.filter(p => !p.bankrupt).length;
+        } else if (card.action === "buildingCost") {
+          const houses = player.properties.reduce((sum, id) => sum + (player.buildings?.[id] || 0), 0);
+          payAmount = houses * card.house;
+        }
+        buttonText = payAmount > 0 ? `지불하기 (₩${payAmount})` : "지불하기";
+      } else if (card.action === "collect" || card.action === "collectAll") {
+        buttonText = "수령하기";
+      }
+
+      btn.textContent = buttonText;
+
+      const handleConfirm = () => {
+        btn.removeEventListener("click", handleConfirm);
+        dialog.close();
+        executeCard(player, card).then(() => {
+          renderAll();
+          resolve();
+        });
+      };
+
+      btn.addEventListener("click", handleConfirm);
+      dialog.showModal();
+
+      if (!player.human) {
+        setTimeout(() => {
+          if (dialog.open) {
+            handleConfirm();
+          }
+        }, 1800);
+      }
+    });
   }
 
   async function executeCard(player, card) {
