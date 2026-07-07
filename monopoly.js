@@ -533,23 +533,29 @@
       const dx = Math.abs(c.x - pc.x);
       const dy = Math.abs(c.y - pc.y);
       const direction = dx > dy ? "h" : "v";
-      // Set left/top directly for reliable transition
+      
       const targetLeft = `calc(${c.x}% + ${ox}%)`;
       const targetTop = `calc(${c.y}% + ${oy}%)`;
+
+      // Trigger the bounce/hop simultaneously with the slide transition
+      piece.classList.add(direction === "h" ? "bounce-h" : "bounce-v");
+      if (avatar) avatar.classList.add(direction === "h" ? "bounce-h" : "bounce-v");
+
       piece.style.left = targetLeft;
       piece.style.top = targetTop;
       if (avatar) {
         avatar.style.left = targetLeft;
         avatar.style.top = targetTop;
       }
-      await wait(STEP_MOVE_MS);
-      // Bounce perpendicular to movement direction
-      piece.classList.add(direction === "h" ? "bounce-h" : "bounce-v");
-      if (avatar) avatar.classList.add(direction === "h" ? "bounce-h" : "bounce-v");
-      await wait(STEP_BOUNCE_MS);
+      
+      // Wait for movement and keyframe animation (260ms duration + 20ms buffer)
+      await wait(280);
+      
       piece.classList.remove("bounce-h", "bounce-v");
       if (avatar) avatar.classList.remove("bounce-h", "bounce-v");
-      await wait(STEP_PAUSE_MS);
+      
+      // Brief pause between hops
+      await wait(60);
     }
     // Sync CSS variables to final position
     const fc = tileCenter(toTile);
