@@ -440,6 +440,10 @@
   const DICE_BOUNCE_DURATION = 1400;
   const DICE_BOUNCE_FRAME_MS = 50;
 
+  function rollDice() {
+    return [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+  }
+
   function animateDice(finalDice) {
     return new Promise(resolve => {
       state.dice = [];
