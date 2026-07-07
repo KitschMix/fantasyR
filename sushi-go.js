@@ -285,49 +285,46 @@
   }
 
   /* ── Drafting ── */
-  function pickCard(playerIndex, cardIndex) {
+  function selectCardForPlayer(playerIndex, cardIndex) {
     const hand = state.hands[playerIndex];
-    if (!hand || cardIndex < 0 || cardIndex >= hand.length) return;
+    if (!hand || cardIndex < 0 || cardIndex >= hand.length) return false;
 
     const card = hand.splice(cardIndex, 1)[0];
     state.pickedThisRound[playerIndex].push(card);
 
-    // Count pudding
     if (card.type === "pudding") {
       state.players[playerIndex].puddings++;
     }
 
     const p = state.players[playerIndex];
     addLog(`${p.emoji} ${p.name}: ${card.emoji} ${card.name} 선택`);
+    return true;
+  }
 
-    // Check if all players picked
-    const allPicked = state.hands.every(h => h.length <= state.hands[0]?.length - 1 || h.length === 0);
+  function pickCard(playerIndex, cardIndex) {
+    if (!selectCardForPlayer(playerIndex, cardIndex)) return;
 
-    if (allPicked) {
-      // Pass hands left
-      const firstHand = state.hands.shift();
-      state.hands.push(firstHand);
-      renderAll();
-
-      // Check if round over
-      if (state.hands[0].length === 0) {
-        endRound();
-        return;
-      }
-
-      // AI picks for next turn
-      if (state.hands[0].length > 0) {
-        // AI picks immediately
-        for (let i = 1; i < state.players.length; i++) {
-          if (state.hands[i] && state.hands[i].length > 0) {
-            const aiIdx = aiSelectCard(i);
-            pickCard(i, aiIdx);
-          }
-        }
+    // AI picks for this turn
+    for (let i = 1; i < state.players.length; i++) {
+      if (state.hands[i] && state.hands[i].length > 0) {
+        const aiIdx = aiSelectCard(i);
+        selectCardForPlayer(i, aiIdx);
       }
     }
 
+    // Pass hands left
+    const firstHand = state.hands.shift();
+    state.hands.push(firstHand);
+
+    // Check if round over
+    if (state.hands[0].length === 0) {
+      renderAll();
+      endRound();
+      return;
+    }
+
     renderAll();
+  }
   }
 
   function startDrafting() {
