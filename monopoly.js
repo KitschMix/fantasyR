@@ -174,7 +174,11 @@
     propertyInfo:     $("#monopolyPropertyInfo"),
     log:              $("#monopolyLog"),
     manageDialog:     $("#monopolyManageDialog"),
-    manageList:       $("#monopolyManageList")
+    manageList:       $("#monopolyManageList"),
+    jailDialog:       $("#monopolyJailDialog"),
+    jailTurnsLabel:   $("#monopolyJailTurnsLeft"),
+    jailFineLabel:    $("#monopolyJailFineText"),
+    jailFooter:       $("#monopolyJailFooter")
   };
 
   /* ── State ── */
@@ -1330,28 +1334,46 @@
 
     // Jail logic
     if (player.inJail) {
-      const dice = rollDice();
-      await animateDice(dice);
-      player.jailTurns--;
-      if (dice[0] === dice[1]) {
-        player.inJail = false;
-        addLog(`🎲 ${playerDisplayName(player)} 더블로 탈옥!`);
-        await movePlayer(player, dice[0] + dice[1]);
-        await wait(600);
-        await handleTileLanding(player);
-        if (activePlayer() === player && state.phase === "buyDecision") {
-          endTurn();
-        }
-        return;
-      } else if (player.jailTurns <= 0) {
+      const unownedCount = TILES.filter(t => t.type === "property" && !getOwner(t.id)).length;
+      const hasPlentyMoney = player.money >= JAIL_FINE + 1000 * SCALE_FACTOR;
+
+      if (hasPlentyMoney && unownedCount > 3) {
         player.inJail = false;
         payMoney(player, null, JAIL_FINE);
-        addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
+        addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
+        renderAll();
+        // Continue to roll normally below!
       } else {
-        addLog(`🔒 ${playerDisplayName(player)} 구금 중 (${player.jailTurns}턴 남음)`);
+        const dice = rollDice();
+        await animateDice(dice);
+        player.jailTurns--;
+        if (dice[0] === dice[1]) {
+          player.inJail = false;
+          addLog(`🎲 ${playerDisplayName(player)} 더블로 탈옥! (${dice[0]}+${dice[1]})`);
+          await movePlayer(player, dice[0] + dice[1]);
+          await wait(600);
+          await handleTileLanding(player);
+          if (activePlayer() === player && state.phase === "buyDecision") {
+            endTurn();
+          }
+          return;
+        } else if (player.jailTurns <= 0) {
+          player.inJail = false;
+          payMoney(player, null, JAIL_FINE);
+          addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
+          await movePlayer(player, dice[0] + dice[1]);
+          await wait(600);
+          await handleTileLanding(player);
+          if (activePlayer() === player && state.phase === "buyDecision") {
+            endTurn();
+          }
+          return;
+        } else {
+          addLog(`🔒 ${playerDisplayName(player)} 구금 중 (${player.jailTurns}턴 남음)`);
+          endTurn();
+          return;
+        }
       }
-      endTurn();
-      return;
     }
 
     // Roll dice
@@ -1449,6 +1471,46 @@
     state.aiTimer = setTimeout(runAiTurn, AI_THINK_DELAY);
   }
 
+  function showJailEscapePopup(player) {
+    return new Promise(resolve => {
+      if (!els.jailDialog || !els.jailTurnsLabel || !els.jailFineLabel || !els.jailFooter) {
+        resolve("roll");
+        return;
+      }
+
+      els.jailTurnsLabel.textContent = player.jailTurns;
+      els.jailFineLabel.textContent = `₩${JAIL_FINE.toLocaleString()}`;
+      els.jailFooter.innerHTML = "";
+
+      const rollBtn = document.createElement("button");
+      rollBtn.className = "primary-button";
+      rollBtn.type = "button";
+      rollBtn.textContent = "🎲 주사위 굴리기 (더블 시도)";
+      rollBtn.addEventListener("click", () => {
+        els.jailDialog.close();
+        resolve("roll");
+      });
+
+      const payBtn = document.createElement("button");
+      payBtn.className = "secondary-button";
+      payBtn.type = "button";
+      payBtn.textContent = `💸 벌금 지불 (₩${JAIL_FINE.toLocaleString()})`;
+      if (player.money < JAIL_FINE) {
+        payBtn.disabled = true;
+        payBtn.textContent = "잔액 부족";
+      }
+      payBtn.addEventListener("click", () => {
+        els.jailDialog.close();
+        resolve("pay");
+      });
+
+      els.jailFooter.appendChild(rollBtn);
+      els.jailFooter.appendChild(payBtn);
+
+      els.jailDialog.showModal();
+    });
+  }
+
   /* ── Human Actions ── */
   async function humanRoll() {
     const player = activePlayer();
@@ -1456,31 +1518,40 @@
 
     // Jail logic
     if (player.inJail) {
-      const dice = rollDice();
-      await animateDice(dice);
-      player.jailTurns--;
-      if (dice[0] === dice[1]) {
-        player.inJail = false;
-        addLog(`🎲 더블로 탈옥!`);
-        await movePlayer(player, dice[0] + dice[1]);
-        await wait(600);
-        await handleTileLanding(player);
-        return;
-      } else if (player.jailTurns <= 0) {
+      const choice = await showJailEscapePopup(player);
+      if (choice === "pay") {
         player.inJail = false;
         payMoney(player, null, JAIL_FINE);
-        addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
-      } else {
-        addLog(`🔒 구금 중 (${player.jailTurns}턴 남음)`);
-        state.phase = "buyDecision";
+        addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
         renderAll();
-        renderControls();
-        return;
+        // Continue to normal roll below!
+      } else {
+        const dice = rollDice();
+        await animateDice(dice);
+        player.jailTurns--;
+        if (dice[0] === dice[1]) {
+          player.inJail = false;
+          addLog(`🎲 더블로 탈옥! (${dice[0]}+${dice[1]})`);
+          await movePlayer(player, dice[0] + dice[1]);
+          await wait(600);
+          await handleTileLanding(player);
+          return;
+        } else if (player.jailTurns <= 0) {
+          player.inJail = false;
+          payMoney(player, null, JAIL_FINE);
+          addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
+          await movePlayer(player, dice[0] + dice[1]);
+          await wait(600);
+          await handleTileLanding(player);
+          return;
+        } else {
+          addLog(`🔒 무인도 구금 중 (${player.jailTurns}턴 남음)`);
+          state.phase = "buyDecision";
+          renderAll();
+          renderControls();
+          return;
+        }
       }
-      state.phase = "buyDecision";
-      renderAll();
-      renderControls();
-      return;
     }
 
     const dice = rollDice();

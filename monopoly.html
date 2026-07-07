@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>부루마불</title>
     <link rel="stylesheet" href="styles.css?v=20260706-brumable" />
-    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v25" />
+    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v26" />
   </head>
   <body class="monopoly-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -178,6 +178,34 @@
         </div>
       </dialog>
 
+      <!-- Jail Popup Dialog (무인도 탈출 선택) -->
+      <dialog id="monopolyJailDialog" class="monopoly-property-dialog">
+        <div class="monopoly-property-popup">
+          <div class="property-popup-header" style="background-color: #e65100;">🏝️ 무인도 탈출</div>
+          <div class="property-popup-body">
+            <h2 class="property-popup-name">무인도 탈옥 시도</h2>
+            <p style="text-align: center; font-size: 14px; line-height: 1.6; margin: 10px 0;">
+              현재 무인도에 갇혀 있습니다.<br>
+              탈출 방법을 선택해 주세요.<br>
+              (남은 대기 턴: <span id="monopolyJailTurnsLeft">3</span>턴)
+            </p>
+            <div class="property-popup-details">
+              <div class="property-popup-row">
+                <span>방법 1. 주사위 더블 굴리기</span>
+                <strong>무료 (더블 시 즉시 탈옥)</strong>
+              </div>
+              <div class="property-popup-row">
+                <span>방법 2. 벌금 지불하고 탈출</span>
+                <strong style="color: #c62828;" id="monopolyJailFineText">₩500,000</strong>
+              </div>
+            </div>
+          </div>
+          <div class="property-popup-footer" id="monopolyJailFooter">
+            <!-- Buttons dynamically populated -->
+          </div>
+        </div>
+      </dialog>
+
       <!-- Property Popup Dialog (부동산 정보 및 구매/지불) -->
       <dialog id="monopolyPropertyDialog" class="monopoly-property-dialog">
         <div class="monopoly-property-popup">
@@ -199,6 +227,6 @@
     </main>
     <script src="shared-ui.js?v=20260706-brumable"></script>
     <script src="shared-profiles.js?v=20260706-brumable"></script>
-    <script src="monopoly.js?v=20260707-brumable-v25"></script>
+    <script src="monopoly.js?v=20260707-brumable-v26"></script>
   </body>
 </html>

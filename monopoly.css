@@ -1586,7 +1586,8 @@ body.monopoly-active .monopoly-all-properties-list {
 }
 
 .monopoly-property-popup {
-  width: min(340px, 90vw);
+  width: min(420px, 90vw);
+  aspect-ratio: 1 / 1;
   background: #fff9e9;
   border: 3px solid #d9a63c;
   border-radius: 16px;
@@ -1671,7 +1672,6 @@ body.monopoly-active .monopoly-all-properties-list {
 }
 
 .monopoly-property-dialog.has-bg-image .monopoly-property-popup {
-  min-height: 480px;
   justify-content: flex-end;
 }
 
