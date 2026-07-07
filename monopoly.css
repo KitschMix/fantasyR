@@ -119,14 +119,18 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
 
 /* --- Game Panel --- */
 .monopoly-game-panel {
-  --monopoly-ui-zoom: 1;
-  zoom: var(--monopoly-ui-zoom);
   min-height: calc(100vh - 28px);
   padding: 14px;
 }
 
+/* Zoom applies only to the board area, not the whole layout */
+.monopoly-board-stage {
+  --monopoly-ui-zoom: 1;
+  zoom: var(--monopoly-ui-zoom);
+}
+
 @supports not (zoom: 1) {
-  .monopoly-game-panel {
+  .monopoly-board-stage {
     transform: scale(var(--monopoly-ui-zoom));
     transform-origin: top center;
   }

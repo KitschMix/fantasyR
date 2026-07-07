@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>스플렌더</title>
+    <link rel="stylesheet" href="styles.css?v=20260707-splendor" />
+    <link rel="stylesheet" href="splendor.css?v=20260707-splendor" />
+  </head>
+  <body class="splendor-active app-loading">
+    <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
+      <div class="loading-box">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <strong>불러오는 중</strong>
+        <small>게임을 준비하고 있습니다.</small>
+      </div>
+    </div>
+    <main class="app-shell">
+      <!-- Setup Panel -->
+      <section id="splendorSetupPanel" class="splendor-setup-panel" aria-label="스플렌더 설정">
+        <div class="mode-panel splendor-panel">
+          <div class="splendor-panel-top">
+            <img class="splendor-setup-logo" src="assets/titles/title-splendor.png" alt="스플렌더" />
+            <button id="splendorBackButton" class="secondary-button" type="button">첫 화면</button>
+          </div>
+          <div class="mode-panel-head">
+            <strong>스플렌더</strong>
+            <span>보석 엔진 빌딩</span>
+          </div>
+          <div class="splendor-setup-controls">
+            <label>
+              플레이어 수
+              <select id="splendorPlayerCountSelect">
+                <option value="2">2명</option>
+                <option value="3" selected>3명</option>
+                <option value="4">4명</option>
+              </select>
+            </label>
+            <button id="startSplendorButton" class="primary-button" type="button">게임 시작</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Game Panel -->
+      <section id="splendorGamePanel" class="splendor-game-panel hidden" aria-label="스플렌더 플레이">
+        <div class="splendor-shell">
+          <div class="splendor-game-top">
+            <img class="splendor-game-logo" src="assets/titles/title-splendor.png" alt="스플렌더" />
+            <div class="splendor-game-actions">
+              <button id="splendorNewGameButton" class="secondary-button" type="button">새 게임</button>
+              <button id="splendorRulesButton" class="icon-button splendor-help-button" type="button" title="도움말" aria-label="스플렌더 도움말">?</button>
+              <button id="splendorExitButton" class="secondary-button" type="button">첫 화면</button>
+            </div>
+          </div>
+
+          <div class="splendor-layout">
+            <!-- Left: Players -->
+            <aside class="splendor-side">
+              <div id="splendorPlayersList" class="splendor-players"></div>
+            </aside>
+
+            <!-- Center: Board -->
+            <div class="splendor-board-area">
+              <!-- Noble tiles -->
+              <div id="splendorNobles" class="splendor-nobles"></div>
+              <!-- Card tiers -->
+              <div class="splendor-tiers">
+                <div class="splendor-tier" data-tier="3">
+                  <div class="splendor-tier-label">티어 3</div>
+                  <div id="splendorTier3" class="splendor-cards-row"></div>
+                </div>
+                <div class="splendor-tier" data-tier="2">
+                  <div class="splendor-tier-label">티어 2</div>
+                  <div id="splendorTier2" class="splendor-cards-row"></div>
+                </div>
+                <div class="splendor-tier" data-tier="1">
+                  <div class="splendor-tier-label">티어 1</div>
+                  <div id="splendorTier1" class="splendor-cards-row"></div>
+                </div>
+              </div>
+              <!-- Gem tokens -->
+              <div id="splendorTokens" class="splendor-tokens"></div>
+            </div>
+
+            <!-- Right: Actions & Info -->
+            <aside class="splendor-actions-panel">
+              <section class="splendor-action-card">
+                <div class="splendor-panel-title">턴: <span id="splendorTurnLabel">-</span></div>
+                <small id="splendorPhaseLabel">-</small>
+              </section>
+              <section class="splendor-action-card">
+                <div class="splendor-panel-title">내 보석 보너스</div>
+                <div id="splendorMyBonuses" class="splendor-my-bonuses"></div>
+              </section>
+              <section class="splendor-action-card">
+                <div class="splendor-panel-title">내 예약 카드</div>
+                <div id="splendorMyReserved" class="splendor-my-reserved"></div>
+              </section>
+              <button id="splendorEndTurnButton" class="primary-button" type="button" disabled>턴 종료</button>
+              <ol id="splendorLog" class="splendor-log"></ol>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rules Dialog -->
+      <dialog id="splendorRulesDialog" class="splendor-rules-dialog">
+        <form method="dialog" class="splendor-rules-help">
+          <h2>💎 스플렌더 규칙</h2>
+          <ul>
+            <li><strong>목표:</strong> 15 프레스티지 포인트를 먼저 달성하세요.</li>
+            <li><strong>보석 가져오기:</strong> 서로 다른 색 3개 또는 같은 색 2개 (4개 이상 남아있을 때)</li>
+            <li><strong>카드 구매:</strong> 보석 + 보너스로 비용을 지불합니다. 카드는 영구 보석 보너스를 줍니다.</li>
+            <li><strong>카드 예약:</strong> 골드 토큰 1개 + 카드 1장을 예약합니다 (최대 3장).</li>
+            <li><strong>귀족:</strong> 보석 보너스 조건을 만족하면 자동으로 귀족 타일을 획득합니다 (3점).</li>
+            <li><strong>보석 토큰:</strong> 2명=4개, 3명=5개, 4명=7개씩 배치됩니다.</li>
+          </ul>
+          <button class="primary-button" type="submit">확인</button>
+        </form>
+      </dialog>
+    </main>
+    <script src="shared-ui.js?v=20260707-splendor"></script>
+    <script src="shared-profiles.js?v=20260707-splendor"></script>
+    <script src="splendor.js?v=20260707-splendor"></script>
+  </body>
+</html>
