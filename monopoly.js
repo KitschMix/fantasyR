@@ -1518,7 +1518,7 @@
     addLog(`🚀 ${playerDisplayName(player)} 우주선 탑승! ${tileAt(destIndex).name}으로 이동합니다.`);
     
     // Pass GO logic during Space Travel
-    if (destIndex < 20) {
+    if (destIndex < 30) {
       collectMoney(player, GO_SALARY);
       addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
     }
