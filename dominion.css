@@ -1,0 +1,472 @@
+/* ===== Dominion / 도미니언 ===== */
+
+/* --- Visibility --- */
+body.launcher-active .dominion-setup-panel,
+body.launcher-active .dominion-game-panel,
+body.clue-active .dominion-setup-panel,
+body.clue-active .dominion-game-panel,
+body.tally-active .dominion-setup-panel,
+body.tally-active .dominion-game-panel,
+body.cant-active .dominion-setup-panel,
+body.cant-active .dominion-game-panel,
+body.monopoly-active .dominion-setup-panel,
+body.monopoly-active .dominion-game-panel,
+body.splendor-active .dominion-setup-panel,
+body.splendor-active .dominion-game-panel {
+  display: none !important;
+}
+
+body.dominion-active .topbar,
+body.dominion-active .setup-panel,
+body.dominion-active .clue-setup-panel,
+body.dominion-active .tally-ho-panel,
+body.dominion-active .cant-stop-panel,
+body.dominion-active .monopoly-setup-panel,
+body.dominion-active .monopoly-game-panel,
+body.dominion-active .splendor-setup-panel,
+body.dominion-active .splendor-game-panel,
+body.dominion-active .game-board {
+  display: none !important;
+}
+
+body:not(.dominion-active) .dominion-setup-panel,
+body:not(.dominion-active) .dominion-game-panel {
+  display: none !important;
+}
+
+body.dominion-active.dominion-playing .dominion-setup-panel {
+  display: none !important;
+}
+
+body.dominion-active.dominion-playing .dominion-game-panel {
+  display: block;
+}
+
+/* --- Setup --- */
+.dominion-setup-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 28px);
+  padding: 24px;
+}
+
+.dominion-panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  width: min(520px, 92vw);
+}
+
+.dominion-panel-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dominion-setup-title {
+  font-size: 36px;
+  color: var(--accent);
+  margin: 0;
+}
+
+.dominion-setup-controls {
+  display: grid;
+  gap: 12px;
+}
+
+.dominion-setup-controls label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dominion-setup-controls select {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 15px;
+  font-family: var(--font-ui);
+}
+
+/* --- Game --- */
+.dominion-game-panel {
+  min-height: calc(100vh - 28px);
+  padding: 14px;
+}
+
+.dominion-shell {
+  display: grid;
+  gap: 14px;
+  width: min(1880px, 100%);
+  margin: 0 auto;
+}
+
+.dominion-game-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dominion-game-title {
+  font-size: 28px;
+  color: var(--accent);
+  margin: 0;
+}
+
+.dominion-game-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Layout --- */
+.dominion-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr 240px;
+  gap: 14px;
+  align-items: start;
+}
+
+.dominion-side,
+.dominion-actions-panel {
+  display: grid;
+  gap: 10px;
+}
+
+/* --- Players --- */
+.dominion-players {
+  display: grid;
+  gap: 8px;
+}
+
+.dominion-player-card {
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition: border-color 0.2s;
+}
+
+.dominion-player-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(217,166,60,0.2);
+}
+
+.dominion-player-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.dominion-player-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.dominion-player-name {
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+}
+
+.dominion-player-score {
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.dominion-player-stats {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* --- Supply --- */
+.dominion-supply {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.dominion-supply-pile {
+  display: grid;
+  place-items: center;
+  width: 90px;
+  min-height: 80px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 6px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  position: relative;
+}
+
+.dominion-supply-pile:hover:not(.empty) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+  border-color: var(--accent);
+}
+
+.dominion-supply-pile.empty {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.dominion-supply-pile.highlight {
+  border-color: var(--focus);
+  box-shadow: 0 0 12px rgba(242,207,120,0.3);
+}
+
+.dominion-pile-name {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.dominion-pile-cost {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--accent);
+}
+
+.dominion-pile-count {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.dominion-pile-type {
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.dominion-pile-vp {
+  color: #60b86e;
+}
+
+/* --- Play Area --- */
+.dominion-center {
+  display: grid;
+  gap: 10px;
+}
+
+.dominion-play-area {
+  display: grid;
+  gap: 10px;
+}
+
+.dominion-played-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 80px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px dashed var(--line);
+  justify-content: center;
+}
+
+.dominion-hand-area {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.dominion-hand-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.dominion-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+/* --- Cards in Hand / Played --- */
+.dominion-card {
+  width: 80px;
+  min-height: 100px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  line-height: 1.2;
+  color: #17130f;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+
+.dominion-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+.dominion-card.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dominion-card.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.dominion-card-name {
+  font-weight: 900;
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+.dominion-card-cost {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(0,0,0,0.6);
+}
+
+.dominion-card-type {
+  font-size: 8px;
+  color: rgba(0,0,0,0.5);
+  position: absolute;
+  bottom: 3px;
+}
+
+/* Card type colors */
+.dominion-card.treasure { background: linear-gradient(135deg, #f0c84b, #d9a63c); }
+.dominion-card.victory { background: linear-gradient(135deg, #60b86e, #3a8a4a); color: #fff; }
+.dominion-card.action { background: linear-gradient(135deg, #e8e4da, #d0c8b0); }
+.dominion-card.curse { background: linear-gradient(135deg, #8a4a8a, #6a2a6a); color: #fff; }
+
+/* --- Action Card --- */
+.dominion-action-card {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.dominion-panel-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.dominion-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.dominion-stat {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* --- Phase Buttons --- */
+.dominion-phase-buttons {
+  display: grid;
+  gap: 6px;
+}
+
+/* --- Log --- */
+.dominion-log {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.dominion-log li {
+  color: var(--muted);
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  line-height: 1.3;
+}
+
+.dominion-log li:first-child {
+  color: var(--text);
+  background: var(--surface-3);
+}
+
+/* --- Rules Dialog --- */
+.dominion-rules-dialog {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0;
+  max-width: 520px;
+  width: 90vw;
+}
+
+.dominion-rules-dialog::backdrop {
+  background: rgba(0,0,0,0.6);
+}
+
+.dominion-rules-help {
+  padding: 24px;
+}
+
+.dominion-rules-help h2 {
+  color: var(--accent);
+  margin: 0 0 12px;
+}
+
+.dominion-rules-help li {
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 1000px) {
+  .dominion-layout {
+    grid-template-columns: 1fr;
+  }
+}

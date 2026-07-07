@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>도미니언</title>
+    <link rel="stylesheet" href="styles.css?v=20260707-dominion" />
+    <link rel="stylesheet" href="dominion.css?v=20260707-dominion" />
+  </head>
+  <body class="dominion-active app-loading">
+    <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
+      <div class="loading-box">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <strong>불러오는 중</strong>
+        <small>덱을 준비하고 있습니다.</small>
+      </div>
+    </div>
+    <main class="app-shell">
+      <!-- Setup -->
+      <section id="dominionSetupPanel" class="dominion-setup-panel" aria-label="도미니언 설정">
+        <div class="mode-panel dominion-panel">
+          <div class="dominion-panel-top">
+            <h1 class="dominion-setup-title">👑 도미니언</h1>
+            <button id="dominionBackButton" class="secondary-button" type="button">첫 화면</button>
+          </div>
+          <div class="mode-panel-head">
+            <strong>도미니언</strong>
+            <span>덱 빌딩</span>
+          </div>
+          <div class="dominion-setup-controls">
+            <label>
+              플레이어 수
+              <select id="dominionPlayerCountSelect">
+                <option value="2">2명</option>
+                <option value="3" selected>3명</option>
+                <option value="4">4명</option>
+              </select>
+            </label>
+            <button id="startDominionButton" class="primary-button" type="button">게임 시작</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Game -->
+      <section id="dominionGamePanel" class="dominion-game-panel hidden" aria-label="도미니언 플레이">
+        <div class="dominion-shell">
+          <div class="dominion-game-top">
+            <h1 class="dominion-game-title">👑 도미니언</h1>
+            <div class="dominion-game-actions">
+              <button id="dominionNewGameButton" class="secondary-button" type="button">새 게임</button>
+              <button id="dominionRulesButton" class="icon-button dominion-help-button" type="button" title="도움말" aria-label="도미니언 도움말">?</button>
+              <button id="dominionExitButton" class="secondary-button" type="button">첫 화면</button>
+            </div>
+          </div>
+
+          <div class="dominion-layout">
+            <!-- Left: Players -->
+            <aside class="dominion-side">
+              <div id="dominionPlayersList" class="dominion-players"></div>
+            </aside>
+
+            <!-- Center: Supply + Play Area -->
+            <div class="dominion-center">
+              <!-- Supply piles -->
+              <div id="dominionSupply" class="dominion-supply"></div>
+              <!-- Play area -->
+              <div class="dominion-play-area">
+                <div id="dominionPlayArea" class="dominion-played-cards"></div>
+                <div id="dominionHandArea" class="dominion-hand-area">
+                  <div class="dominion-hand-label">내 패</div>
+                  <div id="dominionHand" class="dominion-hand"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Actions & Log -->
+            <aside class="dominion-actions-panel">
+              <section class="dominion-action-card">
+                <div class="dominion-panel-title">턴: <span id="dominionTurnLabel">-</span></div>
+                <small id="dominionPhaseLabel">-</small>
+                <div id="dominionStats" class="dominion-stats"></div>
+              </section>
+              <div class="dominion-phase-buttons">
+                <button id="dominionPlayAllTreasures" class="secondary-button" type="button">💰 전부 사용</button>
+                <button id="dominionEndBuyButton" class="primary-button" type="button" disabled>구매 종료</button>
+                <button id="dominionEndTurnButton" class="danger-button" type="button" disabled>턴 종료</button>
+              </div>
+              <ol id="dominionLog" class="dominion-log"></ol>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <dialog id="dominionRulesDialog" class="dominion-rules-dialog">
+        <form method="dialog" class="dominion-rules-help">
+          <h2>👑 도미니언 규칙</h2>
+          <ul>
+            <li><strong>목표:</strong> 게임 종료 시 가장 많은 승점(VP)을 가진 플레이어가 승리합니다.</li>
+            <li><strong>턴 순서:</strong> 행동 단계 → 구매 단계 → 정리 단계</li>
+            <li><strong>행동 단계:</strong> 행동 카드를 1장 사용합니다 (+카드, +행동, +구매, +코인).</li>
+            <li><strong>구매 단계:</strong> 보물 카드를 사용해 공급처에서 카드를 구매합니다.</li>
+            <li><strong>정리 단계:</strong> 사용한 카드와 패를 모두 버리고 5장을 뽑습니다.</li>
+            <li><strong>보물:</strong> 🟤 Copper(1) ⚪ Silver(2) 🟡 Gold(3)</li>
+            <li><strong>승점:</strong> 🏠 Estate(1vp) 🏰 Duchy(3vp) 👑 Province(6vp)</li>
+            <li><strong>게임 종료:</strong> Province가 소진되거나 공급처 3줄이 소진되면 게임이 끝납니다.</li>
+          </ul>
+          <button class="primary-button" type="submit">확인</button>
+        </form>
+      </dialog>
+    </main>
+    <script src="shared-ui.js?v=20260707-dominion"></script>
+    <script src="shared-profiles.js?v=20260707-dominion"></script>
+    <script src="dominion.js?v=20260707-dominion"></script>
+  </body>
+</html>

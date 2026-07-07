@@ -11,7 +11,9 @@ body.tally-active .splendor-game-panel,
 body.cant-active .splendor-setup-panel,
 body.cant-active .splendor-game-panel,
 body.monopoly-active .splendor-setup-panel,
-body.monopoly-active .splendor-game-panel {
+body.monopoly-active .splendor-game-panel,
+body.dominion-active .splendor-setup-panel,
+body.dominion-active .splendor-game-panel {
   display: none !important;
 }
 
@@ -22,6 +24,8 @@ body.splendor-active .tally-ho-panel,
 body.splendor-active .cant-stop-panel,
 body.splendor-active .monopoly-setup-panel,
 body.splendor-active .monopoly-game-panel,
+body.splendor-active .dominion-setup-panel,
+body.splendor-active .dominion-game-panel,
 body.splendor-active .game-board {
   display: none !important;
 }
