@@ -4,7 +4,7 @@
 
   /* ── Card Definitions ── */
   const CARD_DEFS = [
-    { type: "nigiri",   name: "계란 초밥",   emoji: "🥚", points: 1, copies: 5 },
+    { type: "nigiri",   name: "계란 초밥",   emoji: "🥚", points: 1, copies: 4 },
     { type: "nigiri",   name: "연어 초밥",   emoji: "🍣", points: 2, copies: 5 },
     { type: "nigiri",    name: "문어 초밥",   emoji: "🐙", points: 3, copies: 3 },
     { type: "maki",     name: "김밥 3",      emoji: "🍱", points: 0, maki: 3, copies: 8 },

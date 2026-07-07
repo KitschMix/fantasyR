@@ -227,6 +227,8 @@
           attemptBuy(pileName);
         } else if (state.phase === "workshop" && activePlayer()?.human) {
           attemptWorkshopGain(pileName);
+        } else if (state.phase === "remodelGain" && activePlayer()?.human) {
+          attemptRemodelGain(pileName);
         }
       });
     });
@@ -239,7 +241,10 @@
     els.hand.innerHTML = player.hand.map((card, i) => {
       const playable = state.phase === "action" && isAction(card) && player.human && player.actions > 0;
       const treasurePlayable = state.phase === "buy" && isTreasure(card) && player.human;
-      const disabled = !playable && !treasurePlayable;
+      const cellarPlayable = state.phase === "cellar" && player.human;
+      const minePlayable = state.phase === "mine" && isTreasure(card) && player.human;
+      const remodelPlayable = state.phase === "remodel" && player.human;
+      const disabled = !playable && !treasurePlayable && !cellarPlayable && !minePlayable && !remodelPlayable;
       return cardHtml(card, disabled);
     }).join("");
 
@@ -252,6 +257,36 @@
           playActionCard(player, card);
         } else if (state.phase === "buy" && isTreasure(card)) {
           playTreasureCard(player, card);
+        } else if (state.phase === "cellar") {
+          // Discard selected card for Cellar
+          const idx = player.hand.indexOf(card);
+          if (idx >= 0) { player.hand.splice(idx, 1); player.discard.push(card); }
+          addLog(`${player.name}: Cellar로 ${card.name} 버림`);
+          renderAll();
+        } else if (state.phase === "mine" && isTreasure(card)) {
+          // Mine: trash treasure, gain treasure costing +3
+          const maxCost = cardCost(card) + 3;
+          trashCard(player, card);
+          const options = Object.keys(state.supply).filter(n => {
+            const pile = state.supply[n];
+            return pile.length > 0 && isTreasure(pile[pile.length - 1]) && cardCost(pile[pile.length - 1]) <= maxCost;
+          }).sort((a, b) => cardCost(state.supply[b][state.supply[b].length - 1]) - cardCost(state.supply[a][state.supply[a].length - 1]));
+          if (options.length) {
+            const gained = takeFromSupply(options[0]);
+            if (gained) { player.hand.push(gained); addLog(`${player.name}: Mine ${card.name}→${options[0]}`); }
+          }
+          state.phase = "buy";
+          renderAll();
+        } else if (state.phase === "remodel") {
+          // Remodel: trash card, gain card costing +2
+          const maxCost = cardCost(card) + 2;
+          trashCard(player, card);
+          state.phase = "remodelGain";
+          state.remodelMaxCost = maxCost;
+          addLog(`${player.name}: ${card.name} 트래시. ${maxCost}이하 카드를 공급처에서 선택.`);
+          renderAll();
+        } else if (state.phase === "remodelGain") {
+          // This shouldn't happen - remodelGain is handled by supply click
         }
       });
     });
@@ -281,7 +316,17 @@
     const p = activePlayer();
     if (els.turnLabel) els.turnLabel.textContent = p ? `${p.name} 차례` : "-";
     if (els.phaseLabel) {
-      const labels = { action: "행동 카드 사용", buy: "카드 구매 (또는 보물 사용)", cleanup: "정리 중...", finished: "게임 종료" };
+      const labels = {
+        action: "행동 카드 사용",
+        buy: "카드 구매 (또는 보물 사용)",
+        workshop: "4이하 카드 선택",
+        cellar: "버릴 카드 선택 후 구매 종료",
+        mine: "업그레이드할 보물 선택",
+        remodel: "트래시할 카드 선택",
+        remodelGain: `${state.remodelMaxCost || 0}이하 카드 획득`,
+        cleanup: "정리 중...",
+        finished: "게임 종료"
+      };
       els.phaseLabel.textContent = labels[state.phase] || "-";
     }
     if (els.stats && p) {
@@ -292,7 +337,10 @@
       `;
     }
     if (els.playAllBtn) els.playAllBtn.disabled = !p?.human || state.phase !== "buy";
-    if (els.endBuyBtn) els.endBuyBtn.disabled = !p?.human || state.phase !== "buy";
+    if (els.endBuyBtn) {
+      els.endBuyBtn.disabled = !p?.human || !["buy", "cellar"].includes(state.phase);
+      els.endBuyBtn.textContent = state.phase === "cellar" ? "확정" : "구매 종료";
+    }
     if (els.endTurnBtn) els.endTurnBtn.disabled = !p?.human || (state.phase !== "action" && state.phase !== "buy");
   }
 
@@ -388,7 +436,7 @@
 
     addLog(`${player.name}: ${card.emoji} ${card.name} 사용`);
 
-    // Handle special effects
+    // Handle special effects that need UI
     if (player.workshopGain) {
       player.workshopGain = false;
       if (player.human) {
@@ -411,6 +459,65 @@
       } else {
         aiChapelTrash(player);
       }
+    }
+
+    if (player.cellarAction) {
+      player.cellarAction = false;
+      if (player.human) {
+        state.phase = "cellar";
+        addLog("버릴 카드를 선택하세요 (0장 이상). 구매 종료로 확정.");
+        renderAll();
+        return;
+      } else {
+        aiCellarDiscard(player);
+      }
+    }
+
+    if (player.moneylenderAction) {
+      player.moneylenderAction = false;
+      const copper = player.hand.find(c => c.name === "Copper");
+      if (copper) {
+        trashCard(player, copper);
+        player.coins += 3;
+        addLog(`${player.name}: Copper 트래시 → +3코인`);
+      }
+    }
+
+    if (player.mineAction) {
+      player.mineAction = false;
+      if (player.human) {
+        state.phase = "mine";
+        addLog("업그레이드할 보물을 선택하세요.");
+        renderAll();
+        return;
+      } else {
+        aiMineUpgrade(player);
+      }
+    }
+
+    if (player.remodelAction) {
+      player.remodelAction = false;
+      if (player.human) {
+        state.phase = "remodel";
+        addLog("트래시할 카드를 선택하세요.");
+        renderAll();
+        return;
+      } else {
+        aiRemodel(player);
+      }
+    }
+
+    if (player.witchAttack) {
+      player.witchAttack = false;
+      state.players.forEach(op => {
+        if (op !== player && !op.isEliminated) {
+          const curse = takeFromSupply("Curse");
+          if (curse) {
+            op.discard.push(curse);
+            addLog(`${player.name}: ${op.name}에게 Curse 부여!`);
+          }
+        }
+      });
     }
 
     // After action, check if more actions possible
@@ -453,6 +560,14 @@
   function endBuyPhase() {
     const p = activePlayer();
     if (!p) return;
+
+    // Cellar: draw cards equal to discarded
+    if (state.phase === "cellar") {
+      const cellarDiscards = p.discard.length - (state._preCellarDiscardCount || 0);
+      drawCards(p, cellarDiscards);
+      if (cellarDiscards > 0) addLog(`${p.name}: Cellar로 ${cellarDiscards}장 드로우`);
+    }
+
     // Clean up
     discardHand(p);
     discardPlayed(p);
@@ -491,6 +606,22 @@
     renderAll();
   }
 
+  function attemptRemodelGain(cardName) {
+    const p = activePlayer();
+    if (!p?.human || state.phase !== "remodelGain") return;
+    const pile = state.supply[cardName];
+    if (!pile || !pile.length) return;
+    const card = pile[pile.length - 1];
+    if (cardCost(card) > (state.remodelMaxCost || 0)) { addLog(`${state.remodelMaxCost}이하 카드만 가능합니다.`); return; }
+    const gained = takeFromSupply(cardName);
+    if (gained) {
+      p.discard.push(gained);
+      addLog(`${p.name}: Remodel로 ${cardName} 획득`);
+    }
+    state.phase = "buy";
+    renderAll();
+  }
+
   function aiWorkshopGain(player) {
     const options = Object.keys(state.supply).filter(n => {
       const pile = state.supply[n];
@@ -515,6 +646,60 @@
       if (trashed >= 4) break;
       const card = player.hand.find(c => c.name === pname);
       if (card) { trashCard(player, card); trashed++; addLog(`${player.name}: ${pname} 트래시`); }
+    }
+  }
+
+  function aiCellarDiscard(player) {
+    // Discard victory cards and curses, then draw same amount
+    const toDiscard = player.hand.filter(c => isVictory(c) || isCurse(c));
+    const count = toDiscard.length;
+    toDiscard.forEach(c => {
+      const idx = player.hand.indexOf(c);
+      if (idx >= 0) { player.hand.splice(idx, 1); player.discard.push(c); }
+    });
+    drawCards(player, count);
+    if (count > 0) addLog(`${player.name}: Cellar로 ${count}장 교체`);
+  }
+
+  function aiMineUpgrade(player) {
+    // Upgrade Copper→Silver or Silver→Gold
+    const copper = player.hand.find(c => c.name === "Copper");
+    const silver = player.hand.find(c => c.name === "Silver");
+    if (silver) {
+      trashCard(player, silver);
+      const gold = takeFromSupply("Gold");
+      if (gold) player.hand.push(gold);
+      addLog(`${player.name}: Mine Silver→Gold`);
+    } else if (copper) {
+      trashCard(player, copper);
+      const newSilver = takeFromSupply("Silver");
+      if (newSilver) player.hand.push(newSilver);
+      addLog(`${player.name}: Mine Copper→Silver`);
+    }
+  }
+
+  function aiRemodel(player) {
+    // Trash worst card, gain card costing up to +2
+    const priority = ["Curse", "Estate", "Copper", "Silver"];
+    for (const pname of priority) {
+      const card = player.hand.find(c => c.name === pname);
+      if (card) {
+        const maxCost = cardCost(card) + 2;
+        trashCard(player, card);
+        const options = Object.keys(state.supply).filter(n => {
+          const pile = state.supply[n];
+          return pile.length > 0 && cardCost(pile[pile.length - 1]) <= maxCost;
+        }).sort((a, b) => {
+          const ca = state.supply[a][state.supply[a].length - 1];
+          const cb = state.supply[b][state.supply[b].length - 1];
+          return cardCost(cb) - cardCost(ca);
+        });
+        if (options.length) {
+          const gained = takeFromSupply(options[0]);
+          if (gained) { player.discard.push(gained); addLog(`${player.name}: Remodel ${pname}→${options[0]}`); }
+        }
+        return;
+      }
     }
   }
 
