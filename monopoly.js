@@ -117,6 +117,13 @@
     "홍콩": "hongkong.jpg"
   };
 
+  function preloadScenicImages() {
+    Object.values(SCENIC_BG_MAPPING).forEach(filename => {
+      const img = new Image();
+      img.src = `assets/monopoly/${filename}`;
+    });
+  }
+
   // Scale TILES, CHANCE_CARDS, FUND_CARDS
   TILES.forEach(t => {
     if (t.price) t.price *= SCALE_FACTOR;
@@ -1743,6 +1750,9 @@
     els.manageDialog?.addEventListener("click", e => {
       if (e.target === els.manageDialog) els.manageDialog.close();
     });
+
+    // Preload scenic images
+    preloadScenicImages();
 
     // Initialize zoom
     initializeMonopolyZoomControls();
