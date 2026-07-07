@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>스시고</title>
+    <link rel="stylesheet" href="styles.css?v=20260707-sushi" />
+    <link rel="stylesheet" href="sushi-go.css?v=20260707-sushi" />
+  </head>
+  <body class="sushi-active app-loading">
+    <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
+      <div class="loading-box">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <strong>불러오는 중</strong>
+        <small>스시를 준비하고 있습니다.</small>
+      </div>
+    </div>
+    <main class="app-shell">
+      <!-- Setup -->
+      <section id="sushiSetupPanel" class="sushi-setup-panel" aria-label="스시고 설정">
+        <div class="mode-panel sushi-panel">
+          <div class="sushi-panel-top">
+            <h1 class="sushi-setup-title">🍣 스시고!</h1>
+            <button id="sushiBackButton" class="secondary-button" type="button">첫 화면</button>
+          </div>
+          <div class="mode-panel-head">
+            <strong>스시고!</strong>
+            <span>카드 드래프팅</span>
+          </div>
+          <div class="sushi-setup-controls">
+            <label>
+              플레이어 수
+              <select id="sushiPlayerCountSelect">
+                <option value="2">2명</option>
+                <option value="3" selected>3명</option>
+                <option value="4">4명</option>
+                <option value="5">5명</option>
+              </select>
+            </label>
+            <button id="startSushiButton" class="primary-button" type="button">게임 시작</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Game -->
+      <section id="sushiGamePanel" class="sushi-game-panel hidden" aria-label="스시고 플레이">
+        <div class="sushi-shell">
+          <div class="sushi-game-top">
+            <h1 class="sushi-game-title">🍣 스시고!</h1>
+            <div class="sushi-round-info">
+              <span id="sushiRoundLabel">라운드 1/3</span>
+            </div>
+            <div class="sushi-game-actions">
+              <button id="sushiNewGameButton" class="secondary-button" type="button">새 게임</button>
+              <button id="sushiRulesButton" class="icon-button sushi-help-button" type="button" title="도움말" aria-label="스시고 도움말">?</button>
+              <button id="sushiExitButton" class="secondary-button" type="button">첫 화면</button>
+            </div>
+          </div>
+
+          <div class="sushi-layout">
+            <!-- Left: Players & Scores -->
+            <aside class="sushi-side">
+              <div id="sushiPlayersList" class="sushi-players"></div>
+              <div id="sushiMakiRanking" class="sushi-maki-ranking"></div>
+            </aside>
+
+            <!-- Center: Hand -->
+            <div class="sushi-center">
+              <div class="sushi-hand-header">
+                <span class="label">내 손패</span>
+                <span id="sushiHandInfo" class="sushi-hand-info">-</span>
+              </div>
+              <div id="sushiHand" class="sushi-hand"></div>
+              <div id="sushiPickInfo" class="sushi-pick-info"></div>
+            </div>
+
+            <!-- Right: Pudding & Log -->
+            <aside class="sushi-actions-panel">
+              <section class="sushi-action-card">
+                <div class="sushi-panel-title">푸딩 카운트</div>
+                <div id="sushiPuddingCount" class="sushi-pudding-count"></div>
+              </section>
+              <ol id="sushiLog" class="sushi-log"></ol>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- Round End Overlay -->
+      <div id="sushiRoundEnd" class="sushi-round-end hidden">
+        <div class="sushi-round-end-card">
+          <h2 id="sushiRoundEndTitle">라운드 종료</h2>
+          <div id="sushiRoundEndScores" class="sushi-round-end-scores"></div>
+          <button id="sushiNextRoundButton" class="primary-button" type="button">다음 라운드</button>
+        </div>
+      </div>
+
+      <!-- Game End Overlay -->
+      <div id="sushiGameEnd" class="sushi-game-end hidden">
+        <div class="sushi-game-end-card">
+          <h2 id="sushiGameEndTitle">게임 종료</h2>
+          <div id="sushiGameEndScores" class="sushi-game-end-scores"></div>
+          <button id="sushiPlayAgainButton" class="primary-button" type="button">다시 하기</button>
+        </div>
+      </div>
+
+      <dialog id="sushiRulesDialog" class="sushi-rules-dialog">
+        <form method="dialog" class="sushi-rules-help">
+          <h2>🍣 스시고! 규칙</h2>
+          <ul>
+            <li><strong>목표:</strong> 3라운드 동안 가장 많은 점수를 획득하세요.</li>
+            <li><strong>드래프팅:</strong> 손패에서 1장을 선택하면 나머지를 왼쪽 플레이어에게 넘깁니다.</li>
+            <li><strong>회전 초밥(1/2/3점)</strong> — 즉시 점수 획득</li>
+            <li><strong>김밥(●●●)</strong> — 라운드 종료 시 가장 많이 가진 사람 6점, 2등 3점</li>
+            <li><strong>새우튀김(2장=5점)</strong>, <strong>사시미(3장=10점)</strong>, <strong>만두(1/3/5/8/11점)</strong></li>
+            <li><strong>와사비</strong> — 다음 회전 초밥 점수 3배!</li>
+            <li><strong>푸딩</strong> — 3라운드 종료 시 가장 많은 사람 +6점, 가장 적은 사람 -6점</li>
+          </ul>
+          <button class="primary-button" type="submit">확인</button>
+        </form>
+      </dialog>
+    </main>
+    <script src="shared-ui.js?v=20260707-sushi"></script>
+    <script src="shared-profiles.js?v=20260707-sushi"></script>
+    <script src="sushi-go.js?v=20260707-sushi"></script>
+  </body>
+</html>

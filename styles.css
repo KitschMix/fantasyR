@@ -334,6 +334,15 @@ body:not(.launcher-active) .game-launcher {
   filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.42));
 }
 
+.sushi-launcher-card {
+  width: min(560px, 76vw);
+}
+
+.sushi-launcher-card img {
+  max-height: 160px;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.42));
+}
+
 .launcher-device-note {
   color: rgba(247, 236, 217, 0.74);
   font-size: 18px;

@@ -216,10 +216,10 @@
   // Board is a grid: corners are bigger, sides have tiles in between
   // Positions are in % of the board
   function tilePosition(index) {
-    const CORNER_SIZE = 13; // % of board for corner tiles
+    const CORNER_SIZE = 13.5; // % of board for corner tiles (perfectly sized to leave exactly 73% for 9 side tiles)
     const SIDE_TILES = 9;
-    const avail = 100 - CORNER_SIZE;
-    const step = avail / SIDE_TILES;
+    const avail = 100 - 2 * CORNER_SIZE; // 100 - 27 = 73%
+    const step = avail / SIDE_TILES; // 73 / 9 = 8.1111...%
 
     if (index === 0)  return { x: 100 - CORNER_SIZE, y: 100 - CORNER_SIZE, w: CORNER_SIZE, h: CORNER_SIZE }; // GO (bottom-right)
     if (index <= 9)   return { x: 100 - CORNER_SIZE - index * step, y: 100 - CORNER_SIZE, w: step, h: CORNER_SIZE }; // bottom row, right→left
@@ -263,9 +263,11 @@
         html += `<span class="tile-price">₩${tile.price}</span>`;
       }
       div.innerHTML = html;
-      div.title = tile.type === "property"
-        ? `${tile.name} — 가격: ₩${tile.price}, 기본 임대료: ₩${tile.rent[0]}`
-        : tile.name;
+      if (tile.type !== "property") {
+        div.title = tile.name;
+      }
+      div.addEventListener("mouseenter", () => showHoverCard(i));
+      div.addEventListener("mouseleave", hideHoverCard);
       els.board.appendChild(div);
     });
   }
@@ -363,6 +365,187 @@
     els.diceDisplay.innerHTML = html1 + html2;
   }
 
+  function renderMyAssets() {
+    const area = document.querySelector("#monopolyMyAssetsArea");
+    const grid = document.querySelector("#monopolyMyAssetsGrid");
+    const tabsContainer = document.querySelector("#monopolyAssetPlayerTabs");
+    if (!area || !grid || !tabsContainer) return;
+
+    const human = state.players.find(p => p.human);
+    if (!human || state.phase === "idle" || state.phase === "finished") {
+      area.classList.add("hidden");
+      return;
+    }
+
+    area.classList.remove("hidden");
+
+    // Default selection to human (index 0) if undefined or selected player went bankrupt
+    if (state.selectedAssetPlayerIndex === undefined || !state.players[state.selectedAssetPlayerIndex] || state.players[state.selectedAssetPlayerIndex].bankrupt) {
+      state.selectedAssetPlayerIndex = human.index;
+    }
+
+    // Render Tabs for non-bankrupt players
+    tabsContainer.innerHTML = state.players.map(p => {
+      if (p.bankrupt) return "";
+      const isActive = p.index === state.selectedAssetPlayerIndex;
+      const activeStyle = isActive 
+        ? `border: 2px solid ${p.tokenColor}; background: ${p.tokenColor}15; font-weight: 800; color: var(--text);` 
+        : `border: 1px solid var(--line); background: var(--surface-3); opacity: 0.75; color: var(--text);`;
+        
+      return `
+        <button class="monopoly-asset-tab-btn" data-player-index="${p.index}" style="padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; ${activeStyle}">
+          <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${p.tokenColor}"></span>
+          ${p.human ? "나" : p.name} (${p.properties.length})
+        </button>
+      `;
+    }).join("");
+
+    // Bind tab clicks
+    tabsContainer.querySelectorAll(".monopoly-asset-tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.selectedAssetPlayerIndex = parseInt(btn.getAttribute("data-player-index"), 10);
+        renderMyAssets();
+      });
+    });
+
+    const targetPlayer = state.players[state.selectedAssetPlayerIndex];
+    grid.innerHTML = "";
+
+    if (targetPlayer.properties.length === 0) {
+      const displayLabel = targetPlayer.human ? "내가" : `${targetPlayer.name}이(가)`;
+      grid.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); opacity: 0.7;">아직 ${displayLabel} 보유한 부동산이 없습니다.</span>`;
+      return;
+    }
+
+    targetPlayer.properties.forEach(tileId => {
+      const tile = tileAt(tileId);
+      const isMon = tile.color !== "#808080" && tile.color !== "#4682B4" && isMonopoly(targetPlayer, tile.color);
+      
+      let groupStatus = "";
+      if (tile.color === "#4682B4") {
+        const owned = RAILROAD_IDS.filter(id => targetPlayer.properties.includes(id)).length;
+        groupStatus = `철도 ${owned}/4`;
+      } else if (tile.color === "#808080") {
+        const owned = UTILITY_IDS.filter(id => targetPlayer.properties.includes(id)).length;
+        groupStatus = `관공서 ${owned}/2`;
+      } else {
+        const owned = getColorGroupOwned(targetPlayer, tile.color).length;
+        const total = (COLOR_GROUPS[tile.color] || []).length;
+        groupStatus = isMon ? "⭐ 독점" : `보유 ${owned}/${total}`;
+      }
+
+      const cardDiv = document.createElement("div");
+      cardDiv.className = "monopoly-asset-card";
+      
+      const monClass = isMon ? " monopoly-owned" : "";
+      
+      cardDiv.innerHTML = `
+        <div class="asset-card-color-bar" style="background-color: ${tile.color || '#ccc'}"></div>
+        <div class="asset-card-content">
+          <div class="asset-card-name">${escapeHtml(tile.name)}</div>
+          <div class="asset-card-rent">통행료: ₩${getRent(tile, targetPlayer.position)}</div>
+          <div class="asset-card-group-status${monClass}">${groupStatus}</div>
+        </div>
+      `;
+      grid.appendChild(cardDiv);
+    });
+  }
+
+  function showHoverCard(tileId) {
+    const tile = tileAt(tileId);
+    if (!tile || tile.type === "corner" || tile.type === "event") return;
+
+    const hoverCard = document.querySelector("#monopolyBoardHoverCard");
+    if (!hoverCard) return;
+
+    const header = hoverCard.querySelector("#hoverCardHeader");
+    const priceEl = hoverCard.querySelector("#hoverCardPrice");
+    const rent0El = hoverCard.querySelector("#hoverCardRent0");
+    const rentMonEl = hoverCard.querySelector("#hoverCardRentMon");
+    const ownerEl = hoverCard.querySelector("#hoverCardOwner");
+    const ownerRow = hoverCard.querySelector("#hoverCardOwnerRow");
+
+    if (header) {
+      header.textContent = tile.name;
+      header.style.backgroundColor = tile.color || "#808080";
+    }
+    if (priceEl) priceEl.textContent = `₩${tile.price || 0}`;
+    if (rent0El) rent0El.textContent = `₩${tile.rent ? tile.rent[0] : 0}`;
+    
+    let rentMon = tile.rent ? (tile.rent[1] || tile.rent[0] * 2) : 0;
+    if (rentMonEl) rentMonEl.textContent = `₩${rentMon}`;
+    
+    const owner = getOwner(tileId);
+    if (owner) {
+      ownerEl.textContent = owner.human ? "나" : owner.name;
+      ownerEl.style.color = owner.tokenColor;
+      ownerRow.style.display = "flex";
+    } else {
+      ownerEl.textContent = "없음";
+      ownerEl.style.color = "var(--text-muted)";
+      ownerRow.style.display = "flex";
+    }
+
+    hoverCard.classList.remove("hidden");
+  }
+
+  function hideHoverCard() {
+    const hoverCard = document.querySelector("#monopolyBoardHoverCard");
+    hoverCard?.classList.add("hidden");
+  }
+
+  function renderAllPropertiesList() {
+    const listContainer = document.querySelector("#monopolyAllPropertiesList");
+    if (!listContainer) return;
+
+    listContainer.innerHTML = "";
+
+    const groups = {};
+    TILES.forEach((tile, index) => {
+      if (tile.type !== "property") return;
+      const color = tile.color || "other";
+      if (!groups[color]) groups[color] = [];
+      groups[color].push({ tile, index });
+    });
+
+    Object.keys(groups).forEach(color => {
+      const groupTiles = groups[color];
+      const groupDiv = document.createElement("div");
+      groupDiv.className = "property-color-group";
+      groupDiv.style.borderLeft = `4px solid ${color === 'other' ? '#808080' : color}`;
+      
+      let html = "";
+      groupTiles.forEach(({ tile, index }) => {
+        const owner = getOwner(index);
+        let badge = "";
+        let ownedClass = "unowned";
+        
+        if (owner) {
+          badge = `<span class="property-badge" style="background-color: ${owner.tokenColor}">${owner.human ? '나' : owner.name[0]}</span>`;
+          ownedClass = "owned";
+        }
+        
+        html += `
+          <div class="property-list-item ${ownedClass}" data-tile-index="${index}">
+            <span class="property-item-name">${escapeHtml(tile.name)}</span>
+            <div class="property-item-right">
+              <span class="property-item-rent">₩${tile.rent ? tile.rent[0] : 0}</span>
+              ${badge}
+            </div>
+          </div>
+        `;
+      });
+      groupDiv.innerHTML = html;
+      listContainer.appendChild(groupDiv);
+    });
+
+    listContainer.querySelectorAll(".property-list-item").forEach(item => {
+      const idx = parseInt(item.getAttribute("data-tile-index"), 10);
+      item.addEventListener("mouseenter", () => showHoverCard(idx));
+      item.addEventListener("mouseleave", hideHoverCard);
+    });
+  }
+
   function renderControls() {
     const p = activePlayer();
     const humanTurn = p?.human && !p.bankrupt && state.phase !== "finished";
@@ -438,6 +621,8 @@
     renderControls();
     renderLog();
     renderDice();
+    renderMyAssets();
+    renderAllPropertiesList();
   }
 
   /* ── Dice Animation (bouncy physics-style) ── */
@@ -747,11 +932,14 @@
 
   async function handleEventTile(player, tile) {
     let card;
+    let isChance = false;
     if (tile.event === "chance") {
       card = drawChance();
+      isChance = true;
       addLog(`🔑 황금열쇠 카드: ${card.text}`);
     } else if (tile.event === "fund") {
       card = drawFund();
+      isChance = false;
       addLog(`🎴 사회복지기금 카드: ${card.text}`);
     } else if (tile.event === "tax") {
       const tax = tile.amount || 100;
@@ -769,8 +957,75 @@
       return;
     }
 
-    await wait(800);
-    await executeCard(player, card);
+    await showCardPopup(player, card, isChance);
+  }
+
+  function showCardPopup(player, card, isChance) {
+    return new Promise(resolve => {
+      const dialog = document.querySelector("#monopolyCardDialog");
+      const popup = dialog?.querySelector(".monopoly-card-popup");
+      const header = document.querySelector("#monopolyCardHeader");
+      const icon = document.querySelector("#monopolyCardIcon");
+      const text = document.querySelector("#monopolyCardText");
+      const btn = document.querySelector("#monopolyCardActionButton");
+
+      if (!dialog || !popup || !header || !icon || !text || !btn) {
+        executeCard(player, card).then(resolve);
+        return;
+      }
+
+      if (isChance) {
+        popup.className = "monopoly-card-popup chance-card";
+        header.textContent = "황금열쇠";
+        icon.textContent = "🔑";
+      } else {
+        popup.className = "monopoly-card-popup fund-card";
+        header.textContent = "사회복지기금";
+        icon.textContent = "🎴";
+      }
+
+      text.textContent = card.text;
+
+      let buttonText = "확인";
+      const isPayAction = card.action === "pay" || card.action === "payAll" || card.action === "buildingCost";
+      
+      if (isPayAction) {
+        let payAmount = 0;
+        if (card.action === "pay") {
+          payAmount = card.amount;
+        } else if (card.action === "payAll") {
+          payAmount = card.amount * state.players.filter(p => !p.bankrupt).length;
+        } else if (card.action === "buildingCost") {
+          const houses = player.properties.reduce((sum, id) => sum + (player.buildings?.[id] || 0), 0);
+          payAmount = houses * card.house;
+        }
+        buttonText = payAmount > 0 ? `지불하기 (₩${payAmount})` : "지불하기";
+      } else if (card.action === "collect" || card.action === "collectAll") {
+        buttonText = "수령하기";
+      }
+
+      btn.textContent = buttonText;
+
+      const handleConfirm = () => {
+        btn.removeEventListener("click", handleConfirm);
+        dialog.close();
+        executeCard(player, card).then(() => {
+          renderAll();
+          resolve();
+        });
+      };
+
+      btn.addEventListener("click", handleConfirm);
+      dialog.showModal();
+
+      if (!player.human) {
+        setTimeout(() => {
+          if (dialog.open) {
+            handleConfirm();
+          }
+        }, 1800);
+      }
+    });
   }
 
   async function executeCard(player, card) {
@@ -899,6 +1154,9 @@
         await movePlayer(player, dice[0] + dice[1]);
         await wait(600);
         await handleTileLanding(player);
+        if (activePlayer() === player && state.phase === "buyDecision") {
+          endTurn();
+        }
         return;
       } else if (player.jailTurns <= 0) {
         player.inJail = false;
@@ -934,6 +1192,9 @@
     renderAll();
     await wait(600);
     await handleTileLanding(player);
+    if (activePlayer() === player && state.phase === "buyDecision") {
+      endTurn();
+    }
   }
 
   /* ── Turn Flow ── */
@@ -976,6 +1237,7 @@
       addLog(`🔄 ${playerDisplayName(p)} 더블로 한 번 더!`);
       state.phase = "awaitRoll";
       renderAll();
+      showTurnToast(p, true);
       if (!p.human) scheduleAiTurn();
       return;
     }
@@ -992,6 +1254,7 @@
       endTurn();
       return;
     }
+    showTurnToast(np);
     if (!np.human) scheduleAiTurn();
   }
 
@@ -1171,6 +1434,7 @@
     });
 
     state.currentPlayer = 0;
+    state.selectedAssetPlayerIndex = 0;
     state.phase = "awaitRoll";
     state.dice = [];
     state.diceRolling = false;
@@ -1187,6 +1451,7 @@
     els.setupPanel?.classList.add("hidden");
     els.gamePanel?.classList.remove("hidden");
     renderAll();
+    showTurnToast(state.players[0]);
   }
 
   function resetToSetup() {
@@ -1196,6 +1461,84 @@
     els.gamePanel?.classList.add("hidden");
     els.setupPanel?.classList.remove("hidden");
     state.phase = "idle";
+  }
+
+  /* ── Center Toast (Turn Popups) ── */
+  function showTurnToast(player, isDouble = false) {
+    if (typeof window.showCenterToast !== "function") return;
+    const displayName = player.human
+      ? "당신의 턴입니다"
+      : `${player.name}(${TOKEN_NAMES[player.index]})의 턴`;
+
+    const message = isDouble
+      ? `<div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px; color: #ffeb3b; font-weight: bold; letter-spacing: 1px;">(DOUBLE!)</div>${displayName}`
+      : displayName;
+
+    window.showCenterToast(message, 1200, { mode: "monopoly" });
+  }
+
+  /* ── Zoom Controls ── */
+  const MONOPOLY_ZOOM_STORAGE_KEY = "fantasyR.monopolyZoomPercent";
+  const MONOPOLY_ZOOM_MIN_PERCENT = 70;
+  const MONOPOLY_ZOOM_MAX_PERCENT = 200;
+  const MONOPOLY_ZOOM_STEP_PERCENT = 10;
+  let monopolyZoomPercent = 100;
+
+  function loadMonopolyZoomPercent() {
+    try {
+      const saved = window.localStorage.getItem(MONOPOLY_ZOOM_STORAGE_KEY);
+      const numeric = parseInt(saved, 10);
+      return (!isNaN(numeric) && numeric >= MONOPOLY_ZOOM_MIN_PERCENT && numeric <= MONOPOLY_ZOOM_MAX_PERCENT)
+        ? numeric
+        : 100;
+    } catch {
+      return 100;
+    }
+  }
+
+  function saveMonopolyZoomPercent(percent) {
+    try {
+      window.localStorage.setItem(MONOPOLY_ZOOM_STORAGE_KEY, String(percent));
+    } catch {}
+  }
+
+  function renderMonopolyZoomControls() {
+    if (els.gamePanel) {
+      els.gamePanel.style.setProperty("--monopoly-ui-zoom", String(monopolyZoomPercent / 100));
+    }
+    if (els.zoomLabel) {
+      els.zoomLabel.textContent = `${monopolyZoomPercent}%`;
+    }
+    if (els.zoomOutButton) {
+      els.zoomOutButton.disabled = monopolyZoomPercent <= MONOPOLY_ZOOM_MIN_PERCENT;
+    }
+    if (els.zoomInButton) {
+      els.zoomInButton.disabled = monopolyZoomPercent >= MONOPOLY_ZOOM_MAX_PERCENT;
+    }
+  }
+
+  function setMonopolyZoomPercent(percent, persist = true) {
+    monopolyZoomPercent = Math.max(MONOPOLY_ZOOM_MIN_PERCENT, Math.min(MONOPOLY_ZOOM_MAX_PERCENT, Math.round(percent / MONOPOLY_ZOOM_STEP_PERCENT) * MONOPOLY_ZOOM_STEP_PERCENT));
+    renderMonopolyZoomControls();
+    if (persist) saveMonopolyZoomPercent(monopolyZoomPercent);
+  }
+
+  function adjustMonopolyZoom(delta) {
+    setMonopolyZoomPercent(monopolyZoomPercent + delta);
+  }
+
+  function initializeMonopolyZoomControls() {
+    els.zoomOutButton = $("#monopolyZoomOutButton");
+    els.zoomInButton = $("#monopolyZoomInButton");
+    els.zoomLabel = $("#monopolyZoomLabel");
+    
+    if (els.zoomOutButton) {
+      els.zoomOutButton.addEventListener("click", () => adjustMonopolyZoom(-MONOPOLY_ZOOM_STEP_PERCENT));
+    }
+    if (els.zoomInButton) {
+      els.zoomInButton.addEventListener("click", () => adjustMonopolyZoom(MONOPOLY_ZOOM_STEP_PERCENT));
+    }
+    setMonopolyZoomPercent(loadMonopolyZoomPercent(), false);
   }
 
   function leaveGame() {
@@ -1236,6 +1579,9 @@
     els.manageDialog?.addEventListener("click", e => {
       if (e.target === els.manageDialog) els.manageDialog.close();
     });
+
+    // Initialize zoom
+    initializeMonopolyZoomControls();
 
     // Hide loading
     document.body.classList.remove("app-loading");
