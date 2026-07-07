@@ -363,6 +363,59 @@
     els.diceDisplay.innerHTML = html1 + html2;
   }
 
+  function renderMyAssets() {
+    const area = document.querySelector("#monopolyMyAssetsArea");
+    const grid = document.querySelector("#monopolyMyAssetsGrid");
+    if (!area || !grid) return;
+
+    const human = state.players.find(p => p.human);
+    if (!human || human.bankrupt || state.phase === "idle" || state.phase === "finished") {
+      area.classList.add("hidden");
+      return;
+    }
+
+    area.classList.remove("hidden");
+    grid.innerHTML = "";
+
+    if (human.properties.length === 0) {
+      grid.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); opacity: 0.7;">아직 보유한 부동산이 없습니다. 땅을 구매해 보세요!</span>`;
+      return;
+    }
+
+    human.properties.forEach(tileId => {
+      const tile = tileAt(tileId);
+      const isMon = tile.color !== "#808080" && tile.color !== "#4682B4" && isMonopoly(human, tile.color);
+      
+      let groupStatus = "";
+      if (tile.color === "#4682B4") {
+        const owned = RAILROAD_IDS.filter(id => human.properties.includes(id)).length;
+        groupStatus = `철도 ${owned}/4`;
+      } else if (tile.color === "#808080") {
+        const owned = UTILITY_IDS.filter(id => human.properties.includes(id)).length;
+        groupStatus = `관공서 ${owned}/2`;
+      } else {
+        const owned = getColorGroupOwned(human, tile.color).length;
+        const total = (COLOR_GROUPS[tile.color] || []).length;
+        groupStatus = isMon ? "⭐ 독점" : `보유 ${owned}/${total}`;
+      }
+
+      const cardDiv = document.createElement("div");
+      cardDiv.className = "monopoly-asset-card";
+      
+      const monClass = isMon ? " monopoly-owned" : "";
+      
+      cardDiv.innerHTML = `
+        <div class="asset-card-color-bar" style="background-color: ${tile.color || '#ccc'}"></div>
+        <div class="asset-card-content">
+          <div class="asset-card-name">${escapeHtml(tile.name)}</div>
+          <div class="asset-card-rent">통행료: ₩${getRent(tile, human.position)}</div>
+          <div class="asset-card-group-status${monClass}">${groupStatus}</div>
+        </div>
+      `;
+      grid.appendChild(cardDiv);
+    });
+  }
+
   function renderControls() {
     const p = activePlayer();
     const humanTurn = p?.human && !p.bankrupt && state.phase !== "finished";
@@ -438,6 +491,7 @@
     renderControls();
     renderLog();
     renderDice();
+    renderMyAssets();
   }
 
   /* ── Dice Animation (bouncy physics-style) ── */
@@ -899,6 +953,9 @@
         await movePlayer(player, dice[0] + dice[1]);
         await wait(600);
         await handleTileLanding(player);
+        if (activePlayer() === player && state.phase === "buyDecision") {
+          endTurn();
+        }
         return;
       } else if (player.jailTurns <= 0) {
         player.inJail = false;
@@ -934,6 +991,9 @@
     renderAll();
     await wait(600);
     await handleTileLanding(player);
+    if (activePlayer() === player && state.phase === "buyDecision") {
+      endTurn();
+    }
   }
 
   /* ── Turn Flow ── */
