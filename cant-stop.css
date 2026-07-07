@@ -464,14 +464,15 @@ body:not(.cant-active) .cant-stop-panel {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 58px;
-  border: 2px solid rgba(13, 35, 58, 0.4);
-  border-radius: 8px;
+  height: 72px;
+  border: 2.5px solid #0d253c;
+  border-radius: 12px;
   color: #0d253c;
-  background: #f8fbff;
-  font-size: 28px;
-  font-weight: 900;
-  box-shadow: inset 0 -4px 0 rgba(18, 48, 78, 0.14);
+  background: radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.95), transparent 34%), linear-gradient(145deg, #ffffff, #dfe9f5);
+  font-size: 38px !important;
+  font-weight: 950 !important;
+  font-family: inherit !important;
+  box-shadow: inset 0 -4px 10px rgba(13, 35, 58, 0.18), 0 6px 12px rgba(0, 0, 0, 0.22);
 }
 
 button.cant-die {
