@@ -263,9 +263,11 @@
         html += `<span class="tile-price">₩${tile.price}</span>`;
       }
       div.innerHTML = html;
-      div.title = tile.type === "property"
-        ? `${tile.name} — 가격: ₩${tile.price}, 기본 임대료: ₩${tile.rent[0]}`
-        : tile.name;
+      if (tile.type !== "property") {
+        div.title = tile.name;
+      }
+      div.addEventListener("mouseenter", () => showHoverCard(i));
+      div.addEventListener("mouseleave", hideHoverCard);
       els.board.appendChild(div);
     });
   }
@@ -449,6 +451,101 @@
     });
   }
 
+  function showHoverCard(tileId) {
+    const tile = tileAt(tileId);
+    if (!tile || tile.type === "corner" || tile.type === "event") return;
+
+    const hoverCard = document.querySelector("#monopolyBoardHoverCard");
+    if (!hoverCard) return;
+
+    const header = hoverCard.querySelector("#hoverCardHeader");
+    const priceEl = hoverCard.querySelector("#hoverCardPrice");
+    const rent0El = hoverCard.querySelector("#hoverCardRent0");
+    const rentMonEl = hoverCard.querySelector("#hoverCardRentMon");
+    const ownerEl = hoverCard.querySelector("#hoverCardOwner");
+    const ownerRow = hoverCard.querySelector("#hoverCardOwnerRow");
+
+    if (header) {
+      header.textContent = tile.name;
+      header.style.backgroundColor = tile.color || "#808080";
+    }
+    if (priceEl) priceEl.textContent = `₩${tile.price || 0}`;
+    if (rent0El) rent0El.textContent = `₩${tile.rent ? tile.rent[0] : 0}`;
+    
+    let rentMon = tile.rent ? (tile.rent[1] || tile.rent[0] * 2) : 0;
+    if (rentMonEl) rentMonEl.textContent = `₩${rentMon}`;
+    
+    const owner = getOwner(tileId);
+    if (owner) {
+      ownerEl.textContent = owner.human ? "나" : owner.name;
+      ownerEl.style.color = owner.tokenColor;
+      ownerRow.style.display = "flex";
+    } else {
+      ownerEl.textContent = "없음";
+      ownerEl.style.color = "var(--text-muted)";
+      ownerRow.style.display = "flex";
+    }
+
+    hoverCard.classList.remove("hidden");
+  }
+
+  function hideHoverCard() {
+    const hoverCard = document.querySelector("#monopolyBoardHoverCard");
+    hoverCard?.classList.add("hidden");
+  }
+
+  function renderAllPropertiesList() {
+    const listContainer = document.querySelector("#monopolyAllPropertiesList");
+    if (!listContainer) return;
+
+    listContainer.innerHTML = "";
+
+    const groups = {};
+    TILES.forEach((tile, index) => {
+      if (tile.type !== "property") return;
+      const color = tile.color || "other";
+      if (!groups[color]) groups[color] = [];
+      groups[color].push({ tile, index });
+    });
+
+    Object.keys(groups).forEach(color => {
+      const groupTiles = groups[color];
+      const groupDiv = document.createElement("div");
+      groupDiv.className = "property-color-group";
+      groupDiv.style.borderLeft = `4px solid ${color === 'other' ? '#808080' : color}`;
+      
+      let html = "";
+      groupTiles.forEach(({ tile, index }) => {
+        const owner = getOwner(index);
+        let badge = "";
+        let ownedClass = "unowned";
+        
+        if (owner) {
+          badge = `<span class="property-badge" style="background-color: ${owner.tokenColor}">${owner.human ? '나' : owner.name[0]}</span>`;
+          ownedClass = "owned";
+        }
+        
+        html += `
+          <div class="property-list-item ${ownedClass}" data-tile-index="${index}">
+            <span class="property-item-name">${escapeHtml(tile.name)}</span>
+            <div class="property-item-right">
+              <span class="property-item-rent">₩${tile.rent ? tile.rent[0] : 0}</span>
+              ${badge}
+            </div>
+          </div>
+        `;
+      });
+      groupDiv.innerHTML = html;
+      listContainer.appendChild(groupDiv);
+    });
+
+    listContainer.querySelectorAll(".property-list-item").forEach(item => {
+      const idx = parseInt(item.getAttribute("data-tile-index"), 10);
+      item.addEventListener("mouseenter", () => showHoverCard(idx));
+      item.addEventListener("mouseleave", hideHoverCard);
+    });
+  }
+
   function renderControls() {
     const p = activePlayer();
     const humanTurn = p?.human && !p.bankrupt && state.phase !== "finished";
@@ -525,6 +622,7 @@
     renderLog();
     renderDice();
     renderMyAssets();
+    renderAllPropertiesList();
   }
 
   /* ── Dice Animation (bouncy physics-style) ── */
