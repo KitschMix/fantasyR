@@ -98,6 +98,7 @@ body.dominion-active.dominion-playing .dominion-game-panel {
 
 /* --- Game --- */
 .dominion-game-panel {
+  --dominion-ui-zoom: 1;
   min-height: calc(100vh - 28px);
   padding: 14px;
 }
@@ -107,6 +108,14 @@ body.dominion-active.dominion-playing .dominion-game-panel {
   gap: 14px;
   width: min(1880px, 100%);
   margin: 0 auto;
+  zoom: var(--dominion-ui-zoom);
+  transform-origin: top center;
+}
+
+@supports not (zoom: 1) {
+  .dominion-shell {
+    transform: scale(var(--dominion-ui-zoom));
+  }
 }
 
 .dominion-game-top {
@@ -519,6 +528,35 @@ body.dominion-active.dominion-playing .dominion-game-panel {
 .dominion-game-actions .secondary-button,
 .dominion-game-actions .icon-button {
   min-height: 38px;
+}
+
+.dominion-zoom-controls {
+  display: grid;
+  grid-template-columns: 42px minmax(58px, auto) 42px;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 4px;
+  border: 1px solid rgba(246,232,202,0.16);
+  border-radius: 8px;
+  background: rgba(31,28,23,0.76);
+}
+
+.dominion-zoom-button {
+  min-width: 34px;
+  width: 34px;
+  min-height: 34px;
+  height: 34px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.dominion-zoom-label {
+  color: #fff6d8;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .dominion-layout {

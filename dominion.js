@@ -37,6 +37,10 @@
   const KINGDOM_SUPPLY_COUNT = 10;
   const HAND_SIZE = 5;
   const AI_DELAY = 600;
+  const DOMINION_ZOOM_STORAGE_KEY = "fantasyR.dominionZoomPercent";
+  const DOMINION_ZOOM_MIN_PERCENT = 70;
+  const DOMINION_ZOOM_MAX_PERCENT = 200;
+  const DOMINION_ZOOM_STEP_PERCENT = 10;
 
   /* ── DOM ── */
   const $ = (sel) => document.querySelector(sel);
@@ -60,6 +64,9 @@
     playAllBtn:    $("#dominionPlayAllTreasures"),
     endBuyBtn:     $("#dominionEndBuyButton"),
     endTurnBtn:    $("#dominionEndTurnButton"),
+    zoomOutButton: $("#dominionZoomOutButton"),
+    zoomInButton:  $("#dominionZoomInButton"),
+    zoomLabel:     $("#dominionZoomLabel"),
     log:           $("#dominionLog")
   };
 
@@ -74,6 +81,8 @@
     log: [],
     aiTimer: 0
   };
+
+  let dominionZoomPercent = 100;
 
   /* ── Profiles ── */
   const SHARED = window.FANTASY_SHARED_PROFILES || {};
@@ -90,6 +99,68 @@
   function esc(v) { return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function addLog(m) { state.log.unshift(m); state.log = state.log.slice(0, 50); }
   function activePlayer() { return state.players[state.currentPlayer]; }
+  function clampNumber(value, min, max) { return Math.max(min, Math.min(max, value)); }
+
+  function currentViewportSize() {
+    const viewport = window.visualViewport || {};
+    const root = document.documentElement || {};
+    return {
+      width: Math.max(320, Number(viewport.width || window.innerWidth || root.clientWidth || window.screen?.availWidth || 1366)),
+      height: Math.max(320, Number(viewport.height || window.innerHeight || root.clientHeight || window.screen?.availHeight || 768))
+    };
+  }
+
+  function suggestedInitialDominionZoomPercent() {
+    const { width, height } = currentViewportSize();
+    const isPhonePortrait = width <= 700 && height > width;
+    if (isPhonePortrait) return 80;
+    return 100;
+  }
+
+  function loadDominionZoomPercent() {
+    try {
+      const saved = window.localStorage.getItem(DOMINION_ZOOM_STORAGE_KEY);
+      const numeric = Number(saved);
+      return saved !== null && String(saved).trim() !== "" && Number.isFinite(numeric)
+        ? clampNumber(numeric, DOMINION_ZOOM_MIN_PERCENT, DOMINION_ZOOM_MAX_PERCENT)
+        : suggestedInitialDominionZoomPercent();
+    } catch {
+      return suggestedInitialDominionZoomPercent();
+    }
+  }
+
+  function saveDominionZoomPercent(percent) {
+    try {
+      window.localStorage.setItem(DOMINION_ZOOM_STORAGE_KEY, String(percent));
+    } catch {
+      // Storage can be blocked; the current page zoom still works.
+    }
+  }
+
+  function renderDominionZoomControls() {
+    els.gamePanel?.style.setProperty("--dominion-ui-zoom", String(dominionZoomPercent / 100));
+    if (els.zoomLabel) els.zoomLabel.textContent = `${dominionZoomPercent}%`;
+    if (els.zoomOutButton) els.zoomOutButton.disabled = dominionZoomPercent <= DOMINION_ZOOM_MIN_PERCENT;
+    if (els.zoomInButton) els.zoomInButton.disabled = dominionZoomPercent >= DOMINION_ZOOM_MAX_PERCENT;
+  }
+
+  function setDominionZoomPercent(percent, persist = true) {
+    dominionZoomPercent = clampNumber(
+      Math.round(percent / DOMINION_ZOOM_STEP_PERCENT) * DOMINION_ZOOM_STEP_PERCENT,
+      DOMINION_ZOOM_MIN_PERCENT,
+      DOMINION_ZOOM_MAX_PERCENT
+    );
+    renderDominionZoomControls();
+    if (persist) saveDominionZoomPercent(dominionZoomPercent);
+  }
+
+  function adjustDominionZoom(delta) {
+    setDominionZoomPercent(dominionZoomPercent + delta);
+  }
+
+  function initializeDominionZoomControls() {
+    setDominionZoomPercent(loadDominionZoomPercent(), false);
+  }
 
   /* ── Card Helpers ── */
   function makeCard(template) {
@@ -1007,6 +1078,9 @@
       if (state.phase === "action") { state.phase = "buy"; renderAll(); return; }
       if (state.phase === "buy") endBuyPhase();
     });
+    els.zoomOutButton?.addEventListener("click", () => adjustDominionZoom(-DOMINION_ZOOM_STEP_PERCENT));
+    els.zoomInButton?.addEventListener("click", () => adjustDominionZoom(DOMINION_ZOOM_STEP_PERCENT));
+    initializeDominionZoomControls();
 
     // Tutorial button - starts interactive tutorial
     const tutorialBtn = document.querySelector("#dominionTutorialButton");
