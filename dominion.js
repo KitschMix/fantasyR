@@ -194,7 +194,7 @@
     return `<div class="dominion-card ${card.type}${disabled ? " disabled" : ""}${extraClass ? " " + extraClass : ""}" data-card-id="${esc(card.id)}" title="${esc(card.desc || card.name)}">
       <span class="dominion-card-cost">${cardCost(card)}</span>
       <span class="dominion-card-name">${card.emoji || ""} ${esc(card.name)}</span>
-      ${card.desc ? `<span style="font-size:8px;color:rgba(0,0,0,0.5)">${esc(card.desc)}</span>` : ""}
+      ${card.desc ? `<span class="dominion-card-desc">${esc(card.desc)}</span>` : ""}
       <span class="dominion-card-type">${card.type}</span>
     </div>`;
   }
@@ -212,7 +212,7 @@
       const empty = count <= 0;
       const affordable = player && !empty && player.coins >= (card ? cardCost(card) : 999) && player.buys > 0;
       const isVP = card && isVictory(card);
-      return `<div class="dominion-supply-pile${empty ? " empty" : ""}${affordable ? " highlight" : ""}" data-pile="${esc(name)}">
+      return `<div class="dominion-supply-pile${card ? " " + card.type : ""}${empty ? " empty" : ""}${affordable ? " highlight" : ""}" data-pile="${esc(name)}">
         <span class="dominion-pile-count">${count}</span>
         <span class="dominion-pile-cost">${card ? cardCost(card) : "-"}</span>
         <span class="dominion-pile-name">${card ? (card.emoji || "") + " " : ""}${esc(name)}</span>

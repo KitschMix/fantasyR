@@ -470,3 +470,531 @@ body.dominion-active.dominion-playing .dominion-game-panel {
     grid-template-columns: 1fr;
   }
 }
+
+/* --- FantasyR Dominion UI polish --- */
+body.dominion-active {
+  background:
+    linear-gradient(180deg, rgba(23,21,18,0.96), rgba(17,15,13,0.98)),
+    var(--bg);
+}
+
+body.dominion-active.dominion-playing .dominion-game-panel {
+  display: block;
+}
+
+.dominion-game-panel {
+  padding: 12px;
+}
+
+.dominion-shell {
+  gap: 12px;
+}
+
+.dominion-game-top {
+  min-height: 58px;
+  padding: 4px 0;
+}
+
+.dominion-setup-logo {
+  display: block;
+  width: min(300px, 58vw);
+  max-height: 88px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.38));
+}
+
+.dominion-game-logo {
+  display: block;
+  width: min(300px, 34vw);
+  max-height: 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.38));
+}
+
+.dominion-game-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dominion-game-actions .secondary-button,
+.dominion-game-actions .icon-button {
+  min-height: 38px;
+}
+
+.dominion-layout {
+  grid-template-columns: 250px minmax(640px, 1fr) 290px;
+  gap: 12px;
+}
+
+.dominion-side,
+.dominion-center,
+.dominion-actions-panel {
+  min-width: 0;
+}
+
+.dominion-center {
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(246,232,202,0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(36,32,26,0.94), rgba(28,25,21,0.96)),
+    var(--surface);
+  box-shadow: 0 18px 46px rgba(0,0,0,0.26);
+}
+
+.dominion-players {
+  gap: 8px;
+}
+
+.dominion-player-card {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(31,28,23,0.92);
+  border: 1px solid rgba(246,232,202,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.dominion-player-card.active {
+  border-color: rgba(242,207,120,0.72);
+  background: rgba(42,36,27,0.95);
+  box-shadow: 0 0 0 1px rgba(242,207,120,0.18), 0 12px 26px rgba(0,0,0,0.22);
+}
+
+.dominion-player-header {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.dominion-player-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid rgba(246,232,202,0.18);
+}
+
+.dominion-player-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.dominion-player-score {
+  min-width: 42px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(217,166,60,0.14);
+  border: 1px solid rgba(217,166,60,0.28);
+  font-size: 13px;
+  line-height: 1;
+  text-align: center;
+}
+
+.dominion-player-stats {
+  color: rgba(247,236,217,0.66);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.dominion-supply,
+.dominion-played-cards,
+.dominion-hand-area {
+  border-radius: 8px;
+  background: rgba(13,14,15,0.22);
+  border: 1px solid rgba(246,232,202,0.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.dominion-supply {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+  justify-content: stretch;
+  padding: 10px;
+}
+
+.dominion-supply::before {
+  content: "공급처";
+  grid-column: 1 / -1;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.dominion-supply-pile {
+  display: grid;
+  grid-template-rows: auto minmax(30px, 1fr) auto;
+  align-items: center;
+  width: auto;
+  min-height: 92px;
+  padding: 9px 8px 8px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(48,42,33,0.92), rgba(31,28,23,0.96));
+  border: 1px solid rgba(246,232,202,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 14px rgba(0,0,0,0.18);
+}
+
+.dominion-supply-pile::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 8px 0 0 8px;
+  background: rgba(246,232,202,0.12);
+}
+
+.dominion-supply-pile.action::before { background: #d7cab0; }
+.dominion-supply-pile.treasure::before { background: #d9a63c; }
+.dominion-supply-pile.victory::before { background: #6bc6a2; }
+.dominion-supply-pile.curse::before { background: #9a66a8; }
+
+.dominion-supply-pile:hover:not(.empty) {
+  transform: translateY(-2px);
+  border-color: rgba(242,207,120,0.54);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 22px rgba(0,0,0,0.34);
+}
+
+.dominion-supply-pile.highlight {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 2px rgba(242,207,120,0.28), 0 10px 24px rgba(0,0,0,0.3);
+}
+
+.dominion-supply-pile.empty {
+  opacity: 0.34;
+  filter: grayscale(0.7) brightness(0.8);
+}
+
+.dominion-pile-count,
+.dominion-pile-cost {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(246,232,202,0.14);
+  background: rgba(17,15,13,0.88);
+  line-height: 1;
+}
+
+.dominion-pile-count {
+  top: 5px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.dominion-pile-cost {
+  position: absolute;
+  top: 5px;
+  left: 9px;
+  width: 24px;
+  height: 24px;
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.dominion-pile-name {
+  align-self: end;
+  padding: 18px 4px 0;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.dominion-pile-type {
+  justify-self: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(246,232,202,0.07);
+  color: rgba(247,236,217,0.64);
+  font-size: 9px;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.dominion-pile-vp {
+  color: #9ee0be;
+}
+
+.dominion-play-area {
+  grid-template-columns: minmax(210px, 0.78fr) minmax(360px, 1.22fr);
+  gap: 10px;
+}
+
+.dominion-played-cards {
+  align-content: flex-start;
+  justify-content: flex-start;
+  min-height: 166px;
+  padding: 10px;
+}
+
+.dominion-played-cards::before {
+  content: "사용한 카드";
+  flex-basis: 100%;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.dominion-hand-area {
+  padding: 10px;
+}
+
+.dominion-hand-label {
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.dominion-hand,
+.dominion-played-cards {
+  gap: 8px;
+}
+
+.dominion-card {
+  width: 92px;
+  min-height: 124px;
+  grid-template-rows: 22px minmax(32px, 1fr) minmax(30px, auto) 18px;
+  align-content: stretch;
+  padding: 7px;
+  border-radius: 8px;
+  color: #17130f;
+  font-size: 10px;
+  line-height: 1.18;
+  border: 1px solid rgba(0,0,0,0.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.24), 0 6px 14px rgba(0,0,0,0.22);
+}
+
+.dominion-card:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.26), 0 10px 22px rgba(0,0,0,0.34);
+}
+
+.dominion-card.disabled {
+  opacity: 0.58;
+  filter: grayscale(0.3);
+}
+
+.dominion-card-name {
+  align-self: center;
+  font-size: 12px;
+  line-height: 1.08;
+}
+
+.dominion-card-desc {
+  display: -webkit-box;
+  overflow: hidden;
+  color: rgba(0,0,0,0.62);
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.18;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.dominion-card-cost {
+  top: 5px;
+  left: 6px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.52);
+  border: 1px solid rgba(0,0,0,0.16);
+  color: rgba(0,0,0,0.72);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.dominion-card-type {
+  position: static;
+  align-self: end;
+  justify-self: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.14);
+  color: rgba(0,0,0,0.6);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.dominion-card.treasure {
+  background: linear-gradient(180deg, #f0d681, #c99635);
+}
+
+.dominion-card.victory {
+  background: linear-gradient(180deg, #83c58d, #3f8f56);
+  color: #fff;
+}
+
+.dominion-card.victory .dominion-card-desc,
+.dominion-card.victory .dominion-card-type {
+  color: rgba(255,255,255,0.78);
+}
+
+.dominion-card.action {
+  background: linear-gradient(180deg, #e7ddc5, #bcae91);
+}
+
+.dominion-card.curse {
+  background: linear-gradient(180deg, #9564a7, #5a2f6f);
+  color: #fff;
+}
+
+.dominion-card.curse .dominion-card-desc,
+.dominion-card.curse .dominion-card-type {
+  color: rgba(255,255,255,0.78);
+}
+
+.dominion-card.victory .dominion-card-cost,
+.dominion-card.curse .dominion-card-cost {
+  color: rgba(0,0,0,0.72);
+}
+
+.dominion-actions-panel {
+  gap: 10px;
+}
+
+.dominion-action-card,
+.dominion-log {
+  border-radius: 8px;
+  background: rgba(31,28,23,0.92);
+  border: 1px solid rgba(246,232,202,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.dominion-action-card {
+  padding: 10px;
+}
+
+.dominion-panel-title {
+  margin-bottom: 7px;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+#dominionPhaseLabel {
+  display: block;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.dominion-stats {
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.dominion-stat {
+  min-height: 26px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(246,232,202,0.06);
+  border: 1px solid rgba(246,232,202,0.09);
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.dominion-phase-buttons {
+  gap: 7px;
+}
+
+.dominion-log {
+  max-height: 300px;
+  padding: 8px;
+  gap: 4px;
+}
+
+.dominion-log li {
+  padding: 6px 7px;
+  border-radius: 6px;
+  background: rgba(13,14,15,0.22);
+}
+
+.dominion-log li:first-child {
+  background: rgba(217,166,60,0.12);
+}
+
+@media (max-width: 1180px) {
+  .dominion-layout {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+
+  .dominion-actions-panel {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(240px, 0.9fr) minmax(220px, 0.7fr) minmax(360px, 1.4fr);
+    align-items: start;
+  }
+
+  .dominion-log {
+    max-height: 210px;
+  }
+}
+
+@media (max-width: 980px) {
+  .dominion-game-panel {
+    padding: 10px;
+  }
+
+  .dominion-game-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dominion-game-logo {
+    width: min(280px, 76vw);
+  }
+
+  .dominion-layout,
+  .dominion-play-area,
+  .dominion-actions-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .dominion-players {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dominion-supply {
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .dominion-players {
+    grid-template-columns: 1fr;
+  }
+
+  .dominion-center,
+  .dominion-supply,
+  .dominion-played-cards,
+  .dominion-hand-area {
+    padding: 8px;
+  }
+
+  .dominion-supply {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dominion-card {
+    width: 84px;
+    min-height: 116px;
+  }
+}
