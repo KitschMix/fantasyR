@@ -325,7 +325,6 @@
 
     renderAll();
   }
-  }
 
   function startDrafting() {
     state.phase = "pick";
