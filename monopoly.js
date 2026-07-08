@@ -11,7 +11,7 @@
     { id: 2,  name: "황금열쇠",       type: "event",    event: "chance" },
     { id: 3,  name: "홍콩",           type: "property", color: "#FFD700", group: 1, price: 80,  rent: [4, 20, 180, 450], buildCosts: [50, 150, 250] },
     { id: 4,  name: "마닐라",         type: "property", color: "#FFD700", group: 1, price: 80,  rent: [4, 20, 180, 450], buildCosts: [50, 150, 250] },
-    { id: 5,  name: "제주도",         type: "property", color: "", price: 200, rent: [30], fixedRent: true },
+    { id: 5,  name: "제주도",         type: "property", color: "", price: 200, rent: [300], fixedRent: true },
     { id: 6,  name: "싱가포르",       type: "property", color: "#FFD700", group: 2, price: 100, rent: [6, 30, 270, 550], buildCosts: [50, 150, 250] },
     { id: 7,  name: "황금열쇠",       type: "event",    event: "chance" },
     { id: 8,  name: "카이로",         type: "property", color: "#FFD700", group: 2, price: 100, rent: [6, 30, 270, 550], buildCosts: [50, 150, 250] },
@@ -31,7 +31,7 @@
     { id: 22, name: "황금열쇠",       type: "event",    event: "chance" },
     { id: 23, name: "상파울루",       type: "property", color: "#0D47A1", group: 5, price: 240, rent: [20, 100, 750, 1100], buildCosts: [150, 450, 750] },
     { id: 24, name: "시드니",         type: "property", color: "#0D47A1", group: 5, price: 240, rent: [20, 100, 750, 1100], buildCosts: [150, 450, 750] },
-    { id: 25, name: "부산",           type: "property", color: "", price: 500, rent: [60], fixedRent: true },
+    { id: 25, name: "부산",           type: "property", color: "", price: 500, rent: [600], fixedRent: true },
     { id: 26, name: "하와이",         type: "property", color: "#0D47A1", group: 6, price: 260, rent: [22, 110, 800, 1150], buildCosts: [150, 450, 750] },
     { id: 27, name: "리스본",         type: "property", color: "#0D47A1", group: 6, price: 260, rent: [22, 110, 800, 1150], buildCosts: [150, 450, 750] },
     { id: 28, name: "퀸 엘리자베스호", type: "property", color: "", price: 300, rent: [25], fixedRent: true },
@@ -45,7 +45,7 @@
     { id: 36, name: "런던",           type: "property", color: "#E53935", group: 8, price: 380, rent: [40, 200, 1200, 1700], buildCosts: [200, 600, 900] },
     { id: 37, name: "뉴욕",           type: "property", color: "#E53935", group: 8, price: 400, rent: [50, 220, 1300, 1800], buildCosts: [200, 600, 900] },
     { id: 38, name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 39, name: "서울올림픽",       type: "property", color: "", price: 1000, rent: [200], fixedRent: true }
+    { id: 39, name: "서울올림픽",       type: "property", color: "", price: 1000, rent: [2000], fixedRent: true }
   ];
 
   const COLOR_GROUPS = {};
@@ -622,7 +622,8 @@
       if (rent0Row) {
         rent0Row.querySelector("strong").textContent = "도착 시 액션";
         if (rent0El) {
-          rent0El.textContent = tile.corner === "fund" ? "기금 전액 수령 💰" : "기금 ₩150,000 기부 💸";
+          const displayFee = 150 * SCALE_FACTOR;
+          rent0El.textContent = tile.corner === "fund" ? "기금 전액 수령 💰" : `기금 ₩${displayFee.toLocaleString()} 기부 💸`;
           rent0El.style.color = "";
           rent0El.style.fontWeight = "";
         }
@@ -1549,7 +1550,7 @@
       isChance = true;
       addLog(`🔑 황금열쇠 카드: ${card.text}`);
     } else if (tile.event === "fund") {
-      const fee = 15 * SCALE_FACTOR;
+      const fee = 150 * SCALE_FACTOR;
       paySocialFund(player, fee);
       addLog(`💸 ${playerDisplayName(player)} 사회복지기금 ₩${fee.toLocaleString()} 납부`);
       await showNotice(`💸 <strong>${playerDisplayName(player)}</strong>이(가)<br>사회복지기금 <strong>₩${fee.toLocaleString()}</strong>을 납부했습니다!`, 1500);
@@ -2035,7 +2036,7 @@
     state.rentDiceTotal = 0;
     
     // Deduct boarding fee (20만 원)
-    const travelFee = 20 * SCALE_FACTOR;
+    const travelFee = 200 * SCALE_FACTOR;
     payBank(player, travelFee);
     addLog(`💸 ${playerDisplayName(player)} 우주비행선 탑승료 ₩${travelFee.toLocaleString()} 지불`);
     
