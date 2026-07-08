@@ -829,6 +829,10 @@
     }
   }
 
+  function eventToast(message, duration = 1400) {
+    toast(message, duration);
+  }
+
   function playAiTurnCue() {
     if (!isAiTurn() || !els.board) return;
     if (state.aiCueTimer) {
@@ -1201,7 +1205,7 @@
     state.finalJustStarted = true;
     state.finalTurns = { blue: 5, brown: 5 };
     log("모든 타일이 공개되었습니다. 각자 5턴씩 남았습니다.");
-    toast("마지막 5턴 시작", 1400);
+    eventToast("마지막 5턴 시작", 1600);
   }
 
   function assignSidesFromRevealedTile(tile) {
@@ -1306,6 +1310,7 @@
       state.board[from.row][from.col] = null;
       captureTile(state.currentSide, tile);
       log(`${currentSideLabel()}: ${tileMeta(tile).label} 탈출 +${tile.value}`);
+      eventToast(`${tileMeta(tile).label} 탈출 +${tile.value}`, 1500);
       endTallyTurn();
       return;
     }
