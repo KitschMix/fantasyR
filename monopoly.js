@@ -314,6 +314,14 @@
         if (owner) {
           div.style.borderColor = owner.tokenColor;
           div.style.boxShadow = `inset 0 0 10px ${owner.tokenColor}44`;
+          
+          if (isBuildableProperty(tile)) {
+            const level = buildingLevel(owner, i);
+            if (level > 0) {
+              const label = level === 5 ? "🏨" : `🏠×${level}`;
+              html += `<span class="tile-building-badge" style="background:${owner.tokenColor}">${label}</span>`;
+            }
+          }
         }
       }
       html += `<span class="tile-name">${escapeHtml(tile.name)}</span>`;
@@ -538,11 +546,14 @@
       
       const monClass = isMon ? " monopoly-owned" : "";
       
+      const isAirportOrScenic = tile.color === "#4682B4" || tile.color === "#808080";
+      const bLabel = isAirportOrScenic ? "" : ` (${buildingLabel(buildingLevel(targetPlayer, tileId))})`;
+
       cardDiv.innerHTML = `
         <div class="asset-card-color-bar" style="background-color: ${tile.color || '#ccc'}"></div>
         <div class="asset-card-content">
           <div class="asset-card-name">${escapeHtml(tile.name)}</div>
-          <div class="asset-card-rent">통행료: ₩${getRent(tile, targetPlayer.position).toLocaleString()}</div>
+          <div class="asset-card-rent">통행료: ₩${getRent(tile, targetPlayer.position).toLocaleString()}${bLabel}</div>
           <div class="asset-card-group-status${monClass}">${groupStatus}</div>
         </div>
       `;
@@ -714,13 +725,51 @@
       return;
     }
     const owner = state.players.find(p => p.properties.includes(tileId));
-    const colorGroupCount = tile.color === "#808080" || tile.color === "#4682B4"
-      ? 0
-      : (COLOR_GROUPS[tile.color] || []).filter(id => state.players.some(p => p.properties.includes(id))).length;
-
-    let rentInfo = `기본 임대료: ₩${tile.rent[0].toLocaleString()}`;
-    if (tile.rent.length > 1) {
-      rentInfo += `<br>건축 단계: ${tile.rent.slice(1).map((r, i) => `Lv${i + 1}: ₩${r.toLocaleString()}`).join(", ")}`;
+    
+    let rentInfo = "";
+    if (tile.color === "#4682B4") {
+      // Airport
+      const owned = owner ? RAILROAD_IDS.filter(id => owner.properties.includes(id)).length : 0;
+      rentInfo = "보유 공항 수에 따른 임대료:<br>" + tile.rent.map((r, i) => {
+        const cnt = i + 1;
+        const isCurrent = owner && owned === cnt;
+        if (isCurrent) {
+          return `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">${cnt}개: ₩${r.toLocaleString()}</span>`;
+        }
+        return `${cnt}개: ₩${r.toLocaleString()}`;
+      }).join(", ");
+    } else if (tile.color === "#808080") {
+      // Sightseeing (Utility)
+      const owned = owner ? UTILITY_IDS.filter(id => owner.properties.includes(id)).length : 0;
+      rentInfo = "보유 관광지 수에 따른 임대료:<br>" + tile.rent.map((r, i) => {
+        const cnt = i + 1;
+        const isCurrent = owner && owned === cnt;
+        if (isCurrent) {
+          return `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">${cnt}개: ₩${r.toLocaleString()}</span>`;
+        }
+        return `${cnt}개: ₩${r.toLocaleString()}`;
+      }).join(", ");
+    } else {
+      // Regular property
+      const currentLevel = owner ? buildingLevel(owner, tileId) : -1;
+      
+      const isBaseCurrent = owner && currentLevel === 0;
+      const baseText = isBaseCurrent
+        ? `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">₩${tile.rent[0].toLocaleString()}</span>`
+        : `₩${tile.rent[0].toLocaleString()}`;
+      
+      rentInfo = `기본 임대료: ${baseText}`;
+      if (tile.rent.length > 1) {
+        rentInfo += `<br>건축 단계: ` + tile.rent.slice(1).map((r, i) => {
+          const lv = i + 1;
+          const isCurrent = owner && currentLevel === lv;
+          const label = lv === 5 ? "호텔" : `Lv${lv}`;
+          if (isCurrent) {
+            return `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">${label}: ₩${r.toLocaleString()}</span>`;
+          }
+          return `${label}: ₩${r.toLocaleString()}`;
+        }).join(", ");
+      }
     }
 
     els.propertyInfo.innerHTML = `

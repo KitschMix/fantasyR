@@ -368,6 +368,21 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   opacity: 0.8;
 }
 
+.monopoly-tile .tile-building-badge {
+  position: absolute;
+  top: 9px;
+  right: 2px;
+  font-size: 8px;
+  font-weight: 800;
+  color: #fff;
+  padding: 1px 3px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  z-index: 2;
+  pointer-events: none;
+  line-height: 1;
+}
+
 .monopoly-tile.corner {
   background: var(--surface-2);
   font-size: 12px;
