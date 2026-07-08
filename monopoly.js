@@ -1644,8 +1644,8 @@
     // Doubles = extra turn
     if (state.dice[0] === state.dice[1] && !state.suppressDoubleExtraTurn && !p.inJail && !p.bankrupt && state.lastDoubleCount < 3) {
       addLog(`🔄 ${playerDisplayName(p)} 더블로 한 번 더!`);
-      const emoji = p.human ? "🎲" : "🤖";
-      await showNotice(`${emoji} <strong>${playerDisplayName(p)}</strong>의<br>더블 추가 턴!`, 1200);
+      showTurnToast(p, true);
+      await wait(1200);
       state.phase = "awaitRoll";
       renderAll();
       if (!p.human) scheduleAiTurn();
@@ -1665,8 +1665,8 @@
     }
 
     // Show turn change notice popup
-    const emoji = np.human ? "🎲" : "🤖";
-    await showNotice(`${emoji} <strong>${playerDisplayName(np)}</strong>의<br>차례입니다!`, 1200);
+    showTurnToast(np);
+    await wait(1200);
 
     if (np.spaceTravelReady) {
       state.phase = "spaceTravel";
@@ -2052,7 +2052,7 @@
     const firstPlayer = state.players[0];
     // Show first turn popup notice
     setTimeout(() => {
-      showNotice(`🎲 <strong>${playerDisplayName(firstPlayer)}</strong>의<br>차례입니다!`, 1200);
+      showTurnToast(firstPlayer);
     }, 400);
   }
 
@@ -2070,13 +2070,14 @@
   /* ── Center Toast (Turn Popups) ── */
   function showTurnToast(player, isDouble = false) {
     if (typeof window.showCenterToast !== "function") return;
+    const emoji = player.human ? "🎲" : "🤖";
     const displayName = player.human
-      ? "당신의 턴입니다"
-      : `${player.name}(${TOKEN_NAMES[player.index]})의 턴`;
+      ? "당신의 차례입니다"
+      : `${player.name}(${TOKEN_NAMES[player.index]})의 차례`;
 
     const message = isDouble
-      ? `<div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px; color: #ffeb3b; font-weight: bold; letter-spacing: 1px;">(DOUBLE!)</div>${displayName}`
-      : displayName;
+      ? `<div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px; color: #ffeb3b; font-weight: bold; letter-spacing: 1px;">(더블 추가 턴!)</div>${emoji} ${displayName}`
+      : `${emoji} ${displayName}입니다!`;
 
     window.showCenterToast(message, 1200, { mode: "monopoly" });
   }
