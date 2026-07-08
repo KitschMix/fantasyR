@@ -1703,3 +1703,647 @@ body[data-monopoly-phase="spaceTravel"] .monopoly-tile:hover {
   z-index: 5;
   box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
 }
+
+/* --- Mobile layout polish --- */
+body.monopoly-active .monopoly-board,
+body.monopoly-active .monopoly-card-popup,
+body.monopoly-active .monopoly-property-popup {
+  box-sizing: border-box;
+}
+
+body.monopoly-active .monopoly-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+  padding: 3px;
+  border: 1px solid rgba(13, 110, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+body.monopoly-active .monopoly-zoom-button {
+  display: grid;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  place-items: center;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+body.monopoly-active .monopoly-zoom-button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+body.monopoly-active .monopoly-zoom-label {
+  min-width: 46px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 900;
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  body.monopoly-active {
+    overflow-x: hidden;
+  }
+
+  body.monopoly-active .app-shell {
+    padding: 4px;
+    overflow-x: hidden;
+  }
+
+  body.monopoly-active .monopoly-game-panel {
+    min-height: 100dvh;
+    padding: 4px;
+  }
+
+  body.monopoly-active .monopoly-shell {
+    width: 100%;
+    max-width: 100%;
+    gap: 8px;
+  }
+
+  body.monopoly-active .monopoly-game-top {
+    align-items: stretch;
+    gap: 8px;
+    min-height: 0;
+    padding: 6px;
+    flex-direction: column;
+  }
+
+  body.monopoly-active .monopoly-game-title {
+    width: 100%;
+  }
+
+  body.monopoly-active .monopoly-title-logo-small {
+    width: 168px;
+    max-width: 52vw;
+    max-height: 48px;
+  }
+
+  body.monopoly-active .monopoly-game-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-start;
+  }
+
+  body.monopoly-active .monopoly-game-actions > .secondary-button,
+  body.monopoly-active .monopoly-game-actions > .icon-button {
+    min-height: 36px;
+    height: 36px;
+    padding: 0 10px;
+    font-size: 13px;
+    touch-action: manipulation;
+  }
+
+  body.monopoly-active .monopoly-help-button {
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+    font-size: 16px;
+  }
+
+  body.monopoly-active .monopoly-zoom-controls {
+    margin-right: 0;
+  }
+
+  body.monopoly-active .monopoly-game-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  body.monopoly-active .monopoly-board-stage {
+    order: 1;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  body.monopoly-active .monopoly-side-panel {
+    order: 2;
+    height: auto;
+    overflow: visible;
+  }
+
+  body.monopoly-active .monopoly-control-panel {
+    order: 3;
+    height: auto;
+    overflow: visible;
+  }
+
+  body.monopoly-active .monopoly-board {
+    width: min(100%, 720px);
+    min-width: 0;
+    max-width: 100%;
+    border-width: 4px;
+    box-shadow:
+      0 0 0 2px var(--monopoly-gold),
+      0 12px 24px rgba(6, 41, 68, 0.2);
+  }
+
+  body.monopoly-active .monopoly-board-center {
+    inset: 20%;
+    padding: 8px;
+    border-width: 1px;
+    box-shadow: inset 0 0 0 2px rgba(244, 195, 64, 0.16);
+  }
+
+  body.monopoly-active .monopoly-board-center img,
+  body.monopoly-active .monopoly-board-center-logo {
+    width: min(132px, 72%);
+    max-height: 32px;
+  }
+
+  body.monopoly-active .monopoly-board-center-controls {
+    gap: 4px;
+  }
+
+  body.monopoly-active .monopoly-board-center-controls button {
+    min-height: 32px !important;
+    height: auto !important;
+    padding: 3px 5px !important;
+    font-size: 11px !important;
+    line-height: 1.1 !important;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  body.monopoly-active .monopoly-dice-display {
+    gap: 8px;
+  }
+
+  body.monopoly-active .monopoly-die {
+    width: 38px;
+    height: 38px;
+    border-width: 1px;
+    border-radius: 7px;
+    font-size: 20px;
+  }
+
+  body.monopoly-active .monopoly-dice-bonus {
+    font-size: 14px;
+  }
+
+  body.monopoly-active .monopoly-tile {
+    border-radius: 2px;
+  }
+
+  body.monopoly-active .monopoly-tile .tile-color-bar {
+    height: 5px;
+  }
+
+  body.monopoly-active .monopoly-tile .tile-name {
+    padding: 1px 2px;
+    font-size: 8px;
+    line-height: 1.08;
+  }
+
+  body.monopoly-active .monopoly-tile.corner .tile-name {
+    font-size: 9px;
+  }
+
+  body.monopoly-active .monopoly-tile .tile-price {
+    font-size: 7px;
+    line-height: 1;
+  }
+
+  body.monopoly-active .monopoly-piece {
+    width: 20px;
+    height: 20px;
+    border-width: 1px;
+    font-size: 10px;
+  }
+
+  body.monopoly-active .monopoly-board-turn-avatar {
+    width: 28px;
+    height: 28px;
+    border-width: 1px;
+  }
+
+  body.monopoly-active .monopoly-board-turn-avatar.active {
+    width: 38px;
+    height: 38px;
+  }
+
+  body.monopoly-active .monopoly-board-hover-card {
+    inset: 20%;
+    border-width: 2px;
+  }
+
+  body.monopoly-active .hover-card-header {
+    padding: 8px;
+    font-size: 16px;
+  }
+
+  body.monopoly-active .hover-card-body {
+    gap: 8px;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  body.monopoly-active .monopoly-players-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  body.monopoly-active .monopoly-player-card {
+    min-width: 0;
+    gap: 7px;
+    padding: 7px 8px;
+  }
+
+  body.monopoly-active .monopoly-player-avatar-wrap,
+  body.monopoly-active .monopoly-player-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  body.monopoly-active .monopoly-player-token {
+    width: 15px;
+    height: 15px;
+    font-size: 8px;
+  }
+
+  body.monopoly-active .monopoly-player-info strong {
+    font-size: 12px;
+  }
+
+  body.monopoly-active .monopoly-player-info small,
+  body.monopoly-active .monopoly-status-card span,
+  body.monopoly-active .monopoly-status-card small {
+    font-size: 10px;
+  }
+
+  body.monopoly-active .monopoly-player-money,
+  body.monopoly-active .monopoly-status-card strong {
+    font-size: 13px;
+  }
+
+  body.monopoly-active .monopoly-status-card {
+    padding: 8px;
+  }
+
+  body.monopoly-active .monopoly-log-card {
+    min-height: 0;
+    max-height: 150px;
+    padding: 8px;
+  }
+
+  body.monopoly-active .monopoly-log {
+    max-height: 104px;
+    padding: 0;
+  }
+
+  body.monopoly-active .monopoly-log li {
+    padding: 5px 7px;
+    font-size: 11px;
+  }
+
+  body.monopoly-active .monopoly-all-properties-card {
+    height: auto;
+    max-height: 260px;
+    flex-grow: 0;
+    padding: 8px;
+  }
+
+  body.monopoly-active .monopoly-all-properties-list {
+    max-height: 208px;
+    flex-grow: 0;
+  }
+
+  body.monopoly-active .property-color-group {
+    padding: 4px;
+  }
+
+  body.monopoly-active .property-list-item {
+    font-size: 10px;
+  }
+
+  body.monopoly-active .property-item-rent {
+    font-size: 9px;
+  }
+
+  body.monopoly-active .monopoly-my-assets-area {
+    margin-top: 8px;
+    padding: 10px;
+  }
+
+  body.monopoly-active .monopoly-assets-header {
+    gap: 8px !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 8px !important;
+  }
+
+  body.monopoly-active .monopoly-my-assets-title {
+    font-size: 14px !important;
+  }
+
+  body.monopoly-active .monopoly-asset-player-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+
+  body.monopoly-active .monopoly-asset-tab-btn {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 5px 9px !important;
+    font-size: 11px !important;
+    white-space: nowrap;
+  }
+
+  body.monopoly-active .monopoly-my-assets-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  body.monopoly-active .monopoly-asset-card {
+    width: 100%;
+    height: auto;
+    min-height: 112px;
+  }
+
+  body.monopoly-active .asset-card-color-bar {
+    height: 12px;
+  }
+
+  body.monopoly-active .asset-card-content {
+    padding: 7px 6px;
+  }
+
+  body.monopoly-active .asset-card-name {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  body.monopoly-active .asset-card-rent {
+    font-size: 9px;
+  }
+
+  body.monopoly-active .asset-card-group-status {
+    font-size: 8px;
+  }
+
+  body.monopoly-active .monopoly-card-dialog,
+  body.monopoly-active .monopoly-property-dialog,
+  body.monopoly-active .monopoly-manage-dialog,
+  body.monopoly-active .monopoly-rules-dialog {
+    max-width: 100vw;
+  }
+
+  body.monopoly-active .monopoly-card-popup,
+  body.monopoly-active .monopoly-property-popup {
+    width: min(94vw, 380px);
+    max-height: calc(100dvh - 24px);
+    min-height: 0;
+    overflow: auto;
+    border-width: 2px;
+    border-radius: 12px;
+  }
+
+  body.monopoly-active .monopoly-property-popup {
+    aspect-ratio: auto;
+  }
+
+  body.monopoly-active .monopoly-card-body,
+  body.monopoly-active .property-popup-body {
+    gap: 10px;
+    padding: 16px;
+  }
+
+  body.monopoly-active .monopoly-card-icon {
+    font-size: 36px;
+  }
+
+  body.monopoly-active .monopoly-card-text {
+    font-size: 14px;
+  }
+
+  body.monopoly-active .property-popup-header {
+    padding: 11px;
+    font-size: 16px;
+  }
+
+  body.monopoly-active .property-popup-name {
+    font-size: 20px;
+  }
+
+  body.monopoly-active .property-popup-details {
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  body.monopoly-active .property-popup-footer,
+  body.monopoly-active .monopoly-card-footer {
+    gap: 8px;
+    padding: 12px;
+    flex-wrap: wrap;
+  }
+
+  body.monopoly-active .property-popup-footer button,
+  body.monopoly-active .monopoly-card-footer button {
+    min-height: 38px;
+    font-size: 13px;
+  }
+
+  body.monopoly-active .monopoly-manage-form,
+  body.monopoly-active .monopoly-rules-help {
+    padding: 16px;
+  }
+
+  body.monopoly-active .monopoly-manage-item {
+    align-items: stretch;
+    gap: 8px;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  body.monopoly-active .monopoly-setup-panel {
+    padding: 12px;
+  }
+
+  body.monopoly-active .monopoly-panel {
+    width: 100%;
+    padding: 18px 16px;
+  }
+
+  body.monopoly-active .monopoly-panel .mode-panel-head strong {
+    font-size: 22px;
+  }
+
+  body.monopoly-active .monopoly-panel .mode-panel-head span,
+  body.monopoly-active .monopoly-setup-controls label {
+    font-size: 13px;
+  }
+
+  body.monopoly-active .monopoly-setup-controls select,
+  body.monopoly-active .monopoly-setup-controls input {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  body.monopoly-active .monopoly-game-actions {
+    gap: 5px;
+  }
+
+  body.monopoly-active .monopoly-game-actions > .secondary-button,
+  body.monopoly-active .monopoly-game-actions > .icon-button {
+    min-height: 34px;
+    height: 34px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  body.monopoly-active .monopoly-help-button {
+    width: 34px;
+    min-width: 34px;
+    padding: 0;
+  }
+
+  body.monopoly-active .monopoly-zoom-controls {
+    gap: 3px;
+    padding: 2px;
+  }
+
+  body.monopoly-active .monopoly-zoom-button {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    font-size: 16px;
+  }
+
+  body.monopoly-active .monopoly-zoom-label {
+    min-width: 38px;
+    font-size: 12px;
+  }
+
+  body.monopoly-active .monopoly-board {
+    border-width: 3px;
+  }
+
+  body.monopoly-active .monopoly-board-center {
+    inset: 22%;
+    padding: 6px;
+  }
+
+  body.monopoly-active .monopoly-board-center img,
+  body.monopoly-active .monopoly-board-center-logo {
+    max-height: 26px;
+  }
+
+  body.monopoly-active .monopoly-board-center-controls {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  body.monopoly-active .monopoly-board-center-controls #monopolyRollButton {
+    grid-column: auto;
+  }
+
+  body.monopoly-active .monopoly-board-center-controls button {
+    min-height: 28px !important;
+    padding: 2px 4px !important;
+    font-size: 10px !important;
+  }
+
+  body.monopoly-active .monopoly-die {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+
+  body.monopoly-active .monopoly-tile .tile-color-bar {
+    height: 4px;
+  }
+
+  body.monopoly-active .monopoly-tile .tile-name {
+    font-size: 7px;
+    line-height: 1.02;
+  }
+
+  body.monopoly-active .monopoly-tile.corner .tile-name {
+    font-size: 8px;
+  }
+
+  body.monopoly-active .monopoly-tile .tile-price {
+    font-size: 6px;
+  }
+
+  body.monopoly-active .monopoly-piece {
+    width: 16px;
+    height: 16px;
+    font-size: 8px;
+  }
+
+  body.monopoly-active .monopoly-board-turn-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  body.monopoly-active .monopoly-board-turn-avatar.active {
+    width: 32px;
+    height: 32px;
+  }
+
+  body.monopoly-active .monopoly-players-list {
+    gap: 5px;
+  }
+
+  body.monopoly-active .monopoly-player-card {
+    padding: 6px;
+  }
+
+  body.monopoly-active .monopoly-player-avatar-wrap,
+  body.monopoly-active .monopoly-player-avatar {
+    width: 26px;
+    height: 26px;
+  }
+
+  body.monopoly-active .monopoly-my-assets-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.monopoly-active .property-popup-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+@media (max-width: 960px) and (max-height: 500px) {
+  body.monopoly-active .monopoly-game-top {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  body.monopoly-active .monopoly-game-title {
+    width: auto;
+  }
+
+  body.monopoly-active .monopoly-title-logo-small {
+    width: 132px;
+  }
+
+  body.monopoly-active .monopoly-game-actions {
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  body.monopoly-active .monopoly-board {
+    width: min(100%, calc(100dvh - 96px), 560px);
+  }
+}

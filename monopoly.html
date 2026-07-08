@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>부루마불</title>
     <link rel="stylesheet" href="styles.css?v=20260706-brumable" />
-    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v31" />
+    <link rel="stylesheet" href="monopoly.css?v=20260708-brumable-mobile-v32" />
   </head>
   <body class="monopoly-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -58,10 +58,10 @@
               <img class="monopoly-title-logo monopoly-title-logo-small" src="assets/titles/brumable-logo.webp" alt="부루마불" />
             </h1>
             <div class="monopoly-game-actions">
-              <div class="monopoly-zoom-controls" style="display: inline-flex; align-items: center; gap: 4px; margin-right: 8px;" aria-label="부루마불 확대 축소">
-                <button id="monopolyZoomOutButton" class="icon-button" type="button" style="width: 32px; height: 32px; min-height: 32px; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-weight: bold; cursor: pointer;" title="축소">-</button>
-                <span id="monopolyZoomLabel" style="font-size: 14px; font-weight: bold; min-width: 48px; text-align: center; color: var(--text);">100%</span>
-                <button id="monopolyZoomInButton" class="icon-button" type="button" style="width: 32px; height: 32px; min-height: 32px; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-weight: bold; cursor: pointer;" title="확대">+</button>
+              <div class="monopoly-zoom-controls" aria-label="부루마불 확대 축소">
+                <button id="monopolyZoomOutButton" class="icon-button monopoly-zoom-button" type="button" title="축소">-</button>
+                <span id="monopolyZoomLabel" class="monopoly-zoom-label">100%</span>
+                <button id="monopolyZoomInButton" class="icon-button monopoly-zoom-button" type="button" title="확대">+</button>
               </div>
               <button id="monopolyNewGameButton" class="secondary-button" type="button">새 게임</button>
               <button id="monopolyRulesButton" class="icon-button monopoly-help-button" type="button" title="부루마불 도움말" aria-label="부루마불 도움말">?</button>
