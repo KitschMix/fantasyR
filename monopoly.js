@@ -68,21 +68,13 @@
     { text: "은행에서 150원을 받습니다.", action: "collect", amount: 150 },
     { text: "은행에서 100원을 받습니다.", action: "collect", amount: 100 },
     { text: "건설비용: 각 건물당 25원, 호텔당 100원을 지불하세요.", action: "buildingCost", house: 25, hotel: 100 },
-    { text: "한 바퀴 돌아 출발에서 200원을 받으세요.", action: "moveTo", target: 0, collect: true }
+    { text: "한 바퀴 돌아 출발에서 200원을 받으세요.", action: "moveTo", target: 0, collect: true },
+    { text: "우주선에 탑승하세요. 우주여행 정류소로 이동합니다.", action: "moveTo", target: 30 },
+    { text: "우대권: 통행료를 1회 면제받을 수 있습니다. (인벤토리에 보관)", action: "keepExemption" },
+    { text: "무인도 탈출권: 무인도에서 무료로 즉시 탈옥할 수 있습니다. (인벤토리에 보관)", action: "keepJailEscape" }
   ];
 
-  const FUND_CARDS = [
-    { text: "은행에서 200원을 받습니다.", action: "collect", amount: 200 },
-    { text: "은행에서 50원을 받습니다.", action: "collect", amount: 50 },
-    { text: "병원비로 100원을 지불하세요.", action: "pay", amount: 100 },
-    { text: "보험료로 50원을 지불하세요.", action: "pay", amount: 50 },
-    { text: "학교 기부금으로 150원을 지불하세요.", action: "pay", amount: 150 },
-    { text: "컨설팅 수입으로 25원을 받습니다.", action: "collect", amount: 25 },
-    { text: "축하합니다! 생일 선물로 각 플레이어에게서 10원씩 받습니다.", action: "collectAll", amount: 10 },
-    { text: "은행에서 100원을 받습니다.", action: "collect", amount: 100 },
-    { text: "미화금으로 50원을 지불하세요.", action: "pay", amount: 50 },
-    { text: "출발 지점으로 이동하세요.", action: "moveTo", target: 0, collect: true }
-  ];
+  const FUND_CARDS = [];
 
   const SCALE_FACTOR = 10000;
   const START_MONEY = 1500 * SCALE_FACTOR;
@@ -484,10 +476,44 @@
     const targetPlayer = state.players[state.selectedAssetPlayerIndex];
     grid.innerHTML = "";
 
-    if (targetPlayer.properties.length === 0) {
+    const hasItems = (targetPlayer.exemptionCards || 0) > 0 || (targetPlayer.jailEscapeCards || 0) > 0;
+    if (targetPlayer.properties.length === 0 && !hasItems) {
       const displayLabel = targetPlayer.human ? "내가" : `${targetPlayer.name}이(가)`;
-      grid.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); opacity: 0.7;">아직 ${displayLabel} 보유한 부동산이 없습니다.</span>`;
+      grid.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); opacity: 0.7;">아직 ${displayLabel} 보유한 자산이 없습니다.</span>`;
       return;
+    }
+
+    // Render Items at the top of the assets grid
+    if ((targetPlayer.exemptionCards || 0) > 0) {
+      for (let c = 0; c < targetPlayer.exemptionCards; c++) {
+        const cardDiv = document.createElement("div");
+        cardDiv.className = "monopoly-asset-card item-card exemption-item";
+        cardDiv.innerHTML = `
+          <div class="asset-card-color-bar" style="background-color: #ffd700"></div>
+          <div class="asset-card-content">
+            <div class="asset-card-name">🎫 우대권</div>
+            <div class="asset-card-rent" style="font-size:11px;">상대 통행료 1회 무료 면제</div>
+            <div class="asset-card-group-status" style="color:#f39c12; font-weight:800;">보유 중</div>
+          </div>
+        `;
+        grid.appendChild(cardDiv);
+      }
+    }
+
+    if ((targetPlayer.jailEscapeCards || 0) > 0) {
+      for (let c = 0; c < targetPlayer.jailEscapeCards; c++) {
+        const cardDiv = document.createElement("div");
+        cardDiv.className = "monopoly-asset-card item-card escape-item";
+        cardDiv.innerHTML = `
+          <div class="asset-card-color-bar" style="background-color: #2ecc71"></div>
+          <div class="asset-card-content">
+            <div class="asset-card-name">🎫 무인도 탈출권</div>
+            <div class="asset-card-rent" style="font-size:11px;">무인도에서 즉시 무료 탈출</div>
+            <div class="asset-card-group-status" style="color:#27ae60; font-weight:800;">보유 중</div>
+          </div>
+        `;
+        grid.appendChild(cardDiv);
+      }
     }
 
     targetPlayer.properties.forEach(tileId => {
@@ -1017,6 +1043,16 @@
 
   function payMoney(from, to, amount, options = {}) {
     const due = Math.max(0, amount || 0);
+    
+    // Direct Bankruptcy Transfer
+    if (to && !to.bankrupt && from.money + getTotalLiquidationValue(from) < due) {
+      goBankrupt(from, to);
+      const actual = from.money;
+      from.money = 0;
+      to.money += actual;
+      return actual;
+    }
+
     if (options.allowLiquidation !== false) {
       liquidateAssetsForPayment(from, due);
     }
@@ -1215,6 +1251,24 @@
           }
         });
         footer.appendChild(payBtn);
+
+        if ((player.exemptionCards || 0) > 0) {
+          const useExemptionBtn = document.createElement("button");
+          useExemptionBtn.className = "primary-button";
+          useExemptionBtn.type = "button";
+          useExemptionBtn.textContent = `🎫 우대권 사용 (${player.exemptionCards}장 보유)`;
+          useExemptionBtn.style.backgroundColor = "#ffd700";
+          useExemptionBtn.style.color = "black";
+          useExemptionBtn.style.fontWeight = "bold";
+          useExemptionBtn.addEventListener("click", () => {
+            player.exemptionCards--;
+            addLog(`🎫 ${playerDisplayName(player)} 우대권을 사용하여 임대료 면제! (${tile.name})`);
+            closeDialog();
+            showNotice(`🎫 <strong>${playerDisplayName(player)}</strong>이(가)<br>우대권을 사용하여<br>임대료를 면제받았습니다!`, 1800);
+          });
+          footer.appendChild(useExemptionBtn);
+          payBtn.className = "secondary-button";
+        }
       } else if (!owner) {
         // Buy or pass
         const buyBtn = document.createElement("button");
@@ -1320,9 +1374,15 @@
       isChance = true;
       addLog(`🔑 황금열쇠 카드: ${card.text}`);
     } else if (tile.event === "fund") {
-      card = drawFund();
-      isChance = false;
-      addLog(`🎴 사회복지기금 카드: ${card.text}`);
+      const fee = 15 * SCALE_FACTOR;
+      paySocialFund(player, fee);
+      addLog(`💸 ${playerDisplayName(player)} 사회복지기금 ₩${fee.toLocaleString()} 납부`);
+      await showNotice(`💸 <strong>${playerDisplayName(player)}</strong>이(가)<br>사회복지기금 <strong>₩${fee.toLocaleString()}</strong>을 납부했습니다!`, 1500);
+      if (player.money <= 0) goBankrupt(player, null);
+      state.phase = "buyDecision";
+      renderAll();
+      renderControls();
+      return;
     } else if (tile.event === "tax") {
       const tax = tile.amount ?? (100 * SCALE_FACTOR);
       if (tile.id === 38) {
@@ -1465,6 +1525,14 @@
         });
         addLog(`💰 ${playerDisplayName(player)} 모든 플레이어에게서 ₩${card.amount.toLocaleString()} 수집`);
         break;
+      case "keepExemption":
+        player.exemptionCards = (player.exemptionCards || 0) + 1;
+        addLog(`🎫 ${playerDisplayName(player)} 우대권 획득!`);
+        break;
+      case "keepJailEscape":
+        player.jailEscapeCards = (player.jailEscapeCards || 0) + 1;
+        addLog(`🎫 ${playerDisplayName(player)} 무인도 탈출권 획득!`);
+        break;
       case "buildingCost": {
         const costInfo = player.properties.reduce((sum, id) => {
           const level = buildingLevel(player, id);
@@ -1558,11 +1626,17 @@
     const owner = getOwner(tile.id);
     if (owner && owner !== player) {
       const rent = getRent(tile, player.position);
-      const paid = payMoney(player, owner, rent);
-      addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid.toLocaleString()} 지불 (${tile.name})`);
-      await showNotice(`💸 <strong>${playerDisplayName(player)}</strong>이(가)<br><strong>${playerDisplayName(owner)}</strong>에게<br>임대료 <strong>₩${paid.toLocaleString()}</strong>을 지불했습니다!`, 1800);
-      if (player.money <= 0) {
-        goBankrupt(player, owner);
+      if ((player.exemptionCards || 0) > 0) {
+        player.exemptionCards--;
+        addLog(`🎫 ${playerDisplayName(player)} 우대권을 사용하여 임대료 면제! (${tile.name})`);
+        await showNotice(`🎫 <strong>${playerDisplayName(player)}</strong>이(가)<br>우대권을 사용하여<br>임대료를 면제받았습니다!`, 1800);
+      } else {
+        const paid = payMoney(player, owner, rent);
+        addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid.toLocaleString()} 지불 (${tile.name})`);
+        await showNotice(`💸 <strong>${playerDisplayName(player)}</strong>이(가)<br><strong>${playerDisplayName(owner)}</strong>에게<br>임대료 <strong>₩${paid.toLocaleString()}</strong>을 지불했습니다!`, 1800);
+        if (player.money <= 0) {
+          goBankrupt(player, owner);
+        }
       }
       state.phase = "buyDecision";
       renderAll();
@@ -1598,16 +1672,23 @@
 
     // Jail logic
     if (player.inJail) {
-      const unownedCount = TILES.filter(t => t.type === "property" && !getOwner(t.id)).length;
-      const hasPlentyMoney = player.money >= JAIL_FINE + 1000 * SCALE_FACTOR;
-
-      if (hasPlentyMoney && unownedCount > 3) {
+      if ((player.jailEscapeCards || 0) > 0) {
+        player.jailEscapeCards--;
         player.inJail = false;
-        payBank(player, JAIL_FINE);
-        addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
+        addLog(`🎫 ${playerDisplayName(player)} 무인도 탈출권을 사용하여 무인도 탈출.`);
         renderAll();
         // Continue to roll normally below!
       } else {
+        const unownedCount = TILES.filter(t => t.type === "property" && !getOwner(t.id)).length;
+        const hasPlentyMoney = player.money >= JAIL_FINE + 1000 * SCALE_FACTOR;
+
+        if (hasPlentyMoney && unownedCount > 3) {
+          player.inJail = false;
+          payBank(player, JAIL_FINE);
+          addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
+          renderAll();
+          // Continue to roll normally below!
+        } else {
         const dice = rollDice();
         await animateDice(dice);
         state.rentDiceTotal = dice[0] + dice[1];
@@ -1641,6 +1722,7 @@
         }
       }
     }
+  }
 
     // Roll dice
     const dice = rollDice();
@@ -1866,6 +1948,22 @@
       els.jailFooter.appendChild(rollBtn);
       els.jailFooter.appendChild(payBtn);
 
+      if ((player.jailEscapeCards || 0) > 0) {
+        const useCardBtn = document.createElement("button");
+        useCardBtn.className = "primary-button";
+        useCardBtn.type = "button";
+        useCardBtn.textContent = `🎫 탈출권 사용 (${player.jailEscapeCards}장 보유)`;
+        useCardBtn.style.backgroundColor = "#2ecc71";
+        useCardBtn.style.color = "white";
+        useCardBtn.style.fontWeight = "bold";
+        useCardBtn.addEventListener("click", () => {
+          els.jailDialog.close();
+          resolve("useCard");
+        });
+        els.jailFooter.appendChild(useCardBtn);
+        rollBtn.className = "secondary-button";
+      }
+
       els.jailDialog.showModal();
     });
   }
@@ -1882,6 +1980,12 @@
         player.inJail = false;
         payBank(player, JAIL_FINE);
         addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
+        renderAll();
+        // Continue to normal roll below!
+      } else if (choice === "useCard") {
+        player.jailEscapeCards--;
+        player.inJail = false;
+        addLog(`🎫 무인도 탈출권을 사용하여 무인도 탈출.`);
         renderAll();
         // Continue to normal roll below!
       } else {
@@ -2071,7 +2175,9 @@
           inJail: false,
           jailTurns: 0,
           spaceTravelReady: false,
-          bankrupt: false
+          bankrupt: false,
+          exemptionCards: 0,
+          jailEscapeCards: 0
         };
       }
       const profile = pool[i - 1] || { name: `AI ${i}`, avatarUrl: profileImageUrl("보통-건일.jpg") };
@@ -2090,7 +2196,9 @@
         inJail: false,
         jailTurns: 0,
         spaceTravelReady: false,
-        bankrupt: false
+        bankrupt: false,
+        exemptionCards: 0,
+        jailEscapeCards: 0
       };
     });
 
