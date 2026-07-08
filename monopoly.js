@@ -998,6 +998,7 @@
   function canBuildOn(player, tile) {
     if (!isBuildableProperty(tile)) return "공항/관공서는 건설할 수 없습니다.";
     if (!player.properties.includes(tile.id)) return "소유한 땅만 건설할 수 있습니다.";
+    if (player.position !== tile.id) return "해당 칸에 도착했을 때만 건설할 수 있습니다.";
 
     const level = buildingLevel(player, tile.id);
     if (level >= MAX_BUILDING_LEVEL) return "이미 최대 단계입니다.";
