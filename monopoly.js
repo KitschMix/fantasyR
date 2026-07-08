@@ -26,7 +26,7 @@
     { id: 17, name: "사회복지기금",   type: "event",    event: "fund" },
     { id: 18, name: "파리",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
     { id: 19, name: "런던",           type: "property", color: "#FFA500", price: 200, rent: [16, 80, 220, 600, 800, 1000] },
-    { id: 20, name: "사회복지기금 납부", type: "corner",   corner: "fund" },
+    { id: 20, name: "사회복지기금 수령", type: "corner",   corner: "fund" },
     { id: 21, name: "뉴욕",           type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
     { id: 22, name: "황금열쇠",       type: "event",    event: "chance" },
     { id: 23, name: "워싱턴",         type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
@@ -1074,7 +1074,8 @@
 
   async function teleportPlayer(player, target, passGo) {
     state.rentDiceTotal = 0;
-    if (passGo) {
+    const oldPos = player.position;
+    if (passGo && (target < oldPos || target === 0)) {
       awardGoSalary(player);
     }
     await animateTeleport(player, target);
@@ -1269,8 +1270,13 @@
       addLog(`🎴 사회복지기금 카드: ${card.text}`);
     } else if (tile.event === "tax") {
       const tax = tile.amount ?? (100 * SCALE_FACTOR);
-      payBank(player, tax);
-      addLog(`💸 ${playerDisplayName(player)} 세금 ₩${tax.toLocaleString()} 지불`);
+      if (tile.id === 38) {
+        paySocialFund(player, tax);
+        addLog(`💸 ${playerDisplayName(player)} 특별여행세 ₩${tax.toLocaleString()} 지불 (사회복지기금 적립)`);
+      } else {
+        payBank(player, tax);
+        addLog(`💸 ${playerDisplayName(player)} 세금 ₩${tax.toLocaleString()} 지불`);
+      }
       if (player.money <= 0) goBankrupt(player, null);
       state.phase = "buyDecision";
       renderControls();
@@ -1386,8 +1392,8 @@
         addLog(`💰 ${playerDisplayName(player)} ₩${card.amount.toLocaleString()} 획득`);
         break;
       case "pay":
-        payBank(player, card.amount);
-        addLog(`💸 ${playerDisplayName(player)} ₩${card.amount.toLocaleString()} 지불`);
+        paySocialFund(player, card.amount);
+        addLog(`💸 ${playerDisplayName(player)} ₩${card.amount.toLocaleString()} 지불 (사회복지기금 적립)`);
         if (player.money <= 0) goBankrupt(player, null);
         break;
       case "payAll":
@@ -1432,9 +1438,14 @@
         addLog(`🔒 ${playerDisplayName(player)} 무인도에 방문 중.`);
         break;
       case "fund":
-        paySocialFund(player, SOCIAL_FUND_FEE);
-        addLog(`💸 ${playerDisplayName(player)} 사회복지기금 ₩${SOCIAL_FUND_FEE.toLocaleString()} 납부`);
-        if (player.money <= 0) goBankrupt(player, null);
+        if (state.socialFundPool > 0) {
+          const reward = state.socialFundPool;
+          collectMoney(player, reward);
+          addLog(`💰 ${playerDisplayName(player)} 사회복지기금 수령! 적립금 ₩${reward.toLocaleString()} 획득!`);
+          state.socialFundPool = 0;
+        } else {
+          addLog(`💰 ${playerDisplayName(player)} 사회복지기금 수령처에 도착했으나 적립금이 없습니다.`);
+        }
         break;
       case "parking":
         player.spaceTravelReady = true;
