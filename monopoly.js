@@ -60,7 +60,7 @@
     { text: "출발 지점으로 이동하세요.", action: "moveTo", target: 0, collect: true },
     { text: "무인도로 가세요. 출발 지점을 지나도 받지 못합니다.", action: "goToJail" },
     { text: "타이베이로 이동하세요.", action: "moveTo", target: 1 },
-    { text: "로마로 이동하세요.", action: "moveTo", target: 35 },
+    { text: "로마로 이동하세요.", action: "moveTo", target: 34 },
     { text: "제주로 이동하세요.", action: "moveTo", target: 5 },
     { text: "모든 플레이어에게 50원을 지불하세요.", action: "payAll", amount: 50 },
     { text: "은행에서 150원을 받습니다.", action: "collect", amount: 150 },
@@ -1886,8 +1886,7 @@
           return;
         } else if (player.jailTurns <= 0) {
           player.inJail = false;
-          payBank(player, JAIL_FINE);
-          addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
+          addLog(`🔓 ${playerDisplayName(player)} 3턴 동안 탈출하지 못해 무인도에서 자연 출소.`);
           await movePlayer(player, dice[0] + dice[1]);
           await wait(600);
           await handleTileLanding(player);
@@ -2034,6 +2033,11 @@
     state.phase = "rolled"; // Lock actions
     player.spaceTravelReady = false;
     state.rentDiceTotal = 0;
+    
+    // Deduct boarding fee (20만 원)
+    const travelFee = 20 * SCALE_FACTOR;
+    payBank(player, travelFee);
+    addLog(`💸 ${playerDisplayName(player)} 우주비행선 탑승료 ₩${travelFee.toLocaleString()} 지불`);
     
     addLog(`🚀 ${playerDisplayName(player)} 우주선 탑승! ${tileAt(destIndex).name}으로 이동합니다.`);
     
@@ -2188,8 +2192,7 @@
           return;
         } else if (player.jailTurns <= 0) {
           player.inJail = false;
-          payBank(player, JAIL_FINE);
-          addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
+          addLog(`🔓 ${playerDisplayName(player)} 3턴 동안 탈출하지 못해 무인도에서 자연 출소.`);
           await movePlayer(player, dice[0] + dice[1]);
           await wait(600);
           await handleTileLanding(player);
