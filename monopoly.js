@@ -585,7 +585,7 @@
     if (hoverTimer) clearTimeout(hoverTimer);
     hoverTimer = setTimeout(() => {
       showHoverCard(tileId);
-    }, 1000);
+    }, 500);
   }
 
   function handleHoverLeave() {
