@@ -2072,11 +2072,11 @@
     if (typeof window.showCenterToast !== "function") return;
     const emoji = player.human ? "🎲" : "🤖";
     const displayName = player.human
-      ? "당신의 차례입니다"
+      ? "당신의 차례"
       : `${player.name}(${TOKEN_NAMES[player.index]})의 차례`;
 
     const message = isDouble
-      ? `<div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px; color: #ffeb3b; font-weight: bold; letter-spacing: 1px;">(더블 추가 턴!)</div>${emoji} ${displayName}`
+      ? `<div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px; color: #ffeb3b; font-weight: bold; letter-spacing: 1px;">(더블 추가 턴!)</div>${emoji} ${displayName}입니다!`
       : `${emoji} ${displayName}입니다!`;
 
     window.showCenterToast(message, 1200, { mode: "monopoly" });
