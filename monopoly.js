@@ -26,7 +26,7 @@
     { id: 17, name: "사회복지기금",   type: "event",    event: "fund" },
     { id: 18, name: "파리",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
     { id: 19, name: "런던",           type: "property", color: "#FFA500", price: 200, rent: [16, 80, 220, 600, 800, 1000] },
-    { id: 20, name: "사회복지기금",   type: "corner",   corner: "fund" },
+    { id: 20, name: "사회복지기금 납부", type: "corner",   corner: "fund" },
     { id: 21, name: "뉴욕",           type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
     { id: 22, name: "황금열쇠",       type: "event",    event: "chance" },
     { id: 23, name: "워싱턴",         type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
@@ -89,6 +89,9 @@
   const GO_SALARY = 200 * SCALE_FACTOR;
   const JAIL_FINE = 50 * SCALE_FACTOR;
   const JAIL_TURNS = 3;
+  const SOCIAL_FUND_FEE = 50 * SCALE_FACTOR;
+  const DEFAULT_UTILITY_DICE_TOTAL = 7;
+  const MAX_BUILDING_LEVEL = 5;
   const AI_THINK_DELAY = 1200;
   const DICE_ROLL_DURATION = 600;
   const DICE_FRAME_MS = 60;
@@ -196,7 +199,9 @@
     turnCount: 0,
     aiTimer: 0,
     lastDoubleCount: 0,
-    socialFundPool: 0
+    socialFundPool: 0,
+    rentDiceTotal: 0,
+    suppressDoubleExtraTurn: false
   };
 
   const TOKEN_EMOJIS = ["🔴", "🟢", "🔵", "🟡"];
@@ -363,9 +368,11 @@
 
       piecePositions[player.id] = pos;
 
-      // Avatar always attached to token (current player gets bob animation)
+      if (i !== state.currentPlayer || state.phase === "finished" || player.bankrupt) return;
+
+      // Keep only the current player's avatar on the board so the tokens stay readable.
       const avatar = document.createElement("img");
-      avatar.className = `monopoly-board-turn-avatar${i === state.currentPlayer && !state.finished ? " active" : ""}`;
+      avatar.className = "monopoly-board-turn-avatar active";
       avatar.dataset.playerId = player.id;
       avatar.src = player.avatarUrl || currentHumanAvatarUrl();
       avatar.alt = "";
@@ -384,7 +391,7 @@
     els.playersList.innerHTML = "";
     state.players.forEach((p, i) => {
       const card = document.createElement("section");
-      card.className = `monopoly-player-card${i === state.currentPlayer && !state.finished ? " active" : ""}${p.bankrupt ? " bankrupt" : ""}`;
+      card.className = `monopoly-player-card${i === state.currentPlayer && state.phase !== "finished" ? " active" : ""}${p.bankrupt ? " bankrupt" : ""}`;
       card.innerHTML = `
         <span class="monopoly-player-avatar-wrap">
           <img class="monopoly-player-avatar" src="${escapeHtml(p.avatarUrl || currentHumanAvatarUrl())}" alt="" loading="lazy" decoding="async" />
@@ -872,6 +879,58 @@
     return group.length > 0 && group.every(id => player.properties.includes(id));
   }
 
+  function isBuildableProperty(tile) {
+    return tile?.type === "property" && tile.color !== "#808080" && tile.color !== "#4682B4";
+  }
+
+  function buildingLevel(player, tileId) {
+    return Math.max(0, Math.min(MAX_BUILDING_LEVEL, Number(player?.buildings?.[tileId] || 0)));
+  }
+
+  function buildingLabel(level) {
+    if (level >= MAX_BUILDING_LEVEL) return "호텔";
+    return level > 0 ? `건물 Lv${level}` : "건물 없음";
+  }
+
+  function getBuildCost(tile) {
+    return Math.max(50 * SCALE_FACTOR, Math.floor((tile?.price || 0) / 2));
+  }
+
+  function getBuildingSellValue(tile) {
+    return Math.floor(getBuildCost(tile) / 2);
+  }
+
+  function getPropertySellValue(tile) {
+    return Math.floor((tile?.price || 0) / 2);
+  }
+
+  function canBuildOn(player, tile) {
+    if (!isBuildableProperty(tile)) return "공항/관공서는 건설할 수 없습니다.";
+    if (!player.properties.includes(tile.id)) return "소유한 땅만 건설할 수 있습니다.";
+    if (!isMonopoly(player, tile.color)) return "같은 색상 그룹을 모두 소유해야 건설할 수 있습니다.";
+
+    const level = buildingLevel(player, tile.id);
+    if (level >= MAX_BUILDING_LEVEL) return "이미 최대 단계입니다.";
+
+    const groupLevels = (COLOR_GROUPS[tile.color] || []).map(id => buildingLevel(player, id));
+    if (level > Math.min(...groupLevels)) return "같은 색상 그룹을 고르게 건설해야 합니다.";
+
+    const cost = getBuildCost(tile);
+    if (player.money < cost) return "잔액이 부족합니다.";
+    return "";
+  }
+
+  function getTotalLiquidationValue(player) {
+    return player.properties.reduce((sum, id) => {
+      const tile = tileAt(id);
+      return sum + getPropertySellValue(tile) + buildingLevel(player, id) * getBuildingSellValue(tile);
+    }, 0);
+  }
+
+  function canPayWithLiquidation(player, amount) {
+    return player.money + getTotalLiquidationValue(player) >= amount;
+  }
+
   function getRent(tile, playerPosition) {
     if (tile.type !== "property") return 0;
     const owner = getOwner(tile.id);
@@ -885,10 +944,14 @@
     // Utility
     if (tile.color === "#808080") {
       const owned = UTILITY_IDS.filter(id => owner.properties.includes(id)).length;
-      const roll = state.dice[0] + state.dice[1];
+      const roll = state.rentDiceTotal || DEFAULT_UTILITY_DICE_TOTAL;
       return owned === 2 ? roll * 10 * SCALE_FACTOR : roll * 4 * SCALE_FACTOR;
     }
     // Regular property
+    const level = buildingLevel(owner, tile.id);
+    if (level > 0) {
+      return tile.rent[Math.min(level, tile.rent.length - 1)] || tile.rent[tile.rent.length - 1];
+    }
     const baseRent = tile.rent[0];
     if (isMonopoly(owner, tile.color)) {
       return baseRent * 2; // Monopoly doubles base rent
@@ -897,15 +960,70 @@
   }
 
   /* ── Player Management ── */
-  function payMoney(from, to, amount) {
-    const actual = Math.min(from.money, amount);
+  function sellBuildingForCash(player, tileId, quiet = false) {
+    const tile = tileAt(tileId);
+    const level = buildingLevel(player, tileId);
+    if (level <= 0) return 0;
+    const sellPrice = getBuildingSellValue(tile);
+    player.buildings[tileId] = level - 1;
+    player.money += sellPrice;
+    if (!quiet) addLog(`🏗️ ${playerDisplayName(player)} ${tile.name} 건물 매각 (${buildingLabel(level)} → ${buildingLabel(level - 1)}, ₩${sellPrice.toLocaleString()})`);
+    return sellPrice;
+  }
+
+  function sellPropertyForCash(player, tileId, quiet = false) {
+    const idx = player.properties.indexOf(tileId);
+    if (idx < 0) return 0;
+    const tile = tileAt(tileId);
+    const sellPrice = getPropertySellValue(tile);
+    player.properties.splice(idx, 1);
+    if (player.buildings) delete player.buildings[tileId];
+    player.money += sellPrice;
+    if (!quiet) addLog(`🏷️ ${playerDisplayName(player)} ${tile.name} 매각 (₩${sellPrice.toLocaleString()})`);
+    return sellPrice;
+  }
+
+  function liquidateAssetsForPayment(player, amount) {
+    if (!player || player.bankrupt || player.money >= amount) return;
+
+    while (player.money < amount) {
+      const buildingTileId = player.properties
+        .filter(id => buildingLevel(player, id) > 0)
+        .sort((a, b) => buildingLevel(player, b) - buildingLevel(player, a) || getBuildingSellValue(tileAt(b)) - getBuildingSellValue(tileAt(a)))[0];
+      if (buildingTileId !== undefined) {
+        sellBuildingForCash(player, buildingTileId);
+        continue;
+      }
+
+      const propertyTileId = player.properties
+        .filter(id => buildingLevel(player, id) === 0)
+        .sort((a, b) => getPropertySellValue(tileAt(a)) - getPropertySellValue(tileAt(b)))[0];
+      if (propertyTileId === undefined) break;
+      sellPropertyForCash(player, propertyTileId);
+    }
+  }
+
+  function payMoney(from, to, amount, options = {}) {
+    const due = Math.max(0, amount || 0);
+    if (options.allowLiquidation !== false) {
+      liquidateAssetsForPayment(from, due);
+    }
+    const actual = Math.min(from.money, due);
     from.money -= actual;
     if (to && !to.bankrupt) {
       to.money += actual;
-    } else if (!to) {
+    } else if (options.toSocialFund) {
       state.socialFundPool += actual;
     }
     return actual;
+  }
+
+  function payBank(player, amount, options = {}) {
+    return payMoney(player, null, amount, { ...options, toSocialFund: false });
+  }
+
+  function paySocialFund(player, amount, options = {}) {
+    return payMoney(player, null, amount, { ...options, toSocialFund: true });
   }
 
   function collectMoney(player, amount) {
@@ -913,24 +1031,41 @@
   }
 
   function goBankrupt(player, creditor) {
+    if (player.bankrupt) return;
     player.bankrupt = true;
     // Transfer properties to creditor
     if (creditor) {
+      if (!creditor.buildings) creditor.buildings = {};
+      player.properties.forEach(id => {
+        const level = buildingLevel(player, id);
+        if (level > 0) creditor.buildings[id] = level;
+      });
       creditor.properties.push(...player.properties);
       creditor.properties.sort((a, b) => a - b);
     }
     player.properties = [];
+    player.buildings = {};
+    player.inJail = false;
+    player.spaceTravelReady = false;
     addLog(`💀 ${playerDisplayName(player)} 파산!`);
   }
 
   /* ── Movement ── */
+  function awardGoSalary(player) {
+    collectMoney(player, GO_SALARY);
+    addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
+  }
+
+  function passesGoForward(oldPos, target) {
+    return target < oldPos;
+  }
+
   async function movePlayer(player, steps) {
     const oldPos = player.position;
     const newPos = (player.position + steps) % 40;
     // Pass GO
     if (newPos < oldPos && steps > 0) {
-      collectMoney(player, GO_SALARY);
-      addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
+      awardGoSalary(player);
     }
     // Animate step by step
     await animatePlayerMove(player, oldPos, newPos);
@@ -938,10 +1073,9 @@
   }
 
   async function teleportPlayer(player, target, passGo) {
-    const oldPos = player.position;
-    if (target < oldPos || target === 0) {
-      collectMoney(player, GO_SALARY);
-      addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
+    state.rentDiceTotal = 0;
+    if (passGo) {
+      awardGoSalary(player);
     }
     await animateTeleport(player, target);
     player.position = target;
@@ -949,6 +1083,7 @@
 
   /* ── Jail Logic ── */
   async function sendToJail(player) {
+    state.rentDiceTotal = 0;
     await animateTeleport(player, 10);
     player.position = 10;
     player.inJail = true;
@@ -972,6 +1107,12 @@
       case "corner":
         await handleCornerTile(player, tile);
         break;
+    }
+
+    if (player.bankrupt && activePlayer() === player && state.phase !== "finished") {
+      state.phase = "buyDecision";
+      renderAll();
+      await endTurn();
     }
   }
 
@@ -1032,8 +1173,13 @@
 
       footer.innerHTML = "";
 
+      let settled = false;
+      const preventCancel = (event) => event.preventDefault();
       const closeDialog = () => {
-        dialog.close();
+        if (settled) return;
+        settled = true;
+        dialog.removeEventListener("cancel", preventCancel);
+        if (dialog.open) dialog.close();
         renderAll();
         resolve();
       };
@@ -1094,6 +1240,7 @@
         addLog(`📍 ${playerDisplayName(player)} 자기 땅 ${tile.name}에 도착.`);
       }
 
+      dialog.addEventListener("cancel", preventCancel);
       dialog.showModal();
     });
   }
@@ -1121,9 +1268,9 @@
       isChance = false;
       addLog(`🎴 사회복지기금 카드: ${card.text}`);
     } else if (tile.event === "tax") {
-      const tax = (tile.amount || 100) * (tile.amount ? 1 : SCALE_FACTOR);
-      payMoney(player, null, tax);
-      addLog(`💸 ${playerDisplayName(player)} 세금 ₩${tax.toLocaleString()} 지불 (사회복지기금 적립)`);
+      const tax = tile.amount ?? (100 * SCALE_FACTOR);
+      payBank(player, tax);
+      addLog(`💸 ${playerDisplayName(player)} 세금 ₩${tax.toLocaleString()} 지불`);
       if (player.money <= 0) goBankrupt(player, null);
       state.phase = "buyDecision";
       renderControls();
@@ -1141,6 +1288,16 @@
 
   function showCardPopup(player, card, isChance) {
     return new Promise(resolve => {
+      if (!player.human) {
+        wait(500)
+          .then(() => executeCard(player, card))
+          .then(() => {
+            renderAll();
+            resolve();
+          });
+        return;
+      }
+
       const dialog = document.querySelector("#monopolyCardDialog");
       const popup = dialog?.querySelector(".monopoly-card-popup");
       const header = document.querySelector("#monopolyCardHeader");
@@ -1173,10 +1330,15 @@
         if (card.action === "pay") {
           payAmount = card.amount;
         } else if (card.action === "payAll") {
-          payAmount = card.amount * state.players.filter(p => !p.bankrupt).length;
+          payAmount = card.amount * state.players.filter(p => p !== player && !p.bankrupt).length;
         } else if (card.action === "buildingCost") {
-          const houses = player.properties.reduce((sum, id) => sum + (player.buildings?.[id] || 0), 0);
-          payAmount = houses * card.house;
+          const costInfo = player.properties.reduce((sum, id) => {
+            const level = buildingLevel(player, id);
+            if (level >= MAX_BUILDING_LEVEL) sum.hotels += 1;
+            else sum.houses += level;
+            return sum;
+          }, { houses: 0, hotels: 0 });
+          payAmount = costInfo.houses * card.house + costInfo.hotels * card.hotel;
         }
         buttonText = payAmount > 0 ? `지불하기 (₩${payAmount.toLocaleString()})` : "지불하기";
       } else if (card.action === "collect" || card.action === "collectAll") {
@@ -1185,9 +1347,14 @@
 
       btn.textContent = buttonText;
 
+      let settled = false;
+      const preventCancel = (event) => event.preventDefault();
       const handleConfirm = () => {
+        if (settled) return;
+        settled = true;
         btn.removeEventListener("click", handleConfirm);
-        dialog.close();
+        dialog.removeEventListener("cancel", preventCancel);
+        if (dialog.open) dialog.close();
         executeCard(player, card).then(() => {
           renderAll();
           resolve();
@@ -1195,15 +1362,8 @@
       };
 
       btn.addEventListener("click", handleConfirm);
+      dialog.addEventListener("cancel", preventCancel);
       dialog.showModal();
-
-      if (!player.human) {
-        setTimeout(() => {
-          if (dialog.open) {
-            handleConfirm();
-          }
-        }, 1800);
-      }
     });
   }
 
@@ -1226,7 +1386,7 @@
         addLog(`💰 ${playerDisplayName(player)} ₩${card.amount.toLocaleString()} 획득`);
         break;
       case "pay":
-        player.money -= card.amount;
+        payBank(player, card.amount);
         addLog(`💸 ${playerDisplayName(player)} ₩${card.amount.toLocaleString()} 지불`);
         if (player.money <= 0) goBankrupt(player, null);
         break;
@@ -1240,13 +1400,19 @@
       case "collectAll":
         state.players.filter(p => p !== player && !p.bankrupt).forEach(op => {
           payMoney(op, player, card.amount);
+          if (op.money <= 0) goBankrupt(op, player);
         });
         addLog(`💰 ${playerDisplayName(player)} 모든 플레이어에게서 ₩${card.amount.toLocaleString()} 수집`);
         break;
       case "buildingCost": {
-        const houses = player.properties.reduce((sum, id) => sum + (player.buildings?.[id] || 0), 0);
-        const cost = houses * card.house;
-        player.money -= cost;
+        const costInfo = player.properties.reduce((sum, id) => {
+          const level = buildingLevel(player, id);
+          if (level >= MAX_BUILDING_LEVEL) sum.hotels += 1;
+          else sum.houses += level;
+          return sum;
+        }, { houses: 0, hotels: 0 });
+        const cost = costInfo.houses * card.house + costInfo.hotels * card.hotel;
+        payBank(player, cost);
         if (cost > 0) addLog(`💸 ${playerDisplayName(player)} 건설비용 ₩${cost.toLocaleString()} 지불`);
         if (player.money <= 0) goBankrupt(player, null);
         break;
@@ -1266,14 +1432,9 @@
         addLog(`🔒 ${playerDisplayName(player)} 무인도에 방문 중.`);
         break;
       case "fund":
-        if (state.socialFundPool > 0) {
-          const reward = state.socialFundPool;
-          collectMoney(player, reward);
-          addLog(`💰 ${playerDisplayName(player)} 사회복지기금 수령! 적립금 ₩${reward.toLocaleString()} 획득!`);
-          state.socialFundPool = 0;
-        } else {
-          addLog(`💰 ${playerDisplayName(player)} 사회복지기금 수령처에 도착했으나 적립금이 없습니다.`);
-        }
+        paySocialFund(player, SOCIAL_FUND_FEE);
+        addLog(`💸 ${playerDisplayName(player)} 사회복지기금 ₩${SOCIAL_FUND_FEE.toLocaleString()} 납부`);
+        if (player.money <= 0) goBankrupt(player, null);
         break;
       case "parking":
         player.spaceTravelReady = true;
@@ -1313,12 +1474,35 @@
 
   /* ── AI Logic ── */
   async function aiBuyDecision(player, tile) {
-    if (tile.type !== "property" || getOwner(tile.id)) {
+    if (tile.type !== "property") {
       state.phase = "buyDecision";
       renderAll();
       await endTurn();
       return;
     }
+
+    const owner = getOwner(tile.id);
+    if (owner && owner !== player) {
+      const rent = getRent(tile, player.position);
+      const paid = payMoney(player, owner, rent);
+      addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid.toLocaleString()} 지불 (${tile.name})`);
+      if (player.money <= 0) {
+        goBankrupt(player, owner);
+      }
+      state.phase = "buyDecision";
+      renderAll();
+      await endTurn();
+      return;
+    }
+
+    if (owner === player) {
+      addLog(`📍 ${playerDisplayName(player)} 자기 땅 ${tile.name}에 도착.`);
+      state.phase = "buyDecision";
+      renderAll();
+      await endTurn();
+      return;
+    }
+
     // AI buys if affordable and money > 200 * SCALE_FACTOR (keep reserve)
     if (player.money >= tile.price + 200 * SCALE_FACTOR || player.money >= tile.price && state.turnCount > 15) {
       buyProperty(player);
@@ -1342,38 +1526,40 @@
 
       if (hasPlentyMoney && unownedCount > 3) {
         player.inJail = false;
-        payMoney(player, null, JAIL_FINE);
+        payBank(player, JAIL_FINE);
         addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
         renderAll();
         // Continue to roll normally below!
       } else {
         const dice = rollDice();
         await animateDice(dice);
+        state.rentDiceTotal = dice[0] + dice[1];
         player.jailTurns--;
         if (dice[0] === dice[1]) {
           player.inJail = false;
+          state.suppressDoubleExtraTurn = true;
           addLog(`🎲 ${playerDisplayName(player)} 더블로 탈옥! (${dice[0]}+${dice[1]})`);
           await movePlayer(player, dice[0] + dice[1]);
           await wait(600);
           await handleTileLanding(player);
           if (activePlayer() === player && state.phase === "buyDecision") {
-            endTurn();
+            await endTurn();
           }
           return;
         } else if (player.jailTurns <= 0) {
           player.inJail = false;
-          payMoney(player, null, JAIL_FINE);
+          payBank(player, JAIL_FINE);
           addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
           await movePlayer(player, dice[0] + dice[1]);
           await wait(600);
           await handleTileLanding(player);
           if (activePlayer() === player && state.phase === "buyDecision") {
-            endTurn();
+            await endTurn();
           }
           return;
         } else {
           addLog(`🔒 ${playerDisplayName(player)} 구금 중 (${player.jailTurns}턴 남음)`);
-          endTurn();
+          await endTurn();
           return;
         }
       }
@@ -1382,6 +1568,8 @@
     // Roll dice
     const dice = rollDice();
     await animateDice(dice);
+    state.rentDiceTotal = dice[0] + dice[1];
+    state.suppressDoubleExtraTurn = false;
 
     // Doubles
     if (dice[0] === dice[1]) {
@@ -1390,7 +1578,7 @@
       if (state.lastDoubleCount >= 3) {
         await sendToJail(player);
         state.lastDoubleCount = 0;
-        endTurn();
+        await endTurn();
         return;
       }
     } else {
@@ -1403,7 +1591,7 @@
     await wait(600);
     await handleTileLanding(player);
     if (activePlayer() === player && state.phase === "buyDecision") {
-      endTurn();
+      await endTurn();
     }
   }
 
@@ -1443,7 +1631,7 @@
 
     const p = activePlayer();
     // Doubles = extra turn
-    if (state.dice[0] === state.dice[1] && !p.inJail && !p.bankrupt && state.lastDoubleCount < 3) {
+    if (state.dice[0] === state.dice[1] && !state.suppressDoubleExtraTurn && !p.inJail && !p.bankrupt && state.lastDoubleCount < 3) {
       addLog(`🔄 ${playerDisplayName(p)} 더블로 한 번 더!`);
       const emoji = p.human ? "🎲" : "🤖";
       await showNotice(`${emoji} <strong>${playerDisplayName(p)}</strong>의<br>더블 추가 턴!`, 1200);
@@ -1457,6 +1645,8 @@
     state.currentPlayer = next;
     state.turnCount++;
     state.lastDoubleCount = 0;
+    state.suppressDoubleExtraTurn = false;
+    state.rentDiceTotal = 0;
     const np = activePlayer();
     if (np.bankrupt) {
       await endTurn();
@@ -1502,13 +1692,13 @@
   async function executeSpaceTravel(player, destIndex) {
     state.phase = "rolled"; // Lock actions
     player.spaceTravelReady = false;
+    state.rentDiceTotal = 0;
     
     addLog(`🚀 ${playerDisplayName(player)} 우주선 탑승! ${tileAt(destIndex).name}으로 이동합니다.`);
     
     // Pass GO logic during Space Travel
-    if (destIndex < 30) {
-      collectMoney(player, GO_SALARY);
-      addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
+    if (passesGoForward(player.position, destIndex)) {
+      awardGoSalary(player);
     }
     
     await animateTeleport(player, destIndex);
@@ -1534,7 +1724,7 @@
     await executeSpaceTravel(player, dest);
     
     if (activePlayer() === player && state.phase === "buyDecision") {
-      endTurn();
+      await endTurn();
     }
   }
 
@@ -1587,7 +1777,7 @@
       payBtn.className = "secondary-button";
       payBtn.type = "button";
       payBtn.textContent = `💸 벌금 지불 (₩${JAIL_FINE.toLocaleString()})`;
-      if (player.money < JAIL_FINE) {
+      if (!canPayWithLiquidation(player, JAIL_FINE)) {
         payBtn.disabled = true;
         payBtn.textContent = "잔액 부족";
       }
@@ -1613,16 +1803,18 @@
       const choice = await showJailEscapePopup(player);
       if (choice === "pay") {
         player.inJail = false;
-        payMoney(player, null, JAIL_FINE);
+        payBank(player, JAIL_FINE);
         addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
         renderAll();
         // Continue to normal roll below!
       } else {
         const dice = rollDice();
         await animateDice(dice);
+        state.rentDiceTotal = dice[0] + dice[1];
         player.jailTurns--;
         if (dice[0] === dice[1]) {
           player.inJail = false;
+          state.suppressDoubleExtraTurn = true;
           addLog(`🎲 더블로 탈옥! (${dice[0]}+${dice[1]})`);
           await movePlayer(player, dice[0] + dice[1]);
           await wait(600);
@@ -1630,7 +1822,7 @@
           return;
         } else if (player.jailTurns <= 0) {
           player.inJail = false;
-          payMoney(player, null, JAIL_FINE);
+          payBank(player, JAIL_FINE);
           addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
           await movePlayer(player, dice[0] + dice[1]);
           await wait(600);
@@ -1648,6 +1840,8 @@
 
     const dice = rollDice();
     await animateDice(dice);
+    state.rentDiceTotal = dice[0] + dice[1];
+    state.suppressDoubleExtraTurn = false;
 
     if (dice[0] === dice[1]) {
       state.lastDoubleCount++;
@@ -1689,19 +1883,46 @@
     els.manageList.innerHTML = player.properties.map(id => {
       const tile = tileAt(id);
       const rent = getRent(tile, player.position);
+      const level = buildingLevel(player, id);
+      const buildBlockReason = canBuildOn(player, tile);
+      const canBuild = !buildBlockReason;
+      const canSellBuilding = level > 0;
+      const buildCost = getBuildCost(tile);
+      const buildingSellPrice = getBuildingSellValue(tile);
+      const propertySellPrice = getPropertySellValue(tile);
       return `
         <div class="monopoly-manage-item" data-tile-id="${id}">
           <div class="monopoly-manage-item-info">
             <span class="monopoly-manage-color" style="background:${tile.color}"></span>
             <span>
               <span class="monopoly-manage-item-name">${escapeHtml(tile.name)}</span><br>
-              <span class="monopoly-manage-item-rent">임대료: ₩${rent.toLocaleString()}</span>
+              <span class="monopoly-manage-item-rent">임대료: ₩${rent.toLocaleString()} · ${buildingLabel(level)}</span>
             </span>
           </div>
-          <button class="monopoly-manage-sell-btn" data-sell-id="${id}">매각 (₩${Math.floor(tile.price / 2).toLocaleString()})</button>
+          <div class="monopoly-manage-actions">
+            <button class="monopoly-manage-build-btn" type="button" data-build-id="${id}" ${canBuild ? "" : "disabled"} title="${escapeHtml(buildBlockReason || "건설")}">건설 (₩${buildCost.toLocaleString()})</button>
+            <button class="monopoly-manage-sell-building-btn" type="button" data-sell-building-id="${id}" ${canSellBuilding ? "" : "disabled"}>건물 매각 (₩${buildingSellPrice.toLocaleString()})</button>
+            <button class="monopoly-manage-sell-btn" type="button" data-sell-id="${id}" ${level > 0 ? "disabled" : ""}>땅 매각 (₩${propertySellPrice.toLocaleString()})</button>
+          </div>
         </div>
       `;
     }).join("");
+
+    els.manageList.querySelectorAll(".monopoly-manage-build-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tileId = Number(btn.dataset.buildId);
+        buildProperty(player, tileId);
+        openManageDialog();
+      });
+    });
+
+    els.manageList.querySelectorAll(".monopoly-manage-sell-building-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tileId = Number(btn.dataset.sellBuildingId);
+        sellBuilding(player, tileId);
+        openManageDialog();
+      });
+    });
 
     els.manageList.querySelectorAll(".monopoly-manage-sell-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -1711,20 +1932,41 @@
       });
     });
 
-    if (typeof els.manageDialog.showModal === "function") {
+    if (typeof els.manageDialog.showModal === "function" && !els.manageDialog.open) {
       els.manageDialog.showModal();
     }
   }
 
-  function sellProperty(player, tileId) {
-    const idx = player.properties.indexOf(tileId);
-    if (idx < 0) return;
+  function buildProperty(player, tileId) {
     const tile = tileAt(tileId);
-    const sellPrice = Math.floor(tile.price / 2);
-    player.properties.splice(idx, 1);
-    player.money += sellPrice;
-    if (player.buildings) delete player.buildings[tileId];
-    addLog(`🏷️ ${playerDisplayName(player)} ${tile.name} 매각 (₩${sellPrice.toLocaleString()})`);
+    const reason = canBuildOn(player, tile);
+    if (reason) {
+      addLog(`🚧 ${tile.name} 건설 불가: ${reason}`);
+      renderAll();
+      return;
+    }
+
+    const cost = getBuildCost(tile);
+    player.money -= cost;
+    player.buildings[tileId] = buildingLevel(player, tileId) + 1;
+    addLog(`🏗️ ${playerDisplayName(player)} ${tile.name} ${buildingLabel(player.buildings[tileId])} 건설 (₩${cost.toLocaleString()})`);
+    renderAll();
+  }
+
+  function sellBuilding(player, tileId) {
+    if (buildingLevel(player, tileId) <= 0) return;
+    sellBuildingForCash(player, tileId);
+    renderAll();
+  }
+
+  function sellProperty(player, tileId) {
+    const tile = tileAt(tileId);
+    if (buildingLevel(player, tileId) > 0) {
+      addLog(`🚧 ${tile.name}의 건물을 먼저 매각해야 땅을 팔 수 있습니다.`);
+      renderAll();
+      return;
+    }
+    sellPropertyForCash(player, tileId);
     renderAll();
   }
 
@@ -1785,7 +2027,9 @@
     state.log = [];
     state.turnCount = 1;
     state.lastDoubleCount = 0;
-    state.socialFundPool = 50 * SCALE_FACTOR; // Starting 기금 50만 원
+    state.socialFundPool = 0;
+    state.rentDiceTotal = 0;
+    state.suppressDoubleExtraTurn = false;
 
     addLog(`🌐 부루마불 게임 시작! ${count}명 참가.`);
     addLog(`💰 각 플레이어 ₩${START_MONEY.toLocaleString()} 보유.`);
@@ -1808,6 +2052,8 @@
     els.gamePanel?.classList.add("hidden");
     els.setupPanel?.classList.remove("hidden");
     state.phase = "idle";
+    state.rentDiceTotal = 0;
+    state.suppressDoubleExtraTurn = false;
   }
 
   /* ── Center Toast (Turn Popups) ── */
