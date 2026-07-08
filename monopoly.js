@@ -332,8 +332,8 @@
       if (tile.type !== "property") {
         div.title = tile.name;
       }
-      div.addEventListener("mouseenter", () => showHoverCard(i));
-      div.addEventListener("mouseleave", hideHoverCard);
+      div.addEventListener("mouseenter", () => handleHoverEnter(i));
+      div.addEventListener("mouseleave", handleHoverLeave);
       div.addEventListener("click", () => {
         if (state.phase === "spaceTravel" && activePlayer().human) {
           executeSpaceTravel(activePlayer(), i);
@@ -579,6 +579,22 @@
     const hoverCard = document.querySelector("#monopolyBoardHoverCard");
     hoverCard?.classList.add("hidden");
   }
+  
+  let hoverTimer = 0;
+  function handleHoverEnter(tileId) {
+    if (hoverTimer) clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(() => {
+      showHoverCard(tileId);
+    }, 1000);
+  }
+
+  function handleHoverLeave() {
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+      hoverTimer = 0;
+    }
+    hideHoverCard();
+  }
 
   function renderAllPropertiesList() {
     const listContainer = document.querySelector("#monopolyAllPropertiesList");
@@ -627,8 +643,8 @@
 
     listContainer.querySelectorAll(".property-list-item").forEach(item => {
       const idx = parseInt(item.getAttribute("data-tile-index"), 10);
-      item.addEventListener("mouseenter", () => showHoverCard(idx));
-      item.addEventListener("mouseleave", hideHoverCard);
+      item.addEventListener("mouseenter", () => handleHoverEnter(idx));
+      item.addEventListener("mouseleave", handleHoverLeave);
     });
   }
 
