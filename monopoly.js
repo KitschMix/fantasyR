@@ -1063,9 +1063,10 @@
   }
 
   /* ── Movement ── */
-  function awardGoSalary(player) {
+  async function awardGoSalary(player) {
     collectMoney(player, GO_SALARY);
     addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
+    await showNotice(`🏁 <strong>${playerDisplayName(player)}</strong>이(가)<br>출발지를 통과하여 월급 <strong>₩${GO_SALARY.toLocaleString()}</strong>을 받았습니다!`, 1500);
   }
 
   function passesGoForward(oldPos, target) {
@@ -1077,7 +1078,7 @@
     const newPos = (player.position + steps) % 40;
     // Pass GO
     if (newPos < oldPos && steps > 0) {
-      awardGoSalary(player);
+      await awardGoSalary(player);
     }
     // Animate step by step
     await animatePlayerMove(player, oldPos, newPos);
@@ -1088,7 +1089,7 @@
     state.rentDiceTotal = 0;
     const oldPos = player.position;
     if (passGo && (target < oldPos || target === 0)) {
-      awardGoSalary(player);
+      await awardGoSalary(player);
     }
     await animateTeleport(player, target);
     player.position = target;
@@ -1245,7 +1246,9 @@
       } else {
         // Own property
         const buildCost = getBuildCost(tile);
+        const level = buildingLevel(player, tile.id);
         const buildBlockReason = canBuildOn(player, tile);
+        
         if (!buildBlockReason) {
           const buildBtn = document.createElement("button");
           buildBtn.className = "primary-button";
@@ -1256,6 +1259,31 @@
             closeDialog();
           });
           footer.appendChild(buildBtn);
+        }
+
+        // Sell button directly on own landing popup
+        if (level > 0) {
+          const sellBuildingBtn = document.createElement("button");
+          sellBuildingBtn.className = "secondary-button";
+          sellBuildingBtn.type = "button";
+          sellBuildingBtn.textContent = `건물 매각 (₩${getBuildingSellValue(tile).toLocaleString()})`;
+          sellBuildingBtn.style.color = "#e74c3c";
+          sellBuildingBtn.addEventListener("click", () => {
+            sellBuilding(player, tile.id);
+            closeDialog();
+          });
+          footer.appendChild(sellBuildingBtn);
+        } else {
+          const sellBtn = document.createElement("button");
+          sellBtn.className = "secondary-button";
+          sellBtn.type = "button";
+          sellBtn.textContent = `땅 매각 (₩${getPropertySellValue(tile).toLocaleString()})`;
+          sellBtn.style.color = "#e74c3c";
+          sellBtn.addEventListener("click", () => {
+            sellProperty(player, tile.id);
+            closeDialog();
+          });
+          footer.appendChild(sellBtn);
         }
 
         const okBtn = document.createElement("button");
@@ -1747,7 +1775,7 @@
     
     // Pass GO logic during Space Travel
     if (passesGoForward(player.position, destIndex)) {
-      awardGoSalary(player);
+      await awardGoSalary(player);
     }
     
     await animateTeleport(player, destIndex);
