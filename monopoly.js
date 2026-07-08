@@ -22,10 +22,10 @@
     { id: 13, name: "코펜하겐",       type: "property", color: "#FF69B4", price: 160, rent: [12, 60, 500, 900], buildCosts: [100, 300, 500] },
     { id: 14, name: "스톡홀름",       type: "property", color: "#FF69B4", price: 160, rent: [12, 60, 500, 900], buildCosts: [100, 300, 500] },
     { id: 15, name: "콩코드 여객기",   type: "property", color: "#4682B4", price: 200, rent: [30], fixedRent: true },
-    { id: 16, name: "베른",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
-    { id: 17, name: "베를린",         type: "property", color: "#FFA500", price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
-    { id: 18, name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 19, name: "오타와",         type: "property", color: "#FFA500", price: 200, rent: [16, 80, 550, 1000], buildCosts: [100, 300, 500] },
+    { id: 16, name: "취리히",         type: "property", color: "#FFA500", price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
+    { id: 17, name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 18, name: "베를린",         type: "property", color: "#FFA500", price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
+    { id: 19, name: "몬트리올",       type: "property", color: "#FFA500", price: 200, rent: [16, 80, 550, 1000], buildCosts: [100, 300, 500] },
     { id: 20, name: "사회복지기금 수령", type: "corner",   corner: "fund" },
     { id: 21, name: "부에노스아이레스", type: "property", color: "#FF0000", price: 220, rent: [18, 90, 700, 1050], buildCosts: [150, 450, 750] },
     { id: 22, name: "황금열쇠",       type: "event",    event: "chance" },
@@ -39,13 +39,13 @@
     { id: 30, name: "우주여행",       type: "corner",   corner: "parking" },
     { id: 31, name: "도쿄",           type: "property", color: "#008000", price: 300, rent: [26, 130, 900, 1275], buildCosts: [200, 600, 900] },
     { id: 32, name: "콜롬비아 우주선", type: "property", color: "#4682B4", price: 450, rent: [40], fixedRent: true },
-    { id: 33, name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 34, name: "파리",           type: "property", color: "#008000", price: 320, rent: [28, 150, 1000, 1400], buildCosts: [200, 600, 900] },
-    { id: 35, name: "로마",           type: "property", color: "#008000", price: 350, rent: [35, 175, 1100, 1500], buildCosts: [200, 600, 900] },
+    { id: 33, name: "파리",           type: "property", color: "#008000", price: 320, rent: [28, 150, 1000, 1400], buildCosts: [200, 600, 900] },
+    { id: 34, name: "로마",           type: "property", color: "#008000", price: 350, rent: [35, 175, 1100, 1500], buildCosts: [200, 600, 900] },
+    { id: 35, name: "황금열쇠",       type: "event",    event: "chance" },
     { id: 36, name: "런던",           type: "property", color: "#0000FF", price: 380, rent: [40, 200, 1200, 1700], buildCosts: [200, 600, 900] },
     { id: 37, name: "뉴욕",           type: "property", color: "#0000FF", price: 400, rent: [50, 220, 1300, 1800], buildCosts: [200, 600, 900] },
     { id: 38, name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 39, name: "서울",           type: "property", color: "#0000FF", price: 1000, rent: [200], fixedRent: true }
+    { id: 39, name: "서울올림픽",       type: "property", color: "#0000FF", price: 1000, rent: [200], fixedRent: true }
   ];
 
   const COLOR_GROUPS = {};
@@ -98,9 +98,9 @@
     "코펜하겐": "athens.jpg",
     "스톡홀름": "auckland.jpg",
     "콩코드 여객기": "gimpo_airport.jpg",
-    "베른": "toronto.jpg",
+    "취리히": "toronto.jpg",
     "베를린": "washington.jpg",
-    "오타와": "toronto.jpg",
+    "몬트리올": "toronto.jpg",
     "부에노스아이레스": "buenos_aires.jpg",
     "상파울루": "rio.jpg",
     "시드니": "sydney.jpg",
@@ -115,7 +115,7 @@
     "콜롬비아 우주선": "jfk_airport.jpg",
     "런던": "london.jpg",
     "뉴욕": "newyork.jpg",
-    "서울": "seoul.jpg"
+    "서울올림픽": "seoul.jpg"
   };
 
   function preloadScenicImages() {
@@ -540,7 +540,7 @@
       
       let groupStatus = "";
       if (tile.fixedRent) {
-        groupStatus = ["제주도", "부산", "서울"].includes(tile.name) ? "관광지" : "이동수단";
+        groupStatus = ["제주도", "부산", "서울올림픽"].includes(tile.name) ? "관광지" : "이동수단";
       } else {
         const owned = getColorGroupOwned(targetPlayer, tile.color).length;
         const total = (COLOR_GROUPS[tile.color] || []).length;
@@ -1050,7 +1050,7 @@
   }
 
   function canBuildOn(player, tile) {
-    if (!isBuildableProperty(tile)) return "제주도, 서울, 탈것 등은 건설할 수 없습니다.";
+    if (!isBuildableProperty(tile)) return "제주도, 서울올림픽, 탈것 등은 건설할 수 없습니다.";
     if (!player.properties.includes(tile.id)) return "소유한 땅만 건설할 수 있습니다.";
     if (player.position !== tile.id) return "해당 칸에 도착했을 때만 건설할 수 있습니다.";
     if (state.purchasedThisTurn === tile.id) return "땅을 구입한 턴에는 건설할 수 없습니다. 다음번에 방문할 때부터 건설 가능합니다.";
