@@ -413,6 +413,28 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   border: 1px solid var(--line);
 }
 
+/* --- Bank Area --- */
+.splendor-bank-area {
+  margin-top: 10px;
+}
+
+.splendor-bank-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.splendor-section-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent);
+  text-align: center;
+  margin-bottom: 6px;
+  padding: 6px 0;
+}
+
 /* --- Token Bank --- */
 .splendor-tokens {
   display: flex;
