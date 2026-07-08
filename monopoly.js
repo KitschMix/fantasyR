@@ -7,52 +7,52 @@
   // 20=Free Parking, 21-29=bottom row (right→left), 30=GoToJail, 31-39=left col (bottom→top)
   const TILES = [
     { id: 0,  name: "출발",           type: "corner",   corner: "go" },
-    { id: 1,  name: "타이베이",       type: "property", color: "#8B4513", price: 50,  rent: [2, 10, 90, 250], buildCosts: [50, 150, 250] },
+    { id: 1,  name: "타이베이",       type: "property", color: "#FFD700", group: 1, price: 50,  rent: [2, 10, 90, 250], buildCosts: [50, 150, 250] },
     { id: 2,  name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 3,  name: "홍콩",           type: "property", color: "#8B4513", price: 80,  rent: [4, 20, 180, 450], buildCosts: [50, 150, 250] },
-    { id: 4,  name: "마닐라",         type: "property", color: "#8B4513", price: 80,  rent: [4, 20, 180, 450], buildCosts: [50, 150, 250] },
+    { id: 3,  name: "홍콩",           type: "property", color: "#FFD700", group: 1, price: 80,  rent: [4, 20, 180, 450], buildCosts: [50, 150, 250] },
+    { id: 4,  name: "마닐라",         type: "property", color: "#FFD700", group: 1, price: 80,  rent: [4, 20, 180, 450], buildCosts: [50, 150, 250] },
     { id: 5,  name: "제주도",         type: "property", color: "", price: 200, rent: [30], fixedRent: true },
-    { id: 6,  name: "싱가포르",       type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 270, 550], buildCosts: [50, 150, 250] },
+    { id: 6,  name: "싱가포르",       type: "property", color: "#FFD700", group: 2, price: 100, rent: [6, 30, 270, 550], buildCosts: [50, 150, 250] },
     { id: 7,  name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 8,  name: "카이로",         type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 270, 550], buildCosts: [50, 150, 250] },
-    { id: 9,  name: "이스탄불",       type: "property", color: "#ADD8E6", price: 120, rent: [8, 40, 300, 600], buildCosts: [50, 150, 250] },
+    { id: 8,  name: "카이로",         type: "property", color: "#FFD700", group: 2, price: 100, rent: [6, 30, 270, 550], buildCosts: [50, 150, 250] },
+    { id: 9,  name: "이스탄불",       type: "property", color: "#FFD700", group: 2, price: 120, rent: [8, 40, 300, 600], buildCosts: [50, 150, 250] },
     { id: 10, name: "무인도",         type: "corner",   corner: "jail" },
-    { id: 11, name: "아테네",         type: "property", color: "#FF69B4", price: 140, rent: [10, 50, 450, 750], buildCosts: [100, 300, 500] },
+    { id: 11, name: "아테네",         type: "property", color: "#29B6F6", group: 3, price: 140, rent: [10, 50, 450, 750], buildCosts: [100, 300, 500] },
     { id: 12, name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 13, name: "코펜하겐",       type: "property", color: "#FF69B4", price: 160, rent: [12, 60, 500, 900], buildCosts: [100, 300, 500] },
-    { id: 14, name: "스톡홀름",       type: "property", color: "#FF69B4", price: 160, rent: [12, 60, 500, 900], buildCosts: [100, 300, 500] },
+    { id: 13, name: "코펜하겐",       type: "property", color: "#29B6F6", group: 3, price: 160, rent: [12, 60, 500, 900], buildCosts: [100, 300, 500] },
+    { id: 14, name: "스톡홀름",       type: "property", color: "#29B6F6", group: 3, price: 160, rent: [12, 60, 500, 900], buildCosts: [100, 300, 500] },
     { id: 15, name: "콩코드 여객기",   type: "property", color: "", price: 200, rent: [30], fixedRent: true },
-    { id: 16, name: "취리히",         type: "property", color: "#FFA500", price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
+    { id: 16, name: "취리히",         type: "property", color: "#29B6F6", group: 4, price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
     { id: 17, name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 18, name: "베를린",         type: "property", color: "#FFA500", price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
-    { id: 19, name: "몬트리올",       type: "property", color: "#FFA500", price: 200, rent: [16, 80, 550, 1000], buildCosts: [100, 300, 500] },
+    { id: 18, name: "베를린",         type: "property", color: "#29B6F6", group: 4, price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
+    { id: 19, name: "몬트리올",       type: "property", color: "#29B6F6", group: 4, price: 200, rent: [16, 80, 550, 1000], buildCosts: [100, 300, 500] },
     { id: 20, name: "사회복지기금 수령", type: "corner",   corner: "fund" },
-    { id: 21, name: "부에노스아이레스", type: "property", color: "#FF0000", price: 220, rent: [18, 90, 700, 1050], buildCosts: [150, 450, 750] },
+    { id: 21, name: "부에노스아이레스", type: "property", color: "#0D47A1", group: 5, price: 220, rent: [18, 90, 700, 1050], buildCosts: [150, 450, 750] },
     { id: 22, name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 23, name: "상파울루",       type: "property", color: "#FF0000", price: 240, rent: [20, 100, 750, 1100], buildCosts: [150, 450, 750] },
-    { id: 24, name: "시드니",         type: "property", color: "#FF0000", price: 240, rent: [20, 100, 750, 1100], buildCosts: [150, 450, 750] },
+    { id: 23, name: "상파울루",       type: "property", color: "#0D47A1", group: 5, price: 240, rent: [20, 100, 750, 1100], buildCosts: [150, 450, 750] },
+    { id: 24, name: "시드니",         type: "property", color: "#0D47A1", group: 5, price: 240, rent: [20, 100, 750, 1100], buildCosts: [150, 450, 750] },
     { id: 25, name: "부산",           type: "property", color: "", price: 500, rent: [60], fixedRent: true },
-    { id: 26, name: "하와이",         type: "property", color: "#FFD700", price: 260, rent: [22, 110, 800, 1150], buildCosts: [150, 450, 750] },
-    { id: 27, name: "리스본",         type: "property", color: "#FFD700", price: 260, rent: [22, 110, 800, 1150], buildCosts: [150, 450, 750] },
+    { id: 26, name: "하와이",         type: "property", color: "#0D47A1", group: 6, price: 260, rent: [22, 110, 800, 1150], buildCosts: [150, 450, 750] },
+    { id: 27, name: "리스본",         type: "property", color: "#0D47A1", group: 6, price: 260, rent: [22, 110, 800, 1150], buildCosts: [150, 450, 750] },
     { id: 28, name: "퀸 엘리자베스호", type: "property", color: "", price: 300, rent: [25], fixedRent: true },
-    { id: 29, name: "마드리드",       type: "property", color: "#FFD700", price: 280, rent: [24, 120, 850, 1200], buildCosts: [150, 450, 750] },
+    { id: 29, name: "마드리드",       type: "property", color: "#0D47A1", group: 6, price: 280, rent: [24, 120, 850, 1200], buildCosts: [150, 450, 750] },
     { id: 30, name: "우주여행",       type: "corner",   corner: "parking" },
-    { id: 31, name: "도쿄",           type: "property", color: "#008000", price: 300, rent: [26, 130, 900, 1275], buildCosts: [200, 600, 900] },
+    { id: 31, name: "도쿄",           type: "property", color: "#E53935", group: 7, price: 300, rent: [26, 130, 900, 1275], buildCosts: [200, 600, 900] },
     { id: 32, name: "콜롬비아 우주선", type: "property", color: "", price: 450, rent: [40], fixedRent: true },
-    { id: 33, name: "파리",           type: "property", color: "#008000", price: 320, rent: [28, 150, 1000, 1400], buildCosts: [200, 600, 900] },
-    { id: 34, name: "로마",           type: "property", color: "#008000", price: 350, rent: [35, 175, 1100, 1500], buildCosts: [200, 600, 900] },
+    { id: 33, name: "파리",           type: "property", color: "#E53935", group: 7, price: 320, rent: [28, 150, 1000, 1400], buildCosts: [200, 600, 900] },
+    { id: 34, name: "로마",           type: "property", color: "#E53935", group: 7, price: 350, rent: [35, 175, 1100, 1500], buildCosts: [200, 600, 900] },
     { id: 35, name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 36, name: "런던",           type: "property", color: "#0000FF", price: 380, rent: [40, 200, 1200, 1700], buildCosts: [200, 600, 900] },
-    { id: 37, name: "뉴욕",           type: "property", color: "#0000FF", price: 400, rent: [50, 220, 1300, 1800], buildCosts: [200, 600, 900] },
+    { id: 36, name: "런던",           type: "property", color: "#E53935", group: 8, price: 380, rent: [40, 200, 1200, 1700], buildCosts: [200, 600, 900] },
+    { id: 37, name: "뉴욕",           type: "property", color: "#E53935", group: 8, price: 400, rent: [50, 220, 1300, 1800], buildCosts: [200, 600, 900] },
     { id: 38, name: "사회복지기금",   type: "event",    event: "fund" },
     { id: 39, name: "서울올림픽",       type: "property", color: "", price: 1000, rent: [200], fixedRent: true }
   ];
 
   const COLOR_GROUPS = {};
   TILES.forEach(t => {
-    if (t.type === "property" && !t.fixedRent && t.color) {
-      if (!COLOR_GROUPS[t.color]) COLOR_GROUPS[t.color] = [];
-      COLOR_GROUPS[t.color].push(t.id);
+    if (t.type === "property" && !t.fixedRent && t.group) {
+      if (!COLOR_GROUPS[t.group]) COLOR_GROUPS[t.group] = [];
+      COLOR_GROUPS[t.group].push(t.id);
     }
   });
 
@@ -536,14 +536,14 @@
 
     targetPlayer.properties.forEach(tileId => {
       const tile = tileAt(tileId);
-      const isMon = !tile.fixedRent && tile.color && isMonopoly(targetPlayer, tile.color);
+      const isMon = !tile.fixedRent && tile.group && isMonopoly(targetPlayer, tile.group);
       
       let groupStatus = "";
       if (tile.fixedRent) {
         groupStatus = ["제주도", "부산", "서울올림픽"].includes(tile.name) ? "관광지" : "이동수단";
       } else {
-        const owned = getColorGroupOwned(targetPlayer, tile.color).length;
-        const total = (COLOR_GROUPS[tile.color] || []).length;
+        const owned = getColorGroupOwned(targetPlayer, tile.group).length;
+        const total = (COLOR_GROUPS[tile.group] || []).length;
         groupStatus = isMon ? "⭐ 독점" : `보유 ${owned}/${total}`;
       }
 
@@ -1101,7 +1101,7 @@
       return tile.rent[Math.min(level, tile.rent.length - 1)] || tile.rent[tile.rent.length - 1];
     }
     const baseRent = tile.rent[0];
-    if (isMonopoly(owner, tile.color)) {
+    if (isMonopoly(owner, tile.group)) {
       return baseRent * 2; // Monopoly doubles base rent
     }
     return baseRent;
@@ -1354,7 +1354,7 @@
         }
         if (monopolyRow) {
           monopolyRow.style.display = "flex";
-          const isMon = owner ? isMonopoly(owner, tile.color) : false;
+          const isMon = owner ? isMonopoly(owner, tile.group) : false;
           if (monopolyEl) {
             monopolyEl.innerHTML = isMon
               ? `<span style="color:#e74c3c; font-weight:bold;">⭐ 독점 (임대료 2배)</span>`
@@ -1781,8 +1781,8 @@
     }, 100);
 
     // Check monopoly
-    if (tile.color !== "#808080" && tile.color !== "#4682B4" && isMonopoly(player, tile.color)) {
-      addLog(`⭐ ${playerDisplayName(player)} ${tile.name} 색상 독점!`);
+    if (tile.group && isMonopoly(player, tile.group)) {
+      addLog(`⭐ ${playerDisplayName(player)} 그룹 독점!`);
     }
   }
 
