@@ -1207,10 +1207,11 @@
         payBtn.addEventListener("click", () => {
           const paid = payMoney(player, owner, rent);
           addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid.toLocaleString()} 지불 (${tile.name})`);
+          closeDialog();
+          showNotice(`💸 <strong>${playerDisplayName(player)}</strong>이(가)<br><strong>${playerDisplayName(owner)}</strong>에게<br>임대료 <strong>₩${paid.toLocaleString()}</strong>을 지불했습니다!`, 1800);
           if (player.money <= 0) {
             goBankrupt(player, owner);
           }
-          closeDialog();
         });
         footer.appendChild(payBtn);
       } else if (!owner) {
@@ -1531,6 +1532,7 @@
       const rent = getRent(tile, player.position);
       const paid = payMoney(player, owner, rent);
       addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid.toLocaleString()} 지불 (${tile.name})`);
+      await showNotice(`💸 <strong>${playerDisplayName(player)}</strong>이(가)<br><strong>${playerDisplayName(owner)}</strong>에게<br>임대료 <strong>₩${paid.toLocaleString()}</strong>을 지불했습니다!`, 1800);
       if (player.money <= 0) {
         goBankrupt(player, owner);
       }
