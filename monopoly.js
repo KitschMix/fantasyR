@@ -7,63 +7,61 @@
   // 20=Free Parking, 21-29=bottom row (right→left), 30=GoToJail, 31-39=left col (bottom→top)
   const TILES = [
     { id: 0,  name: "출발",           type: "corner",   corner: "go" },
-    { id: 1,  name: "타이베이",       type: "property", color: "#8B4513", price: 60,  rent: [2, 10, 30, 90, 160, 250] },
-    { id: 2,  name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 3,  name: "베이징",         type: "property", color: "#8B4513", price: 60,  rent: [4, 20, 60, 180, 320, 450] },
-    { id: 4,  name: "여행세",         type: "event",    event: "tax", amount: 200 },
-    { id: 5,  name: "김포공항",       type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 6,  name: "홍콩",           type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 90, 270, 400, 550] },
+    { id: 1,  name: "타이베이",       type: "property", color: "#8B4513", price: 50,  rent: [2, 10, 90, 250], buildCosts: [50, 150, 250] },
+    { id: 2,  name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 3,  name: "홍콩",           type: "property", color: "#8B4513", price: 80,  rent: [4, 20, 180, 450], buildCosts: [50, 150, 250] },
+    { id: 4,  name: "마닐라",         type: "property", color: "#8B4513", price: 80,  rent: [4, 20, 180, 450], buildCosts: [50, 150, 250] },
+    { id: 5,  name: "제주도",         type: "property", color: "#4682B4", price: 200, rent: [30], fixedRent: true },
+    { id: 6,  name: "싱가포르",       type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 270, 550], buildCosts: [50, 150, 250] },
     { id: 7,  name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 8,  name: "마닐라",         type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 90, 270, 400, 550] },
-    { id: 9,  name: "싱가포르",       type: "property", color: "#ADD8E6", price: 120, rent: [8, 40, 100, 300, 450, 600] },
+    { id: 8,  name: "카이로",         type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 270, 550], buildCosts: [50, 150, 250] },
+    { id: 9,  name: "이스탄불",       type: "property", color: "#ADD8E6", price: 120, rent: [8, 40, 300, 600], buildCosts: [50, 150, 250] },
     { id: 10, name: "무인도",         type: "corner",   corner: "jail" },
-    { id: 11, name: "카이로",         type: "property", color: "#FF69B4", price: 140, rent: [10, 50, 150, 450, 625, 750] },
-    { id: 12, name: "세계여행권",     type: "property", color: "#808080", price: 150, rent: [4, 10] },
-    { id: 13, name: "이스탄불",       type: "property", color: "#FF69B4", price: 140, rent: [10, 50, 150, 450, 625, 750] },
-    { id: 14, name: "아테네",         type: "property", color: "#FF69B4", price: 160, rent: [12, 60, 180, 500, 700, 900] },
-    { id: 15, name: "두바이공항",     type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 16, name: "로마",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
-    { id: 17, name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 18, name: "파리",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
-    { id: 19, name: "런던",           type: "property", color: "#FFA500", price: 200, rent: [16, 80, 220, 600, 800, 1000] },
+    { id: 11, name: "아테네",         type: "property", color: "#FF69B4", price: 140, rent: [10, 50, 450, 750], buildCosts: [100, 300, 500] },
+    { id: 12, name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 13, name: "코펜하겐",       type: "property", color: "#FF69B4", price: 160, rent: [12, 60, 500, 900], buildCosts: [100, 300, 500] },
+    { id: 14, name: "스톡홀름",       type: "property", color: "#FF69B4", price: 160, rent: [12, 60, 500, 900], buildCosts: [100, 300, 500] },
+    { id: 15, name: "콩코드 여객기",   type: "property", color: "#4682B4", price: 200, rent: [30], fixedRent: true },
+    { id: 16, name: "베른",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
+    { id: 17, name: "베를린",         type: "property", color: "#FFA500", price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
+    { id: 18, name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 19, name: "오타와",         type: "property", color: "#FFA500", price: 200, rent: [16, 80, 550, 1000], buildCosts: [100, 300, 500] },
     { id: 20, name: "사회복지기금 수령", type: "corner",   corner: "fund" },
-    { id: 21, name: "뉴욕",           type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
+    { id: 21, name: "부에노스아이레스", type: "property", color: "#FF0000", price: 220, rent: [18, 90, 700, 1050], buildCosts: [150, 450, 750] },
     { id: 22, name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 23, name: "워싱턴",         type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
-    { id: 24, name: "토론토",         type: "property", color: "#FF0000", price: 240, rent: [20, 100, 300, 750, 925, 1100] },
-    { id: 25, name: "JFK공항",        type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 26, name: "리우",           type: "property", color: "#FFD700", price: 260, rent: [22, 110, 330, 800, 975, 1150] },
-    { id: 27, name: "부에노스",       type: "property", color: "#FFD700", price: 260, rent: [22, 110, 330, 800, 975, 1150] },
-    { id: 28, name: "항공패스",       type: "property", color: "#808080", price: 150, rent: [4, 10] },
-    { id: 29, name: "멕시코시티",     type: "property", color: "#FFD700", price: 280, rent: [24, 120, 360, 850, 1025, 1200] },
+    { id: 23, name: "상파울루",       type: "property", color: "#FF0000", price: 240, rent: [20, 100, 750, 1100], buildCosts: [150, 450, 750] },
+    { id: 24, name: "시드니",         type: "property", color: "#FF0000", price: 240, rent: [20, 100, 750, 1100], buildCosts: [150, 450, 750] },
+    { id: 25, name: "부산",           type: "property", color: "#4682B4", price: 500, rent: [60], fixedRent: true },
+    { id: 26, name: "하와이",         type: "property", color: "#FFD700", price: 260, rent: [22, 110, 800, 1150], buildCosts: [150, 450, 750] },
+    { id: 27, name: "리스본",         type: "property", color: "#FFD700", price: 260, rent: [22, 110, 800, 1150], buildCosts: [150, 450, 750] },
+    { id: 28, name: "퀸 엘리자베스호", type: "property", color: "#4682B4", price: 300, rent: [25], fixedRent: true },
+    { id: 29, name: "마드리드",       type: "property", color: "#FFD700", price: 280, rent: [24, 120, 850, 1200], buildCosts: [150, 450, 750] },
     { id: 30, name: "우주여행",       type: "corner",   corner: "parking" },
-    { id: 31, name: "시드니",         type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
-    { id: 32, name: "오클랜드",       type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
+    { id: 31, name: "도쿄",           type: "property", color: "#008000", price: 300, rent: [26, 130, 900, 1275], buildCosts: [200, 600, 900] },
+    { id: 32, name: "콜롬비아 우주선", type: "property", color: "#4682B4", price: 450, rent: [40], fixedRent: true },
     { id: 33, name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 34, name: "하와이",         type: "property", color: "#008000", price: 320, rent: [28, 150, 450, 1000, 1200, 1400] },
-    { id: 35, name: "나리타공항",     type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 36, name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 37, name: "제주",           type: "property", color: "#4B0082", price: 350, rent: [35, 175, 500, 1100, 1300, 1500] },
-    { id: 38, name: "특별여행세",     type: "event",    event: "tax", amount: 100 },
-    { id: 39, name: "서울",           type: "property", color: "#4B0082", price: 400, rent: [50, 200, 600, 1400, 1700, 2000] }
+    { id: 34, name: "파리",           type: "property", color: "#008000", price: 320, rent: [28, 150, 1000, 1400], buildCosts: [200, 600, 900] },
+    { id: 35, name: "로마",           type: "property", color: "#008000", price: 350, rent: [35, 175, 1100, 1500], buildCosts: [200, 600, 900] },
+    { id: 36, name: "런던",           type: "property", color: "#0000FF", price: 380, rent: [40, 200, 1200, 1700], buildCosts: [200, 600, 900] },
+    { id: 37, name: "뉴욕",           type: "property", color: "#0000FF", price: 400, rent: [50, 220, 1300, 1800], buildCosts: [200, 600, 900] },
+    { id: 38, name: "사회복지기금",   type: "event",    event: "fund" },
+    { id: 39, name: "서울",           type: "property", color: "#0000FF", price: 1000, rent: [200], fixedRent: true }
   ];
 
   const COLOR_GROUPS = {};
-  TILES.filter(t => t.type === "property" && t.color !== "#808080" && t.color !== "#4682B4").forEach(t => {
-    if (!COLOR_GROUPS[t.color]) COLOR_GROUPS[t.color] = [];
-    COLOR_GROUPS[t.color].push(t.id);
+  TILES.forEach(t => {
+    if (t.type === "property" && !t.fixedRent && t.color) {
+      if (!COLOR_GROUPS[t.color]) COLOR_GROUPS[t.color] = [];
+      COLOR_GROUPS[t.color].push(t.id);
+    }
   });
-  // Railroad group
-  const RAILROAD_IDS = [5, 15, 25, 35];
-  // Utility group
-  const UTILITY_IDS = [12, 28];
 
   const CHANCE_CARDS = [
     { text: "출발 지점으로 이동하세요.", action: "moveTo", target: 0, collect: true },
     { text: "무인도로 가세요. 출발 지점을 지나도 받지 못합니다.", action: "goToJail" },
     { text: "타이베이로 이동하세요.", action: "moveTo", target: 1 },
-    { text: "로마로 이동하세요.", action: "moveTo", target: 16 },
-    { text: "제주로 이동하세요.", action: "moveTo", target: 37 },
+    { text: "로마로 이동하세요.", action: "moveTo", target: 35 },
+    { text: "제주로 이동하세요.", action: "moveTo", target: 5 },
     { text: "모든 플레이어에게 50원을 지불하세요.", action: "payAll", amount: 50 },
     { text: "은행에서 150원을 받습니다.", action: "collect", amount: 150 },
     { text: "은행에서 100원을 받습니다.", action: "collect", amount: 100 },
@@ -83,38 +81,41 @@
   const JAIL_TURNS = 3;
   const SOCIAL_FUND_FEE = 50 * SCALE_FACTOR;
   const DEFAULT_UTILITY_DICE_TOTAL = 7;
-  const MAX_BUILDING_LEVEL = 5;
+  const MAX_BUILDING_LEVEL = 3;
   const AI_THINK_DELAY = 1200;
   const DICE_ROLL_DURATION = 600;
   const DICE_FRAME_MS = 60;
 
   const SCENIC_BG_MAPPING = {
-    "JFK공항": "jfk_airport.jpg",
-    "김포공항": "gimpo_airport.jpg",
-    "나리타공항": "narita_airport.jpg",
-    "두바이공항": "dubai_airport.jpg",
-    "뉴욕": "newyork.jpg",
-    "베이징": "beijing.jpg",
-    "워싱턴": "washington.jpg",
     "타이베이": "taipei.jpg",
-    "토론토": "toronto.jpg",
-    "런던": "london.jpg",
-    "로마": "rome.jpg",
-    "리우": "rio.jpg",
+    "홍콩": "hongkong.jpg",
     "마닐라": "manila.jpg",
-    "멕시코시티": "mexicocity.jpg",
-    "부에노스": "buenos_aires.jpg",
-    "서울": "seoul.jpg",
-    "시드니": "sydney.jpg",
+    "제주도": "jeju.jpg",
     "싱가포르": "singapore.jpg",
-    "아테네": "athens.jpg",
-    "오클랜드": "auckland.jpg",
-    "이스탄불": "istanbul.jpg",
-    "제주": "jeju.jpg",
     "카이로": "cairo.jpg",
-    "파리": "paris.jpg",
+    "이스탄불": "istanbul.jpg",
+    "아테네": "athens.jpg",
+    "코펜하겐": "athens.jpg",
+    "스톡홀름": "auckland.jpg",
+    "콩코드 여객기": "gimpo_airport.jpg",
+    "베른": "toronto.jpg",
+    "베를린": "washington.jpg",
+    "오타와": "toronto.jpg",
+    "부에노스아이레스": "buenos_aires.jpg",
+    "상파울루": "rio.jpg",
+    "시드니": "sydney.jpg",
+    "부산": "seoul.jpg",
     "하와이": "hawaii.jpg",
-    "홍콩": "hongkong.jpg"
+    "리스본": "hawaii.jpg",
+    "퀸 엘리자베스호": "dubai_airport.jpg",
+    "마드리드": "mexicocity.jpg",
+    "도쿄": "narita_airport.jpg",
+    "파리": "paris.jpg",
+    "로마": "rome.jpg",
+    "콜롬비아 우주선": "jfk_airport.jpg",
+    "런던": "london.jpg",
+    "뉴욕": "newyork.jpg",
+    "서울": "seoul.jpg"
   };
 
   function preloadScenicImages() {
@@ -129,6 +130,7 @@
     if (t.price) t.price *= SCALE_FACTOR;
     if (t.rent) t.rent = t.rent.map(r => r * SCALE_FACTOR);
     if (t.amount) t.amount *= SCALE_FACTOR;
+    if (t.buildCosts) t.buildCosts = t.buildCosts.map(c => c * SCALE_FACTOR);
   });
 
   CHANCE_CARDS.forEach(card => {
@@ -310,13 +312,16 @@
         html += `<div class="tile-color-bar" style="background:${tile.color}"></div>`;
         if (owner) {
           div.style.borderColor = owner.tokenColor;
-          div.style.boxShadow = `inset 0 0 10px ${owner.tokenColor}44`;
+          div.style.borderWidth = "3px";
+          div.style.borderStyle = "solid";
+          div.style.backgroundColor = `${owner.tokenColor}15`; // Soft owner color background tint
+          div.style.boxShadow = `inset 0 0 12px ${owner.tokenColor}55`; // Beautiful inset glow
           
           if (isBuildableProperty(tile)) {
             const level = buildingLevel(owner, i);
             if (level > 0) {
-              const label = level === 5 ? "🏨" : `🏠×${level}`;
-              html += `<span class="tile-building-badge" style="background:${owner.tokenColor}">${label}</span>`;
+              const label = level === 3 ? "🏨" : (level === 2 ? "🏢" : "🏠");
+              html += `<span class="tile-building-badge">${label}</span>`;
             }
           }
         }
@@ -531,15 +536,11 @@
 
     targetPlayer.properties.forEach(tileId => {
       const tile = tileAt(tileId);
-      const isMon = tile.color !== "#808080" && tile.color !== "#4682B4" && isMonopoly(targetPlayer, tile.color);
+      const isMon = !tile.fixedRent && tile.color && isMonopoly(targetPlayer, tile.color);
       
       let groupStatus = "";
-      if (tile.color === "#4682B4") {
-        const owned = RAILROAD_IDS.filter(id => targetPlayer.properties.includes(id)).length;
-        groupStatus = `철도 ${owned}/4`;
-      } else if (tile.color === "#808080") {
-        const owned = UTILITY_IDS.filter(id => targetPlayer.properties.includes(id)).length;
-        groupStatus = `관공서 ${owned}/2`;
+      if (tile.fixedRent) {
+        groupStatus = ["제주도", "부산", "서울"].includes(tile.name) ? "관광지" : "이동수단";
       } else {
         const owned = getColorGroupOwned(targetPlayer, tile.color).length;
         const total = (COLOR_GROUPS[tile.color] || []).length;
@@ -551,7 +552,7 @@
       
       const monClass = isMon ? " monopoly-owned" : "";
       
-      const isAirportOrScenic = tile.color === "#4682B4" || tile.color === "#808080";
+      const isAirportOrScenic = tile.fixedRent;
       const bLabel = isAirportOrScenic ? "" : ` (${buildingLabel(buildingLevel(targetPlayer, tileId))})`;
 
       cardDiv.innerHTML = `
@@ -581,7 +582,10 @@
 
   function showHoverCard(tileId) {
     const tile = tileAt(tileId);
-    if (!tile || tile.type === "corner" || tile.type === "event") return;
+    if (!tile) return;
+
+    const isSocialFund = tile.name.includes("사회복지기금");
+    if (tile.type !== "property" && !isSocialFund) return;
 
     const hoverCard = document.querySelector("#monopolyBoardHoverCard");
     if (!hoverCard) return;
@@ -593,38 +597,86 @@
     const ownerEl = hoverCard.querySelector("#hoverCardOwner");
     const ownerRow = hoverCard.querySelector("#hoverCardOwnerRow");
 
+    const priceRow = hoverCard.querySelector("#hoverCardPriceRow") || priceEl?.parentElement;
+    const rent0Row = hoverCard.querySelector("#hoverCardRent0Row") || rent0El?.parentElement;
+    const rentMonRow = hoverCard.querySelector("#hoverCardRentMonRow") || rentMonEl?.parentElement;
+
     // Reset styles
     hoverCard.style.background = "";
     hoverCard.classList.remove("has-bg-image");
-    if (header) {
-      header.textContent = tile.name;
-      header.style.backgroundColor = tile.color || "#808080";
-      header.style.display = "";
-    }
 
-    // Set custom backgrounds for scenic tiles
-    const bgImage = SCENIC_BG_MAPPING[tile.name];
-    if (bgImage) {
-      hoverCard.style.background = `url('assets/monopoly/${bgImage}') no-repeat center center / cover`;
-      hoverCard.classList.add("has-bg-image");
-      if (header) header.style.display = "none";
-    }
-
-    if (priceEl) priceEl.textContent = `₩${(tile.price || 0).toLocaleString()}`;
-    if (rent0El) rent0El.textContent = `₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}`;
-    
-    let rentMon = tile.rent ? (tile.rent[1] || tile.rent[0] * 2) : 0;
-    if (rentMonEl) rentMonEl.textContent = `₩${rentMon.toLocaleString()}`;
-    
-    const owner = getOwner(tileId);
-    if (owner) {
-      ownerEl.textContent = owner.human ? "나" : owner.name;
-      ownerEl.style.color = owner.tokenColor;
-      ownerRow.style.display = "flex";
+    if (isSocialFund) {
+      if (header) {
+        header.textContent = tile.name;
+        header.style.backgroundColor = "#27ae60"; // Green theme for welfare fund
+        header.style.display = "";
+      }
+      if (priceRow) {
+        priceRow.querySelector("strong").textContent = "현재 적립액";
+        if (priceEl) {
+          priceEl.textContent = `₩${state.socialFundPool.toLocaleString()}`;
+          priceEl.style.color = "#27ae60";
+          priceEl.style.fontWeight = "bold";
+        }
+      }
+      if (rent0Row) {
+        rent0Row.querySelector("strong").textContent = "도착 시 액션";
+        if (rent0El) {
+          rent0El.textContent = tile.corner === "fund" ? "기금 전액 수령 💰" : "기금 ₩150,000 기부 💸";
+          rent0El.style.color = "";
+          rent0El.style.fontWeight = "";
+        }
+      }
+      if (rentMonRow) rentMonRow.style.display = "none";
+      if (ownerRow) ownerRow.style.display = "none";
     } else {
-      ownerEl.textContent = "없음";
-      ownerEl.style.color = "var(--text-muted)";
-      ownerRow.style.display = "flex";
+      if (header) {
+        header.textContent = tile.name;
+        header.style.backgroundColor = tile.color || "#808080";
+        header.style.display = "";
+      }
+
+      // Set custom backgrounds for scenic tiles
+      const bgImage = SCENIC_BG_MAPPING[tile.name];
+      if (bgImage) {
+        hoverCard.style.background = `url('assets/monopoly/${bgImage}') no-repeat center center / cover`;
+        hoverCard.classList.add("has-bg-image");
+        if (header) header.style.display = "none";
+      }
+
+      if (priceRow) {
+        priceRow.querySelector("strong").textContent = "구매가";
+        if (priceEl) {
+          priceEl.textContent = `₩${(tile.price || 0).toLocaleString()}`;
+          priceEl.style.color = "";
+          priceEl.style.fontWeight = "";
+        }
+      }
+      if (rent0Row) {
+        rent0Row.querySelector("strong").textContent = tile.fixedRent ? "통행료" : "기본 임대료";
+        if (rent0El) {
+          rent0El.textContent = `₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}`;
+        }
+      }
+      if (rentMonRow) {
+        rentMonRow.style.display = "flex";
+        rentMonRow.querySelector("strong").textContent = tile.fixedRent ? "통행료" : "호텔 임대료";
+        if (rentMonEl) {
+          const rentMon = tile.rent ? (tile.fixedRent ? tile.rent[0] : (tile.rent[3] || tile.rent[0] * 2)) : 0;
+          rentMonEl.textContent = `₩${rentMon.toLocaleString()}`;
+        }
+      }
+
+      const owner = getOwner(tileId);
+      if (owner) {
+        ownerEl.textContent = owner.human ? "나" : owner.name;
+        ownerEl.style.color = owner.tokenColor;
+        ownerRow.style.display = "flex";
+      } else {
+        ownerEl.textContent = "없음";
+        ownerEl.style.color = "var(--text-muted)";
+        ownerRow.style.display = "flex";
+      }
     }
 
     hoverCard.classList.remove("hidden");
@@ -742,30 +794,12 @@
     const owner = state.players.find(p => p.properties.includes(tileId));
     
     let rentInfo = "";
-    if (tile.color === "#4682B4") {
-      // Airport
-      const owned = owner ? RAILROAD_IDS.filter(id => owner.properties.includes(id)).length : 0;
-      rentInfo = "보유 공항 수에 따른 임대료:<br>" + tile.rent.map((r, i) => {
-        const cnt = i + 1;
-        const isCurrent = owner && owned === cnt;
-        if (isCurrent) {
-          return `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">${cnt}개: ₩${r.toLocaleString()}</span>`;
-        }
-        return `${cnt}개: ₩${r.toLocaleString()}`;
-      }).join(", ");
-    } else if (tile.color === "#808080") {
-      // Sightseeing (Utility)
-      const owned = owner ? UTILITY_IDS.filter(id => owner.properties.includes(id)).length : 0;
-      rentInfo = "보유 관광지 수에 따른 임대료:<br>" + tile.rent.map((r, i) => {
-        const cnt = i + 1;
-        const isCurrent = owner && owned === cnt;
-        if (isCurrent) {
-          return `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">${cnt}개: ₩${r.toLocaleString()}</span>`;
-        }
-        return `${cnt}개: ₩${r.toLocaleString()}`;
-      }).join(", ");
+    if (tile.fixedRent) {
+      const baseText = owner
+        ? `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">₩${tile.rent[0].toLocaleString()}</span>`
+        : `₩${tile.rent[0].toLocaleString()}`;
+      rentInfo = `통행료: ${baseText}`;
     } else {
-      // Regular property
       const currentLevel = owner ? buildingLevel(owner, tileId) : -1;
       
       const isBaseCurrent = owner && currentLevel === 0;
@@ -773,12 +807,13 @@
         ? `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">₩${tile.rent[0].toLocaleString()}</span>`
         : `₩${tile.rent[0].toLocaleString()}`;
       
-      rentInfo = `기본 임대료: ${baseText}`;
+      rentInfo = `대지: ${baseText}`;
       if (tile.rent.length > 1) {
-        rentInfo += `<br>건축 단계: ` + tile.rent.slice(1).map((r, i) => {
+        const labels = ["별장", "빌딩", "호텔"];
+        rentInfo += `<br>건물: ` + tile.rent.slice(1).map((r, i) => {
           const lv = i + 1;
           const isCurrent = owner && currentLevel === lv;
-          const label = lv === 5 ? "호텔" : `Lv${lv}`;
+          const label = labels[i] || `Lv${lv}`;
           if (isCurrent) {
             return `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">${label}: ₩${r.toLocaleString()}</span>`;
           }
@@ -986,7 +1021,7 @@
   }
 
   function isBuildableProperty(tile) {
-    return tile?.type === "property" && tile.color !== "#808080" && tile.color !== "#4682B4";
+    return tile?.type === "property" && !tile.fixedRent;
   }
 
   function buildingLevel(player, tileId) {
@@ -994,16 +1029,20 @@
   }
 
   function buildingLabel(level) {
-    if (level >= MAX_BUILDING_LEVEL) return "호텔";
-    return level > 0 ? `건물 Lv${level}` : "건물 없음";
+    if (level === 3) return "호텔";
+    if (level === 2) return "빌딩";
+    if (level === 1) return "별장";
+    return "대지";
   }
 
-  function getBuildCost(tile) {
-    return Math.max(50 * SCALE_FACTOR, Math.floor((tile?.price || 0) / 2));
+  function getBuildCost(tile, nextLevel) {
+    if (!tile.buildCosts) return 0;
+    return tile.buildCosts[nextLevel - 1] || 0;
   }
 
-  function getBuildingSellValue(tile) {
-    return Math.floor(getBuildCost(tile) / 2);
+  function getBuildingSellValue(tile, level) {
+    if (!tile.buildCosts || level <= 0) return 0;
+    return Math.floor((tile.buildCosts[level - 1] || 0) / 2);
   }
 
   function getPropertySellValue(tile) {
@@ -1011,23 +1050,34 @@
   }
 
   function canBuildOn(player, tile) {
-    if (!isBuildableProperty(tile)) return "공항/관공서는 건설할 수 없습니다.";
+    if (!isBuildableProperty(tile)) return "제주도, 서울, 탈것 등은 건설할 수 없습니다.";
     if (!player.properties.includes(tile.id)) return "소유한 땅만 건설할 수 있습니다.";
     if (player.position !== tile.id) return "해당 칸에 도착했을 때만 건설할 수 있습니다.";
     if (state.purchasedThisTurn === tile.id) return "땅을 구입한 턴에는 건설할 수 없습니다. 다음번에 방문할 때부터 건설 가능합니다.";
 
     const level = buildingLevel(player, tile.id);
-    if (level >= MAX_BUILDING_LEVEL) return "이미 최대 단계입니다.";
+    if (level >= MAX_BUILDING_LEVEL) return "이미 최대 단계(호텔)입니다.";
 
-    const cost = getBuildCost(tile);
+    const cost = getBuildCost(tile, level + 1);
     if (player.money < cost) return "잔액이 부족합니다.";
     return "";
+  }
+
+  function getBuildingLiquidationValue(player, tileId) {
+    const tile = tileAt(tileId);
+    if (!tile.buildCosts) return 0;
+    const currentLevel = buildingLevel(player, tileId);
+    let sum = 0;
+    for (let lv = 1; lv <= currentLevel; lv++) {
+      sum += getBuildingSellValue(tile, lv);
+    }
+    return sum;
   }
 
   function getTotalLiquidationValue(player) {
     return player.properties.reduce((sum, id) => {
       const tile = tileAt(id);
-      return sum + getPropertySellValue(tile) + buildingLevel(player, id) * getBuildingSellValue(tile);
+      return sum + getPropertySellValue(tile) + getBuildingLiquidationValue(player, id);
     }, 0);
   }
 
@@ -1040,18 +1090,12 @@
     const owner = getOwner(tile.id);
     if (!owner) return 0;
 
-    // Railroad
-    if (tile.color === "#4682B4") {
-      const owned = RAILROAD_IDS.filter(id => owner.properties.includes(id)).length;
-      return 25 * SCALE_FACTOR * Math.pow(2, owned - 1); // 25, 50, 100, 200 scaled
+    // Fixed rent properties (Jeju, Busan, Seoul, transportation)
+    if (tile.fixedRent) {
+      return tile.rent[0];
     }
-    // Utility
-    if (tile.color === "#808080") {
-      const owned = UTILITY_IDS.filter(id => owner.properties.includes(id)).length;
-      const roll = state.rentDiceTotal || DEFAULT_UTILITY_DICE_TOTAL;
-      return owned === 2 ? roll * 10 * SCALE_FACTOR : roll * 4 * SCALE_FACTOR;
-    }
-    // Regular property
+
+    // Regular buildable property
     const level = buildingLevel(owner, tile.id);
     if (level > 0) {
       return tile.rent[Math.min(level, tile.rent.length - 1)] || tile.rent[tile.rent.length - 1];
@@ -1275,7 +1319,7 @@
       if (priceEl) priceEl.textContent = `₩${(tile.price || 0).toLocaleString()}`;
       if (rent0El) rent0El.textContent = `₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}`;
       
-      const rentMon = tile.rent ? (tile.rent[1] || tile.rent[0] * 2) : 0;
+      const rentMon = tile.rent ? (tile.fixedRent ? tile.rent[0] : (tile.rent[3] || tile.rent[0] * 2)) : 0;
       if (rentMonEl) rentMonEl.textContent = `₩${rentMon.toLocaleString()}`;
 
       const owner = getOwner(tile.id);
@@ -1285,6 +1329,38 @@
       } else {
         ownerEl.textContent = "없음";
         ownerEl.style.color = "var(--text-muted)";
+      }
+
+      // Render buildings and monopoly status rows
+      const buildingsEl = dialog.querySelector("#monopolyPropertyBuildings");
+      const buildingsRow = dialog.querySelector("#monopolyPropertyBuildingsRow");
+      const monopolyEl = dialog.querySelector("#monopolyPropertyMonopoly");
+      const monopolyRow = dialog.querySelector("#monopolyPropertyMonopolyRow");
+
+      if (tile.fixedRent) {
+        if (buildingsRow) buildingsRow.style.display = "none";
+        if (monopolyRow) monopolyRow.style.display = "none";
+      } else {
+        if (buildingsRow) {
+          buildingsRow.style.display = "flex";
+          const level = owner ? buildingLevel(owner, tile.id) : 0;
+          if (buildingsEl) {
+            let label = "대지 (건물 없음)";
+            if (level === 1) label = "별장 (🏠)";
+            else if (level === 2) label = "빌딩 (🏢)";
+            else if (level === 3) label = "호텔 (🏨)";
+            buildingsEl.textContent = label;
+          }
+        }
+        if (monopolyRow) {
+          monopolyRow.style.display = "flex";
+          const isMon = owner ? isMonopoly(owner, tile.color) : false;
+          if (monopolyEl) {
+            monopolyEl.innerHTML = isMon
+              ? `<span style="color:#e74c3c; font-weight:bold;">⭐ 독점 (임대료 2배)</span>`
+              : "아니오";
+          }
+        }
       }
 
       footer.innerHTML = "";
@@ -1387,8 +1463,8 @@
         }
       } else {
         // Own property
-        const buildCost = getBuildCost(tile);
         const level = buildingLevel(player, tile.id);
+        const buildCost = getBuildCost(tile, level + 1);
         const buildBlockReason = canBuildOn(player, tile);
         
         if (!buildBlockReason) {
@@ -1411,7 +1487,7 @@
           const sellBuildingBtn = document.createElement("button");
           sellBuildingBtn.className = "secondary-button";
           sellBuildingBtn.type = "button";
-          sellBuildingBtn.textContent = `건물 매각 (₩${getBuildingSellValue(tile).toLocaleString()})`;
+          sellBuildingBtn.textContent = `건물 매각 (₩${getBuildingSellValue(tile, level).toLocaleString()})`;
           sellBuildingBtn.style.color = "#e74c3c";
           sellBuildingBtn.addEventListener("click", () => {
             sellBuilding(player, tile.id);
@@ -1655,7 +1731,11 @@
         addLog(`🏁 ${playerDisplayName(player)} 출발지에 도착.`);
         break;
       case "jail":
-        addLog(`🔒 ${playerDisplayName(player)} 무인도에 방문 중.`);
+        if (!player.inJail) {
+          await sendToJail(player);
+        } else {
+          addLog(`🔒 ${playerDisplayName(player)} 무인도 구금 중.`);
+        }
         break;
       case "fund":
         if (state.socialFundPool > 0) {

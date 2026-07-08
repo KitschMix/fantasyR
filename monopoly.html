@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>부루마불</title>
     <link rel="stylesheet" href="styles.css?v=20260706-brumable" />
-    <link rel="stylesheet" href="monopoly.css?v=20260708-brumable-rules-v44" />
+    <link rel="stylesheet" href="monopoly.css?v=20260708-brumable-rules-v48" />
   </head>
   <body class="monopoly-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -105,9 +105,9 @@
                 <div id="monopolyBoardHoverCard" class="monopoly-board-hover-card hidden">
                   <div class="hover-card-header" id="hoverCardHeader">-</div>
                   <div class="hover-card-body">
-                    <div class="hover-card-row"><strong>구매가</strong> <span id="hoverCardPrice">₩0</span></div>
-                    <div class="hover-card-row"><strong>통행료</strong> <span id="hoverCardRent0">₩0</span></div>
-                    <div class="hover-card-row"><strong>독점 통행료</strong> <span id="hoverCardRentMon">₩0</span></div>
+                    <div class="hover-card-row" id="hoverCardPriceRow"><strong>구매가</strong> <span id="hoverCardPrice">₩0</span></div>
+                    <div class="hover-card-row" id="hoverCardRent0Row"><strong>통행료</strong> <span id="hoverCardRent0">₩0</span></div>
+                    <div class="hover-card-row" id="hoverCardRentMonRow"><strong>독점 통행료</strong> <span id="hoverCardRentMon">₩0</span></div>
                     <div class="hover-card-owner-row" id="hoverCardOwnerRow">
                       <strong>소유주</strong> <span id="hoverCardOwner">없음</span>
                     </div>
@@ -203,7 +203,7 @@
         <div class="monopoly-property-popup" style="width: min(360px, 90vw); aspect-ratio: auto; min-height: auto;">
           <div class="property-popup-header" style="background-color: #2196f3;">📢 알림</div>
           <div class="property-popup-body" style="padding: 24px 16px; min-height: 100px; justify-content: center; display: flex; align-items: center;">
-            <p id="monopolyNoticeText" style="text-align: center; font-size: 20px; font-weight: bold; line-height: 1.6; margin: 0; color: #24170d;"></p>
+            <p id="monopolyNoticeText" style="text-align: center; font-size: 17px; font-weight: bold; line-height: 1.6; margin: 0; color: #24170d;"></p>
           </div>
           <div class="property-popup-footer">
             <button id="monopolyNoticeButton" class="primary-button" type="button" style="width: 100%;">확인</button>
@@ -218,9 +218,206 @@
           <div class="property-popup-body">
             <h2 id="monopolyPropertyName" class="property-popup-name">도시 이름</h2>
             <div class="property-popup-details">
-              <div class="property-popup-row"><strong>구매가</strong> <span id="monopolyPropertyPrice">₩0</span></div>
-              <div class="property-popup-row"><strong>기본 임대료</strong> <span id="monopolyPropertyRent0">₩0</span></div>
-              <div class="property-popup-row"><strong>독점 임대료</strong> <span id="monopolyPropertyRentMon">₩0</span></div>
+              <div class="property-popup-row" id="monopolyPropertyPriceRow"><strong>구매가</strong> <span id="monopolyPropertyPrice">₩0</span></div>
+              <div class="property-popup-row" id="monopolyPropertyRent0Row"><strong>기본 임대료</strong> <span id="monopolyPropertyRent0">₩0</span></div>
+              <div class="property-popup-row" id="monopolyPropertyRentMonRow"><strong>독점 임대료</strong> <span id="monopolyPropertyRentMon">₩0</span></div>
+              <div class="property-popup-row" id="monopolyPropertyBuildingsRow"><strong>건물 현황</strong> <span id="monopolyPropertyBuildings">대지</span></div>
+              <div class="property-popup-row" id="monopolyPropertyMonopolyRow"><strong>독점 여부</strong> <span id="monopolyPropertyMonopoly">아니오</span></div>
+              <div class="property-popup-row" id="monopolyPropertyOwnerRow"><strong>소유주</strong> <span id="monopolyPropertyOwner">없음</span></div>
+            </div>
+          </div>
+          <div class="property-popup-footer" id="monopolyPropertyFooter">
+          <div class="monopoly-setup-controls">
+            <label>
+              플레이어 수
+              <select id="monopolyPlayerCountSelect">
+                <option value="2">2명</option>
+                <option value="3" selected>3명</option>
+                <option value="4">4명</option>
+              </select>
+            </label>
+            <label>
+              내 닉네임
+              <input id="monopolyNameInput" type="text" minlength="2" maxlength="12" placeholder="2글자 이상" autocomplete="nickname" />
+            </label>
+            <button id="startMonopolyButton" class="primary-button" type="button">게임 시작</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Game Panel -->
+      <section id="monopolyGamePanel" class="monopoly-game-panel hidden" aria-label="부루마불 플레이 화면">
+        <div class="monopoly-shell">
+          <div class="monopoly-game-top">
+            <h1 class="monopoly-game-title">
+              <img class="monopoly-title-logo monopoly-title-logo-small" src="assets/titles/brumable-logo.webp" alt="부루마불" />
+            </h1>
+            <div class="monopoly-game-actions">
+              <div class="monopoly-zoom-controls" aria-label="부루마불 확대 축소">
+                <button id="monopolyZoomOutButton" class="icon-button monopoly-zoom-button" type="button" title="축소">-</button>
+                <span id="monopolyZoomLabel" class="monopoly-zoom-label">100%</span>
+                <button id="monopolyZoomInButton" class="icon-button monopoly-zoom-button" type="button" title="확대">+</button>
+              </div>
+              <button id="monopolyNewGameButton" class="secondary-button" type="button">새 게임</button>
+              <button id="monopolyRulesButton" class="icon-button monopoly-help-button" type="button" title="부루마불 도움말" aria-label="부루마불 도움말">?</button>
+              <button id="monopolyExitGameButton" class="secondary-button" type="button">첫 화면</button>
+            </div>
+          </div>
+
+          <div class="monopoly-game-layout">
+            <!-- Left: Players & Log -->
+            <aside class="monopoly-side-panel">
+              <div id="monopolyPlayersList" class="monopoly-players-list"></div>
+              <section class="monopoly-status-card">
+                <span>현재 차례</span>
+                <strong id="monopolyTurnLabel">-</strong>
+                <small id="monopolyPhaseLabel">-</small>
+              </section>
+
+              <!-- Compact Game Log here -->
+              <section class="monopoly-log-card">
+                <div class="monopoly-panel-title">📋 게임 기록</div>
+                <ol id="monopolyLog" class="monopoly-log"></ol>
+              </section>
+            </aside>
+
+            <!-- Center: Board with controls in the center -->
+            <div class="monopoly-board-stage">
+              <div id="monopolyBoard" class="monopoly-board" aria-label="부루마불 보드">
+                <div id="monopolyBoardImage" class="monopoly-board-image"></div>
+                <div class="monopoly-board-center">
+                  <img class="monopoly-board-center-logo" src="assets/titles/brumable-logo.webp" alt="부루마불" />
+
+                  <!-- Dice Display centered inside the board center -->
+                  <div id="monopolyDiceDisplay" class="monopoly-dice-display"></div>
+
+                  <div class="monopoly-board-center-controls">
+                    <button id="monopolyRollButton" class="primary-button" type="button">🎲 주사위 굴리기</button>
+                    <button id="monopolyEndTurnButton" class="secondary-button" type="button" disabled>턴 종료</button>
+                  </div>
+                </div>
+                <div id="monopolyPieces" class="monopoly-pieces"></div>
+                <div id="monopolyBoardHoverCard" class="monopoly-board-hover-card hidden">
+                  <div class="hover-card-header" id="hoverCardHeader">-</div>
+                  <div class="hover-card-body">
+                    <div class="hover-card-row" id="hoverCardPriceRow"><strong>구매가</strong> <span id="hoverCardPrice">₩0</span></div>
+                    <div class="hover-card-row" id="hoverCardRent0Row"><strong>통행료</strong> <span id="hoverCardRent0">₩0</span></div>
+                    <div class="hover-card-row" id="hoverCardRentMonRow"><strong>독점 통행료</strong> <span id="hoverCardRentMon">₩0</span></div>
+                    <div class="hover-card-owner-row" id="hoverCardOwnerRow">
+                      <strong>소유주</strong> <span id="hoverCardOwner">없음</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="monopolyPropertyInfo" class="monopoly-property-info hidden"></div>
+            </div>
+
+            <!-- Right: All Properties Status List -->
+            <aside class="monopoly-control-panel">
+              <section class="monopoly-all-properties-card">
+                <div class="monopoly-panel-title">🏰 전체 부동산 현황</div>
+                <div id="monopolyAllPropertiesList" class="monopoly-all-properties-list"></div >
+              </section>
+            </aside>
+          </div>
+
+          <!-- My Assets Grid (Fantasy Kingdom card style) -->
+          <div id="monopolyMyAssetsArea" class="monopoly-my-assets-area hidden">
+            <div class="monopoly-assets-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap; gap: 12px;">
+              <h2 class="monopoly-my-assets-title" style="margin: 0; border: none; padding: 0; font-size: 16px; font-weight: bold; color: var(--text);">보유 부동산 정보</h2>
+              <div id="monopolyAssetPlayerTabs" class="monopoly-asset-player-tabs" style="display: flex; gap: 8px;"></div>
+            </div>
+            <div id="monopolyMyAssetsGrid" class="monopoly-my-assets-grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rules Dialog -->
+      <dialog id="monopolyRulesDialog" class="monopoly-rules-dialog">
+        <form method="dialog" class="monopoly-rules-help">
+          <h2>부루마불 도움말</h2>
+          <ul>
+            <li>주사위를 굴려 말을 이동합니다.</li>
+            <li>빈 땅에 도착하면 구매할 수 있습니다.</li>
+            <li>다른 플레이어의 땅에 도착하면 임대료를 지불합니다.</li>
+            <li>같은 색 땅을 모으면 임대료가 올라갑니다.</li>
+            <li>황금열쇠와 사회복지기금 칸에서 특수 효과가 발생합니다.</li>
+            <li>자산이 0원이 되면 파산하여 탈락합니다.</li>
+            <li>마지막까지 살아남은 플레이어가 승리합니다!</li>
+          </ul>
+          <button class="primary-button" type="submit">확인</button>
+        </form>
+      </dialog>
+
+
+
+      <!-- Card Popup Dialog (황금열쇠 / 사회복지기금) -->
+      <dialog id="monopolyCardDialog" class="monopoly-card-dialog">
+        <div class="monopoly-card-popup">
+          <div id="monopolyCardHeader" class="monopoly-card-header">황금열쇠</div>
+          <div class="monopoly-card-body">
+            <div id="monopolyCardIcon" class="monopoly-card-icon">🔑</div>
+            <p id="monopolyCardText" class="monopoly-card-text">출발지로 이동하세요.</p>
+          </div>
+          <div class="monopoly-card-footer">
+            <button id="monopolyCardActionButton" class="primary-button" type="button">확인</button>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- Jail Popup Dialog (무인도 탈출 선택) -->
+      <dialog id="monopolyJailDialog" class="monopoly-property-dialog">
+        <div class="monopoly-property-popup">
+          <div class="property-popup-header" style="background-color: #e65100;">🏝️ 무인도 탈출</div>
+          <div class="property-popup-body">
+            <h2 class="property-popup-name">무인도 탈옥 시도</h2>
+            <p style="text-align: center; font-size: 14px; line-height: 1.6; margin: 10px 0;">
+              현재 무인도에 갇혀 있습니다.<br>
+              탈출 방법을 선택해 주세요.<br>
+              (남은 대기 턴: <span id="monopolyJailTurnsLeft">3</span>턴)
+            </p>
+            <div class="property-popup-details">
+              <div class="property-popup-row">
+                <span>방법 1. 주사위 더블 굴리기</span>
+                <strong>무료 (더블 시 즉시 탈옥)</strong>
+              </div>
+              <div class="property-popup-row">
+                <span>방법 2. 벌금 지불하고 탈출</span>
+                <strong style="color: #c62828;" id="monopolyJailFineText">₩500,000</strong>
+              </div>
+            </div>
+          </div>
+          <div class="property-popup-footer" id="monopolyJailFooter">
+            <!-- Buttons dynamically populated -->
+          </div>
+        </div>
+      </dialog>
+
+      <!-- Notice Dialog (알림 팝업) -->
+      <dialog id="monopolyNoticeDialog" class="monopoly-property-dialog">
+        <div class="monopoly-property-popup" style="width: min(360px, 90vw); aspect-ratio: auto; min-height: auto;">
+          <div class="property-popup-header" style="background-color: #2196f3;">📢 알림</div>
+          <div class="property-popup-body" style="padding: 24px 16px; min-height: 100px; justify-content: center; display: flex; align-items: center;">
+            <p id="monopolyNoticeText" style="text-align: center; font-size: 17px; font-weight: bold; line-height: 1.6; margin: 0; color: #24170d;"></p>
+          </div>
+          <div class="property-popup-footer">
+            <button id="monopolyNoticeButton" class="primary-button" type="button" style="width: 100%;">확인</button>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- Property Popup Dialog (부동산 정보 및 구매/지불) -->
+      <dialog id="monopolyPropertyDialog" class="monopoly-property-dialog">
+        <div class="monopoly-property-popup">
+          <div id="monopolyPropertyHeader" class="property-popup-header">부동산 정보</div>
+          <div class="property-popup-body">
+            <h2 id="monopolyPropertyName" class="property-popup-name">도시 이름</h2>
+            <div class="property-popup-details">
+              <div class="property-popup-row" id="monopolyPropertyPriceRow"><strong>구매가</strong> <span id="monopolyPropertyPrice">₩0</span></div>
+              <div class="property-popup-row" id="monopolyPropertyRent0Row"><strong>기본 임대료</strong> <span id="monopolyPropertyRent0">₩0</span></div>
+              <div class="property-popup-row" id="monopolyPropertyRentMonRow"><strong>독점 임대료</strong> <span id="monopolyPropertyRentMon">₩0</span></div>
+              <div class="property-popup-row" id="monopolyPropertyBuildingsRow"><strong>건물 현황</strong> <span id="monopolyPropertyBuildings">대지</span></div>
+              <div class="property-popup-row" id="monopolyPropertyMonopolyRow"><strong>독점 여부</strong> <span id="monopolyPropertyMonopoly">아니오</span></div>
               <div class="property-popup-row" id="monopolyPropertyOwnerRow"><strong>소유주</strong> <span id="monopolyPropertyOwner">없음</span></div>
             </div>
           </div>
@@ -232,6 +429,6 @@
     </main>
     <script src="shared-ui.js?v=20260706-brumable"></script>
     <script src="shared-profiles.js?v=20260706-brumable"></script>
-    <script src="monopoly.js?v=20260708-brumable-rules-v47"></script>
+    <script src="monopoly.js?v=20260708-brumable-rules-v52"></script>
   </body>
 </html>
