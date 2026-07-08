@@ -923,13 +923,9 @@
   function canBuildOn(player, tile) {
     if (!isBuildableProperty(tile)) return "공항/관공서는 건설할 수 없습니다.";
     if (!player.properties.includes(tile.id)) return "소유한 땅만 건설할 수 있습니다.";
-    if (!isMonopoly(player, tile.color)) return "같은 색상 그룹을 모두 소유해야 건설할 수 있습니다.";
 
     const level = buildingLevel(player, tile.id);
     if (level >= MAX_BUILDING_LEVEL) return "이미 최대 단계입니다.";
-
-    const groupLevels = (COLOR_GROUPS[tile.color] || []).map(id => buildingLevel(player, id));
-    if (level > Math.min(...groupLevels)) return "같은 색상 그룹을 고르게 건설해야 합니다.";
 
     const cost = getBuildCost(tile);
     if (player.money < cost) return "잔액이 부족합니다.";
@@ -1247,8 +1243,22 @@
         footer.appendChild(passBtn);
       } else {
         // Own property
+        const buildCost = getBuildCost(tile);
+        const buildBlockReason = canBuildOn(player, tile);
+        if (!buildBlockReason) {
+          const buildBtn = document.createElement("button");
+          buildBtn.className = "primary-button";
+          buildBtn.type = "button";
+          buildBtn.textContent = `건설 (₩${buildCost.toLocaleString()})`;
+          buildBtn.addEventListener("click", () => {
+            buildProperty(player, tile.id);
+            closeDialog();
+          });
+          footer.appendChild(buildBtn);
+        }
+
         const okBtn = document.createElement("button");
-        okBtn.className = "primary-button";
+        okBtn.className = buildBlockReason ? "primary-button" : "secondary-button";
         okBtn.type = "button";
         okBtn.textContent = "확인";
         okBtn.addEventListener("click", closeDialog);
@@ -1500,6 +1510,14 @@
   }
 
   /* ── AI Logic ── */
+  function aiBuildIfPossible(player, tile) {
+    while (canBuildOn(player, tile) === "") {
+      const cost = getBuildCost(tile);
+      if (player.money < cost + 200 * SCALE_FACTOR) break;
+      buildProperty(player, tile.id);
+    }
+  }
+
   async function aiBuyDecision(player, tile) {
     if (tile.type !== "property") {
       state.phase = "buyDecision";
@@ -1524,6 +1542,7 @@
 
     if (owner === player) {
       addLog(`📍 ${playerDisplayName(player)} 자기 땅 ${tile.name}에 도착.`);
+      aiBuildIfPossible(player, tile);
       state.phase = "buyDecision";
       renderAll();
       await endTurn();
@@ -1533,6 +1552,7 @@
     // AI buys if affordable and money > 200 * SCALE_FACTOR (keep reserve)
     if (player.money >= tile.price + 200 * SCALE_FACTOR || player.money >= tile.price && state.turnCount > 15) {
       buyProperty(player);
+      aiBuildIfPossible(player, tile);
     } else {
       addLog(`🚫 ${playerDisplayName(player)} ${tile.name} 구매를 포기.`);
     }
