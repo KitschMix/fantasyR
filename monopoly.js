@@ -1409,16 +1409,6 @@
 
   function showCardPopup(player, card, isChance) {
     return new Promise(resolve => {
-      if (!player.human) {
-        wait(500)
-          .then(() => executeCard(player, card))
-          .then(() => {
-            renderAll();
-            resolve();
-          });
-        return;
-      }
-
       const dialog = document.querySelector("#monopolyCardDialog");
       const popup = dialog?.querySelector(".monopoly-card-popup");
       const header = document.querySelector("#monopolyCardHeader");
@@ -1441,7 +1431,11 @@
         icon.textContent = "🎴";
       }
 
-      text.textContent = card.text;
+      // Prepend AI indicator if it is AI player
+      const prefix = player.human
+        ? ""
+        : `<div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px; font-weight: bold; border-bottom: 1px solid var(--line); padding-bottom: 4px;">🤖 [${playerDisplayName(player)}] 카드를 뽑았습니다</div>`;
+      text.innerHTML = prefix + card.text;
 
       let buttonText = "확인";
       const isPayAction = card.action === "pay" || card.action === "payAll" || card.action === "buildingCost";
@@ -1485,6 +1479,10 @@
       btn.addEventListener("click", handleConfirm);
       dialog.addEventListener("cancel", preventCancel);
       dialog.showModal();
+
+      if (!player.human) {
+        setTimeout(handleConfirm, 2200);
+      }
     });
   }
 
@@ -1854,6 +1852,9 @@
     state.rentDiceTotal = 0;
     
     addLog(`🚀 ${playerDisplayName(player)} 우주선 탑승! ${tileAt(destIndex).name}으로 이동합니다.`);
+    
+    // Show notice popup!
+    await showNotice(`🚀 <strong>${playerDisplayName(player)}</strong>이(가)<br>우주선에 탑승하여<br><strong>${tileAt(destIndex).name}</strong>(으)로 이동합니다!`, 2000);
     
     // Pass GO logic during Space Travel
     if (passesGoForward(player.position, destIndex)) {
