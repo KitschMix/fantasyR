@@ -1014,6 +1014,7 @@
     if (!isBuildableProperty(tile)) return "공항/관공서는 건설할 수 없습니다.";
     if (!player.properties.includes(tile.id)) return "소유한 땅만 건설할 수 있습니다.";
     if (player.position !== tile.id) return "해당 칸에 도착했을 때만 건설할 수 있습니다.";
+    if (state.purchasedThisTurn === tile.id) return "땅을 구입한 턴에는 건설할 수 없습니다. 다음번에 방문할 때부터 건설 가능합니다.";
 
     const level = buildingLevel(player, tile.id);
     if (level >= MAX_BUILDING_LEVEL) return "이미 최대 단계입니다.";
@@ -1691,6 +1692,9 @@
     player.buildings[tile.id] = 0;
     addLog(`🏠 ${playerDisplayName(player)} ${tile.name} 구매! (₩${tile.price.toLocaleString()})`);
 
+    // Record purchased this turn to prevent immediate building
+    state.purchasedThisTurn = tile.id;
+
     // Show purchase popup notice
     setTimeout(() => {
       showNotice(`🏠 <strong>${playerDisplayName(player)}</strong>이(가)<br><strong>${tile.name}</strong>을(를) 구입했습니다!`, 1500);
@@ -1883,6 +1887,8 @@
   async function endTurn() {
     if (state.phase === "finished") return;
     if (checkWinner()) return;
+
+    state.purchasedThisTurn = null;
 
     const p = activePlayer();
     // Doubles = extra turn
@@ -2253,6 +2259,7 @@
     state.socialFundPool = 0;
     state.rentDiceTotal = 0;
     state.suppressDoubleExtraTurn = false;
+    state.purchasedThisTurn = null;
 
     addLog(`🌐 부루마불 게임 시작! ${count}명 참가.`);
     addLog(`💰 각 플레이어 ₩${START_MONEY.toLocaleString()} 보유.`);
