@@ -535,6 +535,7 @@
     if (player.cellarAction) {
       player.cellarAction = false;
       if (player.human) {
+        state._preCellarDiscardCount = player.discard.length;
         state.phase = "cellar";
         addLog("버릴 카드를 선택하세요 (0장 이상). 구매 종료로 확정.");
         renderAll();
