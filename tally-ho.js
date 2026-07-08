@@ -831,7 +831,6 @@
 
   function playAiTurnCue() {
     if (!isAiTurn() || !els.board) return;
-    toast(`${actorLabel("ai")}의 턴`, 950);
     if (state.aiCueTimer) {
       window.clearTimeout(state.aiCueTimer);
       state.aiCueTimer = 0;
