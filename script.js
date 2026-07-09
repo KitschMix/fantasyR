@@ -4849,9 +4849,9 @@ function renderOpponents() {
     opponent.innerHTML = `
       <div class="opponent-head">
         ${playerNameTagHtml(player)}
+        ${playerSpeechBubbleHtml(player)}
         <small>${state.finished ? `${score}점` : "점수 비공개"}</small>
       </div>
-      ${playerSpeechBubbleHtml(player)}
     `;
     if (state.finished) {
       opponent.classList.add("revealed-opponent");

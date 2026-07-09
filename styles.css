@@ -1632,21 +1632,21 @@ select {
 
 .speech-bubble {
   position: absolute;
-  top: -8px;
-  left: 72px;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
   z-index: 20;
   max-width: min(200px, 50vw);
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid rgba(217, 166, 60, 0.5);
-  border-radius: 12px;
+  border-radius: 10px;
   color: #24170d;
   background: rgba(255, 246, 220, 0.96);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
-  font-size: 14px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  font-size: 13px;
   font-weight: 900;
   line-height: 1.2;
   pointer-events: none;
-  transform: translateY(-72%);
   animation: fantasy-speech-pop 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
   white-space: nowrap;
   overflow: hidden;
@@ -1655,13 +1655,13 @@ select {
 
 .speech-bubble::before {
   position: absolute;
-  left: 14px;
-  bottom: -8px;
-  width: 12px;
-  height: 12px;
+  top: -6px;
+  left: 16px;
+  width: 10px;
+  height: 10px;
   background: inherit;
-  border-right: 1px solid rgba(217, 166, 60, 0.5);
-  border-bottom: 1px solid rgba(217, 166, 60, 0.5);
+  border-top: 1px solid rgba(217, 166, 60, 0.5);
+  border-left: 1px solid rgba(217, 166, 60, 0.5);
   content: "";
   transform: rotate(45deg);
 }
@@ -1755,6 +1755,7 @@ select {
 }
 
 .opponent-head {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
