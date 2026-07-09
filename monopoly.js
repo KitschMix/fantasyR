@@ -2016,7 +2016,7 @@
     if (state.dice[0] === state.dice[1] && !state.suppressDoubleExtraTurn && !p.inJail && !p.bankrupt && state.lastDoubleCount < 3) {
       addLog(`🔄 ${playerDisplayName(p)} 더블로 한 번 더!`);
       showTurnToast(p, true);
-      await wait(1200);
+      await wait(800);
       state.phase = "awaitRoll";
       renderAll();
       if (!p.human) scheduleAiTurn();
@@ -2037,7 +2037,7 @@
 
     // Show turn change notice popup
     showTurnToast(np);
-    await wait(1200);
+    await wait(800);
 
     if (np.spaceTravelReady) {
       state.phase = "spaceTravel";
