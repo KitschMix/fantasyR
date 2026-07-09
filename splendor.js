@@ -386,12 +386,10 @@
       <div class="splendor-card-middle"></div>
       <div class="splendor-card-cost">${costHtml}</div>
     </div>`;
-    // Center on screen
-    preview.style.top = "50%";
-    preview.style.left = "50%";
-    preview.style.transform = "translate(-50%, -50%)";
     preview.classList.remove("hidden");
-    requestAnimationFrame(() => preview.classList.add("visible"));
+    // Force reflow so transition restarts
+    void preview.offsetWidth;
+    preview.classList.add("visible");
   }
 
   function hideCardPreview() {
@@ -415,12 +413,9 @@
       <div class="splendor-card-middle"></div>
       <div class="splendor-card-cost" style="flex-direction:column">${reqHtml}</div>
     </div>`;
-    // Center on screen
-    preview.style.top = "50%";
-    preview.style.left = "50%";
-    preview.style.transform = "translate(-50%, -50%)";
     preview.classList.remove("hidden");
-    requestAnimationFrame(() => preview.classList.add("visible"));
+    void preview.offsetWidth;
+    preview.classList.add("visible");
   }
 
   function initCardHover() {
