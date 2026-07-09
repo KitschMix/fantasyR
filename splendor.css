@@ -45,7 +45,6 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 /* --- Setup --- */
 .splendor-setup-panel {
-  --splendor-ui-zoom: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -62,14 +61,6 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   background: var(--surface);
   box-shadow: var(--shadow);
   width: min(520px, 92vw);
-  zoom: var(--splendor-ui-zoom);
-  transform-origin: center center;
-}
-
-@supports not (zoom: 1) {
-  .splendor-panel {
-    transform: scale(var(--splendor-ui-zoom));
-  }
 }
 
 .splendor-panel-top {
