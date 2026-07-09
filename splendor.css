@@ -577,9 +577,17 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   display: none;
 }
 
+.splendor-card-preview::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: -1;
+}
+
 .splendor-card-preview .splendor-card {
-  width: 200px;
-  min-height: 260px;
+  width: 340px;
+  min-height: 340px;
   font-size: 1.1em;
   box-shadow: 0 16px 48px rgba(0,0,0,0.6);
   border-color: var(--accent);
@@ -593,12 +601,12 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-card-preview .splendor-card-points {
-  font-size: 24px;
+  font-size: 42px;
 }
 
 .splendor-card-preview .splendor-card-bonus {
-  width: 48px;
-  height: 48px;
+  width: 80px;
+  height: 80px;
 }
 
 .splendor-card-preview .splendor-card-gem-mark {
@@ -606,12 +614,12 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-card-preview .splendor-cost-pip {
-  font-size: 18px;
+  font-size: 28px;
 }
 
 .splendor-card-preview .splendor-cost-pip img {
-  width: 28px !important;
-  height: 28px !important;
+  width: 44px !important;
+  height: 44px !important;
 }
 
 @keyframes splendor-preview-in {
@@ -923,7 +931,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   display: grid;
   grid-template-columns: 170px repeat(4, 170px);
   gap: 10px;
-  min-height: 200px;
+  min-height: 170px;
   align-items: stretch;
   overflow-x: auto;
   scrollbar-width: thin;
@@ -932,7 +940,8 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 .splendor-card,
 .splendor-card-back {
   width: 170px;
-  min-height: 200px;
+  min-height: 170px;
+  aspect-ratio: 1 / 1;
   border-radius: 10px;
 }
 
@@ -1068,12 +1077,14 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-token-count {
-  width: 28px;
-  height: 28px;
-  right: -2px;
-  bottom: -2px;
+  width: 40px;
+  height: 40px;
+  right: -4px;
+  bottom: -4px;
   background: rgba(17,15,13,0.92);
-  font-size: 14px;
+  font-size: 28px;
+  border-radius: 999px;
+  border: 2px solid rgba(246,232,202,0.2);
 }
 
 .splendor-actions-panel {

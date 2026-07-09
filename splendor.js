@@ -378,22 +378,18 @@
       .filter(([, n]) => n > 0)
       .map(([g, n]) => gemPip(g, n)).join("");
     const tierColors = { 1: "#6a8a6a", 2: "#8a6a3a", 3: "#5a3a6a" };
-    preview.innerHTML = `<div class="splendor-card" style="border-top: 4px solid ${tierColors[1] || "var(--line)"}">
+    preview.innerHTML = `<div class="splendor-card" style="border-top: 4px solid ${tierColors[card.tier] || tierColors[1] || "var(--line)"}">
       <div class="splendor-card-top">
         <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
-        <span class="splendor-card-bonus">${gemImg(card.bonus, 40)}</span>
+        <span class="splendor-card-bonus">${gemImg(card.bonus, 70)}</span>
       </div>
       <div class="splendor-card-middle"></div>
       <div class="splendor-card-cost">${costHtml}</div>
     </div>`;
-    // Position near the card
-    let top = rect.top - 20;
-    let left = rect.right + 10;
-    if (left + 220 > window.innerWidth) left = rect.left - 220;
-    if (top + 280 > window.innerHeight) top = window.innerHeight - 290;
-    if (top < 10) top = 10;
-    preview.style.top = `${top}px`;
-    preview.style.left = `${left}px`;
+    // Center on screen
+    preview.style.top = "50%";
+    preview.style.left = "50%";
+    preview.style.transform = "translate(-50%, -50%)";
     preview.classList.remove("hidden");
   }
 
@@ -407,22 +403,19 @@
     const preview = document.querySelector("#splendorCardPreview");
     if (!preview || !noble) return;
     const reqHtml = Object.entries(noble.requires)
-      .map(([g, n]) => `<span class="splendor-cost-pip">${gemImg(g, 24)}<span class="splendor-cost-num">${n}</span></span>`).join("");
+      .map(([g, n]) => `<span class="splendor-cost-pip">${gemImg(g, 40)}<span class="splendor-cost-num">${n}</span></span>`).join("");
     preview.innerHTML = `<div class="splendor-card" style="border-top: 4px solid var(--accent)">
       <div class="splendor-card-top">
         <span class="splendor-card-points">★★★</span>
-        <span style="font-size:36px">👑</span>
+        <span style="font-size:60px">👑</span>
       </div>
       <div class="splendor-card-middle"></div>
       <div class="splendor-card-cost" style="flex-direction:column">${reqHtml}</div>
     </div>`;
-    let top = rect.top - 20;
-    let left = rect.right + 10;
-    if (left + 220 > window.innerWidth) left = rect.left - 220;
-    if (top + 280 > window.innerHeight) top = window.innerHeight - 290;
-    if (top < 10) top = 10;
-    preview.style.top = `${top}px`;
-    preview.style.left = `${left}px`;
+    // Center on screen
+    preview.style.top = "50%";
+    preview.style.left = "50%";
+    preview.style.transform = "translate(-50%, -50%)";
     preview.classList.remove("hidden");
   }
 
@@ -443,7 +436,7 @@
         hoverCard = card;
         hoverTimer = setTimeout(() => {
           showCardPreview(card, cardEl.getBoundingClientRect());
-        }, 500);
+        }, 300);
       } else if (nobleEl) {
         const nIndex = Number(nobleEl.dataset.nindex);
         if (isNaN(nIndex)) return;
@@ -453,7 +446,7 @@
         hoverCard = noble;
         hoverTimer = setTimeout(() => {
           showNoblePreview(noble, nobleEl.getBoundingClientRect());
-        }, 500);
+        }, 300);
       }
     });
     document.addEventListener("mouseout", e => {
@@ -905,22 +898,37 @@
     els.rulesDialog?.addEventListener("click", e => { if (e.target === els.rulesDialog) els.rulesDialog.close(); });
     // Turn end is automatic (no button)
 
-    // Card click: buy or reserve
+    // Card click: buy (long-press = reserve)
+    let _longPressTimer = null;
+    let _longPressTriggered = false;
+    document.addEventListener("pointerdown", e => {
+      const card = e.target.closest(".splendor-card");
+      if (!card || !activePlayer()?.human || state.phase !== "action") return;
+      if (card.dataset.reserved) return; // reserved cards use normal click
+      const tier = Number(card.dataset.tier);
+      const index = Number(card.dataset.index);
+      _longPressTriggered = false;
+      _longPressTimer = setTimeout(() => {
+        _longPressTriggered = true;
+        attemptReserve(tier, index);
+      }, 1000);
+    });
+    document.addEventListener("pointerup", () => {
+      clearTimeout(_longPressTimer);
+    });
+    document.addEventListener("pointercancel", () => {
+      clearTimeout(_longPressTimer);
+    });
     document.addEventListener("click", e => {
       const card = e.target.closest(".splendor-card");
       if (!card || !activePlayer()?.human || state.phase !== "action") return;
+      if (_longPressTriggered) { _longPressTriggered = false; return; }
       const tier = Number(card.dataset.tier);
       const index = Number(card.dataset.index);
       if (card.dataset.reserved) {
         attemptBuyReserved(index);
       } else {
-        // Left click = buy, but we need a way to reserve too
-        // Use shift+click for reserve
-        if (e.shiftKey) {
-          attemptReserve(tier, index);
-        } else {
-          attemptBuyCard(tier, index);
-        }
+        attemptBuyCard(tier, index);
       }
     });
 
