@@ -187,10 +187,10 @@
   }
 
   function gemPip(gem, count) {
-    return `<span class="splendor-cost-pip">${gemImg(gem, 22)}<span class="splendor-cost-num">${count}</span></span>`;
+    return `<span class="splendor-cost-pip">${gemImg(gem, 24)}<span class="splendor-cost-num">${count}</span></span>`;
   }
   function gemMini(gem, count) {
-    return `<span class="splendor-mini-gem">${gemImg(gem, 16)}${count}</span>`;
+    return `<span class="splendor-mini-gem">${gemImg(gem, 22)}${count}</span>`;
   }
   function tokenEl(gem, count, disabled) {
     return `<span class="splendor-token${disabled ? " disabled" : ""}" data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개">
@@ -227,7 +227,7 @@
   /* ── Noble Rendering ── */
   function nobleHtml(noble) {
     const reqHtml = Object.entries(noble.requires)
-      .map(([g, n]) => `<span class="splendor-noble-req-gem">${gemImg(g, 28)}${n}</span>`).join("");
+      .map(([g, n]) => `<span class="splendor-noble-req-gem">${gemImg(g, 22)}${n}</span>`).join("");
     return `<div class="splendor-noble">
       <span class="splendor-noble-emoji">👑</span>
       <span class="splendor-noble-points">★${noble.points}</span>

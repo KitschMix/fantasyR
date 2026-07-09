@@ -626,12 +626,19 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 .splendor-layout {
   grid-template-columns: 320px minmax(720px, 1fr) 340px;
   gap: 14px;
+  align-items: stretch;
 }
 
 .splendor-side,
 .splendor-actions-panel,
 .splendor-board-area {
   min-width: 0;
+}
+
+.splendor-side {
+  display: grid;
+  gap: 10px;
+  align-content: stretch;
 }
 
 .splendor-board-area {
@@ -644,10 +651,14 @@ body.splendor-active.splendor-playing .splendor-game-panel {
     linear-gradient(180deg, rgba(36,32,26,0.94), rgba(28,25,21,0.96)),
     var(--surface);
   box-shadow: 0 18px 46px rgba(0,0,0,0.26);
+  min-height: 100%;
 }
 
 .splendor-players {
   gap: 10px;
+  flex: 1;
+  display: grid;
+  align-content: stretch;
 }
 
 .splendor-player-card {
@@ -658,6 +669,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   background: rgba(31,28,23,0.92);
   border: 1px solid rgba(246,232,202,0.14);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  flex: 1;
 }
 
 .splendor-player-card.active {
@@ -713,15 +725,15 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 .splendor-cost-pip,
 .splendor-noble-req-gem {
   flex: 0 0 auto;
-  border: 1px solid rgba(255,255,255,0.28);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 3px rgba(0,0,0,0.26);
-  filter: saturate(0.86) brightness(0.9);
-  letter-spacing: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
 }
 
 .splendor-mini-gem {
-  width: 30px;
-  height: 30px;
   font-size: 12px;
 }
 
