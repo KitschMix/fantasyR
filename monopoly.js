@@ -21,7 +21,7 @@
     { id: 12, name: "황금열쇠",       type: "event",    event: "chance" },
     { id: 13, name: "코펜하겐",       type: "property", color: "#29B6F6", group: 3, price: 160, rent: [12, 60, 500, 900], buildCosts: [100, 300, 500] },
     { id: 14, name: "스톡홀름",       type: "property", color: "#29B6F6", group: 3, price: 160, rent: [12, 60, 500, 900], buildCosts: [100, 300, 500] },
-    { id: 15, name: "콩코드 여객기",   type: "property", color: "", price: 200, rent: [30], fixedRent: true },
+    { id: 15, name: "콩코드 여객기",   type: "property", color: "", price: 200, rent: [300], fixedRent: true },
     { id: 16, name: "취리히",         type: "property", color: "#29B6F6", group: 4, price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
     { id: 17, name: "황금열쇠",       type: "event",    event: "chance" },
     { id: 18, name: "베를린",         type: "property", color: "#29B6F6", group: 4, price: 180, rent: [14, 70, 550, 950], buildCosts: [100, 300, 500] },
@@ -34,11 +34,11 @@
     { id: 25, name: "부산",           type: "property", color: "", price: 500, rent: [600], fixedRent: true },
     { id: 26, name: "하와이",         type: "property", color: "#0D47A1", group: 6, price: 260, rent: [22, 110, 800, 1150], buildCosts: [150, 450, 750] },
     { id: 27, name: "리스본",         type: "property", color: "#0D47A1", group: 6, price: 260, rent: [22, 110, 800, 1150], buildCosts: [150, 450, 750] },
-    { id: 28, name: "퀸 엘리자베스호", type: "property", color: "", price: 300, rent: [25], fixedRent: true },
+    { id: 28, name: "퀸 엘리자베스호", type: "property", color: "", price: 300, rent: [250], fixedRent: true },
     { id: 29, name: "마드리드",       type: "property", color: "#0D47A1", group: 6, price: 280, rent: [24, 120, 850, 1200], buildCosts: [150, 450, 750] },
     { id: 30, name: "우주여행",       type: "corner",   corner: "parking" },
     { id: 31, name: "도쿄",           type: "property", color: "#E53935", group: 7, price: 300, rent: [26, 130, 900, 1275], buildCosts: [200, 600, 900] },
-    { id: 32, name: "콜롬비아 우주선", type: "property", color: "", price: 450, rent: [40], fixedRent: true },
+    { id: 32, name: "콜롬비아 우주선", type: "property", color: "", price: 450, rent: [400], fixedRent: true },
     { id: 33, name: "파리",           type: "property", color: "#E53935", group: 7, price: 320, rent: [28, 150, 1000, 1400], buildCosts: [200, 600, 900] },
     { id: 34, name: "로마",           type: "property", color: "#E53935", group: 7, price: 350, rent: [35, 175, 1100, 1500], buildCosts: [200, 600, 900] },
     { id: 35, name: "황금열쇠",       type: "event",    event: "chance" },
@@ -75,7 +75,7 @@
   const FUND_CARDS = [];
 
   const SCALE_FACTOR = 10000;
-  const START_MONEY = 1500 * SCALE_FACTOR;
+  const START_MONEY = 2900 * SCALE_FACTOR;
   const GO_SALARY = 200 * SCALE_FACTOR;
   const JAIL_FINE = 50 * SCALE_FACTOR;
   const JAIL_TURNS = 3;
