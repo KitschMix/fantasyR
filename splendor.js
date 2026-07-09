@@ -694,6 +694,20 @@
   }
 
   /* ── Card Purchase ── */
+  function showBuyAnimation(tier, index, playerName) {
+    // Find the card element on the board
+    const cardEl = document.querySelector(`.splendor-card[data-tier="${tier}"][data-index="${index}"]:not(.splendor-card-reserved)`);
+    if (cardEl) {
+      cardEl.classList.add("card-buying");
+      // Add bubble
+      const bubble = document.createElement("div");
+      bubble.className = "splendor-buy-bubble";
+      bubble.textContent = `${playerName} 카드 구매!`;
+      cardEl.style.position = "relative";
+      cardEl.appendChild(bubble);
+    }
+  }
+
   function attemptBuyCard(tier, index) {
     const p = activePlayer();
     if (state.phase !== "action" || !p.human) return;
@@ -704,21 +718,25 @@
       renderLog();
       return;
     }
+    showBuyAnimation(tier, index, p.name);
     payForCard(card, p);
-    state.visibleCards[tier][index] = drawCard(tier);
-    addLog(`${p.name}: ${GEM_LABELS[card.bonus]} 카드 구매 (${card.points}점)`);
-    const earned = checkNobles(p);
-    earned.forEach(n => addLog(`${p.name}: 귀족 획득! (+${n.points}점)`));
-    state.phase = "done";
-    state.selectedCard = null;
-    renderAll();
-    if (p.points >= WIN_SCORE) {
-      state.phase = "finished";
-      addLog(`🏆 ${p.name} 승리! ${p.points}점!`);
+    // Delay card replacement so animation plays
+    setTimeout(() => {
+      state.visibleCards[tier][index] = drawCard(tier);
+      addLog(`${p.name}: ${GEM_LABELS[card.bonus]} 카드 구매 (${card.points}점)`);
+      const earned = checkNobles(p);
+      earned.forEach(n => addLog(`${p.name}: 귀족 획득! (+${n.points}점)`));
+      state.phase = "done";
+      state.selectedCard = null;
       renderAll();
-      return;
-    }
-    endTurn();
+      if (p.points >= WIN_SCORE) {
+        state.phase = "finished";
+        addLog(`🏆 ${p.name} 승리! ${p.points}점!`);
+        renderAll();
+        return;
+      }
+      endTurn();
+    }, 2000);
   }
 
   function attemptBuyReserved(ri) {
@@ -731,14 +749,24 @@
       renderLog();
       return;
     }
+    // Animate reserved card
+    const reservedEl = els.myReserved?.querySelector(`[data-rindex="${ri}"]`);
+    if (reservedEl) {
+      reservedEl.classList.add("card-buying");
+      const bubble = document.createElement("div");
+      bubble.className = "splendor-buy-bubble";
+      bubble.textContent = `${p.name} 예약 카드 구매!`;
+      reservedEl.appendChild(bubble);
+    }
     payForCard(card, p);
     p.reserved.splice(ri, 1);
-    addLog(`${p.name}: 예약 카드 구매 (${card.points}점)`);
-    const earned = checkNobles(p);
-    earned.forEach(n => addLog(`${p.name}: 귀족 획득! (+${n.points}점)`));
-    state.phase = "done";
-    state.selectedCard = null;
-    renderAll();
+    setTimeout(() => {
+      addLog(`${p.name}: 예약 카드 구매 (${card.points}점)`);
+      const earned = checkNobles(p);
+      earned.forEach(n => addLog(`${p.name}: 귀족 획득! (+${n.points}점)`));
+      state.phase = "done";
+      state.selectedCard = null;
+      renderAll();
     if (p.points >= WIN_SCORE) {
       state.phase = "finished";
       addLog(`🏆 ${p.name} 승리! ${p.points}점!`);
@@ -827,6 +855,7 @@
       bestCard = pick.card; bestTier = pick.tier; bestIdx = pick.i;
     }
     if (bestCard && !(makeMistake() && diff === "normal")) {
+      showBuyAnimation(bestTier, bestIdx, player.name);
       payForCard(bestCard, player);
       state.visibleCards[bestTier][bestIdx] = drawCard(bestTier);
       addLog(`${player.name}: 카드 구매 (${bestCard.points}점)`);

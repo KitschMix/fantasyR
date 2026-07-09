@@ -1082,14 +1082,54 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-card.affordable {
-  border-color: rgba(242,207,120,0.6);
-  box-shadow: 0 0 12px rgba(242,207,120,0.25), 0 4px 10px rgba(0,0,0,0.2);
+  border-color: rgba(242,207,120,0.85);
+  box-shadow: 0 0 20px rgba(242,207,120,0.45), 0 0 40px rgba(242,207,120,0.15), 0 4px 10px rgba(0,0,0,0.2);
   animation: splendor-affordable-glow 2s ease-in-out infinite;
 }
 
 @keyframes splendor-affordable-glow {
-  0%, 100% { box-shadow: 0 0 12px rgba(242,207,120,0.25), 0 4px 10px rgba(0,0,0,0.2); }
-  50% { box-shadow: 0 0 20px rgba(242,207,120,0.4), 0 4px 10px rgba(0,0,0,0.2); }
+  0%, 100% { box-shadow: 0 0 20px rgba(242,207,120,0.45), 0 0 40px rgba(242,207,120,0.15), 0 4px 10px rgba(0,0,0,0.2); }
+  50% { box-shadow: 0 0 32px rgba(242,207,120,0.65), 0 0 60px rgba(242,207,120,0.2), 0 4px 10px rgba(0,0,0,0.2); }
+}
+
+.splendor-card.card-buying {
+  animation: splendor-card-buy 2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes splendor-card-buy {
+  0% { opacity: 1; transform: scale(1); filter: brightness(1); }
+  30% { opacity: 1; transform: scale(1.05); filter: brightness(1.4); }
+  100% { opacity: 0; transform: scale(0.8); filter: brightness(0.5); }
+}
+
+.splendor-buy-bubble {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(42,36,27,0.95);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  border: 1px solid rgba(217,166,60,0.4);
+  animation: splendor-bubble-in 0.3s ease-out;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.splendor-buy-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(42,36,27,0.95);
 }
 
 .splendor-card-top {
