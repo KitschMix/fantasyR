@@ -396,15 +396,17 @@
       const costHtml = Object.entries(c.cost).filter(([, n]) => n > 0).map(([g, n]) => gemPip(g, n)).join("");
       const affordable = canAffordWithGems(c, p) && state.phase === "action";
       const bgUrl = CARD_BG_IMAGES[c.bonus];
+      const reserverName = c._reservedBy || p.name;
       return `<div class="splendor-card splendor-card-reserved${affordable ? " affordable" : ""}"
         data-rindex="${i}" title="예약 카드 ${i + 1} — 클릭해서 구매"
-        style="border-top: 4px solid ${tierColors[c.tier] || "var(--line)"}; background-image: url('${bgUrl}'); background-size: cover; background-position: center;">
+        style="border-top: 4px solid ${tierColors[c.tier] || "var(--line)"}; background-image: url('${bgUrl}'); background-size: cover; background-position: center; position: relative;">
         <div class="splendor-card-top">
           <span class="splendor-card-points">${c.points ? "★".repeat(Math.min(c.points, 5)) : ""}</span>
           <span class="splendor-card-bonus">${gemImg(c.bonus, 40)}</span>
         </div>
         <div class="splendor-card-middle"></div>
         <div class="splendor-card-cost">${costHtml}</div>
+        <div class="splendor-reserved-by">${esc(reserverName)}</div>
       </div>`;
     }).join("");
     // Click reserved card to buy it
@@ -891,9 +893,11 @@
       const deckCard = drawCard(tier);
       if (!deckCard) return;
       p.reserved.push(deckCard);
+      deckCard._reservedBy = p.name;
       addLog(`${p.name}: 티어 ${tier} 덱에서 카드 예약`);
     } else {
       p.reserved.push(card);
+      card._reservedBy = p.name;
       state.visibleCards[tier][index] = drawCard(tier);
       addLog(`${p.name}: 카드 예약`);
     }
@@ -1102,6 +1106,18 @@
   }
 
   /* ── Turn Flow ── */
+  function showThinking(playerName) {
+    const el = document.getElementById("splendorThinking");
+    if (!el) return;
+    el.querySelector(".splendor-thinking-text").textContent = `${playerName} 생각중...`;
+    el.classList.remove("hidden");
+  }
+
+  function hideThinking() {
+    const el = document.getElementById("splendorThinking");
+    if (el) el.classList.add("hidden");
+  }
+
   function endTurn() {
     if (state.phase === "finished") return;
     const p = activePlayer();
@@ -1128,6 +1144,7 @@
       return;
     }
 
+    hideThinking();
     state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
     state.turnCount++;
     state.phase = "action";
@@ -1136,8 +1153,19 @@
 
     const np = activePlayer();
     renderAll();
-    if (!np.human) {
-      setTimeout(runAiTurn, 800);
+
+    if (np.human) {
+      // Show toast for human turn
+      if (typeof showCenterToast === "function") {
+        showCenterToast(`${np.name} 차례!`, 2000);
+      }
+    } else {
+      // Show thinking popup for AI
+      showThinking(np.name);
+      if (typeof showCenterToast === "function") {
+        showCenterToast(`${np.name} 차례`, 1500);
+      }
+      setTimeout(runAiTurn, 1200);
     }
   }
 
@@ -1178,8 +1206,9 @@
     state.selectedTokens = [];
     aiChooseAction(p);
     renderAll();
+    hideThinking();
     if (state.phase !== "finished") {
-      setTimeout(endTurn, 600);
+      setTimeout(endTurn, 800);
     }
   }
 

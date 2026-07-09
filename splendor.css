@@ -583,6 +583,56 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   padding: 2px 8px;
 }
 
+/* --- Thinking Popup --- */
+.splendor-thinking {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4000;
+  background: rgba(42,36,27,0.95);
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  padding: 24px 48px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: splendor-thinking-pulse 1.5s ease-in-out infinite;
+}
+
+.splendor-thinking.hidden {
+  display: none;
+}
+
+.splendor-thinking-text {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+
+@keyframes splendor-thinking-pulse {
+  0%, 100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.03); }
+}
+
+/* --- Reserved By Label --- */
+.splendor-reserved-by {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+  background: rgba(0,0,0,0.6);
+  padding: 2px 4px;
+  border-radius: 0 0 10px 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* --- Action Cards --- */
 .splendor-action-card {
   padding: 12px;

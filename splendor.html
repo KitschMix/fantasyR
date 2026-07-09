@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="splendor.css?v=20260709-bubble-fix" />
   </head>
   <body class="splendor-active app-loading">
+    <div id="turnToast" class="turn-toast" role="status" aria-live="assertive" aria-hidden="true">
+      <strong id="turnToastText">플레이어의 턴</strong>
+    </div>
+
+    <div id="splendorThinking" class="splendor-thinking hidden">
+      <span class="splendor-thinking-text"></span>
+    </div>
+
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
       <div class="loading-box">
         <span class="loading-spinner" aria-hidden="true"></span>
