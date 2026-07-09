@@ -168,7 +168,7 @@
     piecesContainer:  $("#monopolyPieces"),
     diceDisplay:      $("#monopolyDiceDisplay"),
     rollButton:       $("#monopolyRollButton"),
-    endTurnButton:    $("#monopolyEndTurnButton"),
+    endTurnButton:    null,
     propertyInfo:     $("#monopolyPropertyInfo"),
     log:              $("#monopolyLog"),
     jailDialog:       $("#monopolyJailDialog"),
@@ -813,9 +813,8 @@
     if (els.rollButton) {
       els.rollButton.disabled = !humanTurn || state.phase !== "awaitRoll" || state.diceRolling;
     }
-    if (els.endTurnButton) {
-      els.endTurnButton.disabled = !humanTurn || (state.phase !== "buyDecision" && state.phase !== "rolled");
-    }
+    // Auto end turn: when phase is buyDecision or rolled, auto-advance
+    // (Turn end button removed - turns auto-advance after actions)
   }
 
   function renderPropertyInfo(tileId) {
@@ -2274,6 +2273,11 @@
     renderAll();
     await wait(400);
     await handleTileLanding(player);
+    // Auto end turn for human player
+    if (activePlayer() === player && state.phase !== "finished" && !player.bankrupt) {
+      await wait(500);
+      await endTurn();
+    }
     renderControls();
   }
 
@@ -2523,7 +2527,7 @@
       if (e.target === els.rulesDialog) els.rulesDialog.close();
     });
     els.rollButton?.addEventListener("click", humanRoll);
-    els.endTurnButton?.addEventListener("click", humanEndTurn);
+    // Turn end is now automatic (no button)
 
     // Preload scenic images
     preloadScenicImages();
