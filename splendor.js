@@ -594,9 +594,9 @@
 
   function onTokenClick(gem) {
     if (state.phase !== "action" || !activePlayer().human) return;
-    // Debounce: prevent double-click from firing twice
+    // Debounce: prevent double-click second click from firing
     const now = Date.now();
-    if (now - _lastTokenClick < 400) return;
+    if (now - _lastTokenClick < 200) return;
     _lastTokenClick = now;
 
     const p = activePlayer();
