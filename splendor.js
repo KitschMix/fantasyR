@@ -165,7 +165,6 @@
     zoomOutButton:  $("#splendorZoomOutButton"),
     zoomInButton:   $("#splendorZoomInButton"),
     zoomLabel:      $("#splendorZoomLabel"),
-    resetTokensButton: $("#splendorResetTokensButton"),
     discardDialog:   $("#splendorDiscardDialog"),
     discardContainer: $("#splendorDiscardContainer"),
     discardConfirmButton: $("#splendorDiscardConfirmButton"),
@@ -327,9 +326,7 @@
       }
     }
 
-    if (els.resetTokensButton) {
-      els.resetTokensButton.style.display = hasSelection ? "inline-block" : "none";
-    }
+
 
     els.tokens.innerHTML = [...GEMS, "gold"].map(gem => {
       const count = state.tokenBank[gem] || 0;
@@ -1400,11 +1397,7 @@
     els.zoomInButton?.addEventListener("click", () => adjustZoom(ZOOM_STEP_PERCENT));
     initializeZoomControls();
 
-    els.resetTokensButton?.addEventListener("click", () => {
-      state.selectedTokens = [];
-      renderTokens();
-      renderControls();
-    });
+
 
     els.discardConfirmButton?.addEventListener("click", () => {
       const p = activePlayer();

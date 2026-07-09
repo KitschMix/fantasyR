@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>스플렌더</title>
     <link rel="stylesheet" href="styles.css?v=20260707-splendor-restyle" />
-    <link rel="stylesheet" href="splendor.css?v=20260709-rules-fix3" />
+    <link rel="stylesheet" href="splendor.css?v=20260709-final-rules" />
   </head>
   <body class="splendor-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -92,10 +92,7 @@
               <div class="splendor-bank-area">
                 <div class="splendor-bank-label-wrap" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                   <div class="splendor-bank-label">🏦 은행 (클릭해서 보석 가져오기)</div>
-                  <div style="display: flex; gap: 8px; align-items: center;">
-                    <div id="splendorSelectedSummary" class="splendor-selected-summary hidden"></div>
-                    <button id="splendorResetTokensButton" class="secondary-button" style="padding: 2px 8px; font-size: 11px; display: none;" type="button">선택 초기화</button>
-                  </div>
+                  <div id="splendorSelectedSummary" class="splendor-selected-summary hidden"></div>
                 </div>
                 <div id="splendorTokens" class="splendor-tokens"></div>
               </div>
@@ -163,6 +160,6 @@
     </main>
     <script src="shared-ui.js?v=20260707-splendor-restyle"></script>
     <script src="shared-profiles.js?v=20260707-splendor-restyle"></script>
-    <script src="splendor.js?v=20260709-rules-fix"></script>
+    <script src="splendor.js?v=20260709-final-rules"></script>
   </body>
 </html>
