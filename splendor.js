@@ -190,7 +190,7 @@
     return `<span class="splendor-cost-pip">${gemImg(gem, 24)}<span class="splendor-cost-num">${count}</span></span>`;
   }
   function gemMini(gem, count) {
-    return `<span class="splendor-mini-gem">${gemImg(gem, 22)}${count}</span>`;
+    return `<span class="splendor-mini-gem">${gemImg(gem, 28)}${count}</span>`;
   }
   function tokenEl(gem, count, disabled) {
     return `<span class="splendor-token${disabled ? " disabled" : ""}" data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개">
