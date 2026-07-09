@@ -1157,15 +1157,16 @@
     if (np.human) {
       // Show toast for human turn
       if (typeof showCenterToast === "function") {
-        showCenterToast(`${np.name} 차례!`, 2500);
+        showCenterToast(`${np.name} 차례!`, 2000);
       }
     } else {
-      // Show thinking popup for AI
+      // Show thinking popup for AI (3~5s like Clue's 3~6s)
+      const thinkTime = 3000 + Math.floor(Math.random() * 2000);
       showThinking(np.name);
       if (typeof showCenterToast === "function") {
-        showCenterToast(`${np.name} 생각중...`, 2500);
+        showCenterToast(`${np.name} 생각중...`, thinkTime);
       }
-      setTimeout(runAiTurn, 2500);
+      setTimeout(runAiTurn, thinkTime);
     }
   }
 
