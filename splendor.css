@@ -782,7 +782,9 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   padding: 14px;
   border: 1px solid rgba(246,232,202,0.16);
   border-radius: 8px;
-  background-image: url('assets/splendor/background.jpg');
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    url('assets/splendor/background.jpg');
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
