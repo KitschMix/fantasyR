@@ -75,7 +75,7 @@
   const FUND_CARDS = [];
 
   const SCALE_FACTOR = 10000;
-  const START_MONEY = 2900 * SCALE_FACTOR;
+  const START_MONEY = 2930 * SCALE_FACTOR;
   const GO_SALARY = 200 * SCALE_FACTOR;
   const JAIL_FINE = 50 * SCALE_FACTOR;
   const JAIL_TURNS = 3;
@@ -2301,6 +2301,7 @@
     const count = Math.min(4, Math.max(2, Number(els.playerCount?.value || 3)));
     const humanName = currentHumanNickname() || (els.nameInput?.value || "").trim() || "플레이어";
     const pool = shuffle(aiProfiles());
+    const startMoney = (count === 2 ? 5860 : 2930) * SCALE_FACTOR;
 
     state.players = Array.from({ length: count }, (_, i) => {
       if (i === 0) {
@@ -2312,7 +2313,7 @@
           avatarUrl: currentHumanAvatarUrl(),
           emoji: TOKEN_EMOJIS[i],
           tokenColor: TOKEN_COLORS[i],
-          money: START_MONEY,
+          money: startMoney,
           position: 0,
           properties: [],
           buildings: {},
@@ -2333,7 +2334,7 @@
         avatarUrl: profile.avatarUrl,
         emoji: TOKEN_EMOJIS[i],
         tokenColor: TOKEN_COLORS[i],
-        money: START_MONEY,
+        money: startMoney,
         position: 0,
         properties: [],
         buildings: {},
@@ -2362,7 +2363,7 @@
     state.purchasedThisTurn = null;
 
     addLog(`🌐 부루마불 게임 시작! ${count}명 참가.`);
-    addLog(`💰 각 플레이어 ₩${START_MONEY.toLocaleString()} 보유.`);
+    addLog(`💰 각 플레이어 ₩${startMoney.toLocaleString()} 보유.`);
 
     document.body.classList.add("monopoly-playing");
     els.setupPanel?.classList.add("hidden");
