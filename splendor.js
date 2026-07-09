@@ -8,6 +8,24 @@
   const GEM_COLORS = { diamond: "#e8e4da", sapphire: "#5da9e9", emerald: "#60b86e", ruby: "#de3b35", onyx: "#4a4a4a", gold: "#f0c84b" };
   const WIN_SCORE = 15;
 
+  const CARD_BG_IMAGES = {
+    diamond: "assets/splendor/다이아몬드카드.png",
+    sapphire: "assets/splendor/사파이어카드.png",
+    emerald: "assets/splendor/에메랄드.png",
+    ruby: "assets/splendor/루비카드.png",
+    onyx: "assets/splendor/오닉스카드.png"
+  };
+
+  const NOBLE_IMAGES = [
+    "assets/splendor/쉴레이만 1세.png",
+    "assets/splendor/안 드 브르타뉴.png",
+    "assets/splendor/엘리자베트.png",
+    "assets/splendor/이사벨 1세.png",
+    "assets/splendor/카트린 드 메디시스.png",
+    "assets/splendor/프랑수아 1세.png",
+    "assets/splendor/헨리 8세.png"
+  ];
+
   /* ── Noble Tiles ── */
   const NOBLE_TILES = [
     { points: 3, requires: { ruby: 4, onyx: 4 } },
@@ -207,9 +225,10 @@
     const tierColors = { 1: "#6a8a6a", 2: "#8a6a3a", 3: "#5a3a6a" };
     const p = activePlayer();
     const affordable = p && p.human && !reserved && canAffordWithGems(card, p) && state.phase === "action";
+    const bgUrl = CARD_BG_IMAGES[card.bonus];
     return `<div class="splendor-card${reserved ? " splendor-card-reserved" : ""}${state.selectedCard?.tier === tier && state.selectedCard?.index === index ? " selected" : ""}${affordable ? " affordable" : ""}"
       data-tier="${tier}" data-index="${index}" ${reserved ? 'data-reserved="1"' : ""}
-      style="border-top: 4px solid ${tierColors[tier] || "var(--line)"}">
+      style="border-top: 4px solid ${tierColors[tier] || "var(--line)"}; background-image: url('${bgUrl}'); background-size: cover; background-position: center;">
       <div class="splendor-card-top">
         <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
         <span class="splendor-card-bonus" title="${GEM_LABELS[card.bonus]} 보너스">${gemImg(card.bonus, 40)}</span>
@@ -221,9 +240,8 @@
 
   function cardBackHtml(tier) {
     const deck = state.tiers[tier];
-    const tierEmoji = { 1: "🥉", 2: "🥈", 3: "🥇" };
-    return `<div class="splendor-card-back" data-tier="${tier}">
-      ${tierEmoji[tier] || "💎"}<span class="splendor-deck-count">${deck.length}</span>
+    return `<div class="splendor-card-back" data-tier="${tier}" style="background-image: url('assets/splendor/티어${tier}.png'); background-size: cover; background-position: center;">
+      <span class="splendor-deck-count">${deck.length}</span>
     </div>`;
   }
 
@@ -231,8 +249,8 @@
   function nobleHtml(noble, index) {
     const reqHtml = Object.entries(noble.requires)
       .map(([g, n]) => `<span class="splendor-noble-req-gem">${gemImg(g, 22)}${n}</span>`).join("");
-    return `<div class="splendor-noble" data-nindex="${index}">
-      <span class="splendor-noble-emoji">👑</span>
+    const imgUrl = NOBLE_IMAGES[index % NOBLE_IMAGES.length];
+    return `<div class="splendor-noble" data-nindex="${index}" style="background-image: url('${imgUrl}'); background-size: cover; background-position: center;">
       <span class="splendor-noble-points">★${noble.points}</span>
       <div class="splendor-noble-req">${reqHtml}</div>
     </div>`;
