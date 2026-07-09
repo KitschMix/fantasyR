@@ -656,7 +656,37 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 .splendor-side {
   display: grid;
   gap: 10px;
-  align-content: stretch;
+  align-content: start;
+}
+
+.splendor-turn-card {
+  text-align: center;
+}
+
+.splendor-turn-label {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--accent);
+}
+
+.splendor-phase-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.splendor-my-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.splendor-mini-card {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(246,232,202,0.08);
+  border: 1px solid rgba(246,232,202,0.12);
 }
 
 .splendor-board-area {
@@ -731,7 +761,10 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 .splendor-player-gems {
   gap: 6px;
-  min-height: 28px;
+  min-height: 36px;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .splendor-player-gems + .splendor-player-gems {
@@ -997,6 +1030,11 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 .splendor-action-card {
   padding: 14px;
+  border-radius: 8px;
+  background: rgba(31,28,23,0.92);
+  border: 1px solid rgba(246,232,202,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  min-height: 80px;
 }
 
 .splendor-panel-title {

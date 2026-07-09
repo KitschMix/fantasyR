@@ -56,6 +56,10 @@
           <div class="splendor-layout">
             <!-- Left: Players -->
             <aside class="splendor-side">
+              <section class="splendor-action-card splendor-turn-card">
+                <div id="splendorTurnLabel" class="splendor-turn-label">-</div>
+                <small id="splendorPhaseLabel" class="splendor-phase-label">-</small>
+              </section>
               <div id="splendorPlayersList" class="splendor-players"></div>
             </aside>
 
@@ -89,12 +93,8 @@
             <!-- Right: Actions & Info -->
             <aside class="splendor-actions-panel">
               <section class="splendor-action-card">
-                <div class="splendor-panel-title">턴: <span id="splendorTurnLabel">-</span></div>
-                <small id="splendorPhaseLabel">-</small>
-              </section>
-              <section class="splendor-action-card">
-                <div class="splendor-panel-title">내 보석 보너스</div>
-                <div id="splendorMyBonuses" class="splendor-my-bonuses"></div>
+                <div class="splendor-panel-title">내 구입 카드</div>
+                <div id="splendorMyCards" class="splendor-my-cards"></div>
               </section>
               <section class="splendor-action-card">
                 <div class="splendor-panel-title">내 예약 카드</div>

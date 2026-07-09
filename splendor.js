@@ -139,7 +139,8 @@
     tier2:          $("#splendorTier2"),
     tier3:          $("#splendorTier3"),
     tokens:         $("#splendorTokens"),
-    myBonuses:      $("#splendorMyBonuses"),
+    myBonuses:      null,
+    myCards:        $("#splendorMyCards"),
     myReserved:     $("#splendorMyReserved"),
     endTurnButton:  null,
     log:            $("#splendorLog")
@@ -314,11 +315,16 @@
   }
 
   function renderMyBonuses() {
-    if (!els.myBonuses) return;
+    if (!els.myCards) return;
     const p = activePlayer();
-    els.myBonuses.innerHTML = Object.entries(p.bonuses)
-      .filter(([, n]) => n > 0)
-      .map(([g, n]) => gemMini(g, n)).join("") || "<small style='color:var(--muted)'>없음</small>";
+    if (!p.cards.length) {
+      els.myCards.innerHTML = "<small style='color:var(--muted)'>아직 없음</small>";
+      return;
+    }
+    els.myCards.innerHTML = p.cards.map(c => {
+      const bonusHtml = gemMini(c.bonus, 1);
+      return `<span class="splendor-mini-card" title="${GEM_LABELS[c.bonus]} ${c.points ? '★'+c.points : ''}">${bonusHtml}</span>`;
+    }).join("");
   }
 
   function renderMyReserved() {
