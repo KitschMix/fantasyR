@@ -1026,6 +1026,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   border: 1px solid rgba(246,232,202,0.12);
   border-radius: 8px;
   background: rgba(13,14,15,0.18);
+  overflow: visible;
 }
 
 .splendor-tier-label {
@@ -1051,7 +1052,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   gap: 10px;
   min-height: 170px;
   align-items: stretch;
-  overflow-x: auto;
+  overflow: visible;
   scrollbar-width: thin;
 }
 
@@ -1095,12 +1096,13 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 .splendor-card.card-buying {
   animation: splendor-card-buy 2s ease-out forwards;
   pointer-events: none;
+  z-index: 50;
 }
 
 @keyframes splendor-card-buy {
-  0% { opacity: 1; transform: scale(1); filter: brightness(1); }
-  30% { opacity: 1; transform: scale(1.05); filter: brightness(1.4); }
-  100% { opacity: 0; transform: scale(0.8); filter: brightness(0.5); }
+  0% { opacity: 1; filter: brightness(1); }
+  30% { opacity: 1; filter: brightness(1.6); }
+  100% { opacity: 0; filter: brightness(0.3); }
 }
 
 .splendor-buy-bubble {
