@@ -9,21 +9,21 @@
   const WIN_SCORE = 15;
 
   const CARD_BG_IMAGES = {
-    diamond: "assets/splendor/다이아몬드카드.png",
-    sapphire: "assets/splendor/사파이어카드.png",
-    emerald: "assets/splendor/에메랄드.png",
-    ruby: "assets/splendor/루비카드.png",
-    onyx: "assets/splendor/오닉스카드.png"
+    diamond: "assets/splendor/다이아몬드카드.jpg",
+    sapphire: "assets/splendor/사파이어카드.jpg",
+    emerald: "assets/splendor/에메랄드.jpg",
+    ruby: "assets/splendor/루비카드.jpg",
+    onyx: "assets/splendor/오닉스카드.jpg"
   };
 
   const NOBLE_IMAGES = [
-    "assets/splendor/쉴레이만 1세.png",
-    "assets/splendor/안 드 브르타뉴.png",
-    "assets/splendor/엘리자베트.png",
-    "assets/splendor/이사벨 1세.png",
-    "assets/splendor/카트린 드 메디시스.png",
-    "assets/splendor/프랑수아 1세.png",
-    "assets/splendor/헨리 8세.png"
+    "assets/splendor/쉴레이만 1세.jpg",
+    "assets/splendor/안 드 브르타뉴.jpg",
+    "assets/splendor/엘리자베트.jpg",
+    "assets/splendor/이사벨 1세.jpg",
+    "assets/splendor/카트린 드 메디시스.jpg",
+    "assets/splendor/프랑수아 1세.jpg",
+    "assets/splendor/헨리 8세.jpg"
   ];
 
   /* ── Noble Tiles ── */
@@ -240,7 +240,7 @@
 
   function cardBackHtml(tier) {
     const deck = state.tiers[tier];
-    return `<div class="splendor-card-back" data-tier="${tier}" style="background-image: url('assets/splendor/티어${tier}.png'); background-size: cover; background-position: center;">
+    return `<div class="splendor-card-back" data-tier="${tier}" style="background-image: url('assets/splendor/티어${tier}.jpg'); background-size: cover; background-position: center;">
       <span class="splendor-deck-count">${deck.length}</span>
     </div>`;
   }
@@ -249,8 +249,7 @@
   function nobleHtml(noble, index) {
     const reqHtml = Object.entries(noble.requires)
       .map(([g, n]) => `<span class="splendor-noble-req-gem">${gemImg(g, 22)}${n}</span>`).join("");
-    const imgUrl = NOBLE_IMAGES[index % NOBLE_IMAGES.length];
-    return `<div class="splendor-noble" data-nindex="${index}" style="background-image: url('${imgUrl}'); background-size: cover; background-position: center;">
+    return `<div class="splendor-noble" data-nindex="${index}" style="background-image: url('${noble.img}'); background-size: cover; background-position: center;">
       <span class="splendor-noble-points">★${noble.points}</span>
       <div class="splendor-noble-req">${reqHtml}</div>
     </div>`;
@@ -396,7 +395,8 @@
       .filter(([, n]) => n > 0)
       .map(([g, n]) => gemPip(g, n)).join("");
     const tierColors = { 1: "#6a8a6a", 2: "#8a6a3a", 3: "#5a3a6a" };
-    preview.innerHTML = `<div class="splendor-card" style="border-top: 4px solid ${tierColors[card.tier] || tierColors[1] || "var(--line)"}">
+    const bgUrl = CARD_BG_IMAGES[card.bonus];
+    preview.innerHTML = `<div class="splendor-card" style="border-top: 4px solid ${tierColors[card.tier] || tierColors[1] || "var(--line)"}; background-image: url('${bgUrl}'); background-size: cover; background-position: center;">
       <div class="splendor-card-top">
         <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
         <span class="splendor-card-bonus">${gemImg(card.bonus, 70)}</span>
@@ -423,10 +423,9 @@
     if (!preview || !noble) return;
     const reqHtml = Object.entries(noble.requires)
       .map(([g, n]) => `<span class="splendor-cost-pip">${gemImg(g, 40)}<span class="splendor-cost-num">${n}</span></span>`).join("");
-    preview.innerHTML = `<div class="splendor-card" style="border-top: 4px solid var(--accent)">
+    preview.innerHTML = `<div class="splendor-card" style="border-top: 4px solid var(--accent); background-image: url('${noble.img}'); background-size: cover; background-position: center;">
       <div class="splendor-card-top">
-        <span class="splendor-card-points">★★★</span>
-        <span style="font-size:60px">👑</span>
+        <span class="splendor-card-points">★${noble.points}</span>
       </div>
       <div class="splendor-card-middle"></div>
       <div class="splendor-card-cost" style="flex-direction:column">${reqHtml}</div>
@@ -881,7 +880,10 @@
     for (let t = 1; t <= 3; t++) {
       for (let i = 0; i < 4; i++) state.visibleCards[t].push(drawCard(t));
     }
-    state.nobles = shuffle([...NOBLE_TILES]).slice(0, count + 1);
+    state.nobles = shuffle([...NOBLE_TILES]).slice(0, count + 1).map((n, idx) => {
+      n.img = NOBLE_IMAGES[idx % NOBLE_IMAGES.length];
+      return n;
+    });
     state.currentPlayer = 0;
     state.phase = "action";
     state.selectedTokens = [];
@@ -906,6 +908,59 @@
 
   function leaveGame() {
     window.location.href = "./";
+  }
+
+  function preloadSplendorAssets() {
+    return new Promise(resolve => {
+      const assets = [
+        "assets/splendor/diamond.png",
+        "assets/splendor/emerald.png",
+        "assets/splendor/gold.png",
+        "assets/splendor/onyx.png",
+        "assets/splendor/ruby.png",
+        "assets/splendor/sapphire.png",
+        "assets/splendor/다이아몬드카드.jpg",
+        "assets/splendor/루비카드.jpg",
+        "assets/splendor/사파이어카드.jpg",
+        "assets/splendor/에메랄드.jpg",
+        "assets/splendor/오닉스카드.jpg",
+        "assets/splendor/쉴레이만 1세.jpg",
+        "assets/splendor/안 드 브르타뉴.jpg",
+        "assets/splendor/엘리자베트.jpg",
+        "assets/splendor/이사벨 1세.jpg",
+        "assets/splendor/카트린 드 메디시스.jpg",
+        "assets/splendor/프랑수아 1세.jpg",
+        "assets/splendor/헨리 8세.jpg",
+        "assets/splendor/티어1.jpg",
+        "assets/splendor/티어2.jpg",
+        "assets/splendor/티어3.jpg"
+      ];
+      
+      let loadedCount = 0;
+      const total = assets.length;
+      
+      const updateProgress = () => {
+        const percent = Math.round((loadedCount / total) * 100);
+        const smallText = document.querySelector("#loadingOverlay small");
+        if (smallText) {
+          smallText.textContent = `리소스 불러오는 중... (${percent}%)`;
+        }
+      };
+      
+      updateProgress();
+      
+      assets.forEach(src => {
+        const img = new Image();
+        img.onload = img.onerror = () => {
+          loadedCount++;
+          updateProgress();
+          if (loadedCount === total) {
+            resolve();
+          }
+        };
+        img.src = src;
+      });
+    });
   }
 
   /* ── Init ── */
@@ -962,9 +1017,11 @@
       attemptReserve(tier, null);
     });
 
-    document.body.classList.remove("app-loading");
-    document.querySelector("#loadingOverlay")?.classList.add("hidden");
-    initCardHover();
+    preloadSplendorAssets().then(() => {
+      document.body.classList.remove("app-loading");
+      document.querySelector("#loadingOverlay")?.classList.add("hidden");
+      initCardHover();
+    });
   }
 
   init();
