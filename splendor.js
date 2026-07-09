@@ -228,10 +228,10 @@
   }
 
   /* ── Noble Rendering ── */
-  function nobleHtml(noble) {
+  function nobleHtml(noble, index) {
     const reqHtml = Object.entries(noble.requires)
       .map(([g, n]) => `<span class="splendor-noble-req-gem">${gemImg(g, 22)}${n}</span>`).join("");
-    return `<div class="splendor-noble">
+    return `<div class="splendor-noble" data-nindex="${index}">
       <span class="splendor-noble-emoji">👑</span>
       <span class="splendor-noble-points">★${noble.points}</span>
       <div class="splendor-noble-req">${reqHtml}</div>
@@ -267,7 +267,7 @@
   /* ── Board Rendering ── */
   function renderNobles() {
     if (!els.nobles) return;
-    els.nobles.innerHTML = state.nobles.map(n => nobleHtml(n)).join("");
+    els.nobles.innerHTML = state.nobles.map((n, i) => nobleHtml(n, i)).join("");
   }
 
   function renderTiers() {
@@ -383,7 +383,7 @@
         <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
         <span class="splendor-card-bonus">${gemImg(card.bonus, 40)}</span>
       </div>
-      <div class="splendor-card-gem-mark">${gemImg(card.bonus, 48)}</div>
+      <div class="splendor-card-middle"></div>
       <div class="splendor-card-cost">${costHtml}</div>
     </div>`;
     // Position near the card
@@ -403,23 +403,61 @@
     hoverCard = null;
   }
 
+  function showNoblePreview(noble, rect) {
+    const preview = document.querySelector("#splendorCardPreview");
+    if (!preview || !noble) return;
+    const reqHtml = Object.entries(noble.requires)
+      .map(([g, n]) => `<span class="splendor-cost-pip">${gemImg(g, 24)}<span class="splendor-cost-num">${n}</span></span>`).join("");
+    preview.innerHTML = `<div class="splendor-card" style="border-top: 4px solid var(--accent)">
+      <div class="splendor-card-top">
+        <span class="splendor-card-points">★★★</span>
+        <span style="font-size:36px">👑</span>
+      </div>
+      <div class="splendor-card-middle"></div>
+      <div class="splendor-card-cost" style="flex-direction:column">${reqHtml}</div>
+    </div>`;
+    let top = rect.top - 20;
+    let left = rect.right + 10;
+    if (left + 220 > window.innerWidth) left = rect.left - 220;
+    if (top + 280 > window.innerHeight) top = window.innerHeight - 290;
+    if (top < 10) top = 10;
+    preview.style.top = `${top}px`;
+    preview.style.left = `${left}px`;
+    preview.classList.remove("hidden");
+  }
+
   function initCardHover() {
+    // Card hover
     document.addEventListener("mouseover", e => {
-      const el = e.target.closest(".splendor-card:not(.splendor-card-back)");
-      if (!el) { clearTimeout(hoverTimer); hideCardPreview(); return; }
-      const tier = Number(el.dataset.tier);
-      const index = Number(el.dataset.index);
-      if (!tier || isNaN(index)) return;
-      const card = state.visibleCards[tier]?.[index];
-      if (!card || card === hoverCard) return;
-      clearTimeout(hoverTimer);
-      hoverCard = card;
-      hoverTimer = setTimeout(() => {
-        showCardPreview(card, el.getBoundingClientRect());
-      }, 500);
+      const cardEl = e.target.closest(".splendor-card:not(.splendor-card-back)");
+      const nobleEl = e.target.closest(".splendor-noble");
+      if (!cardEl && !nobleEl) { clearTimeout(hoverTimer); hideCardPreview(); return; }
+
+      if (cardEl) {
+        const tier = Number(cardEl.dataset.tier);
+        const index = Number(cardEl.dataset.index);
+        if (!tier || isNaN(index)) return;
+        const card = state.visibleCards[tier]?.[index];
+        if (!card || card === hoverCard) return;
+        clearTimeout(hoverTimer);
+        hoverCard = card;
+        hoverTimer = setTimeout(() => {
+          showCardPreview(card, cardEl.getBoundingClientRect());
+        }, 500);
+      } else if (nobleEl) {
+        const nIndex = Number(nobleEl.dataset.nindex);
+        if (isNaN(nIndex)) return;
+        const noble = state.nobles[nIndex];
+        if (!noble || noble === hoverCard) return;
+        clearTimeout(hoverTimer);
+        hoverCard = noble;
+        hoverTimer = setTimeout(() => {
+          showNoblePreview(noble, nobleEl.getBoundingClientRect());
+        }, 500);
+      }
     });
     document.addEventListener("mouseout", e => {
-      const el = e.target.closest(".splendor-card");
+      const el = e.target.closest(".splendor-card, .splendor-noble");
       if (el) { clearTimeout(hoverTimer); hideCardPreview(); }
     });
   }
