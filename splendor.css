@@ -674,9 +674,8 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 .splendor-players {
   gap: 10px;
-  flex: 1;
   display: grid;
-  align-content: stretch;
+  align-content: start;
 }
 
 .splendor-player-card {
@@ -687,7 +686,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   background: rgba(31,28,23,0.92);
   border: 1px solid rgba(246,232,202,0.14);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-  flex: 1;
+  min-height: 110px;
 }
 
 .splendor-player-card.active {
@@ -752,7 +751,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-mini-gem {
-  font-size: 14px;
+  font-size: 18px;
 }
 
 .splendor-nobles {
@@ -868,6 +867,17 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   transform: translateY(-2px);
   border-color: var(--focus);
   box-shadow: 0 0 0 2px rgba(242,207,120,0.32), 0 10px 24px rgba(0,0,0,0.32);
+}
+
+.splendor-card.affordable {
+  border-color: rgba(242,207,120,0.6);
+  box-shadow: 0 0 12px rgba(242,207,120,0.25), 0 4px 10px rgba(0,0,0,0.2);
+  animation: splendor-affordable-glow 2s ease-in-out infinite;
+}
+
+@keyframes splendor-affordable-glow {
+  0%, 100% { box-shadow: 0 0 12px rgba(242,207,120,0.25), 0 4px 10px rgba(0,0,0,0.2); }
+  50% { box-shadow: 0 0 20px rgba(242,207,120,0.4), 0 4px 10px rgba(0,0,0,0.2); }
 }
 
 .splendor-card-top {

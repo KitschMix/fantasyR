@@ -141,7 +141,7 @@
     tokens:         $("#splendorTokens"),
     myBonuses:      $("#splendorMyBonuses"),
     myReserved:     $("#splendorMyReserved"),
-    endTurnButton:  $("#splendorEndTurnButton"),
+    endTurnButton:  null,
     log:            $("#splendorLog")
   };
 
@@ -190,7 +190,7 @@
     return `<span class="splendor-cost-pip">${gemImg(gem, 24)}<span class="splendor-cost-num">${count}</span></span>`;
   }
   function gemMini(gem, count) {
-    return `<span class="splendor-mini-gem">${gemImg(gem, 28)}${count}</span>`;
+    return `<span class="splendor-mini-gem">${gemImg(gem, 40)}${count}</span>`;
   }
   function tokenEl(gem, count, disabled) {
     return `<span class="splendor-token${disabled ? " disabled" : ""}" data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개">
@@ -204,7 +204,9 @@
       .filter(([, n]) => n > 0)
       .map(([g, n]) => gemPip(g, n)).join("");
     const tierColors = { 1: "#6a8a6a", 2: "#8a6a3a", 3: "#5a3a6a" };
-    return `<div class="splendor-card${reserved ? " splendor-card-reserved" : ""}${state.selectedCard?.tier === tier && state.selectedCard?.index === index ? " selected" : ""}"
+    const p = activePlayer();
+    const affordable = p && p.human && !reserved && canAffordWithGems(card, p) && state.phase === "action";
+    return `<div class="splendor-card${reserved ? " splendor-card-reserved" : ""}${state.selectedCard?.tier === tier && state.selectedCard?.index === index ? " selected" : ""}${affordable ? " affordable" : ""}"
       data-tier="${tier}" data-index="${index}" ${reserved ? 'data-reserved="1"' : ""}
       style="border-top: 4px solid ${tierColors[tier] || "var(--line)"}">
       <div class="splendor-card-top">
@@ -351,7 +353,7 @@
       };
       els.phaseLabel.textContent = labels[state.phase] || "-";
     }
-    if (els.endTurnButton) els.endTurnButton.disabled = state.phase !== "action" && state.phase !== "done";
+    // Turn end is automatic (no button)
   }
 
   function renderLog() {
@@ -800,9 +802,7 @@
       if (typeof els.rulesDialog?.showModal === "function" && !els.rulesDialog.open) els.rulesDialog.showModal();
     });
     els.rulesDialog?.addEventListener("click", e => { if (e.target === els.rulesDialog) els.rulesDialog.close(); });
-    els.endTurnButton?.addEventListener("click", () => {
-      if (activePlayer()?.human && state.phase === "done") endTurn();
-    });
+    // Turn end is automatic (no button)
 
     // Card click: buy or reserve
     document.addEventListener("click", e => {
