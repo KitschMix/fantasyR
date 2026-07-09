@@ -752,16 +752,29 @@
 
   /* ── AI Logic ── */
   function aiChooseAction(player) {
+    const diff = player.difficulty || "normal";
+    const mistakeRate = diff === "expert" ? 0 : diff === "hard" ? 0.12 : 0.35;
+    const makeMistake = () => Math.random() < mistakeRate;
+
     // Try to buy a visible card (prefer highest points affordable)
     let bestCard = null, bestTier = 0, bestIdx = 0, bestPoints = -1;
+    let allAffordable = [];
     for (const tier of [3, 2, 1]) {
       state.visibleCards[tier].forEach((card, i) => {
-        if (card && canAffordWithGems(card, player) && card.points > bestPoints) {
-          bestCard = card; bestTier = tier; bestIdx = i; bestPoints = card.points;
+        if (card && canAffordWithGems(card, player)) {
+          allAffordable.push({ card, tier, i, points: card.points });
+          if (card.points > bestPoints) {
+            bestCard = card; bestTier = tier; bestIdx = i; bestPoints = card.points;
+          }
         }
       });
     }
-    if (bestCard) {
+    // Normal/Hard: sometimes pick a random affordable card instead of best
+    if (bestCard && makeMistake() && allAffordable.length > 1) {
+      const pick = allAffordable[Math.floor(Math.random() * allAffordable.length)];
+      bestCard = pick.card; bestTier = pick.tier; bestIdx = pick.i;
+    }
+    if (bestCard && !(makeMistake() && diff === "normal")) {
       payForCard(bestCard, player);
       state.visibleCards[bestTier][bestIdx] = drawCard(bestTier);
       addLog(`${player.name}: 카드 구매 (${bestCard.points}점)`);
@@ -773,6 +786,7 @@
     for (let ri = 0; ri < player.reserved.length; ri++) {
       const card = player.reserved[ri];
       if (canAffordWithGems(card, player)) {
+        if (makeMistake()) continue; // sometimes skip reserved buy
         payForCard(card, player);
         player.reserved.splice(ri, 1);
         addLog(`${player.name}: 예약 카드 구매 (${card.points}점)`);
@@ -798,29 +812,46 @@
       .sort((a, b) => b[1] - a[1])
       .map(([g]) => g);
 
+    // Normal: sometimes take random gems instead of optimal ones
+    if (makeMistake() && diff !== "expert") {
+      const randomGems = shuffle(GEMS.filter(g => state.tokenBank[g] > 0)).slice(0, 3);
+      if (randomGems.length >= 1) { takeTokens(randomGems); return; }
+    }
+
     if (sortedGems.length >= 3) {
       takeTokens(sortedGems.slice(0, 3));
     } else if (sortedGems.length >= 1) {
-      // Take available gems
       const picks = sortedGems.filter(g => state.tokenBank[g] > 0).slice(0, 3);
       if (picks.length >= 1) {
         takeTokens(picks);
       } else {
-        // Fallback: take any available
         const any = GEMS.filter(g => state.tokenBank[g] > 0).slice(0, 3);
         if (any.length) takeTokens(any);
         else { addLog(`${player.name}: 보석이 없어 턴 넘김`); state.phase = "done"; }
       }
     } else {
+      // Expert: proactively reserve high-value cards for gold
+      if (diff === "expert" && player.reserved.length < 3) {
+        let tier3Card = state.visibleCards[3]?.find(c => c && c.points >= 3);
+        let ti = 3;
+        if (!tier3Card) { tier3Card = state.visibleCards[2]?.find(c => c && c.points >= 2); ti = 2; }
+        if (tier3Card) {
+          const idx = state.visibleCards[ti].indexOf(tier3Card);
+          player.reserved.push(tier3Card);
+          state.visibleCards[ti][idx] = drawCard(ti);
+          if (state.tokenBank.gold > 0) { player.gems.gold++; state.tokenBank.gold--; }
+          addLog(`${player.name}: 카드 예약 (전략)`);
+          return;
+        }
+      }
       // Reserve a card from tier 3 for gold
       const tier3Card = state.visibleCards[3]?.[0];
-      if (tier3Card && player.reserved.length < 3) {
+      if (tier3Card && player.reserved.length < 3 && !makeMistake()) {
         player.reserved.push(tier3Card);
         state.visibleCards[3][0] = drawCard(3);
         if (state.tokenBank.gold > 0) { player.gems.gold++; state.tokenBank.gold--; }
         addLog(`${player.name}: 카드 예약`);
       } else {
-        // Take any 3 gems
         const any = GEMS.filter(g => state.tokenBank[g] > 0).slice(0, 3);
         if (any.length) takeTokens(any);
         else addLog(`${player.name}: 턴 넘김`);
