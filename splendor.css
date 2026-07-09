@@ -524,6 +524,11 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
+.splendor-token-bubble.splendor-token-bubble-ok {
+  background: rgba(88,166,107,0.95);
+  border-color: rgba(88,166,107,0.6);
+}
+
 .splendor-token-bubble::after {
   content: "";
   position: absolute;

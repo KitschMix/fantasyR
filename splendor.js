@@ -747,6 +747,18 @@
 
   function takeTokens(gems) {
     const p = activePlayer();
+    // Show "획득" bubbles on each selected gem before removing
+    if (p.human) {
+      gems.forEach(g => {
+        const tokenEl = els.tokens?.querySelector(`[data-gem="${g}"]`);
+        if (tokenEl) {
+          const bubble = document.createElement("div");
+          bubble.className = "splendor-token-bubble splendor-token-bubble-ok";
+          bubble.textContent = "획득!";
+          tokenEl.appendChild(bubble);
+        }
+      });
+    }
     gems.forEach(g => {
       p.gems[g] = (p.gems[g] || 0) + 1;
       state.tokenBank[g]--;
@@ -755,10 +767,15 @@
     addLog(`${p.name}: 보석 ${labels} 획득`);
     state.selectedTokens = [];
     state.phase = "done";
-    renderAll();
-    if (!p.human) return;
-    // Check nobles & win
-    endTurn();
+    // Delay render slightly so bubbles are visible
+    if (p.human) {
+      setTimeout(() => {
+        renderAll();
+        endTurn();
+      }, 1000);
+    } else {
+      renderAll();
+    }
   }
 
   /* ── Card Purchase ── */
