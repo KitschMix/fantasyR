@@ -391,11 +391,14 @@
     preview.style.left = "50%";
     preview.style.transform = "translate(-50%, -50%)";
     preview.classList.remove("hidden");
+    requestAnimationFrame(() => preview.classList.add("visible"));
   }
 
   function hideCardPreview() {
     const preview = document.querySelector("#splendorCardPreview");
-    if (preview) preview.classList.add("hidden");
+    if (!preview) return;
+    preview.classList.remove("visible");
+    preview.classList.add("hidden");
     hoverCard = null;
   }
 
@@ -417,6 +420,7 @@
     preview.style.left = "50%";
     preview.style.transform = "translate(-50%, -50%)";
     preview.classList.remove("hidden");
+    requestAnimationFrame(() => preview.classList.add("visible"));
   }
 
   function initCardHover() {
