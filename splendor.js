@@ -180,16 +180,21 @@
 
   /* ── Gem Color Helpers ── */
   const GEM_ICONS = { diamond: "💎", sapphire: "🔷", emerald: "🟢", ruby: "🔴", onyx: "⬛", gold: "⭐" };
+  const GEM_IMAGES = { diamond: "assets/splendor/diamond.png", sapphire: "assets/splendor/sapphire.png", emerald: "assets/splendor/emerald.png", ruby: "assets/splendor/ruby.png", onyx: "assets/splendor/onyx.png", gold: "assets/splendor/gold.png" };
+
+  function gemImg(gem, size = 20) {
+    return `<img src="${GEM_IMAGES[gem]}" alt="${GEM_LABELS[gem]}" style="width:${size}px;height:${size}px;object-fit:contain;vertical-align:middle;" loading="lazy" />`;
+  }
 
   function gemPip(gem, count) {
-    return `<span class="splendor-cost-pip" style="background:${GEM_COLORS[gem]}">${GEM_ICONS[gem]}${count}</span>`;
+    return `<span class="splendor-cost-pip" style="background:${GEM_COLORS[gem]}">${gemImg(gem, 14)}${count}</span>`;
   }
   function gemMini(gem, count) {
-    return `<span class="splendor-mini-gem" style="background:${GEM_COLORS[gem]}">${GEM_ICONS[gem]}${count}</span>`;
+    return `<span class="splendor-mini-gem" style="background:${GEM_COLORS[gem]}">${gemImg(gem, 14)}${count}</span>`;
   }
   function tokenEl(gem, count, disabled) {
     return `<span class="splendor-token${disabled ? " disabled" : ""}" data-gem="${gem}" style="background:${GEM_COLORS[gem]}" title="${GEM_LABELS[gem]} ${count}개">
-      ${GEM_ICONS[gem]}<span class="splendor-token-count">${count}</span>
+      ${gemImg(gem, 24)}<span class="splendor-token-count">${count}</span>
     </span>`;
   }
 
@@ -204,9 +209,9 @@
       style="border-top: 4px solid ${tierColors[tier] || "var(--line)"}">
       <div class="splendor-card-top">
         <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
-        <span class="splendor-card-bonus" style="background:${GEM_COLORS[card.bonus]}" title="${GEM_LABELS[card.bonus]} 보너스">${GEM_ICONS[card.bonus]}</span>
+        <span class="splendor-card-bonus" style="background:${GEM_COLORS[card.bonus]}" title="${GEM_LABELS[card.bonus]} 보너스">${gemImg(card.bonus, 16)}</span>
       </div>
-      <div class="splendor-card-gem-mark">${GEM_ICONS[card.bonus]}</div>
+      <div class="splendor-card-gem-mark">${gemImg(card.bonus, 28)}</div>
       <div class="splendor-card-cost">${costHtml}</div>
     </div>`;
   }
@@ -222,7 +227,7 @@
   /* ── Noble Rendering ── */
   function nobleHtml(noble) {
     const reqHtml = Object.entries(noble.requires)
-      .map(([g, n]) => `<span class="splendor-noble-req-gem" style="background:${GEM_COLORS[g]}">${GEM_ICONS[g]}${n}</span>`).join("");
+      .map(([g, n]) => `<span class="splendor-noble-req-gem" style="background:${GEM_COLORS[g]}">${gemImg(g, 12)}${n}</span>`).join("");
     return `<div class="splendor-noble">
       <span class="splendor-noble-emoji">👑</span>
       <span class="splendor-noble-points">★${noble.points}</span>
@@ -283,7 +288,7 @@
       const disabled = isGold || count === 0;
       return `<span class="splendor-token${disabled ? " disabled" : ""}${selected ? " selected" : ""}"
         data-gem="${gem}" style="background:${GEM_COLORS[gem]}" title="${GEM_LABELS[gem]} ${count}개${selected ? " (선택됨 " + selected + ")" : ""}">
-        ${selected || count}<span class="splendor-token-count">${count}</span>
+        ${gemImg(gem, 24)}<span class="splendor-token-count">${count}</span>
       </span>`;
     }).join("");
     // Bind click
