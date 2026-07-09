@@ -257,6 +257,11 @@ body.monopoly-active.monopoly-playing .monopoly-game-panel {
   white-space: nowrap;
 }
 
+.monopoly-player-money.bankrupt-money {
+  color: #e74c3c;
+  font-size: 13px;
+}
+
 /* --- Status Card --- */
 .monopoly-status-card {
   padding: 14px;

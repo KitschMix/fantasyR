@@ -432,7 +432,7 @@
           <strong>${escapeHtml(p.name)}</strong>
           <small>${escapeHtml(tileAt(p.position).name)} · 자산 ${p.properties.length}개${p.inJail ? " · 🚔 구금" : ""}</small>
         </span>
-        <b class="monopoly-player-money">₩${p.money.toLocaleString()}</b>
+        <b class="monopoly-player-money${p.bankrupt ? " bankrupt-money" : ""}">${p.bankrupt ? "💀 파산" : "₩" + p.money.toLocaleString()}</b>
       `;
       els.playersList.appendChild(card);
     });
@@ -1521,6 +1521,12 @@
             showPropertyPopup(player, tile).then(resolve);
           });
           footer.appendChild(buildBtn);
+        } else if (buildBlockReason) {
+          // Show reason why building is not possible
+          const reasonEl = document.createElement("p");
+          reasonEl.style.cssText = "color: #e74c3c; font-size: 12px; margin: 4px 0; text-align: center;";
+          reasonEl.textContent = `⚠️ ${buildBlockReason}`;
+          footer.appendChild(reasonEl);
         }
 
         // Sell button directly on own landing popup
@@ -1573,13 +1579,18 @@
 
   async function handlePropertyLanding(player, tile) {
     if (!player.human) {
-      // AI: 팝업 없이 자동 구매 판단 (사람이 취소할 수 없도록)
+      // AI: 팝업 없이 자동 구매 판단
       await aiBuyDecision(player, tile);
       return;
     }
     await showPropertyPopup(player, tile);
     state.phase = "buyDecision";
-    renderControls();
+    renderAll();
+    // Auto end turn after popup dismissed
+    if (activePlayer() === player && state.phase !== "finished" && !player.bankrupt) {
+      await wait(300);
+      await endTurn();
+    }
   }
 
   async function handleEventTile(player, tile) {
