@@ -243,7 +243,7 @@
 
   function cardBackHtml(tier) {
     const deck = state.tiers[tier];
-    return `<div class="splendor-card-back" data-tier="${tier}" style="background-image: url('assets/splendor/티어${tier}.jpg'); background-size: cover; background-position: center;">
+    return `<div class="splendor-card-back" data-tier="${tier}" style="background-image: url('assets/splendor/티어${tier}.jpg?v=2'); background-size: cover; background-position: center;">
       <span class="splendor-deck-count">${deck.length}</span>
     </div>`;
   }
@@ -980,9 +980,9 @@
         "assets/splendor/카트린 드 메디시스.jpg",
         "assets/splendor/프랑수아 1세.jpg",
         "assets/splendor/헨리 8세.jpg",
-        "assets/splendor/티어1.jpg",
-        "assets/splendor/티어2.jpg",
-        "assets/splendor/티어3.jpg",
+        "assets/splendor/티어1.jpg?v=2",
+        "assets/splendor/티어2.jpg?v=2",
+        "assets/splendor/티어3.jpg?v=2",
         "assets/splendor/background.jpg"
       ];
       
