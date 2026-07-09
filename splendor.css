@@ -355,10 +355,16 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 .splendor-cost-pip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 18px;
   font-weight: 900;
   color: var(--text);
+}
+
+.splendor-cost-num {
+  font-weight: 900;
+  min-width: 16px;
+  text-align: center;
 }
 
 .splendor-card-back {
@@ -862,13 +868,14 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-card-cost {
-  gap: 4px;
+  gap: 6px;
 }
 
 .splendor-cost-pip {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   font-size: 14px;
+  gap: 4px;
 }
 
 .splendor-card-back {

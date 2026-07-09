@@ -187,7 +187,7 @@
   }
 
   function gemPip(gem, count) {
-    return `<span class="splendor-cost-pip">${gemImg(gem, 28)}${count}</span>`;
+    return `<span class="splendor-cost-pip">${gemImg(gem, 22)}<span class="splendor-cost-num">${count}</span></span>`;
   }
   function gemMini(gem, count) {
     return `<span class="splendor-mini-gem">${gemImg(gem, 16)}${count}</span>`;
