@@ -1830,7 +1830,8 @@
   /* ── AI Logic ── */
   function aiBuildIfPossible(player, tile) {
     while (canBuildOn(player, tile) === "") {
-      const cost = getBuildCost(tile);
+      const level = buildingLevel(player, tile.id);
+      const cost = getBuildCost(tile, level + 1);
       if (player.money < cost + 200 * SCALE_FACTOR) break;
       buildProperty(player, tile.id);
     }
@@ -2294,7 +2295,8 @@
       return;
     }
 
-    const cost = getBuildCost(tile);
+    const level = buildingLevel(player, tileId);
+    const cost = getBuildCost(tile, level + 1);
     player.money -= cost;
     player.buildings[tileId] = buildingLevel(player, tileId) + 1;
     addLog(`🏗️ ${playerDisplayName(player)} ${tile.name} ${buildingLabel(player.buildings[tileId])} 건설 (₩${cost.toLocaleString()})`);
