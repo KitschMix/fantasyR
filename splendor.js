@@ -451,7 +451,12 @@
     });
     document.addEventListener("mouseout", e => {
       const el = e.target.closest(".splendor-card, .splendor-noble");
-      if (el) { clearTimeout(hoverTimer); hideCardPreview(); }
+      if (!el) return;
+      // Ignore if moving to a child element within the same card/noble
+      const related = e.relatedTarget;
+      if (related && el.contains(related)) return;
+      clearTimeout(hoverTimer);
+      hideCardPreview();
     });
   }
 
