@@ -97,17 +97,17 @@
     "아테네": "athens.jpg",
     "코펜하겐": "copenhagen.jpg",
     "스톡홀름": "stockholm.jpg",
-    "콩코드 여객기": "gimpo_airport.jpg",
+    "콩코드 여객기": "concord.jpg",
     "취리히": "zurich.jpg",
     "베를린": "berlin.jpg",
     "몬트리올": "montreal.jpg",
     "부에노스아이레스": "buenos_aires.jpg",
     "상파울루": "saopaulo.jpg",
     "시드니": "sydney.jpg",
-    "부산": "seoul.jpg",
+    "부산": "busan.jpg",
     "하와이": "hawaii.jpg",
     "리스본": "lisbon.jpg",
-    "퀸 엘리자베스호": "dubai_airport.jpg",
+    "퀸 엘리자베스호": "queen_elizabeth.jpg",
     "마드리드": "madrid.jpg",
     "도쿄": "tokyo.jpg",
     "파리": "paris.jpg",
@@ -119,7 +119,8 @@
   };
 
   function preloadScenicImages() {
-    Object.values(SCENIC_BG_MAPPING).forEach(filename => {
+    const list = [...Object.values(SCENIC_BG_MAPPING), "go.jpg", "jail.jpg", "fund.jpg", "space.jpg"];
+    list.forEach(filename => {
       const img = new Image();
       img.src = `assets/monopoly/${filename}`;
     });
@@ -307,6 +308,22 @@
       div.style.width = `${pos.w}%`;
       div.style.height = `${pos.h}%`;
 
+      if (tile.type === "corner") {
+        const cornerBgs = {
+          0: "go.jpg",
+          10: "jail.jpg",
+          20: "fund.jpg",
+          30: "space.jpg"
+        };
+        const bg = cornerBgs[i];
+        if (bg) {
+          div.style.backgroundImage = `url('assets/monopoly/${bg}')`;
+          div.style.backgroundSize = "cover";
+          div.style.backgroundPosition = "center";
+          div.style.backgroundRepeat = "no-repeat";
+        }
+      }
+
       let html = "";
       if (tile.type === "property" && tile.color) {
         html += `<div class="tile-color-bar" style="background:${tile.color}"></div>`;
@@ -326,7 +343,9 @@
           }
         }
       }
-      html += `<span class="tile-name">${escapeHtml(tile.name)}</span>`;
+      if (tile.type !== "corner") {
+        html += `<span class="tile-name">${escapeHtml(tile.name)}</span>`;
+      }
       if (tile.price) {
         html += `<span class="tile-price">₩${tile.price.toLocaleString()}</span>`;
       }
