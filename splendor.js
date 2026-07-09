@@ -967,7 +967,8 @@
         "assets/splendor/헨리 8세.jpg",
         "assets/splendor/티어1.jpg",
         "assets/splendor/티어2.jpg",
-        "assets/splendor/티어3.jpg"
+        "assets/splendor/티어3.jpg",
+        "assets/splendor/background.jpg"
       ];
       
       let loadedCount = 0;
