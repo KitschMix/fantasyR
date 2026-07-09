@@ -1185,9 +1185,9 @@
     const npIndex = state.currentPlayer;
     renderAll();
 
-    // Step 1: Show turn toast for 2s
+    // Step 1: Show turn toast for 1.5s
     if (typeof showCenterToast === "function") {
-      showCenterToast(`${np.name} 차례!`, 2000);
+      showCenterToast(`${np.name} 차례!`, 1500);
     }
 
     if (!np.human) {
@@ -1196,7 +1196,7 @@
       setTimeout(() => {
         showThinking(npIndex);
         setTimeout(runAiTurn, thinkTime);
-      }, 2000);
+      }, 1500);
     }
   }
 

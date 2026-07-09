@@ -583,6 +583,17 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   padding: 2px 8px;
 }
 
+/* --- Turn Toast Override (50% smaller) --- */
+body.splendor-active .turn-toast {
+  min-width: min(260px, 50vw);
+  padding: 12px 18px;
+  border-radius: 6px;
+}
+
+body.splendor-active .turn-toast strong {
+  font-size: clamp(16px, 2vw, 28px);
+}
+
 /* --- Thinking Speech Bubble (on player card) --- */
 .splendor-speech-bubble {
   position: absolute;

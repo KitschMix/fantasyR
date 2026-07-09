@@ -56,8 +56,20 @@
 
 .monopoly-setup-controls {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
+  align-items: end;
   margin-top: 0;
+}
+
+.monopoly-setup-controls .nickname-control,
+.monopoly-setup-controls button.primary-button {
+  grid-column: 1 / -1;
+}
+
+.monopoly-setup-controls button.primary-button {
+  width: 100%;
+  margin-top: 2px;
 }
 
 .monopoly-setup-controls label {

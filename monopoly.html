@@ -22,7 +22,7 @@
     <main class="app-shell">
       <!-- Setup Panel -->
       <section id="monopolySetupPanel" class="monopoly-setup-panel" aria-label="부루마불 게임 설정">
-        <div class="mode-panel monopoly-panel">
+        <div class="mode-panel monopoly-panel single-panel">
           <div class="monopoly-panel-top">
             <h1 class="monopoly-setup-title">
               <img class="monopoly-title-logo" src="assets/titles/brumable-logo.webp" alt="부루마불" />
@@ -33,7 +33,15 @@
             <strong>세계 여행 보드게임</strong>
             <span>2~4인 · 주사위 · 도시 투자</span>
           </div>
-          <div class="monopoly-setup-controls">
+          <div class="setup-controls monopoly-setup-controls">
+            <div class="nickname-control">
+              <label>
+                내 닉네임
+                <input id="monopolyNameInput" type="text" minlength="2" maxlength="12" placeholder="2글자 이상" autocomplete="nickname" />
+              </label>
+              <button id="monopolyConfirmNicknameButton" class="secondary-button" type="button">확인</button>
+              <small id="monopolyNicknameStatus">닉네임은 2글자 이상이어야 하며, 하루에 한 번만 변경할 수 있습니다.</small>
+            </div>
             <label>
               플레이어 수
               <select id="monopolyPlayerCountSelect">
@@ -41,10 +49,6 @@
                 <option value="3" selected>3명</option>
                 <option value="4">4명</option>
               </select>
-            </label>
-            <label>
-              내 닉네임
-              <input id="monopolyNameInput" type="text" minlength="2" maxlength="12" placeholder="2글자 이상" autocomplete="nickname" />
             </label>
             <button id="startMonopolyButton" class="primary-button" type="button">게임 시작</button>
           </div>
