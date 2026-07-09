@@ -539,10 +539,8 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-.splendor-bank-label-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.splendor-bank-label-wrap {
+  position: relative;
   margin-bottom: 8px;
 }
 
@@ -550,9 +548,14 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   font-size: 15px;
   font-weight: 800;
   color: var(--accent);
+  text-align: center;
 }
 
 .splendor-selected-summary {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   gap: 8px;
