@@ -187,7 +187,7 @@
   }
 
   function gemPip(gem, count) {
-    return `<span class="splendor-cost-pip">${gemImg(gem, 16)}${count}</span>`;
+    return `<span class="splendor-cost-pip">${gemImg(gem, 28)}${count}</span>`;
   }
   function gemMini(gem, count) {
     return `<span class="splendor-mini-gem">${gemImg(gem, 16)}${count}</span>`;
@@ -209,9 +209,9 @@
       style="border-top: 4px solid ${tierColors[tier] || "var(--line)"}">
       <div class="splendor-card-top">
         <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
-        <span class="splendor-card-bonus" title="${GEM_LABELS[card.bonus]} 보너스">${gemImg(card.bonus, 24)}</span>
+        <span class="splendor-card-bonus" title="${GEM_LABELS[card.bonus]} 보너스">${gemImg(card.bonus, 40)}</span>
       </div>
-      <div class="splendor-card-gem-mark">${gemImg(card.bonus, 28)}</div>
+      <div class="splendor-card-gem-mark">${gemImg(card.bonus, 48)}</div>
       <div class="splendor-card-cost">${costHtml}</div>
     </div>`;
   }
@@ -227,7 +227,7 @@
   /* ── Noble Rendering ── */
   function nobleHtml(noble) {
     const reqHtml = Object.entries(noble.requires)
-      .map(([g, n]) => `<span class="splendor-noble-req-gem">${gemImg(g, 16)}${n}</span>`).join("");
+      .map(([g, n]) => `<span class="splendor-noble-req-gem">${gemImg(g, 28)}${n}</span>`).join("");
     return `<div class="splendor-noble">
       <span class="splendor-noble-emoji">👑</span>
       <span class="splendor-noble-points">★${noble.points}</span>
@@ -312,7 +312,7 @@
       const costHtml = Object.entries(c.cost).filter(([, n]) => n > 0).map(([g, n]) => gemPip(g, n)).join("");
       return `<div class="splendor-reserved-mini" data-rindex="${i}" title="예약 카드 ${i + 1}">
         <span style="font-weight:900;color:var(--accent)">${c.points || ""}</span>
-        ${gemImg(c.bonus, 14)}
+        ${gemImg(c.bonus, 24)}
         <div style="display:flex;gap:1px">${costHtml}</div>
       </div>`;
     }).join("") || "<small style='color:var(--muted)'>없음</small>";
