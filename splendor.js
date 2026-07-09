@@ -164,7 +164,10 @@
     log:            $("#splendorLog"),
     zoomOutButton:  $("#splendorZoomOutButton"),
     zoomInButton:   $("#splendorZoomInButton"),
-    zoomLabel:      $("#splendorZoomLabel")
+    zoomLabel:      $("#splendorZoomLabel"),
+    setupZoomOutButton: $("#splendorSetupZoomOutButton"),
+    setupZoomInButton:  $("#splendorSetupZoomInButton"),
+    setupZoomLabel:     $("#splendorSetupZoomLabel")
   };
 
   /* ── State ── */
@@ -1048,10 +1051,19 @@
   }
 
   function renderZoomControls() {
-    els.gamePanel?.style.setProperty("--splendor-ui-zoom", String(splendorZoomPercent / 100));
+    const zoomVal = String(splendorZoomPercent / 100);
+    els.setupPanel?.style.setProperty("--splendor-ui-zoom", zoomVal);
+    els.gamePanel?.style.setProperty("--splendor-ui-zoom", zoomVal);
+    
     if (els.zoomLabel) els.zoomLabel.textContent = `${splendorZoomPercent}%`;
-    if (els.zoomOutButton) els.zoomOutButton.disabled = splendorZoomPercent <= ZOOM_MIN_PERCENT;
-    if (els.zoomInButton) els.zoomInButton.disabled = splendorZoomPercent >= ZOOM_MAX_PERCENT;
+    if (els.setupZoomLabel) els.setupZoomLabel.textContent = `${splendorZoomPercent}%`;
+    
+    const isMin = splendorZoomPercent <= ZOOM_MIN_PERCENT;
+    const isMax = splendorZoomPercent >= ZOOM_MAX_PERCENT;
+    if (els.zoomOutButton) els.zoomOutButton.disabled = isMin;
+    if (els.setupZoomOutButton) els.setupZoomOutButton.disabled = isMin;
+    if (els.zoomInButton) els.zoomInButton.disabled = isMax;
+    if (els.setupZoomInButton) els.setupZoomInButton.disabled = isMax;
   }
 
   function setZoomPercent(percent, persist = true) {
@@ -1124,6 +1136,8 @@
 
     els.zoomOutButton?.addEventListener("click", () => adjustZoom(-ZOOM_STEP_PERCENT));
     els.zoomInButton?.addEventListener("click", () => adjustZoom(ZOOM_STEP_PERCENT));
+    els.setupZoomOutButton?.addEventListener("click", () => adjustZoom(-ZOOM_STEP_PERCENT));
+    els.setupZoomInButton?.addEventListener("click", () => adjustZoom(ZOOM_STEP_PERCENT));
     initializeZoomControls();
 
     preloadSplendorAssets().then(() => {
