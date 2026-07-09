@@ -642,7 +642,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-layout {
-  grid-template-columns: 320px minmax(720px, 1fr) 340px;
+  grid-template-columns: 380px minmax(580px, 1fr) 340px;
   gap: 14px;
   align-items: stretch;
 }
@@ -763,8 +763,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   gap: 6px;
   min-height: 36px;
   display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  flex-wrap: wrap;
 }
 
 .splendor-player-gems + .splendor-player-gems {
