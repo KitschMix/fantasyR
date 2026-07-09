@@ -318,6 +318,24 @@
     }).join("") +
     (hasSelection ? `<button class="splendor-cancel-tokens" type="button" title="선택 취소">✕ 취소</button>` : "");
 
+    // Show selected summary below tokens
+    let summaryEl = els.tokens.parentElement?.querySelector(".splendor-selected-summary");
+    if (!summaryEl) {
+      summaryEl = document.createElement("div");
+      summaryEl.className = "splendor-selected-summary";
+      els.tokens.after(summaryEl);
+    }
+    if (hasSelection) {
+      const counts = {};
+      state.selectedTokens.forEach(g => { counts[g] = (counts[g] || 0) + 1; });
+      summaryEl.innerHTML = Object.entries(counts)
+        .map(([g, n]) => `<span class="splendor-selected-item">${gemImg(g, 22)} ${GEM_LABELS[g]} ×${n}</span>`)
+        .join("");
+      summaryEl.classList.remove("hidden");
+    } else {
+      summaryEl.classList.add("hidden");
+    }
+
     // Bind click
     els.tokens.querySelectorAll(".splendor-token:not(.disabled)").forEach(el => {
       el.addEventListener("click", () => onTokenClick(el.dataset.gem));

@@ -541,6 +541,32 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+.splendor-selected-summary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  min-height: 28px;
+}
+
+.splendor-selected-summary.hidden {
+  display: none;
+}
+
+.splendor-selected-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(217,166,60,0.12);
+  border: 1px solid rgba(217,166,60,0.25);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
 /* --- Action Cards --- */
 .splendor-action-card {
   padding: 12px;
