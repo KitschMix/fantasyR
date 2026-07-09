@@ -714,9 +714,9 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-mini-gem {
-  width: 24px;
-  height: 24px;
-  font-size: 9px;
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
 }
 
 .splendor-nobles {
@@ -730,8 +730,8 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-noble {
-  width: 104px;
-  min-height: 84px;
+  width: 120px;
+  min-height: 100px;
   border-radius: 8px;
   border: 1px solid rgba(217,166,60,0.38);
   background: linear-gradient(180deg, rgba(48,42,33,0.9), rgba(33,29,24,0.94));
@@ -741,7 +741,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-noble-emoji {
-  font-size: 18px;
+  font-size: 22px;
   opacity: 0.68;
 }
 
@@ -752,18 +752,18 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   border-radius: 999px;
   background: rgba(10,10,10,0.28);
   border: 1px solid rgba(246,232,202,0.12);
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 
 .splendor-noble-req {
-  gap: 3px;
+  gap: 4px;
 }
 
 .splendor-noble-req-gem {
-  width: 20px;
-  height: 20px;
-  font-size: 8px;
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
 }
 
 .splendor-tiers {
@@ -790,7 +790,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   background: rgba(246,232,202,0.06);
   border: 1px solid rgba(246,232,202,0.09);
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.2;
   text-align: center;
   writing-mode: horizontal-tb;
@@ -800,9 +800,9 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 .splendor-cards-row {
   display: grid;
-  grid-template-columns: 112px repeat(4, 112px);
+  grid-template-columns: 130px repeat(4, 130px);
   gap: 8px;
-  min-height: 142px;
+  min-height: 155px;
   align-items: stretch;
   overflow-x: auto;
   scrollbar-width: thin;
@@ -810,13 +810,13 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 .splendor-card,
 .splendor-card-back {
-  width: 112px;
-  min-height: 142px;
+  width: 130px;
+  min-height: 155px;
   border-radius: 8px;
 }
 
 .splendor-card {
-  padding: 8px;
+  padding: 10px;
   background: linear-gradient(180deg, rgba(43,38,31,0.98), rgba(28,25,21,0.98));
   border: 1px solid rgba(246,232,202,0.16);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 14px rgba(0,0,0,0.24);
@@ -839,16 +839,16 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-card-points {
-  min-height: 18px;
-  font-size: 13px;
+  min-height: 22px;
+  font-size: 18px;
   letter-spacing: 0;
 }
 
 .splendor-card-bonus {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   border-width: 1px;
-  font-size: 12px;
+  font-size: 16px;
   filter: saturate(0.88) brightness(0.92);
 }
 
@@ -856,36 +856,36 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   display: grid;
   place-items: center;
   color: rgba(247,236,217,0.34);
-  font-size: 24px;
+  font-size: 36px;
   line-height: 1;
   filter: saturate(0.72);
 }
 
 .splendor-card-cost {
-  gap: 3px;
+  gap: 4px;
 }
 
 .splendor-cost-pip {
-  width: 22px;
-  height: 22px;
-  font-size: 8px;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
 }
 
 .splendor-card-back {
   background: linear-gradient(180deg, rgba(61,53,42,0.95), rgba(36,32,26,0.98));
   border: 1px solid rgba(246,232,202,0.16);
-  font-size: 23px;
+  font-size: 36px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 14px rgba(0,0,0,0.24);
 }
 
 .splendor-deck-count {
   bottom: 7px;
   right: 7px;
-  width: 23px;
-  height: 23px;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   background: rgba(17,15,13,0.86);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .splendor-tokens {
