@@ -889,6 +889,18 @@
   }
 
   /* ── Card Reservation ── */
+  function showReserveAnimation(tier, index, playerName) {
+    const cardEl = document.querySelector(`.splendor-card[data-tier="${tier}"][data-index="${index}"]:not(.splendor-card-reserved)`);
+    if (cardEl) {
+      cardEl.classList.add("card-reserving");
+      cardEl.style.position = "relative";
+      const bubble = document.createElement("div");
+      bubble.className = "splendor-buy-bubble";
+      bubble.textContent = `${playerName} 카드 예약!`;
+      cardEl.appendChild(bubble);
+    }
+  }
+
   function attemptReserve(tier, index) {
     const p = activePlayer();
     if (state.phase !== "action" || !p.human) return;
@@ -906,6 +918,7 @@
       deckCard._reservedBy = p.name;
       addLog(`${p.name}: 티어 ${tier} 덱에서 카드 예약`);
     } else {
+      showReserveAnimation(tier, index, p.name);
       p.reserved.push(card);
       card._reservedBy = p.name;
       state.visibleCards[tier][index] = drawCard(tier);
@@ -916,10 +929,13 @@
       p.gems.gold++;
       state.tokenBank.gold--;
     }
-    state.phase = "done";
-    state.selectedCard = null;
-    renderAll();
-    endTurn();
+    // Delay for animation
+    setTimeout(() => {
+      state.phase = "done";
+      state.selectedCard = null;
+      renderAll();
+      endTurn();
+    }, 2000);
   }
 
   /* ── Return Tokens (max 10) ── */
@@ -1427,7 +1443,7 @@
       _longPressTimer = setTimeout(() => {
         _longPressTriggered = true;
         attemptReserve(tier, index);
-      }, 1000);
+      }, 2000);
     });
     document.addEventListener("pointerup", () => {
       clearTimeout(_longPressTimer);
