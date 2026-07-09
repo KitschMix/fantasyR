@@ -214,7 +214,7 @@
         <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
         <span class="splendor-card-bonus" title="${GEM_LABELS[card.bonus]} 보너스">${gemImg(card.bonus, 40)}</span>
       </div>
-      <div class="splendor-card-gem-mark">${gemImg(card.bonus, 48)}</div>
+      <div class="splendor-card-middle"></div>
       <div class="splendor-card-cost">${costHtml}</div>
     </div>`;
   }

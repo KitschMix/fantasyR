@@ -993,8 +993,15 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   filter: saturate(0.72);
 }
 
+.splendor-card-middle {
+  flex: 1;
+}
+
 .splendor-card-cost {
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-self: end;
 }
 
 .splendor-cost-pip {
