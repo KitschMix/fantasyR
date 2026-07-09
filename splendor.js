@@ -700,7 +700,7 @@
   }
 
   function onTokenClick(gem) {
-    if (state.phase !== "action" || !activePlayer().human) return;
+    if (state.phase !== "action" || !activePlayer().human || state._tokensPending) return;
 
     const p = activePlayer();
     const maxTokens = tokenCount(state.players.length);
@@ -750,8 +750,15 @@
     const isDistinctTake = state.selectedTokens.length === Math.min(3, numAvailableColors);
 
     if (isDoubleTake || (isDistinctTake && state.selectedTokens.length > 0)) {
-      takeTokens(state.selectedTokens);
-      return; // takeTokens handles its own rendering with delay
+      // Show selected state first, then take after brief delay
+      state._tokensPending = true;
+      renderTokens();
+      renderControls();
+      setTimeout(() => {
+        takeTokens(state.selectedTokens);
+        state._tokensPending = false;
+      }, 300);
+      return;
     }
 
     renderTokens();
