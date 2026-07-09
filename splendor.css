@@ -217,20 +217,20 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-noble {
-  width: 110px;
-  min-height: 110px;
+  width: 120px;
+  min-height: 120px;
   border-radius: 10px;
   background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
   border: 2px solid var(--accent);
   display: grid;
   place-items: center;
-  padding: 8px;
+  padding: 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
   position: relative;
 }
 
 .splendor-noble-emoji {
-  font-size: 32px;
+  font-size: 36px;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
 }
 
@@ -238,7 +238,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   position: absolute;
   top: 6px;
   right: 8px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 900;
   color: var(--accent);
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
@@ -247,15 +247,15 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 .splendor-noble-req {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 4px;
   justify-content: center;
 }
 
 .splendor-noble-req-gem {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  font-size: 11px;
+  gap: 3px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text);
 }
@@ -276,7 +276,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   width: 56px;
   text-align: center;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--muted);
   writing-mode: vertical-lr;
   text-orientation: mixed;
@@ -284,21 +284,21 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 .splendor-cards-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex: 1;
-  min-height: 130px;
+  min-height: 150px;
 }
 
 /* --- Development Cards --- */
 .splendor-card {
-  width: 120px;
-  min-height: 140px;
+  width: 130px;
+  min-height: 155px;
   border-radius: 10px;
   background: linear-gradient(160deg, var(--surface) 0%, var(--surface-2) 100%);
   border: 1px solid var(--line);
   display: grid;
   grid-template-rows: auto 1fr auto;
-  padding: 10px;
+  padding: 12px;
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   position: relative;
@@ -329,7 +329,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-card-points {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 900;
   color: var(--accent);
   text-shadow: 0 1px 3px rgba(0,0,0,0.4);
@@ -337,8 +337,8 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-card-bonus {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -355,28 +355,28 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 .splendor-cost-pip {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  font-size: 11px;
+  gap: 3px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text);
 }
 
 .splendor-card-back {
-  width: 120px;
-  min-height: 140px;
+  width: 130px;
+  min-height: 155px;
   border-radius: 10px;
   background: linear-gradient(160deg, var(--surface-3) 0%, var(--surface-2) 100%);
   border: 2px solid var(--line);
   display: grid;
   place-items: center;
-  font-size: 32px;
+  font-size: 36px;
   cursor: default;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   position: relative;
 }
 
 .splendor-deck-count {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 900;
   color: var(--accent);
   position: absolute;
@@ -384,8 +384,8 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   right: 10px;
   background: var(--surface);
   border-radius: 999px;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
@@ -397,7 +397,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-bank-label {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
   color: var(--accent);
   text-align: center;
@@ -405,7 +405,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-section-label {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
   color: var(--accent);
   text-align: center;
