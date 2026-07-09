@@ -739,6 +739,7 @@
 
     if (isDoubleTake || (isDistinctTake && state.selectedTokens.length > 0)) {
       takeTokens(state.selectedTokens);
+      return; // takeTokens handles its own rendering with delay
     }
 
     renderTokens();
@@ -749,6 +750,7 @@
     const p = activePlayer();
     // Show "획득" bubbles on each selected gem before removing
     if (p.human) {
+      state.phase = "done"; // Lock input immediately
       gems.forEach(g => {
         const tokenEl = els.tokens?.querySelector(`[data-gem="${g}"]`);
         if (tokenEl) {
@@ -766,7 +768,7 @@
     const labels = gems.map(g => GEM_LABELS[g]).join(", ");
     addLog(`${p.name}: 보석 ${labels} 획득`);
     state.selectedTokens = [];
-    state.phase = "done";
+    if (!p.human) state.phase = "done";
     // Delay render slightly so bubbles are visible
     if (p.human) {
       setTimeout(() => {
