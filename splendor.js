@@ -578,6 +578,18 @@
   }
 
   /* ── Token Selection ── */
+  function showTokenBubble(gem, msg) {
+    // Remove any existing bubble
+    document.querySelectorAll(".splendor-token-bubble").forEach(b => b.remove());
+    const tokenEl = els.tokens?.querySelector(`[data-gem="${gem}"]`);
+    if (!tokenEl) return;
+    const bubble = document.createElement("div");
+    bubble.className = "splendor-token-bubble";
+    bubble.textContent = msg;
+    tokenEl.appendChild(bubble);
+    setTimeout(() => bubble.remove(), 2000);
+  }
+
   function onTokenClick(gem) {
     if (state.phase !== "action" || !activePlayer().human) return;
     const p = activePlayer();
@@ -602,6 +614,9 @@
         // Same gem - need 4+ in bank
         if (bankCount >= 4 && selCount < 2) {
           state.selectedTokens.push(gem);
+        } else {
+          showTokenBubble(gem, "4개 미만은 2개 가져갈 수 없습니다");
+          return;
         }
       } else {
         // Different gem
