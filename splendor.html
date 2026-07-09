@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>스플렌더</title>
     <link rel="stylesheet" href="styles.css?v=20260707-splendor-restyle" />
-    <link rel="stylesheet" href="splendor.css?v=20260709-bg5" />
+    <link rel="stylesheet" href="splendor.css?v=20260709-rules-fix" />
   </head>
   <body class="splendor-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -90,9 +90,12 @@
               </div>
               <!-- Gem tokens (Bank) -->
               <div class="splendor-bank-area">
-                <div class="splendor-bank-label-wrap">
+                <div class="splendor-bank-label-wrap" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                   <div class="splendor-bank-label">🏦 은행 (클릭해서 보석 가져오기)</div>
-                  <div id="splendorSelectedSummary" class="splendor-selected-summary hidden"></div>
+                  <div style="display: flex; gap: 8px; align-items: center;">
+                    <div id="splendorSelectedSummary" class="splendor-selected-summary hidden"></div>
+                    <button id="splendorResetTokensButton" class="secondary-button" style="padding: 2px 8px; font-size: 11px; display: none;" type="button">선택 초기화</button>
+                  </div>
                 </div>
                 <div id="splendorTokens" class="splendor-tokens"></div>
               </div>
@@ -130,11 +133,36 @@
         </form>
       </dialog>
 
+      <!-- Discard Tokens Dialog -->
+      <dialog id="splendorDiscardDialog" class="splendor-dialog">
+        <div class="splendor-dialog-title">🎒 보석 반납 (최대 10개 보유 가능)</div>
+        <p class="splendor-discard-instruction" style="margin-bottom: 8px; font-size: 13px; color: var(--muted);">보유한 보석이 10개를 초과했습니다. 반납할 보석을 선택하세요.</p>
+        <div class="splendor-discard-needed-label" style="font-size: 14px; margin-bottom: 12px;">반납해야 할 개수: <strong id="splendorDiscardNeededCount" style="color: #ff6b6b;">0</strong>개</div>
+        
+        <div id="splendorDiscardContainer" class="splendor-discard-container">
+          <!-- Dynamically populated rows -->
+        </div>
+        
+        <div class="splendor-dialog-actions" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px;">
+          <button id="splendorDiscardConfirmButton" class="primary-button" type="button" disabled>반납 완료</button>
+        </div>
+      </dialog>
+
+      <!-- Noble Selection Dialog -->
+      <dialog id="splendorNobleSelectionDialog" class="splendor-dialog">
+        <div class="splendor-dialog-title">👑 귀족 영입 선택</div>
+        <p style="margin-bottom: 12px; font-size: 13px; color: var(--muted);">조건을 동시에 만족한 귀족들이 있습니다. 이번 턴에 영입할 귀족 1명을 선택하세요.</p>
+        
+        <div id="splendorNobleSelectionContainer" class="splendor-noble-selection-container">
+          <!-- Dynamically populated options -->
+        </div>
+      </dialog>
+
       <!-- Card Hover Preview -->
       <div id="splendorCardPreview" class="splendor-card-preview hidden"></div>
     </main>
     <script src="shared-ui.js?v=20260707-splendor-restyle"></script>
     <script src="shared-profiles.js?v=20260707-splendor-restyle"></script>
-    <script src="splendor.js?v=20260709-tier-update"></script>
+    <script src="splendor.js?v=20260709-rules-fix"></script>
   </body>
 </html>

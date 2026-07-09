@@ -1450,3 +1450,110 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   text-align: center;
   white-space: nowrap;
 }
+
+/* --- New Splendor Dialogs (Discard & Noble Selection) --- */
+.splendor-dialog {
+  border: 1px solid rgba(246, 232, 202, 0.22);
+  border-radius: 12px;
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+    url('assets/splendor/background.jpg');
+  background-size: cover;
+  background-position: center;
+  color: var(--text);
+  padding: 24px;
+  max-width: 500px;
+  width: 90vw;
+  box-shadow: 0 20px 48px rgba(0,0,0,0.6);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+
+.splendor-dialog::backdrop {
+  background: rgba(0,0,0,0.82);
+}
+
+.splendor-dialog-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(246,232,202,0.16);
+  padding-bottom: 8px;
+}
+
+.splendor-discard-container,
+.splendor-noble-selection-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.splendor-discard-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(13,14,15,0.45);
+  border: 1px solid rgba(246,232,202,0.08);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.splendor-discard-row:hover {
+  border-color: rgba(242,207,120,0.35);
+  background: rgba(217, 166, 60, 0.05);
+}
+
+.splendor-discard-gem-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.splendor-discard-val {
+  font-size: 16px;
+  font-weight: 900;
+  color: #ff6b6b;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* Noble selection card styling */
+.splendor-noble-selection-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(13,14,15,0.45);
+  border: 1px solid rgba(246,232,202,0.08);
+}
+
+.splendor-noble-selection-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.splendor-noble-selection-img {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  border: 2px solid rgba(217, 166, 60, 0.4);
+  object-fit: cover;
+}
+
+.splendor-noble-selection-name {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--text);
+}
+

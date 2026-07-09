@@ -164,7 +164,14 @@
     log:            $("#splendorLog"),
     zoomOutButton:  $("#splendorZoomOutButton"),
     zoomInButton:   $("#splendorZoomInButton"),
-    zoomLabel:      $("#splendorZoomLabel")
+    zoomLabel:      $("#splendorZoomLabel"),
+    resetTokensButton: $("#splendorResetTokensButton"),
+    discardDialog:   $("#splendorDiscardDialog"),
+    discardContainer: $("#splendorDiscardContainer"),
+    discardConfirmButton: $("#splendorDiscardConfirmButton"),
+    discardNeededCount: $("#splendorDiscardNeededCount"),
+    nobleSelectionDialog: $("#splendorNobleSelectionDialog"),
+    nobleSelectionContainer: $("#splendorNobleSelectionContainer")
   };
 
   /* ── State ── */
@@ -179,7 +186,8 @@
     log: [],
     selectedTokens: [],
     selectedCard: null,
-    turnCount: 0
+    turnCount: 0,
+    lastRoundTriggered: false
   };
 
   /* ── Profiles ── */
@@ -305,6 +313,23 @@
     const p = activePlayer();
     const totalTokens = Object.values(p.gems).reduce((s, n) => s + n, 0);
     const hasSelection = state.selectedTokens.length > 0;
+
+    const bankAvailableGems = GEMS.filter(g => (state.tokenBank[g] || 0) > 0);
+    const numAvailableColors = bankAvailableGems.length;
+    const bankLabel = document.querySelector(".splendor-bank-label");
+    if (bankLabel) {
+      if (numAvailableColors < 3 && numAvailableColors > 0) {
+        bankLabel.textContent = `🏦 은행 (가져갈 수 있는 보석이 3종류 미만이므로, ${numAvailableColors}종류만 가져갈 수 있습니다)`;
+        bankLabel.style.color = "#ffb020";
+      } else {
+        bankLabel.textContent = `🏦 은행 (클릭해서 보석 가져오기)`;
+        bankLabel.style.color = "";
+      }
+    }
+
+    if (els.resetTokensButton) {
+      els.resetTokensButton.style.display = hasSelection ? "inline-block" : "none";
+    }
 
     els.tokens.innerHTML = [...GEMS, "gold"].map(gem => {
       const count = state.tokenBank[gem] || 0;
@@ -584,18 +609,66 @@
 
   /* ── Noble Check ── */
   function checkNobles(player) {
-    const earned = [];
-    state.nobles = state.nobles.filter(noble => {
-      const meets = Object.entries(noble.requires).every(([g, n]) => (player.bonuses[g] || 0) >= n);
-      if (meets) {
-        earned.push(noble);
-        player.points += noble.points;
-        player.nobles.push(noble);
-        return false;
-      }
-      return true;
+    const qualifying = state.nobles.filter(noble => {
+      return Object.entries(noble.requires).every(([g, n]) => (player.bonuses[g] || 0) >= n);
     });
-    return earned;
+    if (qualifying.length > 0) {
+      const noble = qualifying[0];
+      player.nobles.push(noble);
+      player.points += noble.points;
+      state.nobles = state.nobles.filter(n => n !== noble);
+      return [noble];
+    }
+    return [];
+  }
+
+  function showNobleSelectionDialog(player, qualifying) {
+    if (!els.nobleSelectionDialog || !els.nobleSelectionContainer) return;
+    
+    els.nobleSelectionContainer.innerHTML = qualifying.map((noble, idx) => {
+      const imgPath = noble.img ? noble.img : "assets/splendor/쉴레이만 1세.jpg";
+      const requirements = Object.entries(noble.requires)
+        .map(([g, n]) => `<span style="margin-right: 6px;">${gemImg(g, 18)} ×${n}</span>`)
+        .join(" ");
+        
+      return `
+        <div class="splendor-noble-selection-row">
+          <div class="splendor-noble-selection-info">
+            <img class="splendor-noble-selection-img" src="${imgPath}" alt="${esc(noble.name)}" />
+            <div>
+              <div class="splendor-noble-selection-name">${esc(noble.name)} (+${noble.points}점)</div>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">요구 조건: ${requirements}</div>
+            </div>
+          </div>
+          <button class="primary-button splendor-select-noble-btn" data-index="${idx}" type="button">영입</button>
+        </div>
+      `;
+    }).join("");
+    
+    // Bind clicks
+    els.nobleSelectionContainer.querySelectorAll(".splendor-select-noble-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.index);
+        const noble = qualifying[idx];
+        player.nobles.push(noble);
+        player.points += noble.points;
+        state.nobles = state.nobles.filter(n => n !== noble);
+        addLog(`${player.name}: 귀족 획득! (+${noble.points}점)`);
+        
+        if (typeof els.nobleSelectionDialog.close === "function") {
+          els.nobleSelectionDialog.close();
+        }
+        
+        state.phase = "done";
+        state.selectedCard = null;
+        renderAll();
+        endTurn();
+      });
+    });
+    
+    if (typeof els.nobleSelectionDialog.showModal === "function") {
+      els.nobleSelectionDialog.showModal();
+    }
   }
 
   /* ── Draw Card ── */
@@ -668,8 +741,12 @@
     }
 
     // Check if selection is complete
-    if (state.selectedTokens.length === 3 || (state.selectedTokens.length === 2 && state.selectedTokens[0] === state.selectedTokens[1])) {
-      // Auto-take tokens
+    const bankAvailableGems = GEMS.filter(g => (state.tokenBank[g] || 0) > 0);
+    const numAvailableColors = bankAvailableGems.length;
+    const isDoubleTake = state.selectedTokens.length === 2 && state.selectedTokens[0] === state.selectedTokens[1];
+    const isDistinctTake = state.selectedTokens.length === Math.min(3, numAvailableColors);
+
+    if (isDoubleTake || (isDistinctTake && state.selectedTokens.length > 0)) {
       takeTokens(state.selectedTokens);
     }
 
@@ -724,18 +801,24 @@
     setTimeout(() => {
       state.visibleCards[tier][index] = drawCard(tier);
       addLog(`${p.name}: ${GEM_LABELS[card.bonus]} 카드 구매 (${card.points}점)`);
-      const earned = checkNobles(p);
-      earned.forEach(n => addLog(`${p.name}: 귀족 획득! (+${n.points}점)`));
-      state.phase = "done";
-      state.selectedCard = null;
-      renderAll();
-      if (p.points >= WIN_SCORE) {
-        state.phase = "finished";
-        addLog(`🏆 ${p.name} 승리! ${p.points}점!`);
+      
+      const qualifying = state.nobles.filter(noble => {
+        return Object.entries(noble.requires).every(([g, n]) => (p.bonuses[g] || 0) >= n);
+      });
+
+      if (p.human && qualifying.length > 1) {
+        showNobleSelectionDialog(p, qualifying);
+      } else {
+        const earned = checkNobles(p);
+        earned.forEach(n => addLog(`${p.name}: 귀족 획득! (+${n.points}점)`));
+        state.phase = "done";
+        state.selectedCard = null;
         renderAll();
-        return;
+        if (p.points >= WIN_SCORE) {
+          state.lastRoundTriggered = true;
+        }
+        endTurn();
       }
-      endTurn();
     }, 2000);
   }
 
@@ -762,18 +845,25 @@
     p.reserved.splice(ri, 1);
     setTimeout(() => {
       addLog(`${p.name}: 예약 카드 구매 (${card.points}점)`);
-      const earned = checkNobles(p);
-      earned.forEach(n => addLog(`${p.name}: 귀족 획득! (+${n.points}점)`));
-      state.phase = "done";
-      state.selectedCard = null;
-      renderAll();
-    if (p.points >= WIN_SCORE) {
-      state.phase = "finished";
-      addLog(`🏆 ${p.name} 승리! ${p.points}점!`);
-      renderAll();
-      return;
-    }
-    endTurn();
+      
+      const qualifying = state.nobles.filter(noble => {
+        return Object.entries(noble.requires).every(([g, n]) => (p.bonuses[g] || 0) >= n);
+      });
+
+      if (p.human && qualifying.length > 1) {
+        showNobleSelectionDialog(p, qualifying);
+      } else {
+        const earned = checkNobles(p);
+        earned.forEach(n => addLog(`${p.name}: 귀족 획득! (+${n.points}점)`));
+        state.phase = "done";
+        state.selectedCard = null;
+        renderAll();
+        if (p.points >= WIN_SCORE) {
+          state.lastRoundTriggered = true;
+        }
+        endTurn();
+      }
+    }, 2000);
   }
 
   /* ── Card Reservation ── */
@@ -809,24 +899,85 @@
   }
 
   /* ── Return Tokens (max 10) ── */
-  function checkTokenLimit(player) {
-    const total = totalTokens(player);
-    if (total > 10) {
-      addLog(`${player.name}: 보석 ${total - 10}개를 반납해야 합니다 (최대 10개)`);
-      // For simplicity, auto-return excess lowest-count gems
-      while (totalTokens(player) > 10) {
-        let minGem = null, minCount = Infinity;
-        for (const g of GEMS) {
-          if (player.gems[g] > 0 && player.gems[g] < minCount) {
-            minCount = player.gems[g];
-            minGem = g;
-          }
+  let tempDiscard = {};
+
+  function showDiscardDialog(player, needed) {
+    if (!els.discardDialog || !els.discardContainer) return;
+    
+    tempDiscard = {};
+    [...GEMS, "gold"].forEach(g => {
+      tempDiscard[g] = 0;
+    });
+    
+    if (els.discardNeededCount) {
+      els.discardNeededCount.textContent = needed;
+    }
+    
+    renderDiscardDialogContent(player, needed);
+    
+    if (typeof els.discardDialog.showModal === "function") {
+      els.discardDialog.showModal();
+    }
+  }
+
+  function renderDiscardDialogContent(player, needed) {
+    const totalSelected = Object.values(tempDiscard).reduce((a, b) => a + b, 0);
+    
+    els.discardContainer.innerHTML = [...GEMS, "gold"].map(gem => {
+      const owned = player.gems[gem] || 0;
+      if (owned === 0) return "";
+      const discard = tempDiscard[gem] || 0;
+      
+      return `
+        <div class="splendor-discard-row" data-gem="${gem}">
+          <div class="splendor-discard-gem-info">
+            ${gemImg(gem, 28)}
+            <span>${GEM_LABELS[gem]} (보유: ${owned}개)</span>
+          </div>
+          <div class="splendor-discard-val">
+            ${discard > 0 ? `-${discard}개` : "선택 안 함"}
+          </div>
+        </div>
+      `;
+    }).join("");
+    
+    els.discardContainer.querySelectorAll(".splendor-discard-row").forEach(row => {
+      row.addEventListener("click", () => {
+        const gem = row.dataset.gem;
+        const owned = player.gems[gem] || 0;
+        const currentDiscard = tempDiscard[gem] || 0;
+        const currentTotalSelected = Object.values(tempDiscard).reduce((a, b) => a + b, 0);
+        
+        if (currentDiscard < owned && currentTotalSelected < needed) {
+          tempDiscard[gem] = currentDiscard + 1;
+        } else {
+          tempDiscard[gem] = 0;
         }
-        if (minGem) {
-          player.gems[minGem]--;
-          state.tokenBank[minGem]++;
-        } else break;
+        
+        renderDiscardDialogContent(player, needed);
+      });
+    });
+    
+    const newTotalSelected = Object.values(tempDiscard).reduce((a, b) => a + b, 0);
+    if (els.discardConfirmButton) {
+      els.discardConfirmButton.disabled = newTotalSelected !== needed;
+    }
+  }
+
+  function autoDiscardExcess(player) {
+    while (totalTokens(player) > 10) {
+      let minGem = null, minCount = Infinity;
+      for (const g of [...GEMS, "gold"]) {
+        if (player.gems[g] > 0 && player.gems[g] < minCount) {
+          minCount = player.gems[g];
+          minGem = g;
+        }
       }
+      if (minGem) {
+        player.gems[minGem]--;
+        state.tokenBank[minGem]++;
+        addLog(`${player.name}: 보석 ${GEM_LABELS[minGem]} 1개 자동 반납`);
+      } else break;
     }
   }
 
@@ -944,13 +1095,26 @@
   function endTurn() {
     if (state.phase === "finished") return;
     const p = activePlayer();
-    checkTokenLimit(p);
+    
+    // Check token limit
+    const total = totalTokens(p);
+    if (total > 10) {
+      if (p.human) {
+        showDiscardDialog(p, total - 10);
+        return;
+      } else {
+        autoDiscardExcess(p);
+      }
+    }
 
-    // Check win
+    // Check if player reached win score to trigger last round
     if (p.points >= WIN_SCORE) {
-      state.phase = "finished";
-      addLog(`🏆 ${p.name} 승리! ${p.points}점!`);
-      renderAll();
+      state.lastRoundTriggered = true;
+    }
+
+    // Check if the round and the game is finished
+    if (state.lastRoundTriggered && state.currentPlayer === state.players.length - 1) {
+      declareWinners();
       return;
     }
 
@@ -965,6 +1129,36 @@
     if (!np.human) {
       setTimeout(runAiTurn, 800);
     }
+  }
+
+  function declareWinners() {
+    let maxPoints = -1;
+    let minCards = Infinity;
+    let winners = [];
+
+    state.players.forEach(player => {
+      if (player.points > maxPoints) {
+        maxPoints = player.points;
+        minCards = player.cards.length;
+        winners = [player];
+      } else if (player.points === maxPoints) {
+        if (player.cards.length < minCards) {
+          minCards = player.cards.length;
+          winners = [player];
+        } else if (player.cards.length === minCards) {
+          winners.push(player);
+        }
+      }
+    });
+
+    state.phase = "finished";
+    if (winners.length === 1) {
+      addLog(`🏆 ${winners[0].name} 승리! (${winners[0].points}점, 카드 ${winners[0].cards.length}장)`);
+    } else {
+      const names = winners.map(w => w.name).join(", ");
+      addLog(`🏆 공동 승리: ${names}! (${maxPoints}점)`);
+    }
+    renderAll();
   }
 
   function runAiTurn() {
@@ -1002,6 +1196,7 @@
     state.selectedCard = null;
     state.log = [];
     state.turnCount = 1;
+    state.lastRoundTriggered = false;
 
     addLog(`💎 스플렌더 게임 시작! ${count}명 참가.`);
     document.body.classList.add("splendor-playing");
@@ -1204,6 +1399,30 @@
     els.zoomOutButton?.addEventListener("click", () => adjustZoom(-ZOOM_STEP_PERCENT));
     els.zoomInButton?.addEventListener("click", () => adjustZoom(ZOOM_STEP_PERCENT));
     initializeZoomControls();
+
+    els.resetTokensButton?.addEventListener("click", () => {
+      state.selectedTokens = [];
+      renderTokens();
+      renderControls();
+    });
+
+    els.discardConfirmButton?.addEventListener("click", () => {
+      const p = activePlayer();
+      Object.entries(tempDiscard).forEach(([gem, count]) => {
+        if (count > 0) {
+          p.gems[gem] -= count;
+          state.tokenBank[gem] += count;
+          addLog(`${p.name}: 보석 ${GEM_LABELS[gem]} ${count}개 반납`);
+        }
+      });
+      
+      if (typeof els.discardDialog?.close === "function") {
+        els.discardDialog.close();
+      }
+      
+      renderAll();
+      endTurn();
+    });
 
     preloadSplendorAssets().then(() => {
       document.body.classList.remove("app-loading");
