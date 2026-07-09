@@ -565,6 +565,60 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   background: var(--surface-3);
 }
 
+/* --- Card Hover Preview --- */
+.splendor-card-preview {
+  position: fixed;
+  z-index: 5000;
+  pointer-events: none;
+  animation: splendor-preview-in 0.2s ease-out;
+}
+
+.splendor-card-preview.hidden {
+  display: none;
+}
+
+.splendor-card-preview .splendor-card {
+  width: 200px;
+  min-height: 260px;
+  font-size: 1.1em;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  border-color: var(--accent);
+  transform: none;
+  cursor: default;
+}
+
+.splendor-card-preview .splendor-card:hover {
+  transform: none;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+}
+
+.splendor-card-preview .splendor-card-points {
+  font-size: 24px;
+}
+
+.splendor-card-preview .splendor-card-bonus {
+  width: 48px;
+  height: 48px;
+}
+
+.splendor-card-preview .splendor-card-gem-mark {
+  font-size: 56px;
+}
+
+.splendor-card-preview .splendor-cost-pip {
+  font-size: 18px;
+}
+
+.splendor-card-preview .splendor-cost-pip img {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+@keyframes splendor-preview-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 /* --- Rules Dialog --- */
 .splendor-rules-dialog {
   border: 1px solid var(--line);

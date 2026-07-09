@@ -367,6 +367,63 @@
     els.log.innerHTML = state.log.map(m => `<li>${esc(m)}</li>`).join("");
   }
 
+  /* ── Card Hover Preview ── */
+  let hoverTimer = 0;
+  let hoverCard = null;
+
+  function showCardPreview(card, rect) {
+    const preview = document.querySelector("#splendorCardPreview");
+    if (!preview || !card) return;
+    const costHtml = Object.entries(card.cost)
+      .filter(([, n]) => n > 0)
+      .map(([g, n]) => gemPip(g, n)).join("");
+    const tierColors = { 1: "#6a8a6a", 2: "#8a6a3a", 3: "#5a3a6a" };
+    preview.innerHTML = `<div class="splendor-card" style="border-top: 4px solid ${tierColors[1] || "var(--line)"}">
+      <div class="splendor-card-top">
+        <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
+        <span class="splendor-card-bonus">${gemImg(card.bonus, 40)}</span>
+      </div>
+      <div class="splendor-card-gem-mark">${gemImg(card.bonus, 48)}</div>
+      <div class="splendor-card-cost">${costHtml}</div>
+    </div>`;
+    // Position near the card
+    let top = rect.top - 20;
+    let left = rect.right + 10;
+    if (left + 220 > window.innerWidth) left = rect.left - 220;
+    if (top + 280 > window.innerHeight) top = window.innerHeight - 290;
+    if (top < 10) top = 10;
+    preview.style.top = `${top}px`;
+    preview.style.left = `${left}px`;
+    preview.classList.remove("hidden");
+  }
+
+  function hideCardPreview() {
+    const preview = document.querySelector("#splendorCardPreview");
+    if (preview) preview.classList.add("hidden");
+    hoverCard = null;
+  }
+
+  function initCardHover() {
+    document.addEventListener("mouseover", e => {
+      const el = e.target.closest(".splendor-card:not(.splendor-card-back)");
+      if (!el) { clearTimeout(hoverTimer); hideCardPreview(); return; }
+      const tier = Number(el.dataset.tier);
+      const index = Number(el.dataset.index);
+      if (!tier || isNaN(index)) return;
+      const card = state.visibleCards[tier]?.[index];
+      if (!card || card === hoverCard) return;
+      clearTimeout(hoverTimer);
+      hoverCard = card;
+      hoverTimer = setTimeout(() => {
+        showCardPreview(card, el.getBoundingClientRect());
+      }, 500);
+    });
+    document.addEventListener("mouseout", e => {
+      const el = e.target.closest(".splendor-card");
+      if (el) { clearTimeout(hoverTimer); hideCardPreview(); }
+    });
+  }
+
   function renderAll() {
     renderPlayers();
     renderNobles();
@@ -839,6 +896,7 @@
 
     document.body.classList.remove("app-loading");
     document.querySelector("#loadingOverlay")?.classList.add("hidden");
+    initCardHover();
   }
 
   init();
