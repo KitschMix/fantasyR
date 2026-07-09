@@ -365,16 +365,28 @@
   function renderMyReserved() {
     if (!els.myReserved) return;
     const p = activePlayer();
+    if (!p.reserved.length) {
+      els.myReserved.innerHTML = "<small style='color:var(--muted)'>없음</small>";
+      return;
+    }
+    const tierColors = { 1: "#6a8a6a", 2: "#8a6a3a", 3: "#5a3a6a" };
     els.myReserved.innerHTML = p.reserved.map((c, i) => {
       const costHtml = Object.entries(c.cost).filter(([, n]) => n > 0).map(([g, n]) => gemPip(g, n)).join("");
-      return `<div class="splendor-reserved-mini" data-rindex="${i}" title="예약 카드 ${i + 1}">
-        <span style="font-weight:900;color:var(--accent)">${c.points || ""}</span>
-        ${gemImg(c.bonus, 24)}
-        <div style="display:flex;gap:1px">${costHtml}</div>
+      const affordable = canAffordWithGems(c, p) && state.phase === "action";
+      const bgUrl = CARD_BG_IMAGES[c.bonus];
+      return `<div class="splendor-card splendor-card-reserved${affordable ? " affordable" : ""}"
+        data-rindex="${i}" title="예약 카드 ${i + 1} — 클릭해서 구매"
+        style="border-top: 4px solid ${tierColors[c.tier] || "var(--line)"}; background-image: url('${bgUrl}'); background-size: cover; background-position: center;">
+        <div class="splendor-card-top">
+          <span class="splendor-card-points">${c.points ? "★".repeat(Math.min(c.points, 5)) : ""}</span>
+          <span class="splendor-card-bonus">${gemImg(c.bonus, 40)}</span>
+        </div>
+        <div class="splendor-card-middle"></div>
+        <div class="splendor-card-cost">${costHtml}</div>
       </div>`;
-    }).join("") || "<small style='color:var(--muted)'>없음</small>";
+    }).join("");
     // Click reserved card to buy it
-    els.myReserved.querySelectorAll(".splendor-reserved-mini").forEach(el => {
+    els.myReserved.querySelectorAll(".splendor-card-reserved").forEach(el => {
       el.addEventListener("click", () => {
         const ri = Number(el.dataset.rindex);
         if (state.phase !== "action") return;
