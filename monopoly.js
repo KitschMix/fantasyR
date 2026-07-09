@@ -644,10 +644,9 @@
       }
       if (rent0Row) {
         rent0Row.querySelector("strong").textContent = "도착 시 액션";
-          rent0El.textContent = tile.corner === "fund" ? "기금 전액 수령 💰" : `기금 ₩${SOCIAL_FUND_FEE.toLocaleString()} 기부 💸`;
-          rent0El.style.color = "";
-          rent0El.style.fontWeight = "";
-        }
+        rent0El.textContent = tile.corner === "fund" ? "기금 전액 수령 💰" : `기금 ₩${SOCIAL_FUND_FEE.toLocaleString()} 기부 💸`;
+        rent0El.style.color = "";
+        rent0El.style.fontWeight = "";
       }
       if (rentMonRow) rentMonRow.style.display = "none";
       if (ownerRow) ownerRow.style.display = "none";
