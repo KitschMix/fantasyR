@@ -203,14 +203,14 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  font-size: 9px;
-  font-weight: 900;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.4);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  gap: 2px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
 }
 
 /* --- Nobles --- */
@@ -349,16 +349,14 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 .splendor-card-bonus {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: 900;
-  color: #fff;
-  border: 2px solid rgba(255,255,255,0.5);
+  border: 1px solid var(--line);
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  background: var(--surface-2);
+  overflow: hidden;
 }
 
 .splendor-card-cost {
@@ -369,18 +367,17 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-cost-pip {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 8px;
-  font-weight: 900;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.4);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  gap: 2px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
 }
 
 .splendor-card-back {
@@ -453,16 +450,16 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   place-items: center;
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: 12px;
   font-size: 20px;
   font-weight: 900;
   color: #fff;
-  border: 3px solid rgba(255,255,255,0.5);
+  border: 2px solid var(--line);
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
   position: relative;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2);
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  background: var(--surface);
 }
 
 .splendor-token:hover:not(.disabled) {
