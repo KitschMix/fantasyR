@@ -155,6 +155,8 @@
     startButton:      $("#startMonopolyButton"),
     playerCount:      $("#monopolyPlayerCountSelect"),
     nameInput:        $("#monopolyNameInput"),
+    confirmNicknameButton: $("#monopolyConfirmNicknameButton"),
+    nicknameStatus:   $("#monopolyNicknameStatus"),
     backButton:       $("#monopolyBackButton"),
     newGameButton:    $("#monopolyNewGameButton"),
     exitButton:       $("#monopolyExitGameButton"),
@@ -216,6 +218,67 @@
       const profile = JSON.parse(localStorage.getItem(HUMAN_PROFILE_STORAGE_KEY) || "null");
       return String(profile?.nickname || "").trim();
     } catch { return ""; }
+  }
+
+  function setMonopolyNicknameStatus(message, error = false) {
+    if (!els.nicknameStatus) return;
+    els.nicknameStatus.textContent = message;
+    els.nicknameStatus.classList.toggle("error", error);
+  }
+
+  function syncMonopolyNicknameInput(force = false) {
+    const nickname = currentHumanNickname();
+    if (els.nameInput && (force || document.activeElement !== els.nameInput)) {
+      els.nameInput.value = nickname;
+    }
+  }
+
+  function confirmMonopolyNicknameChange(sourceInput = els.nameInput, options = {}) {
+    const force = Boolean(options.force);
+    const desired = (sourceInput?.value ?? "").trim();
+    if (desired.length < 2) {
+      setMonopolyNicknameStatus("닉네임은 2글자 이상이어야 합니다.", true);
+      sourceInput?.focus();
+      return false;
+    }
+    try {
+      const profile = JSON.parse(localStorage.getItem(HUMAN_PROFILE_STORAGE_KEY) || "null");
+      const current = String(profile?.nickname || "").trim();
+
+      if (desired === current) {
+        syncMonopolyNicknameInput(true);
+        setMonopolyNicknameStatus(`현재 닉네임: ${current}`);
+        return true;
+      }
+
+      const changedAt = Date.parse(profile?.lastChangedAt || "");
+      const ONE_DAY = 24 * 60 * 60 * 1000;
+      if (!force && changedAt && Date.now() - changedAt < ONE_DAY) {
+        const remaining = Math.ceil((changedAt + ONE_DAY - Date.now()) / (60 * 60 * 1000));
+        window.alert(`닉네임은 하루에 한 번만 변경할 수 있습니다.\n${remaining}시간 후 변경 가능합니다.`);
+        syncMonopolyNicknameInput(true);
+        setMonopolyNicknameStatus(`닉네임 변경 제한 중 (약 ${remaining}시간 후 가능)`, true);
+        return false;
+      }
+
+      const confirmed = window.confirm(
+        `닉네임은 하루에 한 번만 변경할 수 있습니다.\n확인하면 오늘은 '${desired}' 닉네임으로 고정됩니다.\n저장할까요?`
+      );
+      if (!confirmed) {
+        syncMonopolyNicknameInput(true);
+        setMonopolyNicknameStatus(current ? `현재 닉네임: ${current}` : "닉네임을 설정해야 시작할 수 있습니다.", !current);
+        return false;
+      }
+
+      const newProfile = { ...(profile || {}), nickname: desired, lastChangedAt: new Date().toISOString() };
+      localStorage.setItem(HUMAN_PROFILE_STORAGE_KEY, JSON.stringify(newProfile));
+      syncMonopolyNicknameInput(true);
+      setMonopolyNicknameStatus(`닉네임 저장 완료: ${desired}`);
+      return true;
+    } catch {
+      setMonopolyNicknameStatus("오류가 발생했습니다.", true);
+      return false;
+    }
   }
 
   function currentHumanAvatarUrl() {
