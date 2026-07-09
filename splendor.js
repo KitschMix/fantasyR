@@ -9,11 +9,11 @@
   const WIN_SCORE = 15;
 
   const CARD_BG_IMAGES = {
-    diamond: "assets/splendor/다이아몬드카드.jpg",
-    sapphire: "assets/splendor/사파이어카드.jpg",
-    emerald: "assets/splendor/에메랄드.jpg",
-    ruby: "assets/splendor/루비카드.jpg",
-    onyx: "assets/splendor/오닉스카드.jpg"
+    diamond: "assets/splendor/다이아몬드카드.jpg?v=2",
+    sapphire: "assets/splendor/사파이어카드.jpg?v=2",
+    emerald: "assets/splendor/에메랄드.jpg?v=2",
+    ruby: "assets/splendor/루비카드.jpg?v=2",
+    onyx: "assets/splendor/오닉스카드.jpg?v=2"
   };
 
   const NOBLE_IMAGES = [
@@ -919,11 +919,11 @@
         "assets/splendor/onyx.png",
         "assets/splendor/ruby.png",
         "assets/splendor/sapphire.png",
-        "assets/splendor/다이아몬드카드.jpg",
-        "assets/splendor/루비카드.jpg",
-        "assets/splendor/사파이어카드.jpg",
-        "assets/splendor/에메랄드.jpg",
-        "assets/splendor/오닉스카드.jpg",
+        "assets/splendor/다이아몬드카드.jpg?v=2",
+        "assets/splendor/루비카드.jpg?v=2",
+        "assets/splendor/사파이어카드.jpg?v=2",
+        "assets/splendor/에메랄드.jpg?v=2",
+        "assets/splendor/오닉스카드.jpg?v=2",
         "assets/splendor/쉴레이만 1세.jpg",
         "assets/splendor/안 드 브르타뉴.jpg",
         "assets/splendor/엘리자베트.jpg",
