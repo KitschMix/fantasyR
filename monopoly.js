@@ -1911,16 +1911,6 @@
         renderAll();
         // Continue to roll normally below!
       } else {
-        const unownedCount = TILES.filter(t => t.type === "property" && !getOwner(t.id)).length;
-        const hasPlentyMoney = player.money >= JAIL_FINE + 1000 * SCALE_FACTOR;
-
-        if (hasPlentyMoney && unownedCount > 3) {
-          player.inJail = false;
-          payBank(player, JAIL_FINE);
-          addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
-          renderAll();
-          // Continue to roll normally below!
-        } else {
         const dice = rollDice();
         await animateDice(dice);
         state.rentDiceTotal = dice[0] + dice[1];
@@ -1953,7 +1943,6 @@
         }
       }
     }
-  }
 
     // Roll dice
     const dice = rollDice();
@@ -2154,13 +2143,12 @@
 
   function showJailEscapePopup(player) {
     return new Promise(resolve => {
-      if (!els.jailDialog || !els.jailTurnsLabel || !els.jailFineLabel || !els.jailFooter) {
+      if (!els.jailDialog || !els.jailTurnsLabel || !els.jailFooter) {
         resolve("roll");
         return;
       }
 
       els.jailTurnsLabel.textContent = player.jailTurns;
-      els.jailFineLabel.textContent = `₩${JAIL_FINE.toLocaleString()}`;
       els.jailFooter.innerHTML = "";
 
       const rollBtn = document.createElement("button");
@@ -2172,21 +2160,7 @@
         resolve("roll");
       });
 
-      const payBtn = document.createElement("button");
-      payBtn.className = "secondary-button";
-      payBtn.type = "button";
-      payBtn.textContent = `💸 벌금 지불 (₩${JAIL_FINE.toLocaleString()})`;
-      if (!canPayWithLiquidation(player, JAIL_FINE)) {
-        payBtn.disabled = true;
-        payBtn.textContent = "잔액 부족";
-      }
-      payBtn.addEventListener("click", () => {
-        els.jailDialog.close();
-        resolve("pay");
-      });
-
       els.jailFooter.appendChild(rollBtn);
-      els.jailFooter.appendChild(payBtn);
 
       if ((player.jailEscapeCards || 0) > 0) {
         const useCardBtn = document.createElement("button");
@@ -2216,13 +2190,7 @@
     // Jail logic
     if (player.inJail) {
       const choice = await showJailEscapePopup(player);
-      if (choice === "pay") {
-        player.inJail = false;
-        payBank(player, JAIL_FINE);
-        addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
-        renderAll();
-        // Continue to normal roll below!
-      } else if (choice === "useCard") {
+      if (choice === "useCard") {
         player.jailEscapeCards--;
         player.inJail = false;
         addLog(`🎫 무인도 탈출권을 사용하여 무인도 탈출.`);
