@@ -187,14 +187,14 @@
   }
 
   function gemPip(gem, count) {
-    return `<span class="splendor-cost-pip" style="background:${GEM_COLORS[gem]}">${gemImg(gem, 14)}${count}</span>`;
+    return `<span class="splendor-cost-pip">${gemImg(gem, 16)}${count}</span>`;
   }
   function gemMini(gem, count) {
-    return `<span class="splendor-mini-gem" style="background:${GEM_COLORS[gem]}">${gemImg(gem, 14)}${count}</span>`;
+    return `<span class="splendor-mini-gem">${gemImg(gem, 16)}${count}</span>`;
   }
   function tokenEl(gem, count, disabled) {
-    return `<span class="splendor-token${disabled ? " disabled" : ""}" data-gem="${gem}" style="background:${GEM_COLORS[gem]}" title="${GEM_LABELS[gem]} ${count}개">
-      ${gemImg(gem, 24)}<span class="splendor-token-count">${count}</span>
+    return `<span class="splendor-token${disabled ? " disabled" : ""}" data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개">
+      ${gemImg(gem, 56)}<span class="splendor-token-count">${count}</span>
     </span>`;
   }
 
@@ -209,7 +209,7 @@
       style="border-top: 4px solid ${tierColors[tier] || "var(--line)"}">
       <div class="splendor-card-top">
         <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
-        <span class="splendor-card-bonus" style="background:${GEM_COLORS[card.bonus]}" title="${GEM_LABELS[card.bonus]} 보너스">${gemImg(card.bonus, 16)}</span>
+        <span class="splendor-card-bonus" title="${GEM_LABELS[card.bonus]} 보너스">${gemImg(card.bonus, 24)}</span>
       </div>
       <div class="splendor-card-gem-mark">${gemImg(card.bonus, 28)}</div>
       <div class="splendor-card-cost">${costHtml}</div>
@@ -227,7 +227,7 @@
   /* ── Noble Rendering ── */
   function nobleHtml(noble) {
     const reqHtml = Object.entries(noble.requires)
-      .map(([g, n]) => `<span class="splendor-noble-req-gem" style="background:${GEM_COLORS[g]}">${gemImg(g, 12)}${n}</span>`).join("");
+      .map(([g, n]) => `<span class="splendor-noble-req-gem">${gemImg(g, 16)}${n}</span>`).join("");
     return `<div class="splendor-noble">
       <span class="splendor-noble-emoji">👑</span>
       <span class="splendor-noble-points">★${noble.points}</span>
