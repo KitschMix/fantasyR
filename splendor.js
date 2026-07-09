@@ -687,14 +687,8 @@
     setTimeout(() => bubble.remove(), 2000);
   }
 
-  let _lastTokenClick = 0;
-
   function onTokenClick(gem) {
     if (state.phase !== "action" || !activePlayer().human) return;
-    // Debounce: prevent double-click second click from firing
-    const now = Date.now();
-    if (now - _lastTokenClick < 200) return;
-    _lastTokenClick = now;
 
     const p = activePlayer();
     const maxTokens = tokenCount(state.players.length);
