@@ -273,6 +273,7 @@
     state.players.forEach((p, i) => {
       const card = document.createElement("section");
       card.className = `splendor-player-card${i === state.currentPlayer ? " active" : ""}`;
+      card.dataset.playerIndex = i;
       const gemsHtml = Object.entries(p.gems)
         .filter(([, n]) => n > 0)
         .map(([g, n]) => gemMini(g, n)).join("");
@@ -1115,16 +1116,20 @@
   }
 
   /* ── Turn Flow ── */
-  function showThinking(playerName) {
-    const el = document.getElementById("splendorThinking");
-    if (!el) return;
-    el.querySelector(".splendor-thinking-text").textContent = `${playerName} 생각중...`;
-    el.classList.remove("hidden");
+  function showThinking(playerIndex) {
+    // Remove existing bubbles
+    document.querySelectorAll(".splendor-speech-bubble").forEach(b => b.remove());
+    const playerCard = els.playersList?.querySelector(`[data-player-index="${playerIndex}"]`);
+    if (!playerCard) return;
+    const bubble = document.createElement("div");
+    bubble.className = "splendor-speech-bubble";
+    bubble.textContent = "생각중..";
+    playerCard.style.position = "relative";
+    playerCard.appendChild(bubble);
   }
 
   function hideThinking() {
-    const el = document.getElementById("splendorThinking");
-    if (el) el.classList.add("hidden");
+    document.querySelectorAll(".splendor-speech-bubble").forEach(b => b.remove());
   }
 
   function endTurn() {
@@ -1161,21 +1166,21 @@
     state.selectedCard = null;
 
     const np = activePlayer();
+    const npIndex = state.currentPlayer;
     renderAll();
 
-    if (np.human) {
-      // Show toast for human turn
-      if (typeof showCenterToast === "function") {
-        showCenterToast(`${np.name} 차례!`, 2000);
-      }
-    } else {
-      // Show thinking popup for AI (3~5s like Clue's 3~6s)
-      const thinkTime = 3000 + Math.floor(Math.random() * 2000);
-      showThinking(np.name);
-      if (typeof showCenterToast === "function") {
-        showCenterToast(`${np.name} 생각중...`, thinkTime);
-      }
-      setTimeout(runAiTurn, thinkTime);
+    // Step 1: Show turn toast for 2s
+    if (typeof showCenterToast === "function") {
+      showCenterToast(`${np.name} 차례!`, 2000);
+    }
+
+    if (!np.human) {
+      // Step 2: After toast, show thinking bubble for 3~6s random
+      const thinkTime = 3000 + Math.floor(Math.random() * 3000);
+      setTimeout(() => {
+        showThinking(npIndex);
+        setTimeout(runAiTurn, thinkTime);
+      }, 2000);
     }
   }
 

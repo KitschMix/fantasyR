@@ -583,36 +583,43 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   padding: 2px 8px;
 }
 
-/* --- Thinking Popup --- */
-.splendor-thinking {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 4000;
-  background: rgba(42,36,27,0.95);
-  border: 2px solid var(--accent);
-  border-radius: 16px;
-  padding: 24px 48px;
-  text-align: center;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  animation: splendor-thinking-pulse 1.5s ease-in-out infinite;
-}
-
-.splendor-thinking.hidden {
-  display: none;
-}
-
-.splendor-thinking-text {
-  font-size: 22px;
+/* --- Thinking Speech Bubble (on player card) --- */
+.splendor-speech-bubble {
+  position: absolute;
+  left: 56px;
+  top: -8px;
+  z-index: 18;
+  max-width: 160px;
+  padding: 6px 12px;
+  border: 1px solid rgba(217, 166, 60, 0.5);
+  border-radius: 12px;
+  color: #24170d;
+  background: rgba(255, 246, 220, 0.96);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  font-size: 13px;
   font-weight: 900;
-  color: var(--accent);
-  letter-spacing: 1px;
+  line-height: 1.2;
+  pointer-events: none;
+  animation: splendor-speech-pop 200ms ease-out;
+  white-space: nowrap;
 }
 
-@keyframes splendor-thinking-pulse {
-  0%, 100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
-  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.03); }
+.splendor-speech-bubble::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  border-right: 1px solid rgba(217, 166, 60, 0.5);
+  border-bottom: 1px solid rgba(217, 166, 60, 0.5);
+  transform: rotate(45deg);
+}
+
+@keyframes splendor-speech-pop {
+  from { opacity: 0; transform: translateY(4px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* --- Reserved By Label --- */
