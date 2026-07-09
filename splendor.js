@@ -247,7 +247,7 @@
         .map(([g, n]) => gemMini(g, n)).join("");
       const bonusHtml = Object.entries(p.bonuses)
         .filter(([, n]) => n > 0)
-        .map(([g, n]) => `<span class="splendor-mini-gem" style="background:${GEM_COLORS[g]}">${g === "gold" ? "G" : n}</span>`).join("");
+        .map(([g, n]) => gemMini(g, n)).join("");
       card.innerHTML = `
         <div class="splendor-player-header">
           <img class="splendor-player-avatar" src="${esc(p.avatarUrl)}" alt="" />
@@ -287,8 +287,8 @@
       const isGold = gem === "gold";
       const disabled = isGold || count === 0;
       return `<span class="splendor-token${disabled ? " disabled" : ""}${selected ? " selected" : ""}"
-        data-gem="${gem}" style="background:${GEM_COLORS[gem]}" title="${GEM_LABELS[gem]} ${count}개${selected ? " (선택됨 " + selected + ")" : ""}">
-        ${gemImg(gem, 24)}<span class="splendor-token-count">${count}</span>
+        data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개${selected ? " (선택됨 " + selected + ")" : ""}">
+        ${gemImg(gem, 50)}<span class="splendor-token-count">${count}</span>
       </span>`;
     }).join("");
     // Bind click
@@ -312,7 +312,7 @@
       const costHtml = Object.entries(c.cost).filter(([, n]) => n > 0).map(([g, n]) => gemPip(g, n)).join("");
       return `<div class="splendor-reserved-mini" data-rindex="${i}" title="예약 카드 ${i + 1}">
         <span style="font-weight:900;color:var(--accent)">${c.points || ""}</span>
-        <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${GEM_COLORS[c.bonus]}"></span>
+        ${gemImg(c.bonus, 14)}
         <div style="display:flex;gap:1px">${costHtml}</div>
       </div>`;
     }).join("") || "<small style='color:var(--muted)'>없음</small>";
