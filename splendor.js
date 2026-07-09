@@ -1157,15 +1157,15 @@
     if (np.human) {
       // Show toast for human turn
       if (typeof showCenterToast === "function") {
-        showCenterToast(`${np.name} 차례!`, 2000);
+        showCenterToast(`${np.name} 차례!`, 2500);
       }
     } else {
       // Show thinking popup for AI
       showThinking(np.name);
       if (typeof showCenterToast === "function") {
-        showCenterToast(`${np.name} 차례`, 1500);
+        showCenterToast(`${np.name} 생각중...`, 2500);
       }
-      setTimeout(runAiTurn, 1200);
+      setTimeout(runAiTurn, 2500);
     }
   }
 
