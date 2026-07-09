@@ -337,12 +337,10 @@
           if (isBuildableProperty(tile)) {
             const level = buildingLevel(owner, i);
             if (level > 0) {
-              let label = "";
-              if (level === 1) label = "🏠";
-              else if (level === 2) label = "🏠🏠";
-              else if (level === 3) label = "🏢";
-              else if (level === 4) label = "🏨";
-              html += `<span class="tile-building-badge">${label}</span>`;
+              // Visual building indicator: stacked icons
+              const icons = ["🏠", "🏠🏠", "🏢", "🏨"];
+              const labels = ["별장", "별장×2", "빌딩", "호텔"];
+              html += `<span class="tile-building-badge" title="${labels[level - 1]}">${icons[level - 1]}</span>`;
             }
           }
         }
@@ -631,7 +629,7 @@
     if (isSocialFund) {
       if (header) {
         header.textContent = tile.name;
-        header.style.backgroundColor = "#27ae60"; // Green theme for welfare fund
+        header.style.backgroundColor = "#27ae60";
         header.style.display = "";
       }
       if (priceRow) {
@@ -681,18 +679,33 @@
       }
       if (rentMonRow) {
         rentMonRow.style.display = "flex";
-        rentMonRow.querySelector("strong").textContent = tile.fixedRent ? "통행료" : "호텔 임대료";
-        if (rentMonEl) {
-          const rentMon = tile.rent ? (tile.fixedRent ? tile.rent[0] : (tile.rent[3] || tile.rent[0] * 2)) : 0;
-          rentMonEl.textContent = `₩${rentMon.toLocaleString()}`;
+        const owner = getOwner(tileId);
+        if (tile.fixedRent) {
+          rentMonRow.querySelector("strong").textContent = "통행료";
+          if (rentMonEl) rentMonEl.textContent = `₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}`;
+        } else {
+          // Show building level visually
+          const level = owner ? buildingLevel(owner, tile.id) : 0;
+          const levelIcons = ["🏠", "🏠🏠", "🏢", "🏨"];
+          const levelNames = ["별장", "별장2", "빌딩", "호텔"];
+          rentMonRow.querySelector("strong").textContent = level > 0 ? `${levelIcons[level - 1]} ${levelNames[level - 1]} 임대료` : "호텔 임대료";
+          if (rentMonEl) {
+            const rentMon = tile.rent ? (tile.rent[level] || tile.rent[0] * 2) : 0;
+            rentMonEl.textContent = `₩${rentMon.toLocaleString()}`;
+          }
         }
       }
 
+      // Show monopoly status
       const owner = getOwner(tileId);
       if (owner) {
         ownerEl.textContent = owner.human ? "나" : owner.name;
         ownerEl.style.color = owner.tokenColor;
         ownerRow.style.display = "flex";
+        // Add monopoly badge
+        if (!tile.fixedRent && isMonopoly(owner, tile.group)) {
+          ownerEl.textContent += " ⭐독점";
+        }
       } else {
         ownerEl.textContent = "없음";
         ownerEl.style.color = "var(--text-muted)";
