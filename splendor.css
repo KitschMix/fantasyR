@@ -568,6 +568,8 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 /* --- Card Hover Preview --- */
 .splendor-card-preview {
   position: fixed;
+  top: 50%;
+  left: 50%;
   z-index: 5000;
   pointer-events: none;
   opacity: 0;
