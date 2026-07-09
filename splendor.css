@@ -414,8 +414,6 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   font-size: 15px;
   font-weight: 800;
   color: var(--accent);
-  text-align: center;
-  margin-bottom: 8px;
 }
 
 .splendor-section-label {
@@ -541,16 +539,26 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-.splendor-selected-summary {
+.splendor-bank-label-row {
   display: flex;
-  justify-content: center;
   align-items: center;
   gap: 12px;
-  padding: 6px 12px;
-  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.splendor-bank-label {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.splendor-selected-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--accent);
-  min-height: 28px;
 }
 
 .splendor-selected-summary.hidden {
@@ -564,7 +572,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   background: rgba(217,166,60,0.12);
   border: 1px solid rgba(217,166,60,0.25);
   border-radius: 6px;
-  padding: 3px 8px;
+  padding: 2px 8px;
 }
 
 /* --- Action Cards --- */
