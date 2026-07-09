@@ -281,6 +281,8 @@
     if (!els.tokens) return;
     const p = activePlayer();
     const totalTokens = Object.values(p.gems).reduce((s, n) => s + n, 0);
+    const hasSelection = state.selectedTokens.length > 0;
+
     els.tokens.innerHTML = [...GEMS, "gold"].map(gem => {
       const count = state.tokenBank[gem] || 0;
       const selected = state.selectedTokens.filter(t => t === gem).length;
@@ -290,11 +292,23 @@
         data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개${selected ? " (선택됨 " + selected + ")" : ""}">
         ${gemImg(gem, 50)}<span class="splendor-token-count">${count}</span>
       </span>`;
-    }).join("");
+    }).join("") +
+    (hasSelection ? `<button class="splendor-cancel-tokens" type="button" title="선택 취소">✕ 취소</button>` : "");
+
     // Bind click
     els.tokens.querySelectorAll(".splendor-token:not(.disabled)").forEach(el => {
       el.addEventListener("click", () => onTokenClick(el.dataset.gem));
     });
+
+    // Cancel button
+    const cancelBtn = els.tokens.querySelector(".splendor-cancel-tokens");
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", () => {
+        state.selectedTokens = [];
+        renderTokens();
+        renderControls();
+      });
+    }
   }
 
   function renderMyBonuses() {

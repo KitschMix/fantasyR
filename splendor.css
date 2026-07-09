@@ -478,6 +478,24 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   color: var(--text);
 }
 
+.splendor-cancel-tokens {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--danger);
+  background: rgba(211,107,88,0.15);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: var(--font-ui);
+  align-self: center;
+}
+
+.splendor-cancel-tokens:hover {
+  background: rgba(211,107,88,0.3);
+}
+
 /* --- Action Cards --- */
 .splendor-action-card {
   padding: 12px;
