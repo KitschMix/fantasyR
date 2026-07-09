@@ -1632,36 +1632,36 @@ select {
 
 .speech-bubble {
   position: absolute;
-  top: 52px;
-  left: 12px;
-  right: 12px;
+  top: -8px;
+  left: 72px;
   z-index: 20;
-  box-sizing: border-box;
-  width: calc(100% - 24px);
-  height: auto;
+  max-width: min(200px, 50vw);
   padding: 8px 12px;
-  border: 1px solid rgba(139, 94, 60, 0.42);
+  border: 1px solid rgba(217, 166, 60, 0.5);
   border-radius: 12px;
   color: #24170d;
   background: rgba(255, 246, 220, 0.96);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
-  font-size: 15px;
-  font-weight: 850;
-  line-height: 1.25;
-  opacity: 1;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.2;
   pointer-events: none;
+  transform: translateY(-72%);
   animation: fantasy-speech-pop 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .speech-bubble::before {
   position: absolute;
-  top: -6px;
-  left: 24px;
-  width: 10px;
-  height: 10px;
+  left: 14px;
+  bottom: -8px;
+  width: 12px;
+  height: 12px;
   background: inherit;
-  border-top: 1px solid rgba(139, 94, 60, 0.42);
-  border-left: 1px solid rgba(139, 94, 60, 0.42);
+  border-right: 1px solid rgba(217, 166, 60, 0.5);
+  border-bottom: 1px solid rgba(217, 166, 60, 0.5);
   content: "";
   transform: rotate(45deg);
 }
