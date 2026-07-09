@@ -99,6 +99,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 /* --- Game Panel --- */
 .splendor-game-panel {
+  --splendor-ui-zoom: 1;
   min-height: calc(100vh - 28px);
   padding: 14px;
 }
@@ -108,6 +109,14 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   gap: 14px;
   width: min(1880px, 100%);
   margin: 0 auto;
+  zoom: var(--splendor-ui-zoom);
+  transform-origin: top center;
+}
+
+@supports not (zoom: 1) {
+  .splendor-shell {
+    transform: scale(var(--splendor-ui-zoom));
+  }
 }
 
 .splendor-game-top {
@@ -1269,4 +1278,34 @@ body.splendor-active.splendor-playing .splendor-game-panel {
     width: 44px;
     height: 44px;
   }
+}
+
+.splendor-zoom-controls {
+  display: grid;
+  grid-template-columns: 40px minmax(60px, auto) 40px;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 2px;
+  border: 1px solid rgba(217, 166, 60, 0.28);
+  border-radius: 8px;
+  background: rgba(13, 14, 15, 0.65);
+}
+
+.splendor-zoom-button {
+  min-width: 34px;
+  width: 34px;
+  min-height: 34px;
+  height: 34px;
+  font-size: 20px;
+  line-height: 1;
+  border-radius: 6px;
+}
+
+.splendor-zoom-label {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
 }

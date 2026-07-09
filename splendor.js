@@ -161,7 +161,10 @@
     myCards:        $("#splendorMyCards"),
     myReserved:     $("#splendorMyReserved"),
     endTurnButton:  null,
-    log:            $("#splendorLog")
+    log:            $("#splendorLog"),
+    zoomOutButton:  $("#splendorZoomOutButton"),
+    zoomInButton:   $("#splendorZoomInButton"),
+    zoomLabel:      $("#splendorZoomLabel")
   };
 
   /* ── State ── */
@@ -994,6 +997,77 @@
     });
   }
 
+  const ZOOM_STORAGE_KEY = "fantasyR.splendorZoomPercent";
+  const ZOOM_MIN_PERCENT = 60;
+  const ZOOM_MAX_PERCENT = 180;
+  const ZOOM_STEP_PERCENT = 10;
+  let splendorZoomPercent = 100;
+
+  function currentViewportSize() {
+    return {
+      width: Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0),
+      height: Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
+    };
+  }
+
+  function clampNumber(num, min, max) {
+    return Math.min(Math.max(num, min), max);
+  }
+
+  function suggestedInitialZoomPercent() {
+    const { width, height } = currentViewportSize();
+    const isPhonePortrait = width <= 700 && height > width;
+    if (isPhonePortrait) return 70;
+
+    const isCoarsePointer = Boolean(window.matchMedia?.("(pointer: coarse)")?.matches);
+    const pixelRatio = isCoarsePointer ? 1 : Math.max(1, Number(window.devicePixelRatio || 1));
+    const resolutionRatio = Math.min((width * pixelRatio) / 1920, (height * pixelRatio) / 1080);
+    const percent = resolutionRatio <= 1
+      ? resolutionRatio * 100
+      : 100 + ((Math.min(resolutionRatio, 1.8) - 1) * 80);
+    const stepped = Math.round(percent / ZOOM_STEP_PERCENT) * ZOOM_STEP_PERCENT;
+    return clampNumber(stepped, ZOOM_MIN_PERCENT, ZOOM_MAX_PERCENT);
+  }
+
+  function loadZoomPercent() {
+    try {
+      const saved = window.localStorage.getItem(ZOOM_STORAGE_KEY);
+      const numeric = Number(saved);
+      return saved !== null && String(saved).trim() !== "" && Number.isFinite(numeric)
+        ? clampNumber(numeric, ZOOM_MIN_PERCENT, ZOOM_MAX_PERCENT)
+        : suggestedInitialZoomPercent();
+    } catch {
+      return suggestedInitialZoomPercent();
+    }
+  }
+
+  function saveZoomPercent(percent) {
+    try {
+      window.localStorage.setItem(ZOOM_STORAGE_KEY, String(percent));
+    } catch {}
+  }
+
+  function renderZoomControls() {
+    els.gamePanel?.style.setProperty("--splendor-ui-zoom", String(splendorZoomPercent / 100));
+    if (els.zoomLabel) els.zoomLabel.textContent = `${splendorZoomPercent}%`;
+    if (els.zoomOutButton) els.zoomOutButton.disabled = splendorZoomPercent <= ZOOM_MIN_PERCENT;
+    if (els.zoomInButton) els.zoomInButton.disabled = splendorZoomPercent >= ZOOM_MAX_PERCENT;
+  }
+
+  function setZoomPercent(percent, persist = true) {
+    splendorZoomPercent = clampNumber(Math.round(percent / ZOOM_STEP_PERCENT) * ZOOM_STEP_PERCENT, ZOOM_MIN_PERCENT, ZOOM_MAX_PERCENT);
+    renderZoomControls();
+    if (persist) saveZoomPercent(splendorZoomPercent);
+  }
+
+  function adjustZoom(delta) {
+    setZoomPercent(splendorZoomPercent + delta);
+  }
+
+  function initializeZoomControls() {
+    setZoomPercent(loadZoomPercent(), false);
+  }
+
   /* ── Init ── */
   function init() {
     els.startButton?.addEventListener("click", startGame);
@@ -1047,6 +1121,10 @@
       const tier = Number(back.dataset.tier);
       attemptReserve(tier, null);
     });
+
+    els.zoomOutButton?.addEventListener("click", () => adjustZoom(-ZOOM_STEP_PERCENT));
+    els.zoomInButton?.addEventListener("click", () => adjustZoom(ZOOM_STEP_PERCENT));
+    initializeZoomControls();
 
     preloadSplendorAssets().then(() => {
       document.body.classList.remove("app-loading");
