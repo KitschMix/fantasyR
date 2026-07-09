@@ -191,11 +191,11 @@
     return `<span class="splendor-cost-pip">${gemImg(gem, 24)}<span class="splendor-cost-num">${count}</span></span>`;
   }
   function gemMini(gem, count) {
-    return `<span class="splendor-mini-gem">${gemImg(gem, 40)}${count}</span>`;
+    return `<span class="splendor-mini-gem">${gemImg(gem, 28)}${count}</span>`;
   }
   function tokenEl(gem, count, disabled) {
     return `<span class="splendor-token${disabled ? " disabled" : ""}" data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개">
-      ${gemImg(gem, 56)}<span class="splendor-token-count">${count}</span>
+      ${gemImg(gem, 100)}<span class="splendor-token-count">${count}</span>
     </span>`;
   }
 
@@ -293,7 +293,7 @@
       const disabled = isGold || count === 0;
       return `<span class="splendor-token${disabled ? " disabled" : ""}${selected ? " selected" : ""}"
         data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개${selected ? " (선택됨 " + selected + ")" : ""}">
-        ${gemImg(gem, 50)}<span class="splendor-token-count">${count}</span>
+        ${gemImg(gem, 100)}<span class="splendor-token-count">${count}</span>
       </span>`;
     }).join("") +
     (hasSelection ? `<button class="splendor-cancel-tokens" type="button" title="선택 취소">✕ 취소</button>` : "");
