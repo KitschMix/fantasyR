@@ -45,7 +45,7 @@
     { id: 36, name: "런던",           type: "property", color: "#E53935", group: 8, price: 380, rent: [40, 200, 1200, 1700], buildCosts: [200, 600, 900] },
     { id: 37, name: "뉴욕",           type: "property", color: "#E53935", group: 8, price: 400, rent: [50, 220, 1300, 1800], buildCosts: [200, 600, 900] },
     { id: 38, name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 39, name: "서울올림픽",       type: "property", color: "", price: 1000, rent: [2000], fixedRent: true }
+    { id: 39, name: "서울",           type: "property", color: "", price: 1000, rent: [2000], fixedRent: true }
   ];
 
   const COLOR_GROUPS = {};
@@ -115,7 +115,7 @@
     "콜롬비아 우주선": "jfk_airport.jpg",
     "런던": "london.jpg",
     "뉴욕": "newyork.jpg",
-    "서울올림픽": "seoul.jpg"
+    "서울": "seoul.jpg"
   };
 
   function preloadScenicImages() {
@@ -540,7 +540,7 @@
       
       let groupStatus = "";
       if (tile.fixedRent) {
-        groupStatus = ["제주도", "부산", "서울올림픽"].includes(tile.name) ? "관광지" : "이동수단";
+        groupStatus = ["제주도", "부산", "서울"].includes(tile.name) ? "관광지" : "이동수단";
       } else {
         const owned = getColorGroupOwned(targetPlayer, tile.group).length;
         const total = (COLOR_GROUPS[tile.group] || []).length;
@@ -1051,7 +1051,7 @@
   }
 
   function canBuildOn(player, tile) {
-    if (!isBuildableProperty(tile)) return "제주도, 서울올림픽, 탈것 등은 건설할 수 없습니다.";
+    if (!isBuildableProperty(tile)) return "제주도, 서울, 탈것 등은 건설할 수 없습니다.";
     if (!player.properties.includes(tile.id)) return "소유한 땅만 건설할 수 있습니다.";
     if (player.position !== tile.id) return "해당 칸에 도착했을 때만 건설할 수 있습니다.";
     if (state.purchasedThisTurn === tile.id) return "땅을 구입한 턴에는 건설할 수 없습니다. 다음번에 방문할 때부터 건설 가능합니다.";
