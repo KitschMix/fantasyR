@@ -420,7 +420,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   font-size: 15px;
   font-weight: 800;
   color: var(--accent);
-  text-align: left;
+  text-align: left !important;
   margin-bottom: 6px;
   padding: 6px 0;
 }
@@ -548,7 +548,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   font-size: 15px;
   font-weight: 800;
   color: var(--accent);
-  text-align: left;
+  text-align: left !important;
 }
 
 .splendor-selected-summary {
