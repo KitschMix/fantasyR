@@ -306,7 +306,8 @@
     const totalTokens = Object.values(p.gems).reduce((s, n) => s + n, 0);
     const hasSelection = state.selectedTokens.length > 0;
 
-    els.tokens.innerHTML = [...GEMS, "gold"].map(gem => {
+    els.tokens.innerHTML = `<div class="splendor-tokens-row">` +
+      [...GEMS, "gold"].map(gem => {
       const count = state.tokenBank[gem] || 0;
       const selected = state.selectedTokens.filter(t => t === gem).length;
       const isGold = gem === "gold";
@@ -315,8 +316,8 @@
         data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개${selected ? " (선택됨 " + selected + ")" : ""}">
         ${gemImg(gem, 100)}<span class="splendor-token-count">${count}</span>
       </span>`;
-    }).join("") +
-    (hasSelection ? `<button class="splendor-cancel-tokens" type="button" title="선택 취소">✕ 취소</button>` : "");
+    }).join("") + `</div>` +
+    (hasSelection ? `<div class="splendor-cancel-wrap"><button class="splendor-cancel-tokens" type="button" title="선택 취소">✕ 취소</button></div>` : "");
 
     // Bind click
     els.tokens.querySelectorAll(".splendor-token:not(.disabled)").forEach(el => {
