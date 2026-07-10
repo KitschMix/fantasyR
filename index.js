@@ -35,6 +35,7 @@ const GAMES = [
     accent: 'rgba(20,80,40,0.6)',        // 깊은 그린
     accent2: 'rgba(242,202,80,0.5)',
     symbol: 'apartment',
+    coverArt: 'assets/main/부루마불.png',
     desc: '서울 시내를 점령하고 부의 전쟁에 승리하세요.'
   },
   {
@@ -50,6 +51,7 @@ const GAMES = [
     accent: 'rgba(140,15,30,0.6)',        // 미스터리 레드
     accent2: 'rgba(0,0,0,0.4)',
     symbol: 'psychology',
+    coverArt: 'assets/main/클루.png',
     desc: '범인을 추리라! 섹튼 가의 비밀.'
   },
   {
@@ -65,6 +67,7 @@ const GAMES = [
     accent: 'rgba(200,140,40,0.6)',       // 사바나 오렌지
     accent2: 'rgba(120,80,30,0.5)',
     symbol: 'pets',
+    coverArt: 'assets/main/텔리호.png',
     desc: '잉글랜드 사냥개와 늑대. 야생의 전쟁.'
   },
   {
@@ -80,6 +83,7 @@ const GAMES = [
     accent: 'rgba(220,40,80,0.6)',        // 일본식 핑크-레드
     accent2: 'rgba(255,255,255,0.3)',
     symbol: 'restaurant',
+    coverArt: 'assets/main/스시고.png',
     desc: '일본 회전초밥, 카드를 모아 최고의 점수.'
   },
   {
@@ -95,6 +99,7 @@ const GAMES = [
     accent: 'rgba(15,80,140,0.6)',        // 산 블루
     accent2: 'rgba(255,140,0,0.5)',
     symbol: 'terrain',
+    coverArt: 'assets/main/캔트스탑.png',
     desc: '주사위 굴리기, 과감한 결정!'
   },
   {
@@ -172,14 +177,18 @@ function renderGameGrid(filter = 'all', query = '') {
 }
 
 function gameCardHtml(g) {
+  const heroInner = g.coverArt
+    ? `<img class="hub-game-cover transition-transform duration-500 group-hover:scale-110" src="${g.coverArt}" alt="${g.title} 카드 아트" loading="lazy" decoding="async" />`
+    : `<div class="absolute inset-0 transition-transform duration-500 group-hover:scale-110" style="background:radial-gradient(ellipse at 30% 20%, ${g.accent}, transparent 60%), radial-gradient(ellipse at 70% 80%, ${g.accent2}, transparent 60%), linear-gradient(135deg, #1a1a1a, #0e0e0e);"></div>
+       <div class="absolute inset-0 opacity-25 mix-blend-overlay" style="background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 8px);"></div>
+       <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15">
+         <span class="material-symbols-outlined text-[140px]">${g.symbol}</span>
+       </div>`;
+
   return `
-    <a href="${g.file}" data-game-file="${g.file}" class="hub-game-card group relative aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden card-shadow transition-all duration-300 hover:-translate-y-1">
+    <a href="${g.file}" data-game-file="${g.file}" class="hub-game-card group relative aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden card-shadow transition-all duration-300 hover:-translate-y-1${g.coverArt ? ' has-art' : ''}">
       <div class="absolute inset-0">
-        <div class="absolute inset-0 transition-transform duration-500 group-hover:scale-110" style="background:radial-gradient(ellipse at 30% 20%, ${g.accent}, transparent 60%), radial-gradient(ellipse at 70% 80%, ${g.accent2}, transparent 60%), linear-gradient(135deg, #1a1a1a, #0e0e0e);"></div>
-        <div class="absolute inset-0 opacity-25 mix-blend-overlay" style="background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 8px);"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15">
-          <span class="material-symbols-outlined text-[140px]">${g.symbol}</span>
-        </div>
+        ${heroInner}
         <div class="absolute inset-0 card-img-overlay"></div>
       </div>
       <div class="absolute top-2 right-2 lg:top-3 lg:right-3 bg-surface-bright/80 backdrop-blur-sm px-2 py-1 rounded flex items-center gap-1 text-[10px] lg:text-xs font-bold text-primary">
