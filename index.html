@@ -1,52 +1,376 @@
-<!doctype html>
-<html lang="ko">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>게임 선택</title>
-    <link rel="stylesheet" href="styles.css?v=20260707-launcher-logos" />
-    <link rel="stylesheet" href="clue.css?v=20260706-split-pages" />
-    <link rel="stylesheet" href="tally-ho.css?v=20260706-split-pages" />
-    <link rel="stylesheet" href="cant-stop.css?v=20260707-markers-v6" />
-    <link rel="stylesheet" href="monopoly.css?v=20260707-brumable-v27" />
-    <link rel="stylesheet" href="splendor.css?v=20260707-splendor-restyle" />
-    <link rel="stylesheet" href="dominion.css?v=20260707-dominion" />
-    <link rel="stylesheet" href="sushi-go.css?v=20260707-sushi" />
-  </head>
-  <body class="launcher-active">
-    <main class="app-shell">
-      <section id="gameLauncher" class="game-launcher" aria-label="게임 선택">
-        <a class="game-launcher-card" href="fantasy" aria-label="판타지왕국 입장">
-          <img src="assets/titles/title-base.png" alt="판타지왕국" />
-        </a>
-        <a class="game-launcher-card clue-launcher-card" href="clue" aria-label="클루 입장">
-          <img src="assets/titles/title-clue.jpg" alt="클루" />
-        </a>
-        <a class="game-launcher-card tally-launcher-card" href="tally-ho" aria-label="탤리 호 입장">
-          <img src="assets/titles/title-tally-ho.png" alt="Tally Ho! 탤리 호" />
-        </a>
-        <a class="game-launcher-card cant-stop-launcher-card" href="cant-stop" aria-label="캔트스탑 입장">
-          <img src="assets/titles/title-cant-stop.png" alt="Can't Stop 캔트스탑" />
-        </a>
-        <a class="game-launcher-card monopoly-launcher-card" href="monopoly" aria-label="부루마불 입장">
-          <img src="assets/titles/brumable-logo.webp" alt="부루마불" />
-        </a>
-        <a class="game-launcher-card splendor-launcher-card" href="splendor" aria-label="스플렌더 입장">
-          <img src="assets/titles/title-splendor.png" alt="💎 스플렌더" />
-        </a>
-        <a class="game-launcher-card dominion-launcher-card" href="dominion" aria-label="도미니언 입장">
-          <img src="assets/titles/title-dominion.webp" alt="도미니언 Dominion" />
-        </a>
-        <a class="game-launcher-card sushi-launcher-card" href="sushi-go" aria-label="스시고 입장">
-          <img src="assets/titles/title-sushi-go.png" alt="초밥왕 Sushi Go!" />
-        </a>
-        <p class="launcher-device-note">PC 화면 권장 · 모바일은 가로 화면에서 플레이하세요.</p>
-        <div class="game-launcher-coming-soon" aria-label="개발 예정 게임" hidden>
-          <div class="game-launcher-placeholder" aria-disabled="true">
-            <img src="assets/titles/title-dead-of-winter.png" alt="데드 오브 윈터 개발 예정" />
-          </div>
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOARD GAME ROOM | 프리미엄 보드게임 컬렉션</title>
+<!-- 첫 화면 게임 카드 아트 preload (LCP 가속) -->
+<link rel="preload" as="image" href="assets/main/%EC%8A%A4%ED%94%8C%EB%A0%8C%EB%8D%94.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="assets/main/%EB%B6%80%EB%A3%A8%EB%A7%88%EB%B6%88.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="assets/main/%ED%81%B4%EB%A3%A8.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="assets/main/%ED%85%94%EB%A6%AC%ED%98%B8.jpg" fetchpriority="high">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          surface: { DEFAULT: "#131313", dim: "#131313", bright: "#393939" },
+          "surface-container-lowest": "#0e0e0e",
+          "surface-container-low": "#1c1b1b",
+          "surface-container": "#201f1f",
+          "surface-container-high": "#2a2a2a",
+          "surface-container-highest": "#353534",
+          "on-surface": "#e5e2e1",
+          "on-surface-variant": "#d0c5af",
+          outline: { DEFAULT: "#99907c", variant: "#4d4635" },
+          primary: { DEFAULT: "#f2ca50", container: "#d4af37" },
+          "on-primary": "#3c2f00",
+          "on-primary-container": "#554300",
+          secondary: { DEFAULT: "#adc6ff", container: "#0566d9" },
+          "on-secondary-container": "#e6ecff",
+          error: "#ffb4ab"
+        },
+        fontFamily: {
+          "headline-xl": ['Montserrat', 'Noto Sans KR', 'sans-serif'],
+          "headline-lg": ['Montserrat', 'Noto Sans KR', 'sans-serif'],
+          "headline-md": ['Montserrat', 'Noto Sans KR', 'sans-serif'],
+          "body-lg": ['Inter', 'Noto Sans KR', 'sans-serif'],
+          "body-md": ['Inter', 'Noto Sans KR', 'sans-serif'],
+          "label-lg": ['Inter', 'Noto Sans KR', 'sans-serif'],
+          "label-md": ['Inter', 'Noto Sans KR', 'sans-serif']
+        },
+        fontSize: {
+          "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em" }],
+          "headline-lg": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em" }],
+          "headline-md": ["20px", { lineHeight: "28px" }],
+          "body-lg": ["18px", { lineHeight: "28px" }],
+          "body-md": ["16px", { lineHeight: "24px" }],
+          "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.05em" }],
+          "label-md": ["12px", { lineHeight: "16px" }]
+        },
+        borderRadius: {
+          sm: "0.25rem", md: "0.75rem", lg: "1rem", xl: "1.5rem"
+        },
+        spacing: {
+          "gutter": "16px", "stack-sm": "8px", "stack-md": "16px", "stack-lg": "24px",
+          "card-padding": "16px", "container-margin": "20px"
+        },
+        boxShadow: {
+          "premium-card": "0px 12px 32px rgba(0, 0, 0, 0.5)",
+          "premium-glow": "0 0 24px rgba(242, 202, 80, 0.10)"
+        }
+      }
+    }
+  };
+</script>
+<style>
+  body { background: radial-gradient(ellipse at top left, #1a1a1a, #121212 60%); }
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal; font-style: normal;
+    line-height: 1; letter-spacing: normal;
+    text-transform: none; display: inline-block;
+    white-space: nowrap; word-wrap: normal;
+    direction: ltr; -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  }
+  .material-symbols-filled {
+    font-family: 'Material Symbols Outlined';
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  /* 스크롤바 다크 */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #0e0e0e; }
+  ::-webkit-scrollbar-thumb { background: #353534; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #4d4635; }
+
+  /* 카드 그라데이션 오버레이 */
+  .card-gradient-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 35%, transparent 70%);
+  }
+
+  /* 게임별 시네마틱 배경 (이미지 대체) */
+  .game-cinematic {
+    position: absolute; inset: 0;
+    overflow: hidden;
+  }
+  .game-cinematic::before {
+    content: ""; position: absolute; inset: -10%;
+    background-size: cover; background-position: center;
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    filter: saturate(1.1) contrast(1.05);
+  }
+  .game-cinematic::after {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.4) 100%);
+  }
+  .hub-game-card:hover .game-cinematic::before { transform: scale(1.1); }
+
+  /* 게임 카드 아트 이미지 (My Collection) */
+  .hub-game-cover {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center;
+    filter: saturate(1.05) contrast(1.02);
+    /* Progressive 로드 UX: 로딩 직전엔 어두운 placeholder만, 도착 시 fade-in */
+    opacity: 0;
+    background: linear-gradient(135deg, #1a1a1a 0%, #0e0e0e 100%);
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+  .hub-game-cover.is-loaded { opacity: 1; }
+
+  /* 카드 아트가 있을 때 카드 하단 정보 가독성을 위한 어두운 그라데이션 */
+  .hub-game-card.has-art .card-img-overlay {
+    background: linear-gradient(180deg,
+      transparent 0%, transparent 45%,
+      rgba(0,0,0,0.25) 65%,
+      rgba(0,0,0,0.75) 95%);
+  }
+
+  /* 골드 글로우 링 */
+  .gold-ring {
+    box-shadow: 0 0 0 2px rgba(242, 202, 80, 0.4),
+                0 0 32px rgba(242, 202, 80, 0.15);
+  }
+
+  /* 사이드바 네비 active 글로우 */
+  .nav-active {
+    background: linear-gradient(90deg, rgba(242, 202, 80, 0.12), transparent);
+    box-shadow: inset 4px 0 0 #f2ca50;
+  }
+
+  /* 부드러운 페이드인 */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .anim-fade { animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  /* 골드 텍스트 그라데이션 */
+  .gold-text {
+    background: linear-gradient(135deg, #ffe088, #f2ca50 50%, #d4af37);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* 프로필 카드 펄스 */
+  @keyframes profilePulse {
+    0%   { box-shadow: 0 0 0 0 rgba(242,202,80,0.0), 0 0 0 rgba(242,202,80,0); border-color: rgba(77,70,53,0.3); }
+    25%  { box-shadow: 0 0 0 4px rgba(242,202,80,0.45), 0 0 32px rgba(242,202,80,0.35); border-color: #f2ca50; }
+    100% { box-shadow: 0 0 0 0 rgba(242,202,80,0); border-color: rgba(77,70,53,0.3); }
+  }
+  .profile-pulse {
+    animation: profilePulse 1.4s cubic-bezier(0.16,1,0.3,1);
+    border-color: #f2ca50 !important;
+  }
+
+  /* Stitch 모바일 디자인 시스템 */
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .card-shadow { box-shadow: 0px 12px 32px rgba(0, 0, 0, 0.5); }
+  .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 12px); }
+  .right-container-margin { right: 20px; }
+
+  /* 카드 이미지 그라데이션 오버레이 (Stitch 스타일) */
+  .card-img-overlay {
+    background: linear-gradient(to top, #131313 0%, transparent 70%);
+    opacity: 0.8;
+  }
+</style>
+</head>
+<body class="font-body-md text-body-md text-on-surface">
+
+<!-- ═══ 사이드 네비게이션 (데스크탑만) ═══ -->
+<aside class="hidden lg:flex h-screen w-80 fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant shadow-xl flex-col py-6 z-50">
+  <div class="px-6 mb-8">
+    <h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tighter whitespace-nowrap" style="font-family: 'Montserrat', sans-serif; letter-spacing: -0.04em;">BOARD GAME ROOM</h1>
+    <p class="text-on-surface-variant font-label-md mt-1 opacity-70 whitespace-nowrap text-[13px]">프리미엄 보드게임 컬렉션</p>
+  </div>
+
+  <nav class="flex-1 space-y-1">
+    <a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant mx-2 hover:bg-surface-container-high transition-colors duration-200 group" href="fantasy.html">
+      <span class="material-symbols-outlined group-hover:text-primary transition-colors">home</span>
+      <span class="font-label-lg text-label-lg">홈</span>
+    </a>
+    <a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant mx-2 hover:bg-surface-container-high transition-colors duration-200 group" href="#" onclick="event.preventDefault(); document.getElementById('vaultSearch').focus(); window.scrollTo({top:0, behavior:'smooth'});">
+      <span class="material-symbols-outlined group-hover:text-primary transition-colors">search</span>
+      <span class="font-label-lg text-label-lg">검색</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- ═══ 메인 컨텐츠 ═══ -->
+<main class="lg:ml-80 min-h-screen relative pb-32 lg:pb-0">
+
+  <!-- ═══ 모바일 TopAppBar (Stitch 스타일: 알림 + 프로필) ═══ -->
+  <header class="lg:hidden bg-background/90 backdrop-blur-md text-primary sticky top-0 shadow-sm flex justify-between items-center px-container-margin py-stack-md w-full z-50 transition-all duration-300 ease-in-out">
+    <div class="flex items-center gap-4">
+      <h1 class="font-headline-md text-[18px] leading-6 font-bold tracking-normal text-primary whitespace-nowrap">BOARD GAME ROOM</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-on-surface-variant hover:opacity-80 cursor-pointer" title="알림">notifications</span>
+      <button id="mobileProfileButton" type="button" class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-container border border-primary/30 flex items-center justify-center text-on-primary font-bold text-sm shrink-0 hover:scale-105 transition-transform cursor-pointer" aria-label="마이 프로필">게</button>
+    </div>
+  </header>
+
+  <!-- (모바일 드로어는 첨부 디자인 기준 미사용) -->
+
+  <!-- ═══ 데스크탑 상단 앱 바 ═══ -->
+  <header class="hidden lg:flex sticky top-0 bg-background/90 backdrop-blur-md z-40 items-center justify-between px-gutter py-4 border-b border-outline-variant/20">
+    <div class="flex items-center gap-4 flex-1">
+      <div class="relative max-w-md w-full">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+        <input id="vaultSearch" class="w-full bg-surface-container border border-outline-variant/50 rounded-full py-2 pl-10 pr-4 focus:border-primary focus:ring-1 focus:ring-primary/30 text-on-surface transition-all placeholder:text-on-surface-variant/50" placeholder="볼트에서 검색..." type="text">
+      </div>
+    </div>
+    <div class="flex items-center gap-6">
+      <button class="relative hover:text-primary transition-colors active:opacity-80 text-on-surface" title="알림">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
+      </button>
+      <button id="desktopProfileButton" type="button" class="flex items-center gap-3 pl-4 border-l border-outline-variant/30 hover:opacity-90 transition-opacity cursor-pointer group">
+        <div class="text-right hidden xl:block">
+          <p id="desktopProfileName" class="font-label-lg text-on-surface truncate max-w-[160px]">게스트</p>
+          <p class="text-[10px] text-primary uppercase tracking-widest font-bold">마이 프로필</p>
         </div>
-      </section>
-    </main>
-  </body>
+        <div id="desktopProfileAvatar" class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-container border border-primary/30 flex items-center justify-center text-on-primary font-bold text-sm shrink-0 group-hover:scale-105 transition-transform">
+          게
+        </div>
+      </button>
+    </div>
+  </header>
+
+  <!-- 컨텐츠 캔버스 -->
+  <div class="px-container-margin lg:px-gutter pb-12 anim-fade">
+
+    <!-- ═══ 히어로 ═══ -->
+    <section class="py-6 lg:py-10">
+      <!-- 모바일: Stitch 스타일 (Your Library 라벨 + My Collection) -->
+      <div class="lg:hidden mb-stack-md flex justify-between items-end">
+        <div>
+          <p class="text-primary font-label-lg text-label-lg uppercase tracking-widest mb-1">Your Library</p>
+          <h2 class="font-headline-md text-headline-md text-on-surface">My Collection</h2>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant cursor-pointer">tune</span>
+      </div>
+
+      <!-- 데스크탑: 큰 타이틀 + 설명 + 필터 -->
+      <div class="hidden lg:flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+        <div>
+          <h2 class="font-headline-xl text-headline-xl gold-text mb-2">My Collection</h2>
+          <p class="text-on-surface-variant max-w-lg opacity-80">Explore your curated premium board game library. Manage sessions and track your history.</p>
+        </div>
+      </div>
+
+      <!-- 모바일: 터치하기 쉬운 가로 스크롤 필터 -->
+      <div class="lg:hidden flex overflow-x-auto hide-scrollbar gap-stack-sm mb-stack-md -mx-container-margin px-container-margin">
+        <button type="button" data-filter="all" aria-pressed="true" class="filter-chip inline-flex min-h-11 items-center justify-center bg-primary text-on-primary font-label-lg text-label-lg px-5 py-2.5 rounded-full whitespace-nowrap active-pill transition-transform active:scale-95 shrink-0">All</button>
+        <button type="button" data-filter="strategy" aria-pressed="false" class="filter-chip inline-flex min-h-11 items-center justify-center bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-5 py-2.5 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Strategy</button>
+        <button type="button" data-filter="party" aria-pressed="false" class="filter-chip inline-flex min-h-11 items-center justify-center bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-5 py-2.5 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Party</button>
+        <button type="button" data-filter="family" aria-pressed="false" class="filter-chip inline-flex min-h-11 items-center justify-center bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-5 py-2.5 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Family</button>
+      </div>
+
+      <!-- 데스크탑: flex-wrap 필터 -->
+      <div class="hidden lg:flex flex-wrap gap-2 mb-8" id="filterChipsDesktop">
+        <button type="button" data-filter="all" aria-pressed="true" class="filter-chip px-5 py-2 rounded-full bg-primary text-on-primary font-label-lg hover:scale-105 active:scale-95 transition-all">All Games</button>
+        <button type="button" data-filter="strategy" aria-pressed="false" class="filter-chip px-5 py-2 rounded-full bg-surface-container-high border border-outline-variant/30 text-on-surface font-label-lg hover:border-primary/50 transition-all">Strategy</button>
+        <button type="button" data-filter="party" aria-pressed="false" class="filter-chip px-5 py-2 rounded-full bg-surface-container-high border border-outline-variant/30 text-on-surface font-label-lg hover:border-primary/50 transition-all">Party</button>
+        <button type="button" data-filter="family" aria-pressed="false" class="filter-chip px-5 py-2 rounded-full bg-surface-container-high border border-outline-variant/30 text-on-surface font-label-lg hover:border-primary/50 transition-all">Family</button>
+      </div>
+
+      <!-- 게임 카드 그리드 -->
+      <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-gutter lg:gap-stack-lg" id="gameGrid">
+        <!-- 카드는 JS로 렌더링 -->
+      </div>
+    </section>
+
+    <!-- ═══ Session History (데스크탑 전용, 모바일 미사용) ═══ -->
+    <section class="py-6 hidden lg:block">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="font-headline-lg text-headline-lg text-on-surface">Session History</h3>
+        <a href="#" class="font-label-lg text-primary hover:underline flex items-center gap-1">
+          View All Logs
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
+      </div>
+
+      <div class="bg-surface-container-low border border-outline-variant/30 rounded-xl overflow-hidden divide-y divide-outline-variant/20" id="sessionList">
+        <!-- JS로 렌더링 -->
+      </div>
+    </section>
+
+    <!-- ═══ 통계 패널 ═══ -->
+    <section class="py-6 grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+      <div class="bg-surface-container-low border border-outline-variant/30 rounded-xl p-card-padding">
+        <div class="flex items-center justify-between mb-3">
+          <span class="material-symbols-outlined text-primary">emoji_events</span>
+          <span class="text-[10px] text-on-surface-variant uppercase tracking-widest">승률</span>
+        </div>
+        <div class="font-headline-lg text-headline-lg text-on-surface">72%</div>
+        <div class="text-[11px] text-on-surface-variant mt-1">지난 30일</div>
+      </div>
+      <div class="bg-surface-container-low border border-outline-variant/30 rounded-xl p-card-padding">
+        <div class="flex items-center justify-between mb-3">
+          <span class="material-symbols-outlined text-secondary">timer</span>
+          <span class="text-[10px] text-on-surface-variant uppercase tracking-widest">플레이 시간</span>
+        </div>
+        <div class="font-headline-lg text-headline-lg text-on-surface">14h 32m</div>
+        <div class="text-[11px] text-on-surface-variant mt-1">이번 주 +2h 15m</div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- (모바일 FAB는 첨부 디자인 기준 컬렉션 추가 기능이 없어 제거됨) -->
+
+<!-- ═══ 닉네임 프로필 모달 (입력/변경 통합) ═══ -->
+<div id="profileModal" class="fixed inset-0 z-[80] hidden items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-sm" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+  <div class="w-full max-w-md bg-surface-container-highest border border-outline-variant/40 rounded-2xl shadow-2xl overflow-hidden anim-fade">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
+      <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary">badge</span>
+        <h3 id="profileModalTitle" class="font-headline-md text-headline-md text-on-surface">닉네임 설정</h3>
+      </div>
+      <button id="profileModalCloseButton" type="button" class="material-symbols-outlined text-on-surface-variant hover:text-on-surface" aria-label="닫기">close</button>
+    </div>
+
+    <div class="px-6 py-5">
+      <p id="profileModalIntro" class="text-on-surface-variant text-sm mb-4 leading-relaxed">
+        게임에서 사용할 닉네임을 정해주세요. 다른 플레이어에게 보이는 이름입니다.
+      </p>
+
+      <label for="profileModalInput" class="block text-label-lg text-on-surface-variant mb-2">닉네임</label>
+      <input id="profileModalInput" type="text" maxlength="12" minlength="2" placeholder="2글자 이상"
+        class="w-full bg-surface-container border border-outline-variant/50 rounded-lg px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+        autocomplete="nickname">
+
+      <p id="profileModalHint" class="text-[12px] text-on-surface-variant/70 mt-2">
+        2~12자 · '나'는 사용할 수 없음 · 변경 후 24시간 동안 재변경 불가
+      </p>
+      <p id="profileModalCooldown" class="hidden text-[12px] text-primary mt-1 font-semibold"></p>
+      <p id="profileModalError" class="text-[12px] text-error mt-2 min-h-[1.25rem]" role="alert" aria-live="polite"></p>
+
+      <label class="flex items-start gap-2 mt-4 cursor-pointer select-none">
+        <input id="profileModalRankingConfirm" type="checkbox" class="mt-1 accent-primary hidden">
+        <span id="profileModalRankingWarning" class="text-[12px] text-error leading-snug">
+          ⚠️ 닉네임을 변경하면 랭킹과 플레이 기록이 초기화됩니다.
+        </span>
+      </label>
+    </div>
+
+    <div class="px-6 py-4 flex justify-end gap-2 border-t border-outline-variant/30 bg-surface-container/40">
+      <button id="profileModalCancelButton" type="button" class="secondary-button">취소</button>
+      <button id="profileModalSaveButton" type="button" class="primary-button">저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="index.js"></script>
+</body>
 </html>

@@ -7,126 +7,121 @@
   // 20=Free Parking, 21-29=bottom row (right→left), 30=GoToJail, 31-39=left col (bottom→top)
   const TILES = [
     { id: 0,  name: "출발",           type: "corner",   corner: "go" },
-    { id: 1,  name: "타이베이",       type: "property", color: "#8B4513", price: 60,  rent: [2, 10, 30, 90, 160, 250] },
-    { id: 2,  name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 3,  name: "베이징",         type: "property", color: "#8B4513", price: 60,  rent: [4, 20, 60, 180, 320, 450] },
-    { id: 4,  name: "여행세",         type: "event",    event: "tax", amount: 200 },
-    { id: 5,  name: "김포공항",       type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 6,  name: "홍콩",           type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 90, 270, 400, 550] },
+    { id: 1,  name: "타이베이",       type: "property", color: "#FFD700", group: 1, price: 50,  rent: [2, 10, 30, 90, 250], buildCosts: [50, 50, 150, 250] },
+    { id: 2,  name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 3,  name: "홍콩",           type: "property", color: "#FFD700", group: 1, price: 80,  rent: [4, 20, 60, 180, 450], buildCosts: [50, 50, 150, 250] },
+    { id: 4,  name: "마닐라",         type: "property", color: "#FFD700", group: 1, price: 80,  rent: [4, 20, 60, 180, 450], buildCosts: [50, 50, 150, 250] },
+    { id: 5,  name: "제주도",         type: "property", color: "", price: 200, rent: [300], fixedRent: true },
+    { id: 6,  name: "싱가포르",       type: "property", color: "#FFD700", group: 2, price: 100, rent: [6, 30, 90, 270, 550], buildCosts: [50, 50, 150, 250] },
     { id: 7,  name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 8,  name: "마닐라",         type: "property", color: "#ADD8E6", price: 100, rent: [6, 30, 90, 270, 400, 550] },
-    { id: 9,  name: "싱가포르",       type: "property", color: "#ADD8E6", price: 120, rent: [8, 40, 100, 300, 450, 600] },
+    { id: 8,  name: "카이로",         type: "property", color: "#FFD700", group: 2, price: 120, rent: [8, 40, 100, 300, 600], buildCosts: [50, 50, 150, 250] },
+    { id: 9,  name: "이스탄불",       type: "property", color: "#FFD700", group: 2, price: 140, rent: [10, 50, 150, 450, 750], buildCosts: [50, 50, 150, 250] },
     { id: 10, name: "무인도",         type: "corner",   corner: "jail" },
-    { id: 11, name: "카이로",         type: "property", color: "#FF69B4", price: 140, rent: [10, 50, 150, 450, 625, 750] },
-    { id: 12, name: "세계여행권",     type: "property", color: "#808080", price: 150, rent: [4, 10] },
-    { id: 13, name: "이스탄불",       type: "property", color: "#FF69B4", price: 140, rent: [10, 50, 150, 450, 625, 750] },
-    { id: 14, name: "아테네",         type: "property", color: "#FF69B4", price: 160, rent: [12, 60, 180, 500, 700, 900] },
-    { id: 15, name: "두바이공항",     type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 16, name: "로마",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
-    { id: 17, name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 18, name: "파리",           type: "property", color: "#FFA500", price: 180, rent: [14, 70, 200, 550, 750, 950] },
-    { id: 19, name: "런던",           type: "property", color: "#FFA500", price: 200, rent: [16, 80, 220, 600, 800, 1000] },
-    { id: 20, name: "사회복지기금 납부", type: "corner",   corner: "fund" },
-    { id: 21, name: "뉴욕",           type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
+    { id: 11, name: "아테네",         type: "property", color: "#29B6F6", group: 3, price: 140, rent: [10, 50, 150, 450, 750], buildCosts: [100, 100, 300, 500] },
+    { id: 12, name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 13, name: "코펜하겐",       type: "property", color: "#29B6F6", group: 3, price: 160, rent: [12, 60, 180, 500, 900], buildCosts: [100, 100, 300, 500] },
+    { id: 14, name: "스톡홀름",       type: "property", color: "#29B6F6", group: 3, price: 160, rent: [12, 60, 180, 500, 900], buildCosts: [100, 100, 300, 500] },
+    { id: 15, name: "콩코드 여객기",   type: "property", color: "", price: 200, rent: [300], fixedRent: true },
+    { id: 16, name: "취리히",         type: "property", color: "#29B6F6", group: 4, price: 180, rent: [14, 70, 200, 550, 950], buildCosts: [100, 100, 300, 500] },
+    { id: 17, name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 18, name: "베를린",         type: "property", color: "#29B6F6", group: 4, price: 180, rent: [14, 70, 200, 550, 950], buildCosts: [100, 100, 300, 500] },
+    { id: 19, name: "몬트리올",       type: "property", color: "#29B6F6", group: 4, price: 200, rent: [16, 80, 220, 600, 1000], buildCosts: [100, 100, 300, 500] },
+    { id: 20, name: "사회복지기금 수령", type: "corner",   corner: "fund" },
+    { id: 21, name: "부에노스아이레스", type: "property", color: "#0D47A1", group: 5, price: 220, rent: [18, 90, 250, 700, 1050], buildCosts: [150, 150, 450, 750] },
     { id: 22, name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 23, name: "워싱턴",         type: "property", color: "#FF0000", price: 220, rent: [18, 90, 250, 700, 875, 1050] },
-    { id: 24, name: "토론토",         type: "property", color: "#FF0000", price: 240, rent: [20, 100, 300, 750, 925, 1100] },
-    { id: 25, name: "JFK공항",        type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 26, name: "리우",           type: "property", color: "#FFD700", price: 260, rent: [22, 110, 330, 800, 975, 1150] },
-    { id: 27, name: "부에노스",       type: "property", color: "#FFD700", price: 260, rent: [22, 110, 330, 800, 975, 1150] },
-    { id: 28, name: "항공패스",       type: "property", color: "#808080", price: 150, rent: [4, 10] },
-    { id: 29, name: "멕시코시티",     type: "property", color: "#FFD700", price: 280, rent: [24, 120, 360, 850, 1025, 1200] },
+    { id: 23, name: "상파울루",       type: "property", color: "#0D47A1", group: 5, price: 220, rent: [18, 90, 250, 700, 1050], buildCosts: [150, 150, 450, 750] },
+    { id: 24, name: "시드니",         type: "property", color: "#0D47A1", group: 5, price: 240, rent: [20, 100, 300, 750, 1100], buildCosts: [150, 150, 450, 750] },
+    { id: 25, name: "부산",           type: "property", color: "", price: 500, rent: [600], fixedRent: true },
+    { id: 26, name: "하와이",         type: "property", color: "#0D47A1", group: 6, price: 260, rent: [22, 110, 330, 800, 1150], buildCosts: [150, 150, 450, 750] },
+    { id: 27, name: "리스본",         type: "property", color: "#0D47A1", group: 6, price: 260, rent: [22, 110, 330, 800, 1150], buildCosts: [150, 150, 450, 750] },
+    { id: 28, name: "퀸 엘리자베스호", type: "property", color: "", price: 300, rent: [250], fixedRent: true },
+    { id: 29, name: "마드리드",       type: "property", color: "#0D47A1", group: 6, price: 280, rent: [24, 120, 360, 850, 1200], buildCosts: [150, 150, 450, 750] },
     { id: 30, name: "우주여행",       type: "corner",   corner: "parking" },
-    { id: 31, name: "시드니",         type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
-    { id: 32, name: "오클랜드",       type: "property", color: "#008000", price: 300, rent: [26, 130, 390, 900, 1100, 1275] },
-    { id: 33, name: "황금열쇠",       type: "event",    event: "chance" },
-    { id: 34, name: "하와이",         type: "property", color: "#008000", price: 320, rent: [28, 150, 450, 1000, 1200, 1400] },
-    { id: 35, name: "나리타공항",     type: "property", color: "#4682B4", price: 200, rent: [25, 50, 100, 200] },
-    { id: 36, name: "사회복지기금",   type: "event",    event: "fund" },
-    { id: 37, name: "제주",           type: "property", color: "#4B0082", price: 350, rent: [35, 175, 500, 1100, 1300, 1500] },
-    { id: 38, name: "특별여행세",     type: "event",    event: "tax", amount: 100 },
-    { id: 39, name: "서울",           type: "property", color: "#4B0082", price: 400, rent: [50, 200, 600, 1400, 1700, 2000] }
+    { id: 31, name: "도쿄",           type: "property", color: "#E53935", group: 7, price: 300, rent: [26, 130, 390, 900, 1270], buildCosts: [200, 200, 600, 900] },
+    { id: 32, name: "콜롬비아 우주선", type: "property", color: "", price: 450, rent: [400], fixedRent: true },
+    { id: 33, name: "파리",           type: "property", color: "#E53935", group: 7, price: 320, rent: [28, 150, 450, 1000, 1400], buildCosts: [200, 200, 600, 900] },
+    { id: 34, name: "로마",           type: "property", color: "#E53935", group: 7, price: 320, rent: [28, 150, 450, 1000, 1400], buildCosts: [200, 200, 600, 900] },
+    { id: 35, name: "황금열쇠",       type: "event",    event: "chance" },
+    { id: 36, name: "런던",           type: "property", color: "#E53935", group: 8, price: 350, rent: [35, 175, 500, 1100, 1500], buildCosts: [200, 200, 600, 900] },
+    { id: 37, name: "뉴욕",           type: "property", color: "#E53935", group: 8, price: 350, rent: [35, 175, 500, 1100, 1500], buildCosts: [200, 200, 600, 900] },
+    { id: 38, name: "사회복지기금",   type: "event",    event: "fund" },
+    { id: 39, name: "서울",           type: "property", color: "", price: 1000, rent: [2000], fixedRent: true }
   ];
 
   const COLOR_GROUPS = {};
-  TILES.filter(t => t.type === "property" && t.color !== "#808080" && t.color !== "#4682B4").forEach(t => {
-    if (!COLOR_GROUPS[t.color]) COLOR_GROUPS[t.color] = [];
-    COLOR_GROUPS[t.color].push(t.id);
+  TILES.forEach(t => {
+    if (t.type === "property" && !t.fixedRent && t.group) {
+      if (!COLOR_GROUPS[t.group]) COLOR_GROUPS[t.group] = [];
+      COLOR_GROUPS[t.group].push(t.id);
+    }
   });
-  // Railroad group
-  const RAILROAD_IDS = [5, 15, 25, 35];
-  // Utility group
-  const UTILITY_IDS = [12, 28];
 
   const CHANCE_CARDS = [
     { text: "출발 지점으로 이동하세요.", action: "moveTo", target: 0, collect: true },
     { text: "무인도로 가세요. 출발 지점을 지나도 받지 못합니다.", action: "goToJail" },
     { text: "타이베이로 이동하세요.", action: "moveTo", target: 1 },
-    { text: "로마로 이동하세요.", action: "moveTo", target: 16 },
-    { text: "제주로 이동하세요.", action: "moveTo", target: 37 },
+    { text: "로마로 이동하세요.", action: "moveTo", target: 34 },
+    { text: "제주로 이동하세요.", action: "moveTo", target: 5 },
     { text: "모든 플레이어에게 50원을 지불하세요.", action: "payAll", amount: 50 },
     { text: "은행에서 150원을 받습니다.", action: "collect", amount: 150 },
     { text: "은행에서 100원을 받습니다.", action: "collect", amount: 100 },
     { text: "건설비용: 각 건물당 25원, 호텔당 100원을 지불하세요.", action: "buildingCost", house: 25, hotel: 100 },
-    { text: "한 바퀴 돌아 출발에서 200원을 받으세요.", action: "moveTo", target: 0, collect: true }
+    { text: "한 바퀴 돌아 출발에서 200원을 받으세요.", action: "moveTo", target: 0, collect: true },
+    { text: "우주선에 탑승하세요. 우주여행 정류소로 이동합니다.", action: "moveTo", target: 30 },
+    { text: "우대권: 통행료를 1회 면제받을 수 있습니다. (인벤토리에 보관)", action: "keepExemption" },
+    { text: "무인도 탈출권: 무인도에서 무료로 즉시 탈옥할 수 있습니다. (인벤토리에 보관)", action: "keepJailEscape" }
   ];
 
-  const FUND_CARDS = [
-    { text: "은행에서 200원을 받습니다.", action: "collect", amount: 200 },
-    { text: "은행에서 50원을 받습니다.", action: "collect", amount: 50 },
-    { text: "병원비로 100원을 지불하세요.", action: "pay", amount: 100 },
-    { text: "보험료로 50원을 지불하세요.", action: "pay", amount: 50 },
-    { text: "학교 기부금으로 150원을 지불하세요.", action: "pay", amount: 150 },
-    { text: "컨설팅 수입으로 25원을 받습니다.", action: "collect", amount: 25 },
-    { text: "축하합니다! 생일 선물로 각 플레이어에게서 10원씩 받습니다.", action: "collectAll", amount: 10 },
-    { text: "은행에서 100원을 받습니다.", action: "collect", amount: 100 },
-    { text: "미화금으로 50원을 지불하세요.", action: "pay", amount: 50 },
-    { text: "출발 지점으로 이동하세요.", action: "moveTo", target: 0, collect: true }
-  ];
+  const FUND_CARDS = [];
 
   const SCALE_FACTOR = 10000;
-  const START_MONEY = 1500 * SCALE_FACTOR;
+  const START_MONEY = 2930 * SCALE_FACTOR;
   const GO_SALARY = 200 * SCALE_FACTOR;
   const JAIL_FINE = 50 * SCALE_FACTOR;
   const JAIL_TURNS = 3;
-  const SOCIAL_FUND_FEE = 50 * SCALE_FACTOR;
+  const SOCIAL_FUND_FEE = 150 * SCALE_FACTOR;
+  const SPACE_TRAVEL_FEE = 200 * SCALE_FACTOR;
   const DEFAULT_UTILITY_DICE_TOTAL = 7;
-  const MAX_BUILDING_LEVEL = 5;
+  const MAX_BUILDING_LEVEL = 4;
   const AI_THINK_DELAY = 1200;
   const DICE_ROLL_DURATION = 600;
   const DICE_FRAME_MS = 60;
 
   const SCENIC_BG_MAPPING = {
-    "JFK공항": "jfk_airport.jpg",
-    "김포공항": "gimpo_airport.jpg",
-    "나리타공항": "narita_airport.jpg",
-    "두바이공항": "dubai_airport.jpg",
-    "뉴욕": "newyork.jpg",
-    "베이징": "beijing.jpg",
-    "워싱턴": "washington.jpg",
     "타이베이": "taipei.jpg",
-    "토론토": "toronto.jpg",
-    "런던": "london.jpg",
-    "로마": "rome.jpg",
-    "리우": "rio.jpg",
+    "홍콩": "hongkong.jpg",
     "마닐라": "manila.jpg",
-    "멕시코시티": "mexicocity.jpg",
-    "부에노스": "buenos_aires.jpg",
-    "서울": "seoul.jpg",
-    "시드니": "sydney.jpg",
+    "제주도": "jeju.jpg",
     "싱가포르": "singapore.jpg",
-    "아테네": "athens.jpg",
-    "오클랜드": "auckland.jpg",
-    "이스탄불": "istanbul.jpg",
-    "제주": "jeju.jpg",
     "카이로": "cairo.jpg",
-    "파리": "paris.jpg",
+    "이스탄불": "istanbul.jpg",
+    "아테네": "athens.jpg",
+    "코펜하겐": "copenhagen.jpg",
+    "스톡홀름": "stockholm.jpg",
+    "콩코드 여객기": "concord.jpg",
+    "취리히": "zurich.jpg",
+    "베를린": "berlin.jpg",
+    "몬트리올": "montreal.jpg",
+    "부에노스아이레스": "buenos_aires.jpg",
+    "상파울루": "saopaulo.jpg",
+    "시드니": "sydney.jpg",
+    "부산": "busan.jpg",
     "하와이": "hawaii.jpg",
-    "홍콩": "hongkong.jpg"
+    "리스본": "lisbon.jpg",
+    "퀸 엘리자베스호": "queen_elizabeth.jpg",
+    "마드리드": "madrid.jpg",
+    "도쿄": "tokyo.jpg",
+    "파리": "paris.jpg",
+    "로마": "rome.jpg",
+    "콜롬비아 우주선": "jfk_airport.jpg",
+    "런던": "london.jpg",
+    "뉴욕": "newyork.jpg",
+    "서울": "seoul.jpg"
   };
 
   function preloadScenicImages() {
-    Object.values(SCENIC_BG_MAPPING).forEach(filename => {
+    const list = [...Object.values(SCENIC_BG_MAPPING), "go.jpg", "jail.jpg", "fund.jpg", "space.jpg"];
+    list.forEach(filename => {
       const img = new Image();
       img.src = `assets/monopoly/${filename}`;
     });
@@ -137,6 +132,7 @@
     if (t.price) t.price *= SCALE_FACTOR;
     if (t.rent) t.rent = t.rent.map(r => r * SCALE_FACTOR);
     if (t.amount) t.amount *= SCALE_FACTOR;
+    if (t.buildCosts) t.buildCosts = t.buildCosts.map(c => c * SCALE_FACTOR);
   });
 
   CHANCE_CARDS.forEach(card => {
@@ -158,7 +154,6 @@
     gamePanel:        $("#monopolyGamePanel"),
     startButton:      $("#startMonopolyButton"),
     playerCount:      $("#monopolyPlayerCountSelect"),
-    nameInput:        $("#monopolyNameInput"),
     backButton:       $("#monopolyBackButton"),
     newGameButton:    $("#monopolyNewGameButton"),
     exitButton:       $("#monopolyExitGameButton"),
@@ -172,12 +167,9 @@
     piecesContainer:  $("#monopolyPieces"),
     diceDisplay:      $("#monopolyDiceDisplay"),
     rollButton:       $("#monopolyRollButton"),
-    endTurnButton:    $("#monopolyEndTurnButton"),
-    manageButton:     $("#monopolyManageButton"),
+    endTurnButton:    null,
     propertyInfo:     $("#monopolyPropertyInfo"),
     log:              $("#monopolyLog"),
-    manageDialog:     $("#monopolyManageDialog"),
-    manageList:       $("#monopolyManageList"),
     jailDialog:       $("#monopolyJailDialog"),
     jailTurnsLabel:   $("#monopolyJailTurnsLeft"),
     jailFineLabel:    $("#monopolyJailFineText"),
@@ -316,15 +308,45 @@
       div.style.width = `${pos.w}%`;
       div.style.height = `${pos.h}%`;
 
-      let html = "";
-      if (tile.type === "property") {
-        html += `<div class="tile-color-bar" style="background:${tile.color}"></div>`;
-        if (owner) {
-          div.style.borderColor = owner.tokenColor;
-          div.style.boxShadow = `inset 0 0 10px ${owner.tokenColor}44`;
+      if (tile.type === "corner") {
+        const cornerBgs = {
+          0: "go.jpg",
+          10: "jail.jpg",
+          20: "fund.jpg",
+          30: "space.jpg"
+        };
+        const bg = cornerBgs[i];
+        if (bg) {
+          div.style.backgroundImage = `url('assets/monopoly/${bg}')`;
+          div.style.backgroundSize = "cover";
+          div.style.backgroundPosition = "center";
+          div.style.backgroundRepeat = "no-repeat";
         }
       }
-      html += `<span class="tile-name">${escapeHtml(tile.name)}</span>`;
+
+      let html = "";
+      if (tile.type === "property") {
+        if (tile.color) {
+          html += `<div class="tile-color-bar" style="background:${tile.color}"></div>`;
+        }
+        if (owner) {
+          div.style.backgroundColor = `${owner.tokenColor}4D`; // 30% opacity tint
+          div.style.boxShadow = `inset 0 0 12px ${owner.tokenColor}4D`;
+          
+          if (isBuildableProperty(tile)) {
+            const level = buildingLevel(owner, i);
+            if (level > 0) {
+              // Visual building indicator: stacked icons
+              const icons = ["🏠", "🏠🏠", "🏢", "🏨"];
+              const labels = ["별장", "별장×2", "빌딩", "호텔"];
+              html += `<span class="tile-building-badge" title="${labels[level - 1]}">${icons[level - 1]}</span>`;
+            }
+          }
+        }
+      }
+      if (tile.type !== "corner") {
+        html += `<span class="tile-name">${escapeHtml(tile.name)}</span>`;
+      }
       if (tile.price) {
         html += `<span class="tile-price">₩${tile.price.toLocaleString()}</span>`;
       }
@@ -332,11 +354,19 @@
       if (tile.type !== "property") {
         div.title = tile.name;
       }
-      div.addEventListener("mouseenter", () => showHoverCard(i));
-      div.addEventListener("mouseleave", hideHoverCard);
+      div.addEventListener("mouseenter", () => handleHoverEnter(i));
+      div.addEventListener("mouseleave", handleHoverLeave);
       div.addEventListener("click", () => {
         if (state.phase === "spaceTravel" && activePlayer().human) {
           executeSpaceTravel(activePlayer(), i);
+          return;
+        }
+        
+        if (tile.type === "property" && state.phase !== "diceRolling" && state.phase !== "idle" && state.phase !== "finished") {
+          const human = state.players.find(p => p.human);
+          if (human && !human.bankrupt) {
+            showPropertyPopup(human, tile);
+          }
         }
       });
       els.board.appendChild(div);
@@ -401,7 +431,7 @@
           <strong>${escapeHtml(p.name)}</strong>
           <small>${escapeHtml(tileAt(p.position).name)} · 자산 ${p.properties.length}개${p.inJail ? " · 🚔 구금" : ""}</small>
         </span>
-        <b class="monopoly-player-money">₩${p.money.toLocaleString()}</b>
+        <b class="monopoly-player-money${p.bankrupt ? " bankrupt-money" : ""}">${p.bankrupt ? "💀 파산" : "₩" + p.money.toLocaleString()}</b>
       `;
       els.playersList.appendChild(card);
     });
@@ -484,26 +514,56 @@
     const targetPlayer = state.players[state.selectedAssetPlayerIndex];
     grid.innerHTML = "";
 
-    if (targetPlayer.properties.length === 0) {
+    const hasItems = (targetPlayer.exemptionCards || 0) > 0 || (targetPlayer.jailEscapeCards || 0) > 0;
+    if (targetPlayer.properties.length === 0 && !hasItems) {
       const displayLabel = targetPlayer.human ? "내가" : `${targetPlayer.name}이(가)`;
-      grid.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); opacity: 0.7;">아직 ${displayLabel} 보유한 부동산이 없습니다.</span>`;
+      grid.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); opacity: 0.7;">아직 ${displayLabel} 보유한 자산이 없습니다.</span>`;
       return;
+    }
+
+    // Render Items at the top of the assets grid
+    if ((targetPlayer.exemptionCards || 0) > 0) {
+      for (let c = 0; c < targetPlayer.exemptionCards; c++) {
+        const cardDiv = document.createElement("div");
+        cardDiv.className = "monopoly-asset-card item-card exemption-item";
+        cardDiv.innerHTML = `
+          <div class="asset-card-color-bar" style="background-color: #ffd700"></div>
+          <div class="asset-card-content">
+            <div class="asset-card-name">🎫 우대권</div>
+            <div class="asset-card-rent" style="font-size:11px;">상대 통행료 1회 무료 면제</div>
+            <div class="asset-card-group-status" style="color:#f39c12; font-weight:800;">보유 중</div>
+          </div>
+        `;
+        grid.appendChild(cardDiv);
+      }
+    }
+
+    if ((targetPlayer.jailEscapeCards || 0) > 0) {
+      for (let c = 0; c < targetPlayer.jailEscapeCards; c++) {
+        const cardDiv = document.createElement("div");
+        cardDiv.className = "monopoly-asset-card item-card escape-item";
+        cardDiv.innerHTML = `
+          <div class="asset-card-color-bar" style="background-color: #2ecc71"></div>
+          <div class="asset-card-content">
+            <div class="asset-card-name">🎫 무인도 탈출권</div>
+            <div class="asset-card-rent" style="font-size:11px;">무인도에서 즉시 무료 탈출</div>
+            <div class="asset-card-group-status" style="color:#27ae60; font-weight:800;">보유 중</div>
+          </div>
+        `;
+        grid.appendChild(cardDiv);
+      }
     }
 
     targetPlayer.properties.forEach(tileId => {
       const tile = tileAt(tileId);
-      const isMon = tile.color !== "#808080" && tile.color !== "#4682B4" && isMonopoly(targetPlayer, tile.color);
+      const isMon = !tile.fixedRent && tile.group && isMonopoly(targetPlayer, tile.group);
       
       let groupStatus = "";
-      if (tile.color === "#4682B4") {
-        const owned = RAILROAD_IDS.filter(id => targetPlayer.properties.includes(id)).length;
-        groupStatus = `철도 ${owned}/4`;
-      } else if (tile.color === "#808080") {
-        const owned = UTILITY_IDS.filter(id => targetPlayer.properties.includes(id)).length;
-        groupStatus = `관공서 ${owned}/2`;
+      if (tile.fixedRent) {
+        groupStatus = ["제주도", "부산", "서울"].includes(tile.name) ? "관광지" : "이동수단";
       } else {
-        const owned = getColorGroupOwned(targetPlayer, tile.color).length;
-        const total = (COLOR_GROUPS[tile.color] || []).length;
+        const owned = getColorGroupOwned(targetPlayer, tile.group).length;
+        const total = (COLOR_GROUPS[tile.group] || []).length;
         groupStatus = isMon ? "⭐ 독점" : `보유 ${owned}/${total}`;
       }
 
@@ -512,21 +572,40 @@
       
       const monClass = isMon ? " monopoly-owned" : "";
       
+      const isAirportOrScenic = tile.fixedRent;
+      const bLabel = isAirportOrScenic ? "" : ` (${buildingLabel(buildingLevel(targetPlayer, tileId))})`;
+
       cardDiv.innerHTML = `
         <div class="asset-card-color-bar" style="background-color: ${tile.color || '#ccc'}"></div>
         <div class="asset-card-content">
           <div class="asset-card-name">${escapeHtml(tile.name)}</div>
-          <div class="asset-card-rent">통행료: ₩${getRent(tile, targetPlayer.position).toLocaleString()}</div>
+          <div class="asset-card-rent">통행료: ₩${getRent(tile, targetPlayer.position).toLocaleString()}${bLabel}</div>
           <div class="asset-card-group-status${monClass}">${groupStatus}</div>
         </div>
       `;
+      
+      // Bind hover and click events
+      cardDiv.addEventListener("mouseenter", () => handleHoverEnter(tileId));
+      cardDiv.addEventListener("mouseleave", handleHoverLeave);
+      cardDiv.addEventListener("click", () => {
+        if (state.phase !== "diceRolling" && state.phase !== "idle" && state.phase !== "finished") {
+          const human = state.players.find(p => p.human);
+          if (human && !human.bankrupt) {
+            showPropertyPopup(human, tile);
+          }
+        }
+      });
+
       grid.appendChild(cardDiv);
     });
   }
 
   function showHoverCard(tileId) {
     const tile = tileAt(tileId);
-    if (!tile || tile.type === "corner" || tile.type === "event") return;
+    if (!tile) return;
+
+    const isSocialFund = tile.name.includes("사회복지기금");
+    if (tile.type !== "property" && !isSocialFund) return;
 
     const hoverCard = document.querySelector("#monopolyBoardHoverCard");
     if (!hoverCard) return;
@@ -538,38 +617,99 @@
     const ownerEl = hoverCard.querySelector("#hoverCardOwner");
     const ownerRow = hoverCard.querySelector("#hoverCardOwnerRow");
 
+    const priceRow = hoverCard.querySelector("#hoverCardPriceRow") || priceEl?.parentElement;
+    const rent0Row = hoverCard.querySelector("#hoverCardRent0Row") || rent0El?.parentElement;
+    const rentMonRow = hoverCard.querySelector("#hoverCardRentMonRow") || rentMonEl?.parentElement;
+
     // Reset styles
     hoverCard.style.background = "";
     hoverCard.classList.remove("has-bg-image");
-    if (header) {
-      header.textContent = tile.name;
-      header.style.backgroundColor = tile.color || "#808080";
-      header.style.display = "";
-    }
 
-    // Set custom backgrounds for scenic tiles
-    const bgImage = SCENIC_BG_MAPPING[tile.name];
-    if (bgImage) {
-      hoverCard.style.background = `url('assets/monopoly/${bgImage}') no-repeat center center / cover`;
-      hoverCard.classList.add("has-bg-image");
-      if (header) header.style.display = "none";
-    }
-
-    if (priceEl) priceEl.textContent = `₩${(tile.price || 0).toLocaleString()}`;
-    if (rent0El) rent0El.textContent = `₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}`;
-    
-    let rentMon = tile.rent ? (tile.rent[1] || tile.rent[0] * 2) : 0;
-    if (rentMonEl) rentMonEl.textContent = `₩${rentMon.toLocaleString()}`;
-    
-    const owner = getOwner(tileId);
-    if (owner) {
-      ownerEl.textContent = owner.human ? "나" : owner.name;
-      ownerEl.style.color = owner.tokenColor;
-      ownerRow.style.display = "flex";
+    if (isSocialFund) {
+      if (header) {
+        header.textContent = tile.name;
+        header.style.backgroundColor = "#27ae60";
+        header.style.display = "";
+      }
+      if (priceRow) {
+        priceRow.querySelector("strong").textContent = "현재 적립액";
+        if (priceEl) {
+          priceEl.textContent = `₩${state.socialFundPool.toLocaleString()}`;
+          priceEl.style.color = "#27ae60";
+          priceEl.style.fontWeight = "bold";
+        }
+      }
+      if (rent0Row) {
+        rent0Row.querySelector("strong").textContent = "도착 시 액션";
+        rent0El.textContent = tile.corner === "fund" ? "기금 전액 수령 💰" : `기금 ₩${SOCIAL_FUND_FEE.toLocaleString()} 기부 💸`;
+        rent0El.style.color = "";
+        rent0El.style.fontWeight = "";
+      }
+      if (rentMonRow) rentMonRow.style.display = "none";
+      if (ownerRow) ownerRow.style.display = "none";
     } else {
-      ownerEl.textContent = "없음";
-      ownerEl.style.color = "var(--text-muted)";
-      ownerRow.style.display = "flex";
+      if (header) {
+        header.textContent = tile.name;
+        header.style.backgroundColor = tile.color || "#808080";
+        header.style.display = "";
+      }
+
+      // Set custom backgrounds for scenic tiles
+      const bgImage = SCENIC_BG_MAPPING[tile.name];
+      if (bgImage) {
+        hoverCard.style.background = `url('assets/monopoly/${bgImage}') no-repeat center center / cover`;
+        hoverCard.classList.add("has-bg-image");
+        if (header) header.style.display = "none";
+      }
+
+      if (priceRow) {
+        priceRow.querySelector("strong").textContent = "구매가";
+        if (priceEl) {
+          priceEl.textContent = `₩${(tile.price || 0).toLocaleString()}`;
+          priceEl.style.color = "";
+          priceEl.style.fontWeight = "";
+        }
+      }
+      if (rent0Row) {
+        rent0Row.querySelector("strong").textContent = tile.fixedRent ? "통행료" : "기본 임대료";
+        if (rent0El) {
+          rent0El.textContent = `₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}`;
+        }
+      }
+      if (rentMonRow) {
+        rentMonRow.style.display = "flex";
+        const owner = getOwner(tileId);
+        if (tile.fixedRent) {
+          rentMonRow.querySelector("strong").textContent = "통행료";
+          if (rentMonEl) rentMonEl.textContent = `₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}`;
+        } else {
+          // Show building level visually
+          const level = owner ? buildingLevel(owner, tile.id) : 0;
+          const levelIcons = ["🏠", "🏠🏠", "🏢", "🏨"];
+          const levelNames = ["별장", "별장2", "빌딩", "호텔"];
+          rentMonRow.querySelector("strong").textContent = level > 0 ? `${levelIcons[level - 1]} ${levelNames[level - 1]} 임대료` : "호텔 임대료";
+          if (rentMonEl) {
+            const rentMon = tile.rent ? (tile.rent[level] || tile.rent[0] * 2) : 0;
+            rentMonEl.textContent = `₩${rentMon.toLocaleString()}`;
+          }
+        }
+      }
+
+      // Show monopoly status
+      const owner = getOwner(tileId);
+      if (owner) {
+        ownerEl.textContent = owner.human ? "나" : owner.name;
+        ownerEl.style.color = owner.tokenColor;
+        ownerRow.style.display = "flex";
+        // Add monopoly badge
+        if (!tile.fixedRent && isMonopoly(owner, tile.group)) {
+          ownerEl.textContent += " ⭐독점";
+        }
+      } else {
+        ownerEl.textContent = "없음";
+        ownerEl.style.color = "var(--text-muted)";
+        ownerRow.style.display = "flex";
+      }
     }
 
     hoverCard.classList.remove("hidden");
@@ -578,6 +718,22 @@
   function hideHoverCard() {
     const hoverCard = document.querySelector("#monopolyBoardHoverCard");
     hoverCard?.classList.add("hidden");
+  }
+  
+  let hoverTimer = 0;
+  function handleHoverEnter(tileId) {
+    if (hoverTimer) clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(() => {
+      showHoverCard(tileId);
+    }, 500);
+  }
+
+  function handleHoverLeave() {
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+      hoverTimer = 0;
+    }
+    hideHoverCard();
   }
 
   function renderAllPropertiesList() {
@@ -627,8 +783,8 @@
 
     listContainer.querySelectorAll(".property-list-item").forEach(item => {
       const idx = parseInt(item.getAttribute("data-tile-index"), 10);
-      item.addEventListener("mouseenter", () => showHoverCard(idx));
-      item.addEventListener("mouseleave", hideHoverCard);
+      item.addEventListener("mouseenter", () => handleHoverEnter(idx));
+      item.addEventListener("mouseleave", handleHoverLeave);
     });
   }
 
@@ -656,12 +812,8 @@
     if (els.rollButton) {
       els.rollButton.disabled = !humanTurn || state.phase !== "awaitRoll" || state.diceRolling;
     }
-    if (els.endTurnButton) {
-      els.endTurnButton.disabled = !humanTurn || (state.phase !== "buyDecision" && state.phase !== "rolled");
-    }
-    if (els.manageButton) {
-      els.manageButton.disabled = !humanTurn || !p?.properties.length;
-    }
+    // Auto end turn: when phase is buyDecision or rolled, auto-advance
+    // (Turn end button removed - turns auto-advance after actions)
   }
 
   function renderPropertyInfo(tileId) {
@@ -672,13 +824,34 @@
       return;
     }
     const owner = state.players.find(p => p.properties.includes(tileId));
-    const colorGroupCount = tile.color === "#808080" || tile.color === "#4682B4"
-      ? 0
-      : (COLOR_GROUPS[tile.color] || []).filter(id => state.players.some(p => p.properties.includes(id))).length;
-
-    let rentInfo = `기본 임대료: ₩${tile.rent[0].toLocaleString()}`;
-    if (tile.rent.length > 1) {
-      rentInfo += `<br>건축 단계: ${tile.rent.slice(1).map((r, i) => `Lv${i + 1}: ₩${r.toLocaleString()}`).join(", ")}`;
+    
+    let rentInfo = "";
+    if (tile.fixedRent) {
+      const baseText = owner
+        ? `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">₩${tile.rent[0].toLocaleString()}</span>`
+        : `₩${tile.rent[0].toLocaleString()}`;
+      rentInfo = `통행료: ${baseText}`;
+    } else {
+      const currentLevel = owner ? buildingLevel(owner, tileId) : -1;
+      
+      const isBaseCurrent = owner && currentLevel === 0;
+      const baseText = isBaseCurrent
+        ? `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">₩${tile.rent[0].toLocaleString()}</span>`
+        : `₩${tile.rent[0].toLocaleString()}`;
+      
+      rentInfo = `대지: ${baseText}`;
+      if (tile.rent.length > 1) {
+        const labels = ["별장", "빌딩", "호텔"];
+        rentInfo += `<br>건물: ` + tile.rent.slice(1).map((r, i) => {
+          const lv = i + 1;
+          const isCurrent = owner && currentLevel === lv;
+          const label = labels[i] || `Lv${lv}`;
+          if (isCurrent) {
+            return `<span style="background-color: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-weight: bold;">${label}: ₩${r.toLocaleString()}</span>`;
+          }
+          return `${label}: ₩${r.toLocaleString()}`;
+        }).join(", ");
+      }
     }
 
     els.propertyInfo.innerHTML = `
@@ -880,7 +1053,7 @@
   }
 
   function isBuildableProperty(tile) {
-    return tile?.type === "property" && tile.color !== "#808080" && tile.color !== "#4682B4";
+    return tile?.type === "property" && !tile.fixedRent;
   }
 
   function buildingLevel(player, tileId) {
@@ -888,16 +1061,21 @@
   }
 
   function buildingLabel(level) {
-    if (level >= MAX_BUILDING_LEVEL) return "호텔";
-    return level > 0 ? `건물 Lv${level}` : "건물 없음";
+    if (level === 4) return "호텔";
+    if (level === 3) return "빌딩";
+    if (level === 2) return "별장 2개";
+    if (level === 1) return "별장 1개";
+    return "대지";
   }
 
-  function getBuildCost(tile) {
-    return Math.max(50 * SCALE_FACTOR, Math.floor((tile?.price || 0) / 2));
+  function getBuildCost(tile, nextLevel) {
+    if (!tile.buildCosts) return 0;
+    return tile.buildCosts[nextLevel - 1] || 0;
   }
 
-  function getBuildingSellValue(tile) {
-    return Math.floor(getBuildCost(tile) / 2);
+  function getBuildingSellValue(tile, level) {
+    if (!tile.buildCosts || level <= 0) return 0;
+    return Math.floor((tile.buildCosts[level - 1] || 0) / 2);
   }
 
   function getPropertySellValue(tile) {
@@ -905,25 +1083,34 @@
   }
 
   function canBuildOn(player, tile) {
-    if (!isBuildableProperty(tile)) return "공항/관공서는 건설할 수 없습니다.";
+    if (!isBuildableProperty(tile)) return "제주도, 서울, 탈것 등은 건설할 수 없습니다.";
     if (!player.properties.includes(tile.id)) return "소유한 땅만 건설할 수 있습니다.";
-    if (!isMonopoly(player, tile.color)) return "같은 색상 그룹을 모두 소유해야 건설할 수 있습니다.";
+    if (player.position !== tile.id) return "해당 칸에 도착했을 때만 건설할 수 있습니다.";
+    if (state.purchasedThisTurn === tile.id) return "땅을 구입한 턴에는 건설할 수 없습니다. 다음번에 방문할 때부터 건설 가능합니다.";
 
     const level = buildingLevel(player, tile.id);
-    if (level >= MAX_BUILDING_LEVEL) return "이미 최대 단계입니다.";
+    if (level >= MAX_BUILDING_LEVEL) return "이미 최대 단계(호텔)입니다.";
 
-    const groupLevels = (COLOR_GROUPS[tile.color] || []).map(id => buildingLevel(player, id));
-    if (level > Math.min(...groupLevels)) return "같은 색상 그룹을 고르게 건설해야 합니다.";
-
-    const cost = getBuildCost(tile);
+    const cost = getBuildCost(tile, level + 1);
     if (player.money < cost) return "잔액이 부족합니다.";
     return "";
+  }
+
+  function getBuildingLiquidationValue(player, tileId) {
+    const tile = tileAt(tileId);
+    if (!tile.buildCosts) return 0;
+    const currentLevel = buildingLevel(player, tileId);
+    let sum = 0;
+    for (let lv = 1; lv <= currentLevel; lv++) {
+      sum += getBuildingSellValue(tile, lv);
+    }
+    return sum;
   }
 
   function getTotalLiquidationValue(player) {
     return player.properties.reduce((sum, id) => {
       const tile = tileAt(id);
-      return sum + getPropertySellValue(tile) + buildingLevel(player, id) * getBuildingSellValue(tile);
+      return sum + getPropertySellValue(tile) + getBuildingLiquidationValue(player, id);
     }, 0);
   }
 
@@ -936,24 +1123,18 @@
     const owner = getOwner(tile.id);
     if (!owner) return 0;
 
-    // Railroad
-    if (tile.color === "#4682B4") {
-      const owned = RAILROAD_IDS.filter(id => owner.properties.includes(id)).length;
-      return 25 * SCALE_FACTOR * Math.pow(2, owned - 1); // 25, 50, 100, 200 scaled
+    // Fixed rent properties (Jeju, Busan, Seoul, transportation)
+    if (tile.fixedRent) {
+      return tile.rent[0];
     }
-    // Utility
-    if (tile.color === "#808080") {
-      const owned = UTILITY_IDS.filter(id => owner.properties.includes(id)).length;
-      const roll = state.rentDiceTotal || DEFAULT_UTILITY_DICE_TOTAL;
-      return owned === 2 ? roll * 10 * SCALE_FACTOR : roll * 4 * SCALE_FACTOR;
-    }
-    // Regular property
+
+    // Regular buildable property
     const level = buildingLevel(owner, tile.id);
     if (level > 0) {
       return tile.rent[Math.min(level, tile.rent.length - 1)] || tile.rent[tile.rent.length - 1];
     }
     const baseRent = tile.rent[0];
-    if (isMonopoly(owner, tile.color)) {
+    if (isMonopoly(owner, tile.group)) {
       return baseRent * 2; // Monopoly doubles base rent
     }
     return baseRent;
@@ -1005,6 +1186,16 @@
 
   function payMoney(from, to, amount, options = {}) {
     const due = Math.max(0, amount || 0);
+    
+    // Direct Bankruptcy Transfer
+    if (to && !to.bankrupt && from.money + getTotalLiquidationValue(from) < due) {
+      goBankrupt(from, to);
+      const actual = from.money;
+      from.money = 0;
+      to.money += actual;
+      return actual;
+    }
+
     if (options.allowLiquidation !== false) {
       liquidateAssetsForPayment(from, due);
     }
@@ -1051,9 +1242,10 @@
   }
 
   /* ── Movement ── */
-  function awardGoSalary(player) {
+  async function awardGoSalary(player) {
     collectMoney(player, GO_SALARY);
     addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
+    await showNotice(`🏁 <strong>${playerDisplayName(player)}</strong>이(가)<br>출발지를 통과하여 월급 <strong>₩${GO_SALARY.toLocaleString()}</strong>을 받았습니다!`, 1500);
   }
 
   function passesGoForward(oldPos, target) {
@@ -1065,7 +1257,7 @@
     const newPos = (player.position + steps) % 40;
     // Pass GO
     if (newPos < oldPos && steps > 0) {
-      awardGoSalary(player);
+      await awardGoSalary(player);
     }
     // Animate step by step
     await animatePlayerMove(player, oldPos, newPos);
@@ -1074,8 +1266,9 @@
 
   async function teleportPlayer(player, target, passGo) {
     state.rentDiceTotal = 0;
-    if (passGo) {
-      awardGoSalary(player);
+    const oldPos = player.position;
+    if (passGo && (target < oldPos || target === 0)) {
+      await awardGoSalary(player);
     }
     await animateTeleport(player, target);
     player.position = target;
@@ -1159,7 +1352,7 @@
       if (priceEl) priceEl.textContent = `₩${(tile.price || 0).toLocaleString()}`;
       if (rent0El) rent0El.textContent = `₩${(tile.rent ? tile.rent[0] : 0).toLocaleString()}`;
       
-      const rentMon = tile.rent ? (tile.rent[1] || tile.rent[0] * 2) : 0;
+      const rentMon = tile.rent ? (tile.fixedRent ? tile.rent[0] : (tile.rent[3] || tile.rent[0] * 2)) : 0;
       if (rentMonEl) rentMonEl.textContent = `₩${rentMon.toLocaleString()}`;
 
       const owner = getOwner(tile.id);
@@ -1169,6 +1362,38 @@
       } else {
         ownerEl.textContent = "없음";
         ownerEl.style.color = "var(--text-muted)";
+      }
+
+      // Render buildings and monopoly status rows
+      const buildingsEl = dialog.querySelector("#monopolyPropertyBuildings");
+      const buildingsRow = dialog.querySelector("#monopolyPropertyBuildingsRow");
+      const monopolyEl = dialog.querySelector("#monopolyPropertyMonopoly");
+      const monopolyRow = dialog.querySelector("#monopolyPropertyMonopolyRow");
+
+      if (tile.fixedRent) {
+        if (buildingsRow) buildingsRow.style.display = "none";
+        if (monopolyRow) monopolyRow.style.display = "none";
+      } else {
+        if (buildingsRow) {
+          buildingsRow.style.display = "flex";
+          const level = owner ? buildingLevel(owner, tile.id) : 0;
+          if (buildingsEl) {
+            let label = "대지 (건물 없음)";
+            if (level === 1) label = "별장 (🏠)";
+            else if (level === 2) label = "빌딩 (🏢)";
+            else if (level === 3) label = "호텔 (🏨)";
+            buildingsEl.textContent = label;
+          }
+        }
+        if (monopolyRow) {
+          monopolyRow.style.display = "flex";
+          const isMon = owner ? isMonopoly(owner, tile.group) : false;
+          if (monopolyEl) {
+            monopolyEl.innerHTML = isMon
+              ? `<span style="color:#e74c3c; font-weight:bold;">⭐ 독점 (임대료 2배)</span>`
+              : "아니오";
+          }
+        }
       }
 
       footer.innerHTML = "";
@@ -1184,60 +1409,166 @@
         resolve();
       };
 
+      const isStandingOn = player.position === tile.id;
+
       if (owner && owner !== player) {
-        // Rent payment
-        const rent = getRent(tile, player.position);
-        const payBtn = document.createElement("button");
-        payBtn.className = "primary-button";
-        payBtn.type = "button";
-        payBtn.textContent = `임대료 지불 (₩${rent.toLocaleString()})`;
-        payBtn.addEventListener("click", () => {
-          const paid = payMoney(player, owner, rent);
-          addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid.toLocaleString()} 지불 (${tile.name})`);
-          if (player.money <= 0) {
-            goBankrupt(player, owner);
+        if (isStandingOn) {
+          // Rent payment
+          const rent = getRent(tile, player.position);
+          const payBtn = document.createElement("button");
+          payBtn.className = "primary-button";
+          payBtn.type = "button";
+          payBtn.textContent = `임대료 지불 (₩${rent.toLocaleString()})`;
+          payBtn.addEventListener("click", () => {
+            const paid = payMoney(player, owner, rent);
+            addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid.toLocaleString()} 지불 (${tile.name})`);
+            closeDialog();
+            showNotice(`💸 <strong>${playerDisplayName(player)}</strong>이(가)<br><strong>${playerDisplayName(owner)}</strong>에게<br>임대료 <strong>₩${paid.toLocaleString()}</strong>을 지불했습니다!`, 1800);
+            if (player.money <= 0) {
+              goBankrupt(player, owner);
+            }
+          });
+          footer.appendChild(payBtn);
+
+          if ((player.exemptionCards || 0) > 0) {
+            const useExemptionBtn = document.createElement("button");
+            useExemptionBtn.className = "primary-button";
+            useExemptionBtn.type = "button";
+            useExemptionBtn.textContent = `🎫 우대권 사용 (${player.exemptionCards}장 보유)`;
+            useExemptionBtn.style.backgroundColor = "#ffd700";
+            useExemptionBtn.style.color = "black";
+            useExemptionBtn.style.fontWeight = "bold";
+            useExemptionBtn.addEventListener("click", () => {
+              player.exemptionCards--;
+              addLog(`🎫 ${playerDisplayName(player)} 우대권을 사용하여 임대료 면제! (${tile.name})`);
+              closeDialog();
+              showNotice(`🎫 <strong>${playerDisplayName(player)}</strong>이(가)<br>우대권을 사용하여<br>임대료를 면제받았습니다!`, 1800);
+            });
+            footer.appendChild(useExemptionBtn);
+            payBtn.className = "secondary-button";
           }
-          closeDialog();
-        });
-        footer.appendChild(payBtn);
-      } else if (!owner) {
-        // Buy or pass
-        const buyBtn = document.createElement("button");
-        buyBtn.className = "primary-button";
-        buyBtn.type = "button";
-        buyBtn.textContent = `구매 (₩${tile.price.toLocaleString()})`;
-        if (player.money < tile.price) {
-          buyBtn.disabled = true;
-          buyBtn.textContent = "잔액 부족";
+        } else {
+          // Just viewing
+          const okBtn = document.createElement("button");
+          okBtn.className = "primary-button";
+          okBtn.type = "button";
+          okBtn.textContent = "확인";
+          okBtn.addEventListener("click", closeDialog);
+          footer.appendChild(okBtn);
         }
+      } else if (!owner) {
+        if (isStandingOn) {
+          // Buy or pass
+          const buyBtn = document.createElement("button");
+          buyBtn.className = "primary-button";
+          buyBtn.type = "button";
+          buyBtn.textContent = `구매 (₩${tile.price.toLocaleString()})`;
+          if (player.money < tile.price) {
+            buyBtn.disabled = true;
+            buyBtn.textContent = "잔액 부족";
+          }
 
-        const passBtn = document.createElement("button");
-        passBtn.className = "secondary-button";
-        passBtn.type = "button";
-        passBtn.textContent = "구매 안 하기";
+          const passBtn = document.createElement("button");
+          passBtn.className = "secondary-button";
+          passBtn.type = "button";
+          passBtn.textContent = "구매 안 하기";
 
-        buyBtn.addEventListener("click", () => {
-          buyProperty(player);
-          closeDialog();
-        });
+          buyBtn.addEventListener("click", () => {
+            buyProperty(player);
+            closeDialog();
+          });
 
-        passBtn.addEventListener("click", () => {
-          addLog(`🚫 ${playerDisplayName(player)} ${tile.name} 구매를 포기.`);
-          closeDialog();
-        });
+          passBtn.addEventListener("click", () => {
+            addLog(`🚫 ${playerDisplayName(player)} ${tile.name} 구매를 포기.`);
+            closeDialog();
+          });
 
-        footer.appendChild(buyBtn);
-        footer.appendChild(passBtn);
+          footer.appendChild(buyBtn);
+          footer.appendChild(passBtn);
+        } else {
+          // Just viewing
+          const okBtn = document.createElement("button");
+          okBtn.className = "primary-button";
+          okBtn.type = "button";
+          okBtn.textContent = "확인";
+          okBtn.addEventListener("click", closeDialog);
+          footer.appendChild(okBtn);
+        }
       } else {
         // Own property
+        const level = buildingLevel(player, tile.id);
+        const buildCost = getBuildCost(tile, level + 1);
+        const buildBlockReason = canBuildOn(player, tile);
+        
+        if (!buildBlockReason) {
+          const buildBtn = document.createElement("button");
+          buildBtn.className = "primary-button";
+          buildBtn.type = "button";
+          
+          let btnText = "";
+          if (level === 0) btnText = "별장짓기";
+          else if (level === 1) btnText = "별장2개 짓기";
+          else if (level === 2) btnText = "빌딩짓기";
+          else if (level === 3) btnText = "호텔짓기";
+          
+          buildBtn.textContent = `${btnText} (₩${buildCost.toLocaleString()})`;
+          buildBtn.addEventListener("click", () => {
+            buildProperty(player, tile.id);
+            settled = true;
+            dialog.removeEventListener("cancel", preventCancel);
+            if (dialog.open) dialog.close();
+            showPropertyPopup(player, tile).then(resolve);
+          });
+          footer.appendChild(buildBtn);
+        } else if (buildBlockReason) {
+          // Show reason why building is not possible
+          const reasonEl = document.createElement("p");
+          reasonEl.style.cssText = "color: #e74c3c; font-size: 12px; margin: 4px 0; text-align: center;";
+          reasonEl.textContent = `⚠️ ${buildBlockReason}`;
+          footer.appendChild(reasonEl);
+        }
+
+        // Sell button directly on own landing popup
+        if (level > 0) {
+          const sellBuildingBtn = document.createElement("button");
+          sellBuildingBtn.className = "secondary-button";
+          sellBuildingBtn.type = "button";
+          sellBuildingBtn.textContent = `건물 매각 (₩${getBuildingSellValue(tile, level).toLocaleString()})`;
+          sellBuildingBtn.style.color = "#e74c3c";
+          sellBuildingBtn.addEventListener("click", () => {
+            sellBuilding(player, tile.id);
+            settled = true;
+            dialog.removeEventListener("cancel", preventCancel);
+            if (dialog.open) dialog.close();
+            showPropertyPopup(player, tile).then(resolve);
+          });
+          footer.appendChild(sellBuildingBtn);
+        } else {
+          const sellBtn = document.createElement("button");
+          sellBtn.className = "secondary-button";
+          sellBtn.type = "button";
+          sellBtn.textContent = `땅 매각 (₩${getPropertySellValue(tile).toLocaleString()})`;
+          sellBtn.style.color = "#e74c3c";
+          sellBtn.addEventListener("click", () => {
+            sellProperty(player, tile.id);
+            settled = true;
+            dialog.removeEventListener("cancel", preventCancel);
+            if (dialog.open) dialog.close();
+            showPropertyPopup(player, tile).then(resolve);
+          });
+          footer.appendChild(sellBtn);
+        }
+
         const okBtn = document.createElement("button");
-        okBtn.className = "primary-button";
+        okBtn.className = buildBlockReason ? "primary-button" : "secondary-button";
         okBtn.type = "button";
         okBtn.textContent = "확인";
         okBtn.addEventListener("click", closeDialog);
         footer.appendChild(okBtn);
 
-        addLog(`📍 ${playerDisplayName(player)} 자기 땅 ${tile.name}에 도착.`);
+        if (isStandingOn) {
+          addLog(`📍 ${playerDisplayName(player)} 자기 땅 ${tile.name}에 도착.`);
+        }
       }
 
       dialog.addEventListener("cancel", preventCancel);
@@ -1247,13 +1578,18 @@
 
   async function handlePropertyLanding(player, tile) {
     if (!player.human) {
-      // AI: 팝업 없이 자동 구매 판단 (사람이 취소할 수 없도록)
+      // AI: 팝업 없이 자동 구매 판단
       await aiBuyDecision(player, tile);
       return;
     }
     await showPropertyPopup(player, tile);
     state.phase = "buyDecision";
-    renderControls();
+    renderAll();
+    // Auto end turn after popup dismissed
+    if (activePlayer() === player && state.phase !== "finished" && !player.bankrupt) {
+      await wait(300);
+      await endTurn();
+    }
   }
 
   async function handleEventTile(player, tile) {
@@ -1264,13 +1600,23 @@
       isChance = true;
       addLog(`🔑 황금열쇠 카드: ${card.text}`);
     } else if (tile.event === "fund") {
-      card = drawFund();
-      isChance = false;
-      addLog(`🎴 사회복지기금 카드: ${card.text}`);
+      paySocialFund(player, SOCIAL_FUND_FEE);
+      addLog(`💸 ${playerDisplayName(player)} 사회복지기금 ₩${SOCIAL_FUND_FEE.toLocaleString()} 납부`);
+      await showNotice(`💸 <strong>${playerDisplayName(player)}</strong>이(가)<br>사회복지기금 <strong>₩${SOCIAL_FUND_FEE.toLocaleString()}</strong>을 납부했습니다!`, 1500);
+      if (player.money <= 0) goBankrupt(player, null);
+      state.phase = "buyDecision";
+      renderAll();
+      renderControls();
+      return;
     } else if (tile.event === "tax") {
       const tax = tile.amount ?? (100 * SCALE_FACTOR);
-      payBank(player, tax);
-      addLog(`💸 ${playerDisplayName(player)} 세금 ₩${tax.toLocaleString()} 지불`);
+      if (tile.id === 38) {
+        paySocialFund(player, tax);
+        addLog(`💸 ${playerDisplayName(player)} 특별여행세 ₩${tax.toLocaleString()} 지불 (사회복지기금 적립)`);
+      } else {
+        payBank(player, tax);
+        addLog(`💸 ${playerDisplayName(player)} 세금 ₩${tax.toLocaleString()} 지불`);
+      }
       if (player.money <= 0) goBankrupt(player, null);
       state.phase = "buyDecision";
       renderControls();
@@ -1288,16 +1634,6 @@
 
   function showCardPopup(player, card, isChance) {
     return new Promise(resolve => {
-      if (!player.human) {
-        wait(500)
-          .then(() => executeCard(player, card))
-          .then(() => {
-            renderAll();
-            resolve();
-          });
-        return;
-      }
-
       const dialog = document.querySelector("#monopolyCardDialog");
       const popup = dialog?.querySelector(".monopoly-card-popup");
       const header = document.querySelector("#monopolyCardHeader");
@@ -1320,7 +1656,11 @@
         icon.textContent = "🎴";
       }
 
-      text.textContent = card.text;
+      // Prepend AI indicator if it is AI player
+      const prefix = player.human
+        ? ""
+        : `<div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px; font-weight: bold; border-bottom: 1px solid var(--line); padding-bottom: 4px;">🤖 [${playerDisplayName(player)}] 카드를 뽑았습니다</div>`;
+      text.innerHTML = prefix + card.text;
 
       let buttonText = "확인";
       const isPayAction = card.action === "pay" || card.action === "payAll" || card.action === "buildingCost";
@@ -1364,6 +1704,10 @@
       btn.addEventListener("click", handleConfirm);
       dialog.addEventListener("cancel", preventCancel);
       dialog.showModal();
+
+      if (!player.human) {
+        setTimeout(handleConfirm, 2200);
+      }
     });
   }
 
@@ -1386,8 +1730,8 @@
         addLog(`💰 ${playerDisplayName(player)} ₩${card.amount.toLocaleString()} 획득`);
         break;
       case "pay":
-        payBank(player, card.amount);
-        addLog(`💸 ${playerDisplayName(player)} ₩${card.amount.toLocaleString()} 지불`);
+        paySocialFund(player, card.amount);
+        addLog(`💸 ${playerDisplayName(player)} ₩${card.amount.toLocaleString()} 지불 (사회복지기금 적립)`);
         if (player.money <= 0) goBankrupt(player, null);
         break;
       case "payAll":
@@ -1403,6 +1747,14 @@
           if (op.money <= 0) goBankrupt(op, player);
         });
         addLog(`💰 ${playerDisplayName(player)} 모든 플레이어에게서 ₩${card.amount.toLocaleString()} 수집`);
+        break;
+      case "keepExemption":
+        player.exemptionCards = (player.exemptionCards || 0) + 1;
+        addLog(`🎫 ${playerDisplayName(player)} 우대권 획득!`);
+        break;
+      case "keepJailEscape":
+        player.jailEscapeCards = (player.jailEscapeCards || 0) + 1;
+        addLog(`🎫 ${playerDisplayName(player)} 무인도 탈출권 획득!`);
         break;
       case "buildingCost": {
         const costInfo = player.properties.reduce((sum, id) => {
@@ -1429,12 +1781,21 @@
         addLog(`🏁 ${playerDisplayName(player)} 출발지에 도착.`);
         break;
       case "jail":
-        addLog(`🔒 ${playerDisplayName(player)} 무인도에 방문 중.`);
+        if (!player.inJail) {
+          await sendToJail(player);
+        } else {
+          addLog(`🔒 ${playerDisplayName(player)} 무인도 구금 중.`);
+        }
         break;
       case "fund":
-        paySocialFund(player, SOCIAL_FUND_FEE);
-        addLog(`💸 ${playerDisplayName(player)} 사회복지기금 ₩${SOCIAL_FUND_FEE.toLocaleString()} 납부`);
-        if (player.money <= 0) goBankrupt(player, null);
+        if (state.socialFundPool > 0) {
+          const reward = state.socialFundPool;
+          collectMoney(player, reward);
+          addLog(`💰 ${playerDisplayName(player)} 사회복지기금 수령! 적립금 ₩${reward.toLocaleString()} 획득!`);
+          state.socialFundPool = 0;
+        } else {
+          addLog(`💰 ${playerDisplayName(player)} 사회복지기금 수령처에 도착했으나 적립금이 없습니다.`);
+        }
         break;
       case "parking":
         player.spaceTravelReady = true;
@@ -1461,18 +1822,30 @@
     player.buildings[tile.id] = 0;
     addLog(`🏠 ${playerDisplayName(player)} ${tile.name} 구매! (₩${tile.price.toLocaleString()})`);
 
+    // Record purchased this turn to prevent immediate building
+    state.purchasedThisTurn = tile.id;
+
     // Show purchase popup notice
     setTimeout(() => {
       showNotice(`🏠 <strong>${playerDisplayName(player)}</strong>이(가)<br><strong>${tile.name}</strong>을(를) 구입했습니다!`, 1500);
     }, 100);
 
     // Check monopoly
-    if (tile.color !== "#808080" && tile.color !== "#4682B4" && isMonopoly(player, tile.color)) {
-      addLog(`⭐ ${playerDisplayName(player)} ${tile.name} 색상 독점!`);
+    if (tile.group && isMonopoly(player, tile.group)) {
+      addLog(`⭐ ${playerDisplayName(player)} 그룹 독점!`);
     }
   }
 
   /* ── AI Logic ── */
+  function aiBuildIfPossible(player, tile) {
+    while (canBuildOn(player, tile) === "") {
+      const level = buildingLevel(player, tile.id);
+      const cost = getBuildCost(tile, level + 1);
+      if (player.money < cost + 200 * SCALE_FACTOR) break;
+      buildProperty(player, tile.id);
+    }
+  }
+
   async function aiBuyDecision(player, tile) {
     if (tile.type !== "property") {
       state.phase = "buyDecision";
@@ -1484,10 +1857,17 @@
     const owner = getOwner(tile.id);
     if (owner && owner !== player) {
       const rent = getRent(tile, player.position);
-      const paid = payMoney(player, owner, rent);
-      addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid.toLocaleString()} 지불 (${tile.name})`);
-      if (player.money <= 0) {
-        goBankrupt(player, owner);
+      if ((player.exemptionCards || 0) > 0) {
+        player.exemptionCards--;
+        addLog(`🎫 ${playerDisplayName(player)} 우대권을 사용하여 임대료 면제! (${tile.name})`);
+        await showNotice(`🎫 <strong>${playerDisplayName(player)}</strong>이(가)<br>우대권을 사용하여<br>임대료를 면제받았습니다!`, 1800);
+      } else {
+        const paid = payMoney(player, owner, rent);
+        addLog(`💸 ${playerDisplayName(player)} → ${playerDisplayName(owner)} 임대료 ₩${paid.toLocaleString()} 지불 (${tile.name})`);
+        await showNotice(`💸 <strong>${playerDisplayName(player)}</strong>이(가)<br><strong>${playerDisplayName(owner)}</strong>에게<br>임대료 <strong>₩${paid.toLocaleString()}</strong>을 지불했습니다!`, 1800);
+        if (player.money <= 0) {
+          goBankrupt(player, owner);
+        }
       }
       state.phase = "buyDecision";
       renderAll();
@@ -1497,6 +1877,7 @@
 
     if (owner === player) {
       addLog(`📍 ${playerDisplayName(player)} 자기 땅 ${tile.name}에 도착.`);
+      aiBuildIfPossible(player, tile);
       state.phase = "buyDecision";
       renderAll();
       await endTurn();
@@ -1506,6 +1887,7 @@
     // AI buys if affordable and money > 200 * SCALE_FACTOR (keep reserve)
     if (player.money >= tile.price + 200 * SCALE_FACTOR || player.money >= tile.price && state.turnCount > 15) {
       buyProperty(player);
+      aiBuildIfPossible(player, tile);
     } else {
       addLog(`🚫 ${playerDisplayName(player)} ${tile.name} 구매를 포기.`);
     }
@@ -1521,13 +1903,10 @@
 
     // Jail logic
     if (player.inJail) {
-      const unownedCount = TILES.filter(t => t.type === "property" && !getOwner(t.id)).length;
-      const hasPlentyMoney = player.money >= JAIL_FINE + 1000 * SCALE_FACTOR;
-
-      if (hasPlentyMoney && unownedCount > 3) {
+      if ((player.jailEscapeCards || 0) > 0) {
+        player.jailEscapeCards--;
         player.inJail = false;
-        payBank(player, JAIL_FINE);
-        addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
+        addLog(`🎫 ${playerDisplayName(player)} 무인도 탈출권을 사용하여 무인도 탈출.`);
         renderAll();
         // Continue to roll normally below!
       } else {
@@ -1548,8 +1927,7 @@
           return;
         } else if (player.jailTurns <= 0) {
           player.inJail = false;
-          payBank(player, JAIL_FINE);
-          addLog(`💸 ${playerDisplayName(player)} 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
+          addLog(`🔓 ${playerDisplayName(player)} 3턴 동안 탈출하지 못해 무인도에서 자연 출소.`);
           await movePlayer(player, dice[0] + dice[1]);
           await wait(600);
           await handleTileLanding(player);
@@ -1629,12 +2007,14 @@
     if (state.phase === "finished") return;
     if (checkWinner()) return;
 
+    state.purchasedThisTurn = null;
+
     const p = activePlayer();
     // Doubles = extra turn
     if (state.dice[0] === state.dice[1] && !state.suppressDoubleExtraTurn && !p.inJail && !p.bankrupt && state.lastDoubleCount < 3) {
       addLog(`🔄 ${playerDisplayName(p)} 더블로 한 번 더!`);
-      const emoji = p.human ? "🎲" : "🤖";
-      await showNotice(`${emoji} <strong>${playerDisplayName(p)}</strong>의<br>더블 추가 턴!`, 1200);
+      showTurnToast(p, true);
+      await wait(800);
       state.phase = "awaitRoll";
       renderAll();
       if (!p.human) scheduleAiTurn();
@@ -1654,8 +2034,8 @@
     }
 
     // Show turn change notice popup
-    const emoji = np.human ? "🎲" : "🤖";
-    await showNotice(`${emoji} <strong>${playerDisplayName(np)}</strong>의<br>차례입니다!`, 1200);
+    showTurnToast(np);
+    await wait(800);
 
     if (np.spaceTravelReady) {
       state.phase = "spaceTravel";
@@ -1694,11 +2074,18 @@
     player.spaceTravelReady = false;
     state.rentDiceTotal = 0;
     
+    // Deduct boarding fee (20만 원)
+    payBank(player, SPACE_TRAVEL_FEE);
+    addLog(`💸 ${playerDisplayName(player)} 우주비행선 탑승료 ₩${SPACE_TRAVEL_FEE.toLocaleString()} 지불`);
+    
     addLog(`🚀 ${playerDisplayName(player)} 우주선 탑승! ${tileAt(destIndex).name}으로 이동합니다.`);
+    
+    // Show notice popup!
+    await showNotice(`🚀 <strong>${playerDisplayName(player)}</strong>이(가)<br>우주선에 탑승하여<br><strong>${tileAt(destIndex).name}</strong>(으)로 이동합니다!`, 2000);
     
     // Pass GO logic during Space Travel
     if (passesGoForward(player.position, destIndex)) {
-      awardGoSalary(player);
+      await awardGoSalary(player);
     }
     
     await animateTeleport(player, destIndex);
@@ -1755,13 +2142,12 @@
 
   function showJailEscapePopup(player) {
     return new Promise(resolve => {
-      if (!els.jailDialog || !els.jailTurnsLabel || !els.jailFineLabel || !els.jailFooter) {
+      if (!els.jailDialog || !els.jailTurnsLabel || !els.jailFooter) {
         resolve("roll");
         return;
       }
 
       els.jailTurnsLabel.textContent = player.jailTurns;
-      els.jailFineLabel.textContent = `₩${JAIL_FINE.toLocaleString()}`;
       els.jailFooter.innerHTML = "";
 
       const rollBtn = document.createElement("button");
@@ -1773,21 +2159,23 @@
         resolve("roll");
       });
 
-      const payBtn = document.createElement("button");
-      payBtn.className = "secondary-button";
-      payBtn.type = "button";
-      payBtn.textContent = `💸 벌금 지불 (₩${JAIL_FINE.toLocaleString()})`;
-      if (!canPayWithLiquidation(player, JAIL_FINE)) {
-        payBtn.disabled = true;
-        payBtn.textContent = "잔액 부족";
-      }
-      payBtn.addEventListener("click", () => {
-        els.jailDialog.close();
-        resolve("pay");
-      });
-
       els.jailFooter.appendChild(rollBtn);
-      els.jailFooter.appendChild(payBtn);
+
+      if ((player.jailEscapeCards || 0) > 0) {
+        const useCardBtn = document.createElement("button");
+        useCardBtn.className = "primary-button";
+        useCardBtn.type = "button";
+        useCardBtn.textContent = `🎫 탈출권 사용 (${player.jailEscapeCards}장 보유)`;
+        useCardBtn.style.backgroundColor = "#2ecc71";
+        useCardBtn.style.color = "white";
+        useCardBtn.style.fontWeight = "bold";
+        useCardBtn.addEventListener("click", () => {
+          els.jailDialog.close();
+          resolve("useCard");
+        });
+        els.jailFooter.appendChild(useCardBtn);
+        rollBtn.className = "secondary-button";
+      }
 
       els.jailDialog.showModal();
     });
@@ -1801,10 +2189,10 @@
     // Jail logic
     if (player.inJail) {
       const choice = await showJailEscapePopup(player);
-      if (choice === "pay") {
+      if (choice === "useCard") {
+        player.jailEscapeCards--;
         player.inJail = false;
-        payBank(player, JAIL_FINE);
-        addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 무인도 탈출.`);
+        addLog(`🎫 무인도 탈출권을 사용하여 무인도 탈출.`);
         renderAll();
         // Continue to normal roll below!
       } else {
@@ -1822,8 +2210,7 @@
           return;
         } else if (player.jailTurns <= 0) {
           player.inJail = false;
-          payBank(player, JAIL_FINE);
-          addLog(`💸 벌금 ₩${JAIL_FINE.toLocaleString()} 내고 출소.`);
+          addLog(`🔓 ${playerDisplayName(player)} 3턴 동안 탈출하지 못해 무인도에서 자연 출소.`);
           await movePlayer(player, dice[0] + dice[1]);
           await wait(600);
           await handleTileLanding(player);
@@ -1864,6 +2251,11 @@
     renderAll();
     await wait(400);
     await handleTileLanding(player);
+    // Auto end turn for human player
+    if (activePlayer() === player && state.phase !== "finished" && !player.bankrupt) {
+      await wait(500);
+      await endTurn();
+    }
     renderControls();
   }
 
@@ -1874,68 +2266,7 @@
     await endTurn();
   }
 
-  /* ── Manage Dialog ── */
-  function openManageDialog() {
-    const player = activePlayer();
-    if (!player?.human || !player.properties.length) return;
-    if (!els.manageDialog || !els.manageList) return;
 
-    els.manageList.innerHTML = player.properties.map(id => {
-      const tile = tileAt(id);
-      const rent = getRent(tile, player.position);
-      const level = buildingLevel(player, id);
-      const buildBlockReason = canBuildOn(player, tile);
-      const canBuild = !buildBlockReason;
-      const canSellBuilding = level > 0;
-      const buildCost = getBuildCost(tile);
-      const buildingSellPrice = getBuildingSellValue(tile);
-      const propertySellPrice = getPropertySellValue(tile);
-      return `
-        <div class="monopoly-manage-item" data-tile-id="${id}">
-          <div class="monopoly-manage-item-info">
-            <span class="monopoly-manage-color" style="background:${tile.color}"></span>
-            <span>
-              <span class="monopoly-manage-item-name">${escapeHtml(tile.name)}</span><br>
-              <span class="monopoly-manage-item-rent">임대료: ₩${rent.toLocaleString()} · ${buildingLabel(level)}</span>
-            </span>
-          </div>
-          <div class="monopoly-manage-actions">
-            <button class="monopoly-manage-build-btn" type="button" data-build-id="${id}" ${canBuild ? "" : "disabled"} title="${escapeHtml(buildBlockReason || "건설")}">건설 (₩${buildCost.toLocaleString()})</button>
-            <button class="monopoly-manage-sell-building-btn" type="button" data-sell-building-id="${id}" ${canSellBuilding ? "" : "disabled"}>건물 매각 (₩${buildingSellPrice.toLocaleString()})</button>
-            <button class="monopoly-manage-sell-btn" type="button" data-sell-id="${id}" ${level > 0 ? "disabled" : ""}>땅 매각 (₩${propertySellPrice.toLocaleString()})</button>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    els.manageList.querySelectorAll(".monopoly-manage-build-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const tileId = Number(btn.dataset.buildId);
-        buildProperty(player, tileId);
-        openManageDialog();
-      });
-    });
-
-    els.manageList.querySelectorAll(".monopoly-manage-sell-building-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const tileId = Number(btn.dataset.sellBuildingId);
-        sellBuilding(player, tileId);
-        openManageDialog();
-      });
-    });
-
-    els.manageList.querySelectorAll(".monopoly-manage-sell-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const tileId = Number(btn.dataset.sellId);
-        sellProperty(player, tileId);
-        openManageDialog(); // Refresh
-      });
-    });
-
-    if (typeof els.manageDialog.showModal === "function" && !els.manageDialog.open) {
-      els.manageDialog.showModal();
-    }
-  }
 
   function buildProperty(player, tileId) {
     const tile = tileAt(tileId);
@@ -1946,7 +2277,8 @@
       return;
     }
 
-    const cost = getBuildCost(tile);
+    const level = buildingLevel(player, tileId);
+    const cost = getBuildCost(tile, level + 1);
     player.money -= cost;
     player.buildings[tileId] = buildingLevel(player, tileId) + 1;
     addLog(`🏗️ ${playerDisplayName(player)} ${tile.name} ${buildingLabel(player.buildings[tileId])} 건설 (₩${cost.toLocaleString()})`);
@@ -1973,76 +2305,97 @@
   /* ── Game Start ── */
   function startGame() {
     clearAiTimer();
-    const count = Math.min(4, Math.max(2, Number(els.playerCount?.value || 3)));
-    const humanName = currentHumanNickname() || (els.nameInput?.value || "").trim() || "플레이어";
-    const pool = shuffle(aiProfiles());
+    // 즉시 UI 응답: 시작 버튼 비활성화 + setup 패널 숨김 (클릭 피드백 즉시)
+    if (els.startButton) {
+      els.startButton.disabled = true;
+      els.startButton.dataset.starting = "1";
+    }
+    document.body.classList.add("monopoly-playing");
+    els.setupPanel?.classList.add("hidden");
+    els.gamePanel?.classList.remove("hidden");
 
-    state.players = Array.from({ length: count }, (_, i) => {
-      if (i === 0) {
+    // 무거운 초기화(보드/플레이어/로그 렌더링)는 다음 틱으로 분리해 클릭 응답성 확보
+    setTimeout(() => {
+      const count = Math.min(4, Math.max(2, Number(els.playerCount?.value || 3)));
+      const humanName = currentHumanNickname() || "플레이어";
+      const pool = shuffle(aiProfiles());
+      const startMoney = (count === 2 ? 5860 : 2930) * SCALE_FACTOR;
+
+      state.players = Array.from({ length: count }, (_, i) => {
+        if (i === 0) {
+          return {
+            index: i,
+            id: "human",
+            human: true,
+            name: humanName,
+            avatarUrl: currentHumanAvatarUrl(),
+            emoji: TOKEN_EMOJIS[i],
+            tokenColor: TOKEN_COLORS[i],
+            money: startMoney,
+            position: 0,
+            properties: [],
+            buildings: {},
+            inJail: false,
+            jailTurns: 0,
+            spaceTravelReady: false,
+            bankrupt: false,
+            exemptionCards: 0,
+            jailEscapeCards: 0
+          };
+        }
+        const profile = pool[i - 1] || { name: `AI ${i}`, avatarUrl: profileImageUrl("보통-건일.jpg") };
         return {
           index: i,
-          id: "human",
-          human: true,
-          name: humanName,
-          avatarUrl: currentHumanAvatarUrl(),
+          id: `ai${i}`,
+          human: false,
+          name: profile.name || `AI ${i}`,
+          avatarUrl: profile.avatarUrl,
           emoji: TOKEN_EMOJIS[i],
           tokenColor: TOKEN_COLORS[i],
-          money: START_MONEY,
+          money: startMoney,
           position: 0,
           properties: [],
           buildings: {},
           inJail: false,
           jailTurns: 0,
           spaceTravelReady: false,
-          bankrupt: false
+          bankrupt: false,
+          exemptionCards: 0,
+          jailEscapeCards: 0
         };
+      });
+
+      state.currentPlayer = 0;
+      state.selectedAssetPlayerIndex = 0;
+      state.phase = "awaitRoll";
+      state.dice = [];
+      state.diceRolling = false;
+      state.chanceDeck = shuffle([...CHANCE_CARDS]);
+      state.fundDeck = shuffle([...FUND_CARDS]);
+      state.log = [];
+      state.turnCount = 1;
+      state.lastDoubleCount = 0;
+      state.socialFundPool = 0;
+      state.rentDiceTotal = 0;
+      state.suppressDoubleExtraTurn = false;
+      state.purchasedThisTurn = null;
+
+      addLog(`🌐 부루마불 게임 시작! ${count}명 참가.`);
+      addLog(`💰 각 플레이어 ₩${startMoney.toLocaleString()} 보유.`);
+
+      renderAll();
+      const firstPlayer = state.players[0];
+
+      if (els.startButton) {
+        els.startButton.disabled = false;
+        delete els.startButton.dataset.starting;
       }
-      const profile = pool[i - 1] || { name: `AI ${i}`, avatarUrl: profileImageUrl("보통-건일.jpg") };
-      return {
-        index: i,
-        id: `ai${i}`,
-        human: false,
-        name: profile.name || `AI ${i}`,
-        avatarUrl: profile.avatarUrl,
-        emoji: TOKEN_EMOJIS[i],
-        tokenColor: TOKEN_COLORS[i],
-        money: START_MONEY,
-        position: 0,
-        properties: [],
-        buildings: {},
-        inJail: false,
-        jailTurns: 0,
-        spaceTravelReady: false,
-        bankrupt: false
-      };
-    });
 
-    state.currentPlayer = 0;
-    state.selectedAssetPlayerIndex = 0;
-    state.phase = "awaitRoll";
-    state.dice = [];
-    state.diceRolling = false;
-    state.chanceDeck = shuffle([...CHANCE_CARDS]);
-    state.fundDeck = shuffle([...FUND_CARDS]);
-    state.log = [];
-    state.turnCount = 1;
-    state.lastDoubleCount = 0;
-    state.socialFundPool = 0;
-    state.rentDiceTotal = 0;
-    state.suppressDoubleExtraTurn = false;
-
-    addLog(`🌐 부루마불 게임 시작! ${count}명 참가.`);
-    addLog(`💰 각 플레이어 ₩${START_MONEY.toLocaleString()} 보유.`);
-
-    document.body.classList.add("monopoly-playing");
-    els.setupPanel?.classList.add("hidden");
-    els.gamePanel?.classList.remove("hidden");
-    renderAll();
-    const firstPlayer = state.players[0];
-    // Show first turn popup notice
-    setTimeout(() => {
-      showNotice(`🎲 <strong>${playerDisplayName(firstPlayer)}</strong>의<br>차례입니다!`, 1200);
-    }, 400);
+      // Show first turn popup notice
+      setTimeout(() => {
+        showTurnToast(firstPlayer);
+      }, 300);
+    }, 0);
   }
 
   function resetToSetup() {
@@ -2059,13 +2412,14 @@
   /* ── Center Toast (Turn Popups) ── */
   function showTurnToast(player, isDouble = false) {
     if (typeof window.showCenterToast !== "function") return;
+    const emoji = player.human ? "🎲" : "🤖";
     const displayName = player.human
-      ? "당신의 턴입니다"
-      : `${player.name}(${TOKEN_NAMES[player.index]})의 턴`;
+      ? "당신의 차례"
+      : `${player.name}(${TOKEN_NAMES[player.index]})의 차례`;
 
     const message = isDouble
-      ? `<div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px; color: #ffeb3b; font-weight: bold; letter-spacing: 1px;">(DOUBLE!)</div>${displayName}`
-      : displayName;
+      ? `<div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px; color: #ffeb3b; font-weight: bold; letter-spacing: 1px;">(더블 추가 턴!)</div>${emoji} ${displayName}입니다!`
+      : `${emoji} ${displayName}입니다!`;
 
     window.showCenterToast(message, 1200, { mode: "monopoly" });
   }
@@ -2141,12 +2495,6 @@
 
   /* ── Init ── */
   function init() {
-    // Load saved nickname
-    try {
-      const profile = JSON.parse(localStorage.getItem("fantasyKingdom.humanProfile.v1") || "null");
-      if (profile?.nickname && els.nameInput) els.nameInput.value = profile.nickname;
-    } catch {}
-
     // Board background is drawn with CSS so the UI does not depend on a missing image asset.
     if (els.boardImage) {
       els.boardImage.style.backgroundImage = "none";
@@ -2166,11 +2514,7 @@
       if (e.target === els.rulesDialog) els.rulesDialog.close();
     });
     els.rollButton?.addEventListener("click", humanRoll);
-    els.endTurnButton?.addEventListener("click", humanEndTurn);
-    els.manageButton?.addEventListener("click", openManageDialog);
-    els.manageDialog?.addEventListener("click", e => {
-      if (e.target === els.manageDialog) els.manageDialog.close();
-    });
+    // Turn end is now automatic (no button)
 
     // Preload scenic images
     preloadScenicImages();

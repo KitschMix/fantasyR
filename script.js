@@ -237,8 +237,8 @@ const MOBILE_DISCARD_COLUMNS = 6;
 const MOBILE_DISCARD_WIDTH_OFFSET = 76;
 const MOBILE_DISCARD_CARD_GAP = 4;
 const MOBILE_PORTRAIT_QUERY = "(max-width: 760px) and (orientation: portrait)";
-const DIALOGUE_CHANCE = 0.3;
-const DIALOGUE_IDLE_INTERVAL_MS = 10000;
+const DIALOGUE_CHANCE = 0.1;
+const DIALOGUE_IDLE_INTERVAL_MS = 18000;
 const DIALOGUE_DISPLAY_MS = 6200;
 const DIALOGUE_START_DISPLAY_MS = 8200;
 const DIALOGUE_END_DISPLAY_MS = 15000;
@@ -4849,9 +4849,9 @@ function renderOpponents() {
     opponent.innerHTML = `
       <div class="opponent-head">
         ${playerNameTagHtml(player)}
+        ${playerSpeechBubbleHtml(player)}
         <small>${state.finished ? `${score}점` : "점수 비공개"}</small>
       </div>
-      ${playerSpeechBubbleHtml(player)}
     `;
     if (state.finished) {
       opponent.classList.add("revealed-opponent");

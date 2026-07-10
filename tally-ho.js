@@ -100,10 +100,7 @@
     rulesDialog: document.querySelector("#tallyRulesDialog"),
     startButton: document.querySelector("#tallyStartButton"),
     difficultySelect: document.querySelector("#tallyDifficultySelect"),
-    nameInput: document.querySelector("#tallyNameInput"),
     onlineNameInput: document.querySelector("#tallyOnlineNameInput"),
-    confirmNicknameButton: document.querySelector("#tallyConfirmNicknameButton"),
-    nicknameStatus: document.querySelector("#tallyNicknameStatus"),
     humanAvatar: document.querySelector("#tallyHumanAvatar"),
     humanPreviewName: document.querySelector("#tallyHumanPreviewName"),
     animalLeaderboardList: document.querySelector("#tallyAnimalLeaderboardList"),
@@ -288,99 +285,6 @@
     const minutes = Math.ceil((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
     if (hours <= 0) return `${Math.max(1, minutes)}분 후 변경 가능`;
     return `${hours}시간 ${minutes}분 후 변경 가능`;
-  }
-
-  function setTallyNicknameStatus(message, error = false) {
-    if (!els.nicknameStatus) return;
-    els.nicknameStatus.textContent = message;
-    els.nicknameStatus.classList.toggle("error", error);
-  }
-
-  function syncTallyNicknameInputs(force = false) {
-    const nickname = currentHumanNickname();
-    if (els.nameInput && (force || document.activeElement !== els.nameInput)) {
-      els.nameInput.value = nickname;
-    }
-    if (els.onlineNameInput) {
-      els.onlineNameInput.value = nickname;
-    }
-    const fantasyNameInput = document.querySelector("#humanNameInput");
-    const fantasyOnlineInput = document.querySelector("#onlineNameInput");
-    if (fantasyNameInput && force) fantasyNameInput.value = nickname;
-    if (fantasyOnlineInput && force) fantasyOnlineInput.value = nickname;
-  }
-
-  function confirmTallyNicknameChange(sourceInput = els.nameInput, options = {}) {
-    const force = Boolean(options.force);
-    const profile = readHumanProfile();
-    const desired = normalizeHumanNickname(sourceInput?.value ?? profile.nickname);
-    const validationMessage = nicknameValidationMessage(desired);
-    if (validationMessage) {
-      window.alert(validationMessage);
-      setTallyNicknameStatus(validationMessage, true);
-      sourceInput?.focus();
-      return false;
-    }
-
-    if (desired === profile.nickname) {
-      syncTallyNicknameInputs(true);
-      setTallyNicknameStatus(`현재 닉네임: ${profile.nickname}`);
-      renderTallySetup();
-      return true;
-    }
-
-    const changedAt = Date.parse(profile.lastChangedAt || "");
-    if (!force && changedAt && Date.now() - changedAt < NICKNAME_CHANGE_INTERVAL_MS) {
-      const remaining = nicknameChangeRemainingText(profile.lastChangedAt);
-      window.alert(`닉네임은 판타지왕국과 탤리호를 통틀어 하루에 한 번만 변경할 수 있습니다.\n${remaining}`);
-      syncTallyNicknameInputs(true);
-      setTallyNicknameStatus(`닉네임 변경 제한 중 (${remaining})`, true);
-      renderTallySetup();
-      return false;
-    }
-
-    const confirmed = window.confirm(force
-      ? `숨겨진 변경키로 '${desired}' 닉네임을 강제 저장할까요?`
-      : "닉네임은 판타지왕국과 탤리호를 통틀어 하루에 한 번만 변경할 수 있습니다.\n"
-        + `확인하면 오늘은 '${desired}' 닉네임으로 고정됩니다.\n`
-        + "저장할까요?");
-    if (!confirmed) {
-      syncTallyNicknameInputs(true);
-      setTallyNicknameStatus(profile.nickname ? `현재 닉네임: ${profile.nickname}` : "닉네임을 설정해야 시작할 수 있습니다.", !profile.nickname);
-      renderTallySetup();
-      return false;
-    }
-
-    saveHumanProfile({ nickname: desired, lastChangedAt: new Date().toISOString() });
-    syncTallyNicknameInputs(true);
-    setTallyNicknameStatus(`${force ? "닉네임 강제 변경 완료" : "닉네임 저장 완료"}: ${desired}`);
-    renderTallySetup();
-    return true;
-  }
-
-  function consumeNicknameForceChangeClick(event) {
-    if (!event?.shiftKey) {
-      nicknameForceChangeState.clicks = 0;
-      nicknameForceChangeState.lastClickAt = 0;
-      return false;
-    }
-
-    const now = Date.now();
-    if (now - nicknameForceChangeState.lastClickAt > 5000) {
-      nicknameForceChangeState.clicks = 0;
-    }
-    nicknameForceChangeState.lastClickAt = now;
-    nicknameForceChangeState.clicks += 1;
-
-    if (nicknameForceChangeState.clicks < 5) {
-      setTallyNicknameStatus(`숨겨진 변경키 ${nicknameForceChangeState.clicks}/5`);
-      return null;
-    }
-
-    nicknameForceChangeState.clicks = 0;
-    nicknameForceChangeState.lastClickAt = 0;
-    setTallyNicknameStatus("숨겨진 변경키 활성화");
-    return true;
   }
 
   function getSupabaseClient() {
@@ -686,15 +590,9 @@
   }
 
   function renderTallySetup() {
-    syncTallyNicknameInputs();
     const nickname = currentHumanNickname();
     if (els.humanAvatar) els.humanAvatar.src = HUMAN_PROFILE.avatarUrl;
     if (els.humanPreviewName) els.humanPreviewName.textContent = nickname || "닉네임 필요";
-    if (!nickname) {
-      setTallyNicknameStatus("닉네임을 2글자 이상으로 설정해야 시작할 수 있습니다.", true);
-    } else if (!els.nicknameStatus?.classList.contains("error")) {
-      setTallyNicknameStatus(`현재 닉네임: ${nickname}`);
-    }
   }
 
   function showTallySetup() {
@@ -715,8 +613,6 @@
   }
 
   function startTallyGame() {
-    const desired = normalizeHumanNickname(els.nameInput?.value || "");
-    if ((!currentHumanNickname() || (desired && desired !== currentHumanNickname())) && !confirmTallyNicknameChange(els.nameInput)) return;
     state.humanName = currentHumanNickname();
     if (!state.humanName) {
       renderTallySetup();
@@ -1561,11 +1457,6 @@
   els.backButton?.addEventListener("click", leaveTallyHo);
   els.newGameButton?.addEventListener("click", startTallyGame);
   els.startButton?.addEventListener("click", startTallyGame);
-  els.confirmNicknameButton?.addEventListener("click", (event) => {
-    const force = consumeNicknameForceChangeClick(event);
-    if (force === null) return;
-    confirmTallyNicknameChange(els.nameInput, { force });
-  });
   els.difficultySelect?.addEventListener("change", () => {
     renderTallySetup();
   });

@@ -1632,36 +1632,36 @@ select {
 
 .speech-bubble {
   position: absolute;
-  top: 52px;
-  left: 12px;
-  right: 12px;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
   z-index: 20;
-  box-sizing: border-box;
-  width: calc(100% - 24px);
-  height: auto;
-  padding: 8px 12px;
-  border: 1px solid rgba(139, 94, 60, 0.42);
-  border-radius: 12px;
+  max-width: min(200px, 50vw);
+  padding: 6px 10px;
+  border: 1px solid rgba(217, 166, 60, 0.5);
+  border-radius: 10px;
   color: #24170d;
   background: rgba(255, 246, 220, 0.96);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
-  font-size: 15px;
-  font-weight: 850;
-  line-height: 1.25;
-  opacity: 1;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.2;
   pointer-events: none;
   animation: fantasy-speech-pop 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .speech-bubble::before {
   position: absolute;
   top: -6px;
-  left: 24px;
+  left: 16px;
   width: 10px;
   height: 10px;
   background: inherit;
-  border-top: 1px solid rgba(139, 94, 60, 0.42);
-  border-left: 1px solid rgba(139, 94, 60, 0.42);
+  border-top: 1px solid rgba(217, 166, 60, 0.5);
+  border-left: 1px solid rgba(217, 166, 60, 0.5);
   content: "";
   transform: rotate(45deg);
 }
@@ -1755,6 +1755,7 @@ select {
 }
 
 .opponent-head {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3042,6 +3043,51 @@ select {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* ============================================================
+ * Game cover art (각 게임 첫화면 상단 카드 아트)
+ * ============================================================ */
+.game-cover-art {
+  display: block;
+  width: clamp(160px, 48vw, 220px);
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  margin: 0 auto 14px;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(246, 232, 202, 0.08) inset;
+  background: var(--surface-2, #302a21);
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.game-cover-art-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0 0 8px;
+}
+
+@media (min-width: 640px) {
+  .game-cover-art {
+    width: clamp(200px, 26vw, 260px);
+    margin-bottom: 18px;
+    border-radius: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .game-cover-art {
+    width: clamp(220px, 20vw, 300px);
+    margin-bottom: 22px;
+    border-radius: 18px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(246, 232, 202, 0.1) inset;
+  }
+}
+
+/* 기존 큰 title-art 자리에 들어가는 경우(이미지 자체 교체) */
+.game-cover-art.is-replacement {
+  margin: 0 auto;
 }
 
 @media (max-width: 2320px) {

@@ -99,10 +99,7 @@
     startButton: document.querySelector("#cantStartButton"),
     playerCountSelect: document.querySelector("#cantPlayerCountSelect"),
     difficultySelect: document.querySelector("#cantDifficultySelect"),
-    nameInput: document.querySelector("#cantNameInput"),
     onlineNameInput: document.querySelector("#cantOnlineNameInput"),
-    confirmNicknameButton: document.querySelector("#cantConfirmNicknameButton"),
-    nicknameStatus: document.querySelector("#cantNicknameStatus"),
     humanAvatar: document.querySelector("#cantHumanAvatar"),
     humanPreviewName: document.querySelector("#cantHumanPreviewName"),
     leaderboardList: document.querySelector("#cantLeaderboardList"),
@@ -333,103 +330,6 @@
     return `${hours}시간 ${minutes}분 후 변경 가능`;
   }
 
-  function setCantNicknameStatus(message, error = false) {
-    if (!els.nicknameStatus) return;
-    els.nicknameStatus.textContent = message;
-    els.nicknameStatus.classList.toggle("error", error);
-  }
-
-  function syncCantNicknameInputs(force = false) {
-    const nickname = currentHumanNickname();
-    if (els.nameInput && (force || document.activeElement !== els.nameInput)) {
-      els.nameInput.value = nickname;
-    }
-    if (els.onlineNameInput) {
-      els.onlineNameInput.value = nickname;
-    }
-    const fantasyNameInput = document.querySelector("#humanNameInput");
-    const fantasyOnlineInput = document.querySelector("#onlineNameInput");
-    const tallyNameInput = document.querySelector("#tallyNameInput");
-    const tallyOnlineInput = document.querySelector("#tallyOnlineNameInput");
-    if (fantasyNameInput && force) fantasyNameInput.value = nickname;
-    if (fantasyOnlineInput && force) fantasyOnlineInput.value = nickname;
-    if (tallyNameInput && force) tallyNameInput.value = nickname;
-    if (tallyOnlineInput && force) tallyOnlineInput.value = nickname;
-  }
-
-  function confirmCantNicknameChange(sourceInput = els.nameInput, options = {}) {
-    const force = Boolean(options.force);
-    const profile = readHumanProfile();
-    const desired = normalizeHumanNickname(sourceInput?.value ?? profile.nickname);
-    const validationMessage = nicknameValidationMessage(desired);
-    if (validationMessage) {
-      window.alert(validationMessage);
-      setCantNicknameStatus(validationMessage, true);
-      sourceInput?.focus();
-      return false;
-    }
-
-    if (desired === profile.nickname) {
-      syncCantNicknameInputs(true);
-      setCantNicknameStatus(`현재 닉네임: ${profile.nickname}`);
-      renderCantSetup();
-      return true;
-    }
-
-    const changedAt = Date.parse(profile.lastChangedAt || "");
-    if (!force && changedAt && Date.now() - changedAt < NICKNAME_CHANGE_INTERVAL_MS) {
-      const remaining = nicknameChangeRemainingText(profile.lastChangedAt);
-      window.alert(`닉네임은 모든 게임을 통틀어 하루에 한 번만 변경할 수 있습니다.\n${remaining}`);
-      syncCantNicknameInputs(true);
-      setCantNicknameStatus(`닉네임 변경 제한 중 (${remaining})`, true);
-      renderCantSetup();
-      return false;
-    }
-
-    const confirmed = window.confirm(force
-      ? `숨겨진 변경키로 '${desired}' 닉네임을 강제 저장할까요?`
-      : "닉네임은 모든 게임을 통틀어 하루에 한 번만 변경할 수 있습니다.\n"
-        + `확인하면 오늘은 '${desired}' 닉네임으로 고정됩니다.\n`
-        + "저장할까요?");
-    if (!confirmed) {
-      syncCantNicknameInputs(true);
-      setCantNicknameStatus(profile.nickname ? `현재 닉네임: ${profile.nickname}` : "닉네임을 설정해야 시작할 수 있습니다.", !profile.nickname);
-      renderCantSetup();
-      return false;
-    }
-
-    saveHumanProfile({ nickname: desired, lastChangedAt: new Date().toISOString() });
-    syncCantNicknameInputs(true);
-    setCantNicknameStatus(`${force ? "닉네임 강제 변경 완료" : "닉네임 저장 완료"}: ${desired}`);
-    renderCantSetup();
-    return true;
-  }
-
-  function consumeNicknameForceChangeClick(event) {
-    if (!event?.shiftKey) {
-      nicknameForceChangeState.clicks = 0;
-      nicknameForceChangeState.lastClickAt = 0;
-      return false;
-    }
-
-    const now = Date.now();
-    if (now - nicknameForceChangeState.lastClickAt > 5000) {
-      nicknameForceChangeState.clicks = 0;
-    }
-    nicknameForceChangeState.lastClickAt = now;
-    nicknameForceChangeState.clicks += 1;
-
-    if (nicknameForceChangeState.clicks < 5) {
-      setCantNicknameStatus(`숨겨진 변경키 ${nicknameForceChangeState.clicks}/5`);
-      return null;
-    }
-
-    nicknameForceChangeState.clicks = 0;
-    nicknameForceChangeState.lastClickAt = 0;
-    setCantNicknameStatus("숨겨진 변경키 활성화");
-    return true;
-  }
-
   function getSupabaseClient() {
     if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key || !window.supabase?.createClient) return null;
     if (cantSupabaseClient) return cantSupabaseClient;
@@ -582,15 +482,9 @@
   }
 
   function renderCantSetup() {
-    syncCantNicknameInputs();
     const nickname = currentHumanNickname();
     if (els.humanAvatar) els.humanAvatar.src = HUMAN_PROFILE.avatarUrl;
     if (els.humanPreviewName) els.humanPreviewName.textContent = nickname || "닉네임 필요";
-    if (!nickname) {
-      setCantNicknameStatus("닉네임을 2글자 이상으로 설정해야 시작할 수 있습니다.", true);
-    } else if (!els.nicknameStatus?.classList.contains("error")) {
-      setCantNicknameStatus(`현재 닉네임: ${nickname}`);
-    }
   }
 
   function showCantSetup() {
@@ -629,8 +523,6 @@
   }
 
   function startCantGame() {
-    const desired = normalizeHumanNickname(els.nameInput?.value || "");
-    if ((!currentHumanNickname() || (desired && desired !== currentHumanNickname())) && !confirmCantNicknameChange(els.nameInput)) return;
     state.humanName = currentHumanNickname();
     if (!state.humanName) {
       renderCantSetup();
@@ -1395,16 +1287,6 @@
   els.backButton?.addEventListener("click", leaveCantStop);
   els.newGameButton?.addEventListener("click", startCantGame);
   els.startButton?.addEventListener("click", startCantGame);
-  els.confirmNicknameButton?.addEventListener("click", (event) => {
-    const force = consumeNicknameForceChangeClick(event);
-    if (force === null) return;
-    confirmCantNicknameChange(els.nameInput, { force });
-  });
-  els.nameInput?.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
-    confirmCantNicknameChange(els.nameInput);
-  });
   els.difficultySelect?.addEventListener("change", renderCantSetup);
   els.playerCountSelect?.addEventListener("change", renderCantSetup);
   els.refreshLeaderboardButton?.addEventListener("click", loadCantLeaderboard);

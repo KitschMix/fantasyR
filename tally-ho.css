@@ -393,16 +393,8 @@ body:not(.tally-active) .tally-ho-panel {
 }
 
 .tally-board.ai-turn-cue::before {
-  position: absolute;
-  inset: 3.75%;
-  z-index: 2;
-  content: "";
-  border: 2px solid rgba(211, 107, 88, 0.82);
-  border-radius: 6px;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, transparent, rgba(211, 107, 88, 0.2), transparent),
-    radial-gradient(circle at 50% 50%, rgba(211, 107, 88, 0.16), transparent 58%);
+  display: none;
+}
   opacity: 0;
   animation: tally-ai-turn-wake 980ms ease-out;
 }
