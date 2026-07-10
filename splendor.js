@@ -569,6 +569,7 @@
         human: isHuman,
         name: isHuman ? humanName : (profile.name || `AI ${i}`),
         avatarUrl: isHuman ? profileImageUrl("유저.jpg") : profile.avatarUrl,
+        difficulty: isHuman ? "normal" : (profile.difficulty || "normal"),
         gems: { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 0 },
         bonuses: { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0 },
         points: 0,
@@ -1045,44 +1046,203 @@
   }
 
   /* ── AI Logic ── */
+  // 난이도별 AI 전략 설정 (디테일한 차별화)
+  const AI_DIFFICULTY_CONFIG = {
+    easy: {
+      mistakeRate: 0.45,           // 높은 실수율
+      cardStrategy: "lowest",      // 가장 저렴한 카드 우선
+      tokenStrategy: "random",     // 무작위 토큰 가져가기
+      considerBonus: false,        // 보너스 효율성 무시
+      considerNoble: false,        // 귀족 매칭 무시
+      reserveStrategy: "rare",     // 거의 예약 안 함
+      avoidStarvation: false,      // 자원 고갈 무시
+      preferDoubles: false         // 2개 같은 색 전략 안 씀
+    },
+    normal: {
+      mistakeRate: 0.25,
+      cardStrategy: "highest",     // 가장 높은 점수 카드
+      tokenStrategy: "needed",     // 부족한 토큰 순
+      considerBonus: false,
+      considerNoble: false,
+      reserveStrategy: "tier3",
+      avoidStarvation: true,
+      preferDoubles: false
+    },
+    hard: {
+      mistakeRate: 0.10,
+      cardStrategy: "value",       // 보너스 효율성 가중
+      tokenStrategy: "needed",
+      considerBonus: true,         // 보너스 효율성 고려
+      considerNoble: false,
+      reserveStrategy: "tier3_strategic",
+      avoidStarvation: true,
+      preferDoubles: false
+    },
+    expert: {
+      mistakeRate: 0.03,
+      cardStrategy: "value",
+      tokenStrategy: "needed_bonus",
+      considerBonus: true,
+      considerNoble: true,         // 귀족 매칭 고려
+      reserveStrategy: "high_value",
+      avoidStarvation: true,
+      preferDoubles: true          // 자원 보존 차원에서 같은 색 2개도 고려
+    },
+    boss: {
+      mistakeRate: 0,
+      cardStrategy: "value_noble",
+      tokenStrategy: "smart",      // 보너스+귀족+자원고갈 모두 고려
+      considerBonus: true,
+      considerNoble: true,
+      reserveStrategy: "denial",   // 상대 차단 포함
+      avoidStarvation: true,
+      preferDoubles: true
+    }
+  };
+
+  // 헬퍼: 카드 구매 가치 점수 (높을수록 좋은 카드)
+  function aiScoreCardValue(player, card) {
+    let score = card.points * 10;
+    // 보너스 효율성: 같은 보너스 색깔을 이미 가지고 있으면 추가 가치
+    const myBonus = player.bonuses[card.bonus] || 0;
+    score += myBonus * 4;
+    // 보너스 잠재력: 이 카드를 사면 다른 카드 비용 절감
+    let totalDiscount = 0;
+    for (const [g, n] of Object.entries(card.cost)) {
+      if (player.bonuses[g] > 0) totalDiscount += Math.min(player.bonuses[g], n);
+    }
+    score += totalDiscount * 2;
+    return score;
+  }
+
+  // 헬퍼: 가장 가까운 귀족 매칭 분석
+  function aiFindClosestNoble(player) {
+    let bestNoble = null;
+    let bestProgress = 0;
+    let bestNeeded = null;
+    for (const noble of state.nobles) {
+      let progress = 0;
+      let required = 0;
+      const needed = {};
+      for (const [g, n] of Object.entries(noble.requires)) {
+        required += n;
+        const have = player.bonuses[g] || 0;
+        progress += Math.min(have, n);
+        if (have < n) needed[g] = n - have;
+      }
+      const ratio = required > 0 ? progress / required : 0;
+      if (ratio > bestProgress) {
+        bestProgress = ratio;
+        bestNoble = noble;
+        bestNeeded = needed;
+      }
+    }
+    return { noble: bestNoble, progress: bestProgress, needed: bestNeeded };
+  }
+
+  // 헬퍼: 보너스 색깔 가치 평가 (귀족 매칭 가중치)
+  function aiScoreGemForBonus(player, gem) {
+    const config = AI_DIFFICULTY_CONFIG[player.difficulty] || AI_DIFFICULTY_CONFIG.normal;
+    let score = 0;
+    if (config.considerBonus) {
+      score += (player.bonuses[gem] || 0) * 1.5;
+    }
+    if (config.considerNoble) {
+      const closest = aiFindClosestNoble(player);
+      if (closest.needed && closest.needed[gem]) {
+        score += closest.needed[gem] * 3 * (1 + closest.progress);
+      }
+    }
+    return score;
+  }
+
+  // 헬퍼: 자원 고갈 위험 판단
+  function aiIsResourceStarved() {
+    const scarceColors = GEMS.filter(g => g !== 'gold' && (state.tokenBank[g] || 0) <= 1);
+    return scarceColors.length >= 3;
+  }
+
+  /* ── AI Decision ── */
   function aiChooseAction(player) {
     const diff = player.difficulty || "normal";
-    const mistakeRate = diff === "expert" ? 0 : diff === "hard" ? 0.12 : 0.35;
-    const makeMistake = () => Math.random() < mistakeRate;
+    const config = AI_DIFFICULTY_CONFIG[diff] || AI_DIFFICULTY_CONFIG.normal;
+    const makeMistake = () => Math.random() < config.mistakeRate;
 
-    // Try to buy a visible card (prefer highest points affordable)
-    let bestCard = null, bestTier = 0, bestIdx = 0, bestPoints = -1;
-    let allAffordable = [];
+    // ── 1) 카드 구매 결정 ──
+    const allAffordable = [];
     for (const tier of [3, 2, 1]) {
       state.visibleCards[tier].forEach((card, i) => {
         if (card && canAffordWithGems(card, player)) {
-          allAffordable.push({ card, tier, i, points: card.points });
-          if (card.points > bestPoints) {
-            bestCard = card; bestTier = tier; bestIdx = i; bestPoints = card.points;
-          }
+          allAffordable.push({ card, tier, i });
         }
       });
     }
-    // Normal/Hard: sometimes pick a random affordable card instead of best
-    if (bestCard && makeMistake() && allAffordable.length > 1) {
-      const pick = allAffordable[Math.floor(Math.random() * allAffordable.length)];
-      bestCard = pick.card; bestTier = pick.tier; bestIdx = pick.i;
+
+    if (allAffordable.length > 0 && !makeMistake()) {
+      let bestPick = null;
+      let bestScore = -Infinity;
+
+      for (const a of allAffordable) {
+        let score;
+        if (config.cardStrategy === "lowest") {
+          // Easy: 가장 저렴한 카드 우선 (점수 낮지만 비용도 낮음)
+          score = -Object.values(a.card.cost).reduce((s, n) => s + n, 0);
+        } else if (config.cardStrategy === "highest") {
+          // Normal: 가장 높은 점수
+          score = a.card.points;
+        } else if (config.cardStrategy === "value") {
+          // Hard/Expert: 가치 점수 (보너스 효율성)
+          score = aiScoreCardValue(player, a.card);
+          // Expert+: 귀족 매칭 보너스
+          if (config.considerNoble) {
+            const closest = aiFindClosestNoble(player);
+            if (closest.needed && closest.needed[a.card.bonus]) {
+              score += 25 * closest.progress;
+            }
+          }
+        } else {
+          // Boss: 모든 전략 종합
+          score = aiScoreCardValue(player, a.card);
+          const closest = aiFindClosestNoble(player);
+          if (closest.needed && closest.needed[a.card.bonus]) {
+            score += 30 * closest.progress;
+          }
+          // Boss: 5점 카드는 특별 가중
+          if (a.card.points >= 4) score += 15;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestPick = a;
+        }
+      }
+
+      if (bestPick) {
+        showBuyAnimation(bestPick.tier, bestPick.i, player.name);
+        payForCard(bestPick.card, player);
+        state.visibleCards[bestPick.tier][bestPick.i] = drawCard(bestPick.tier);
+        addLog(`${player.name}: 카드 구매 (${bestPick.card.points}점)`);
+        checkNobles(player);
+        DIALOGUE.speak(player.index, "aiBuy");
+        return;
+      }
     }
-    if (bestCard && !(makeMistake() && diff === "normal")) {
-      showBuyAnimation(bestTier, bestIdx, player.name);
-      payForCard(bestCard, player);
-      state.visibleCards[bestTier][bestIdx] = drawCard(bestTier);
-      addLog(`${player.name}: 카드 구매 (${bestCard.points}점)`);
+
+    // 실수 시 무작위 카드 (Normal/Hard/Easy만)
+    if (allAffordable.length > 1 && makeMistake() && config.mistakeRate > 0.05) {
+      const pick = allAffordable[Math.floor(Math.random() * allAffordable.length)];
+      showBuyAnimation(pick.tier, pick.i, player.name);
+      payForCard(pick.card, player);
+      state.visibleCards[pick.tier][pick.i] = drawCard(pick.tier);
+      addLog(`${player.name}: 카드 구매 (${pick.card.points}점)`);
       checkNobles(player);
-      DIALOGUE.speak(player.index, "aiBuy");
       return;
     }
 
-    // Try to buy reserved card
+    // ── 2) 예약된 카드 구매 ──
     for (let ri = 0; ri < player.reserved.length; ri++) {
       const card = player.reserved[ri];
-      if (canAffordWithGems(card, player)) {
-        if (makeMistake()) continue; // sometimes skip reserved buy
+      if (canAffordWithGems(card, player) && !makeMistake()) {
         payForCard(card, player);
         player.reserved.splice(ri, 1);
         addLog(`${player.name}: 예약 카드 구매 (${card.points}점)`);
@@ -1091,69 +1251,97 @@
       }
     }
 
-    // Take gems: prefer gems needed for cheapest affordable card
-    const needed = {};
-    for (const tier of [1, 2, 3]) {
-      state.visibleCards[tier].forEach(card => {
-        if (!card) return;
-        const cost = effectiveCost(card, player);
-        for (const [g, n] of Object.entries(cost)) {
-          const deficit = n - (player.gems[g] || 0);
-          if (deficit > 0) needed[g] = (needed[g] || 0) + deficit;
-        }
-      });
-    }
-    const sortedGems = Object.entries(needed)
-      .filter(([g]) => state.tokenBank[g] > 0)
-      .sort((a, b) => b[1] - a[1])
-      .map(([g]) => g);
-
-    // Normal: sometimes take random gems instead of optimal ones
-    if (makeMistake() && diff !== "expert") {
-      const randomGems = shuffle(GEMS.filter(g => state.tokenBank[g] > 0)).slice(0, 3);
-      if (randomGems.length >= 1) { takeTokens(randomGems); return; }
-    }
-
-    if (sortedGems.length >= 3) {
-      takeTokens(sortedGems.slice(0, 3));
-      DIALOGUE.speak(player.index, "aiGem");
-    } else if (sortedGems.length >= 1) {
-      const picks = sortedGems.filter(g => state.tokenBank[g] > 0).slice(0, 3);
-      if (picks.length >= 1) {
-        takeTokens(picks);
-        DIALOGUE.speak(player.index, "aiGem");
-      } else {
-        const any = GEMS.filter(g => state.tokenBank[g] > 0).slice(0, 3);
-        if (any.length) takeTokens(any);
-        else { addLog(`${player.name}: 보석이 없어 턴 넘김`); state.phase = "done"; }
-      }
-    } else {
-      // Expert: proactively reserve high-value cards for gold
-      if (diff === "expert" && player.reserved.length < 3) {
-        let tier3Card = state.visibleCards[3]?.find(c => c && c.points >= 3);
-        let ti = 3;
-        if (!tier3Card) { tier3Card = state.visibleCards[2]?.find(c => c && c.points >= 2); ti = 2; }
-        if (tier3Card) {
-          const idx = state.visibleCards[ti].indexOf(tier3Card);
+    // ── 3) 자원 고갈 방지 판단 ──
+    const availableBankGems = GEMS.filter(g => state.tokenBank[g] > 0 && g !== 'gold');
+    if (availableBankGems.length === 0) {
+      // 뱅크가 완전히 빔 → 예약 또는 턴 종료
+      if (player.reserved.length < 3 && config.reserveStrategy !== "rare" && !makeMistake()) {
+        const tier3Card = state.visibleCards[3]?.[0];
+        if (tier3Card && config.reserveStrategy !== "rare") {
           player.reserved.push(tier3Card);
-          state.visibleCards[ti][idx] = drawCard(ti);
+          state.visibleCards[3][0] = drawCard(3);
           if (state.tokenBank.gold > 0) { player.gems.gold++; state.tokenBank.gold--; }
           addLog(`${player.name}: 카드 예약 (전략)`);
           return;
         }
       }
-      // Reserve a card from tier 3 for gold
-      const tier3Card = state.visibleCards[3]?.[0];
-      if (tier3Card && player.reserved.length < 3 && !makeMistake()) {
-        player.reserved.push(tier3Card);
-        state.visibleCards[3][0] = drawCard(3);
-        if (state.tokenBank.gold > 0) { player.gems.gold++; state.tokenBank.gold--; }
-        addLog(`${player.name}: 카드 예약`);
-      } else {
-        const any = GEMS.filter(g => state.tokenBank[g] > 0).slice(0, 3);
-        if (any.length) takeTokens(any);
-        else addLog(`${player.name}: 턴 넘김`);
+      addLog(`${player.name}: 토큰 없음, 턴 종료`);
+      state.phase = "done";
+      return;
+    }
+
+    // ── 4) 토큰 가져오기 결정 ──
+    let picks;
+
+    if (config.tokenStrategy === "random" || makeMistake()) {
+      // Easy 또는 실수 시: 무작위
+      picks = shuffle(availableBankGems).slice(0, 3);
+    } else {
+      // 필요한 토큰 계산
+      const needScore = {};
+      for (const tier of [1, 2, 3]) {
+        state.visibleCards[tier].forEach(card => {
+          if (!card) return;
+          const cost = effectiveCost(card, player);
+          for (const [g, n] of Object.entries(cost)) {
+            const deficit = n - (player.gems[g] || 0);
+            if (deficit > 0) needScore[g] = (needScore[g] || 0) + deficit;
+          }
+        });
       }
+      // Hard+: 보너스 효율성 가중치
+      if (config.considerBonus || config.considerNoble) {
+        for (const gem of GEMS) {
+          if (gem === 'gold') continue;
+          needScore[gem] = (needScore[gem] || 0) + aiScoreGemForBonus(player, gem);
+        }
+      }
+      // 부족한 순으로 정렬
+      const sortedGems = Object.entries(needScore)
+        .filter(([g]) => state.tokenBank[g] > 0)
+        .sort((a, b) => b[1] - a[1])
+        .map(([g]) => g);
+
+      picks = sortedGems.slice(0, 3);
+      if (picks.length < 3) {
+        const remaining = availableBankGems.filter(g => !picks.includes(g));
+        picks = picks.concat(remaining.slice(0, 3 - picks.length));
+      }
+    }
+
+    // ── 5) 2개 같은 색 전략 (Expert/Boss만) ──
+    // 자원 고갈 방지 차원에서 4+개 남아있는 같은 색 2개 가져오기
+    if (config.preferDoubles && Math.random() < 0.4 && !makeMistake()) {
+      for (const gem of GEMS) {
+        if (state.tokenBank[gem] >= 4 && (player.gems[gem] || 0) < 3) {
+          picks = [gem, gem];
+          break;
+        }
+      }
+    }
+
+    // ── 6) 카드 예약 (Expert/Boss: 고가치 카드 전략적 확보) ──
+    if (allAffordable.length === 0 && config.reserveStrategy !== "rare" && player.reserved.length < 3 && !makeMistake()) {
+      // 4+점 카드 우선 예약
+      let target = state.visibleCards[3]?.find(c => c && c.points >= 3);
+      let ti = 3;
+      if (!target) { target = state.visibleCards[2]?.find(c => c && c.points >= 3); ti = 2; }
+      if (target) {
+        const idx = state.visibleCards[ti].indexOf(target);
+        player.reserved.push(target);
+        state.visibleCards[ti][idx] = drawCard(ti);
+        if (state.tokenBank.gold > 0) { player.gems.gold++; state.tokenBank.gold--; }
+        addLog(`${player.name}: 카드 예약 (${target.points}점)`);
+        return;
+      }
+    }
+
+    if (picks.length >= 1) {
+      takeTokens(picks);
+      DIALOGUE.speak(player.index, "aiGem");
+    } else {
+      addLog(`${player.name}: 가져갈 토큰 없음`);
+      state.phase = "done";
     }
   }
 
@@ -1217,8 +1405,16 @@
     }
 
     if (!np.human) {
-      // Step 2: After toast, show thinking bubble for 3~6s random
-      const thinkTime = 3000 + Math.floor(Math.random() * 3000);
+      // Step 2: After toast, show thinking bubble (난이도별 차등)
+      const diff = np.difficulty || "normal";
+      const thinkConfig = {
+        easy:   { min: 4500, max: 7000 },   // 쉬움: 더 오래 고민 (덜 전략적)
+        normal: { min: 3000, max: 5500 },
+        hard:   { min: 2200, max: 4500 },
+        expert: { min: 1500, max: 3500 },   // 매우어려움: 빠르게 결정
+        boss:   { min: 1000, max: 2500 }    // 최종보스: 즉시 결정
+      }[diff] || { min: 3000, max: 5500 };
+      const thinkTime = thinkConfig.min + Math.floor(Math.random() * (thinkConfig.max - thinkConfig.min));
       setTimeout(() => {
         showThinking(npIndex);
         setTimeout(runAiTurn, thinkTime);
