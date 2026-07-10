@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOARD GAME ROOM  | 프리미엄 보드게임 컬렉션</title>
+<title>BOARD GAME ROOM | 프리미엄 보드게임 컬렉션</title>
 <!-- 첫 화면 게임 카드 아트 preload (LCP 가속) -->
 <link rel="preload" as="image" href="assets/main/%EC%8A%A4%ED%94%8C%EB%A0%8C%EB%8D%94.jpg" fetchpriority="high">
 <link rel="preload" as="image" href="assets/main/%EB%B6%80%EB%A3%A8%EB%A7%88%EB%B6%88.jpg" fetchpriority="high">
@@ -210,7 +210,7 @@
   <!-- ═══ 모바일 TopAppBar (Stitch 스타일: 알림 + 프로필) ═══ -->
   <header class="lg:hidden bg-background/90 backdrop-blur-md text-primary sticky top-0 shadow-sm flex justify-between items-center px-container-margin py-stack-md w-full z-50 transition-all duration-300 ease-in-out">
     <div class="flex items-center gap-4">
-      <h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold tracking-tight text-primary">BOARDVAULT</h1>
+      <h1 class="font-headline-md text-[18px] leading-6 font-bold tracking-normal text-primary whitespace-nowrap">BOARD GAME ROOM</h1>
     </div>
     <div class="flex items-center gap-3">
       <span class="material-symbols-outlined text-on-surface-variant hover:opacity-80 cursor-pointer" title="알림">notifications</span>
@@ -267,21 +267,20 @@
         </div>
       </div>
 
-      <!-- 모바일: 가로 스크롤 필터 (Stitch 스타일, Logic 추가) -->
+      <!-- 모바일: 터치하기 쉬운 가로 스크롤 필터 -->
       <div class="lg:hidden flex overflow-x-auto hide-scrollbar gap-stack-sm mb-stack-md -mx-container-margin px-container-margin">
-        <button data-filter="all" class="filter-chip bg-primary text-on-primary font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap active-pill transition-transform active:scale-95 shrink-0">All</button>
-        <button data-filter="strategy" class="filter-chip bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Strategy</button>
-        <button data-filter="party" class="filter-chip bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Party</button>
-        <button data-filter="family" class="filter-chip bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Family</button>
-        <button data-filter="logic" class="filter-chip bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Logic</button>
+        <button type="button" data-filter="all" aria-pressed="true" class="filter-chip inline-flex min-h-11 items-center justify-center bg-primary text-on-primary font-label-lg text-label-lg px-5 py-2.5 rounded-full whitespace-nowrap active-pill transition-transform active:scale-95 shrink-0">All</button>
+        <button type="button" data-filter="strategy" aria-pressed="false" class="filter-chip inline-flex min-h-11 items-center justify-center bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-5 py-2.5 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Strategy</button>
+        <button type="button" data-filter="party" aria-pressed="false" class="filter-chip inline-flex min-h-11 items-center justify-center bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-5 py-2.5 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Party</button>
+        <button type="button" data-filter="family" aria-pressed="false" class="filter-chip inline-flex min-h-11 items-center justify-center bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-5 py-2.5 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Family</button>
       </div>
 
       <!-- 데스크탑: flex-wrap 필터 -->
       <div class="hidden lg:flex flex-wrap gap-2 mb-8" id="filterChipsDesktop">
-        <button data-filter="all" class="filter-chip px-5 py-2 rounded-full bg-primary text-on-primary font-label-lg hover:scale-105 active:scale-95 transition-all">All Games</button>
-        <button data-filter="strategy" class="filter-chip px-5 py-2 rounded-full bg-surface-container-high border border-outline-variant/30 text-on-surface font-label-lg hover:border-primary/50 transition-all">Strategy</button>
-        <button data-filter="party" class="filter-chip px-5 py-2 rounded-full bg-surface-container-high border border-outline-variant/30 text-on-surface font-label-lg hover:border-primary/50 transition-all">Party</button>
-        <button data-filter="family" class="filter-chip px-5 py-2 rounded-full bg-surface-container-high border border-outline-variant/30 text-on-surface font-label-lg hover:border-primary/50 transition-all">Family</button>
+        <button type="button" data-filter="all" aria-pressed="true" class="filter-chip px-5 py-2 rounded-full bg-primary text-on-primary font-label-lg hover:scale-105 active:scale-95 transition-all">All Games</button>
+        <button type="button" data-filter="strategy" aria-pressed="false" class="filter-chip px-5 py-2 rounded-full bg-surface-container-high border border-outline-variant/30 text-on-surface font-label-lg hover:border-primary/50 transition-all">Strategy</button>
+        <button type="button" data-filter="party" aria-pressed="false" class="filter-chip px-5 py-2 rounded-full bg-surface-container-high border border-outline-variant/30 text-on-surface font-label-lg hover:border-primary/50 transition-all">Party</button>
+        <button type="button" data-filter="family" aria-pressed="false" class="filter-chip px-5 py-2 rounded-full bg-surface-container-high border border-outline-variant/30 text-on-surface font-label-lg hover:border-primary/50 transition-all">Family</button>
       </div>
 
       <!-- 게임 카드 그리드 -->

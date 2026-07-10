@@ -1,4 +1,4 @@
-/* BOARDVAULT - 판타지왕국 프리미엄 컬렉션
+/* BOARD GAME ROOM - 판타지왕국 프리미엄 컬렉션
  * Stitch 디자인 코드 기반으로 작성된 클라이언트 UI 스크립트.
  * 외부 의존성 없음 (모든 데이터는 인라인).
  */
@@ -276,7 +276,9 @@ function setupInteractions() {
       const filter = chip.getAttribute('data-filter') || 'all';
       // 모든 칩 동기화: 활성 칩은 골드, 나머지는 비활성 스타일
       document.querySelectorAll('.filter-chip').forEach(c => {
-        if (c === chip) {
+        const isActive = c.getAttribute('data-filter') === filter;
+        c.setAttribute('aria-pressed', String(isActive));
+        if (isActive) {
           // 활성
           c.classList.add('bg-primary', 'text-on-primary', 'active-pill');
           c.classList.remove('bg-surface-container-high', 'text-on-surface-variant', 'border', 'border-outline-variant/30');
