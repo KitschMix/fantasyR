@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOARDVAULT | 판타지왕국 프리미엄 컬렉션</title>
+<title>BOARD GAME ROOM  | 프리미엄 보드게임 컬렉션</title>
 <!-- 첫 화면 게임 카드 아트 preload (LCP 가속) -->
 <link rel="preload" as="image" href="assets/main/%EC%8A%A4%ED%94%8C%EB%A0%8C%EB%8D%94.jpg" fetchpriority="high">
 <link rel="preload" as="image" href="assets/main/%EB%B6%80%EB%A3%A8%EB%A7%88%EB%B6%88.jpg" fetchpriority="high">
@@ -207,49 +207,18 @@
 <!-- ═══ 메인 컨텐츠 ═══ -->
 <main class="lg:ml-80 min-h-screen relative pb-32 lg:pb-0">
 
-  <!-- ═══ 모바일 TopAppBar (Stitch 스타일) ═══ -->
+  <!-- ═══ 모바일 TopAppBar (Stitch 스타일: 알림 + 프로필) ═══ -->
   <header class="lg:hidden bg-background/90 backdrop-blur-md text-primary sticky top-0 shadow-sm flex justify-between items-center px-container-margin py-stack-md w-full z-50 transition-all duration-300 ease-in-out">
     <div class="flex items-center gap-4">
-      <button id="mobileMenuBtn" class="material-symbols-outlined text-primary hover:opacity-80 cursor-pointer" onclick="document.getElementById('mobileDrawer').classList.toggle('translate-x-full')">menu</button>
-      <h1 class="font-headline-md text-headline-md font-bold tracking-tight text-primary">BOARD GAME ROOM</h1>
+      <h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold tracking-tight text-primary">BOARDVAULT</h1>
     </div>
     <div class="flex items-center gap-3">
-      <button id="mobileProfileButton" type="button" class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-container border border-primary/30 flex items-center justify-center text-on-primary font-bold text-xs shrink-0 hover:opacity-90 active:scale-95 transition-transform cursor-pointer" title="프로필 / 닉네임 변경">
-        게
-      </button>
+      <span class="material-symbols-outlined text-on-surface-variant hover:opacity-80 cursor-pointer" title="알림">notifications</span>
+      <button id="mobileProfileButton" type="button" class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-container border border-primary/30 flex items-center justify-center text-on-primary font-bold text-sm shrink-0 hover:scale-105 transition-transform cursor-pointer" aria-label="마이 프로필">게</button>
     </div>
   </header>
 
-  <!-- ═══ 모바일 드로어 메뉴 (사이드바 미니 버전) ═══ -->
-  <div id="mobileDrawer" class="lg:hidden fixed inset-0 z-[60] pointer-events-none opacity-0 transition-opacity duration-300">
-    <div class="absolute inset-0 bg-black/60 pointer-events-auto" onclick="document.getElementById('mobileDrawer').classList.add('opacity-0','pointer-events-none'); document.getElementById('mobileDrawer').classList.remove('opacity-100'); document.getElementById('mobileDrawerPanel').classList.add('translate-x-full');"></div>
-    <aside id="mobileDrawerPanel" class="absolute right-0 top-0 h-full w-72 bg-surface-container-lowest border-l border-outline-variant shadow-2xl p-6 transform translate-x-full transition-transform duration-300 pointer-events-auto">
-      <div class="flex items-center justify-between mb-8">
-        <h2 class="font-headline-md text-headline-md font-bold text-primary whitespace-nowrap">BOARD GAME ROOM</h2>
-        <button class="material-symbols-outlined text-on-surface-variant" onclick="document.getElementById('mobileDrawer').classList.add('opacity-0','pointer-events-none'); document.getElementById('mobileDrawer').classList.remove('opacity-100'); document.getElementById('mobileDrawerPanel').classList.add('translate-x-full');">close</button>
-      </div>
-      <p class="text-on-surface-variant font-label-md mb-6 opacity-70">프리미엄 보드게임 컬렉션</p>
-      <nav class="space-y-1 mb-8">
-        <a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant rounded-lg hover:bg-surface-container-high transition-colors" href="fantasy.html">
-          <span class="material-symbols-outlined">home</span><span class="font-label-lg text-label-lg">홈</span>
-        </a>
-        <a class="flex items-center gap-4 px-4 py-3 bg-primary-container/20 text-on-surface rounded-lg nav-active" href="#">
-          <span class="material-symbols-filled text-primary">library_books</span><span class="font-label-lg text-label-lg font-semibold">컬렉션</span>
-        </a>
-        <a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant rounded-lg hover:bg-surface-container-high transition-colors" href="#" onclick="event.preventDefault(); document.getElementById('mobileDrawer').classList.add('opacity-0','pointer-events-none'); document.getElementById('mobileDrawer').classList.remove('opacity-100'); document.getElementById('mobileDrawerPanel').classList.add('translate-x-full'); setTimeout(()=>{document.getElementById('vaultSearchMobile').focus();}, 320);">
-          <span class="material-symbols-outlined">search</span><span class="font-label-lg text-label-lg">검색</span>
-        </a>
-      </nav>
-      <div class="p-3 bg-surface-container rounded-xl border border-outline-variant/30 flex items-center gap-3">
-        <div id="drawerProfileAvatar" class="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary-container border border-primary/30 flex items-center justify-center text-on-primary font-bold text-base shrink-0">게</div>
-        <div class="min-w-0 flex-1">
-          <p id="drawerProfileName" class="font-label-lg text-on-surface truncate text-sm">게스트</p>
-          <p class="text-[10px] text-primary uppercase tracking-widest font-bold">마이 프로필</p>
-        </div>
-        <button id="drawerProfileEditButton" type="button" class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer" title="닉네임 변경">edit</button>
-      </div>
-    </aside>
-  </div>
+  <!-- (모바일 드로어는 첨부 디자인 기준 미사용) -->
 
   <!-- ═══ 데스크탑 상단 앱 바 ═══ -->
   <header class="hidden lg:flex sticky top-0 bg-background/90 backdrop-blur-md z-40 items-center justify-between px-gutter py-4 border-b border-outline-variant/20">
@@ -298,12 +267,13 @@
         </div>
       </div>
 
-      <!-- 모바일: 가로 스크롤 필터 (Stitch 스타일) -->
+      <!-- 모바일: 가로 스크롤 필터 (Stitch 스타일, Logic 추가) -->
       <div class="lg:hidden flex overflow-x-auto hide-scrollbar gap-stack-sm mb-stack-md -mx-container-margin px-container-margin">
-        <button data-filter="all" class="filter-chip bg-primary text-on-primary font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap active-pill transition-transform active:scale-95 shrink-0">All Games</button>
+        <button data-filter="all" class="filter-chip bg-primary text-on-primary font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap active-pill transition-transform active:scale-95 shrink-0">All</button>
         <button data-filter="strategy" class="filter-chip bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Strategy</button>
         <button data-filter="party" class="filter-chip bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Party</button>
         <button data-filter="family" class="filter-chip bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Family</button>
+        <button data-filter="logic" class="filter-chip bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors shrink-0">Logic</button>
       </div>
 
       <!-- 데스크탑: flex-wrap 필터 -->
@@ -320,8 +290,8 @@
       </div>
     </section>
 
-    <!-- ═══ Session History ═══ -->
-    <section class="py-6">
+    <!-- ═══ Session History (데스크탑 전용, 모바일 미사용) ═══ -->
+    <section class="py-6 hidden lg:block">
       <div class="flex items-center justify-between mb-6">
         <h3 class="font-headline-lg text-headline-lg text-on-surface">Session History</h3>
         <a href="#" class="font-label-lg text-primary hover:underline flex items-center gap-1">
@@ -358,30 +328,7 @@
   </div>
 </main>
 
-<!-- ═══ 모바일 FAB (Stitch 스타일) ═══ -->
-<button id="fabAdd" class="lg:hidden fixed right-container-margin bottom-24 bg-primary text-on-primary w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-40" title="컬렉션에 추가">
-  <span class="material-symbols-outlined">add</span>
-</button>
-
-<!-- ═══ 모바일 하단 네비 (Stitch 스타일) ═══ -->
-<nav class="lg:hidden fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe bg-surface/90 backdrop-blur-md shadow-lg shadow-black/50 rounded-t-xl">
-  <a href="fantasy.html" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary-fixed active:scale-95 transition-transform duration-200 cursor-pointer">
-    <span class="material-symbols-outlined">home</span>
-    <span class="font-label-md text-label-md mt-1">Home</span>
-  </a>
-  <a href="#" class="flex flex-col items-center justify-center bg-primary-container/20 text-primary rounded-xl px-4 py-1 active:scale-95 transition-transform duration-200 cursor-pointer">
-    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">library_books</span>
-    <span class="font-label-md text-label-md mt-1">Collection</span>
-  </a>
-  <a href="#" onclick="event.preventDefault(); document.getElementById('mobileDrawer').classList.remove('opacity-0','pointer-events-none'); document.getElementById('mobileDrawer').classList.add('opacity-100'); document.getElementById('mobileDrawerPanel').classList.remove('translate-x-full');" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary-fixed active:scale-95 transition-transform duration-200 cursor-pointer">
-    <span class="material-symbols-outlined">search</span>
-    <span class="font-label-md text-label-md mt-1">Search</span>
-  </a>
-  <button id="mobileNavProfileButton" type="button" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary-fixed active:scale-95 transition-transform duration-200 cursor-pointer">
-    <span class="material-symbols-outlined">person</span>
-    <span class="font-label-md text-label-md mt-1">Profile</span>
-  </button>
-</nav>
+<!-- (모바일 FAB는 첨부 디자인 기준 컬렉션 추가 기능이 없어 제거됨) -->
 
 <!-- ═══ 닉네임 프로필 모달 (입력/변경 통합) ═══ -->
 <div id="profileModal" class="fixed inset-0 z-[80] hidden items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-sm" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
