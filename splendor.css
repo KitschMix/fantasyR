@@ -328,6 +328,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 .splendor-card-reserved {
   opacity: 0.8;
   border-style: dashed;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .splendor-card-top {
@@ -651,6 +652,129 @@ body.splendor-active .turn-toast strong {
   text-overflow: ellipsis;
 }
 
+/* --- Player Gem Labels --- */
+.splendor-player-gems-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--muted);
+  margin-bottom: 2px;
+  letter-spacing: 0.5px;
+}
+
+/* --- Result Modal --- */
+.splendor-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,0.7);
+  animation: splendor-result-fade-in 0.3s ease-out;
+}
+
+@keyframes splendor-result-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.splendor-result-modal {
+  background: linear-gradient(180deg, rgba(42,36,27,0.98), rgba(28,25,21,0.98));
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  padding: 32px 40px;
+  min-width: 360px;
+  max-width: 480px;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  animation: splendor-result-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes splendor-result-pop {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.splendor-result-icon {
+  font-size: 56px;
+  margin-bottom: 8px;
+}
+
+.splendor-result-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.splendor-result-subtitle {
+  font-size: 16px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.splendor-result-scores {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.splendor-result-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.splendor-result-row.winner {
+  background: rgba(217,166,60,0.12);
+  border-color: rgba(217,166,60,0.3);
+}
+
+.splendor-result-row.you {
+  border-color: rgba(242,207,120,0.5);
+}
+
+.splendor-result-rank {
+  font-weight: 900;
+  font-size: 14px;
+  color: var(--accent);
+  min-width: 28px;
+}
+
+.splendor-result-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.splendor-result-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 14px;
+  text-align: left;
+}
+
+.splendor-result-pts {
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.splendor-result-cards {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.splendor-result-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
 /* --- Action Cards --- */
 .splendor-action-card {
   padding: 12px;
@@ -684,14 +808,20 @@ body.splendor-active .turn-toast strong {
 }
 
 .splendor-card-reserved {
-  width: 130px;
-  min-height: 130px;
+  width: 80px;
+  min-height: 80px;
   cursor: pointer;
   opacity: 0.9;
-  transition: border-color 0.15s;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
 }
 
 .splendor-card-reserved:hover {
+  width: 170px;
+  min-height: 170px;
+  z-index: 10;
+  opacity: 1;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
   border-color: rgba(242,207,120,0.54);
 }
 
@@ -1392,10 +1522,31 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-card-reserved {
-  width: 130px;
-  min-height: 130px;
+  width: 80px;
+  min-height: 80px;
   cursor: pointer;
   opacity: 0.9;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
+}
+
+.splendor-card-reserved:hover {
+  width: 170px;
+  min-height: 170px;
+  z-index: 10;
+  opacity: 1;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+}
+
+.splendor-card-reserved .splendor-card-cost,
+.splendor-card-reserved .splendor-reserved-by {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.splendor-card-reserved:hover .splendor-card-cost,
+.splendor-card-reserved:hover .splendor-reserved-by {
+  opacity: 1;
 }
 
 .splendor-log {

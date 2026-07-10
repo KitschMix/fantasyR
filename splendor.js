@@ -286,8 +286,10 @@
           <span class="splendor-player-name">${esc(p.name)}</span>
           <span class="splendor-player-score">${p.points}점</span>
         </div>
+        <div class="splendor-player-gems-label">💎 보석</div>
         <div class="splendor-player-gems">${gemsHtml || "<small style='color:var(--muted)'>없음</small>"}</div>
-        <div class="splendor-player-gems" style="margin-top:4px">${bonusHtml}</div>
+        <div class="splendor-player-gems-label">⭐ 보너스</div>
+        <div class="splendor-player-gems">${bonusHtml || "<small style='color:var(--muted)'>없음</small>"}</div>
       `;
       els.playersList.appendChild(card);
     });
@@ -425,14 +427,18 @@
     const p = activePlayer();
     if (els.turnLabel) els.turnLabel.textContent = `${p.name} 차례`;
     if (els.phaseLabel) {
-      const labels = {
-        action: "보석 가져오기, 카드 구매, 또는 카드 예약",
-        done: "턴 종료 대기",
-        finished: "게임 종료"
-      };
-      els.phaseLabel.textContent = labels[state.phase] || "-";
+      if (state.phase === "action") {
+        const selCount = state.selectedTokens.length;
+        const selSame = selCount === 2 && state.selectedTokens[0] === state.selectedTokens[1];
+        const maxSel = selSame ? 2 : 3;
+        els.phaseLabel.textContent = selCount > 0
+          ? `보석 선택 중 (${selCount}/${maxSel})`
+          : "보석 가져오기, 카드 구매, 또는 카드 예약";
+      } else {
+        const labels = { done: "턴 종료 대기", finished: "게임 종료" };
+        els.phaseLabel.textContent = labels[state.phase] || "-";
+      }
     }
-    // Turn end is automatic (no button)
   }
 
   function renderLog() {
@@ -1228,13 +1234,49 @@
     });
 
     state.phase = "finished";
-    if (winners.length === 1) {
-      addLog(`🏆 ${winners[0].name} 승리! (${winners[0].points}점, 카드 ${winners[0].cards.length}장)`);
-    } else {
-      const names = winners.map(w => w.name).join(", ");
-      addLog(`🏆 공동 승리: ${names}! (${maxPoints}점)`);
-    }
+    const sorted = [...state.players].sort((a, b) => b.points - a.points || a.cards.length - b.cards.length);
+    const winnerNames = winners.map(w => w.name).join(", ");
+    addLog(`🏆 ${winnerNames} 승리! (${maxPoints}점)`);
     renderAll();
+    // Show result modal
+    setTimeout(() => showResultModal(sorted, winners), 500);
+  }
+
+  function showResultModal(sorted, winners) {
+    const modal = document.createElement("div");
+    modal.className = "splendor-result-overlay";
+    const isWin = winners.some(w => w.human);
+    modal.innerHTML = `
+      <div class="splendor-result-modal">
+        <div class="splendor-result-icon">${isWin ? "🎉" : "😢"}</div>
+        <div class="splendor-result-title">${isWin ? "승리!" : "패배"}</div>
+        <div class="splendor-result-subtitle">${winners.map(w => w.name).join(", ")} 우승</div>
+        <div class="splendor-result-scores">
+          ${sorted.map((p, i) => `
+            <div class="splendor-result-row${winners.includes(p) ? " winner" : ""}${p.human ? " you" : ""}">
+              <span class="splendor-result-rank">${i + 1}위</span>
+              <img class="splendor-result-avatar" src="${esc(p.avatarUrl)}" alt="" />
+              <span class="splendor-result-name">${esc(p.name)}${p.human ? " (나)" : ""}</span>
+              <span class="splendor-result-pts">${p.points}점</span>
+              <span class="splendor-result-cards">카드 ${p.cards.length}장</span>
+            </div>
+          `).join("")}
+        </div>
+        <div class="splendor-result-actions">
+          <button class="primary-button splendor-result-newgame" type="button">새 게임</button>
+          <button class="secondary-button splendor-result-exit" type="button">첫 화면</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector(".splendor-result-newgame")?.addEventListener("click", () => {
+      modal.remove();
+      resetToSetup();
+    });
+    modal.querySelector(".splendor-result-exit")?.addEventListener("click", () => {
+      modal.remove();
+      leaveGame();
+    });
   }
 
   function runAiTurn() {
