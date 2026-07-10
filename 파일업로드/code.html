@@ -1,0 +1,277 @@
+<!DOCTYPE html><html lang="en" class="dark" style=""><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#f2ca50",
+                    "inverse-surface": "#e5e2e1",
+                    "inverse-primary": "#735c00",
+                    "on-tertiary-fixed-variant": "#474746",
+                    "surface-container-low": "#1c1b1b",
+                    "tertiary-container": "#b4b2b2",
+                    "primary-fixed": "#ffe088",
+                    "surface-container-high": "#2a2a2a",
+                    "background": "#131313",
+                    "surface-tint": "#e9c349",
+                    "surface-variant": "#353534",
+                    "on-secondary-fixed": "#001a42",
+                    "on-tertiary-container": "#454544",
+                    "on-tertiary-fixed": "#1b1b1c",
+                    "on-primary-fixed": "#241a00",
+                    "error": "#ffb4ab",
+                    "secondary": "#adc6ff",
+                    "on-primary-fixed-variant": "#574500",
+                    "on-surface": "#e5e2e1",
+                    "surface-dim": "#131313",
+                    "secondary-container": "#0566d9",
+                    "on-surface-variant": "#d0c5af",
+                    "on-primary-container": "#554300",
+                    "primary-container": "#d4af37",
+                    "on-secondary-container": "#e6ecff",
+                    "primary-fixed-dim": "#e9c349",
+                    "tertiary-fixed": "#e5e2e1",
+                    "outline": "#99907c",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-error-container": "#ffdad6",
+                    "surface-container-highest": "#353534",
+                    "surface-container": "#201f1f",
+                    "surface": "#131313",
+                    "on-error": "#690005",
+                    "secondary-fixed": "#d8e2ff",
+                    "on-primary": "#3c2f00",
+                    "on-tertiary": "#303030",
+                    "error-container": "#93000a",
+                    "outline-variant": "#4d4635",
+                    "on-secondary": "#002e6a",
+                    "on-secondary-fixed-variant": "#004395",
+                    "surface-bright": "#393939",
+                    "on-background": "#e5e2e1",
+                    "tertiary": "#d0cdcd",
+                    "tertiary-fixed-dim": "#c8c6c5",
+                    "inverse-on-surface": "#313030",
+                    "secondary-fixed-dim": "#adc6ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-sm": "8px",
+                    "gutter": "16px",
+                    "container-margin": "20px",
+                    "stack-md": "16px",
+                    "stack-lg": "24px",
+                    "card-padding": "16px"
+            },
+            "fontFamily": {
+                    "label-md": ["Inter"],
+                    "headline-lg-mobile": ["Montserrat"],
+                    "headline-md": ["Montserrat"],
+                    "headline-xl": ["Montserrat"],
+                    "headline-lg": ["Montserrat"],
+                    "label-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["22px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    }catch(_e){}</script><meta charset="utf-8"></head><body class="font-body-md text-body-md antialiased min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="bg-background/90 backdrop-blur-md text-primary font-headline-lg-mobile text-headline-lg-mobile docked full-width top-0 sticky shadow-sm flex justify-between items-center px-container-margin py-stack-md w-full z-50 transition-all duration-300 ease-in-out">
+<div class="flex items-center gap-4">
+
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold tracking-tight text-primary">BOARDVAULT</h1>
+</div>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-on-surface-variant hover:opacity-80 cursor-pointer" data-original-icon="notifications">notifications</span>
+</div>
+</header>
+<!-- Main Content -->
+<main class="mt-stack-lg">
+<!-- Categories Horizontal Scroll -->
+<section class="mb-stack-lg">
+<div class="flex overflow-x-auto hide-scrollbar gap-stack-sm px-container-margin">
+<button class="bg-primary text-on-primary font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap active-pill transition-transform active:scale-95">All</button>
+<button class="bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors">Strategy</button>
+<button class="bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors">Party</button>
+<button class="bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors">Family</button>
+<button class="bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg px-6 py-2 rounded-full whitespace-nowrap hover:bg-surface-container-highest transition-colors">Logic</button>
+</div>
+</section>
+<!-- Collection Header -->
+<section class="px-container-margin mb-stack-md flex justify-between items-end">
+<div>
+<p class="text-primary font-label-lg text-label-lg uppercase tracking-widest mb-1">Your Library</p>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">My Collection</h2>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">tune</span>
+</section>
+<!-- Main Collection Grid -->
+<section class="px-container-margin grid grid-cols-2 gap-gutter">
+<!-- Splendor Card -->
+<div class="group relative bg-surface-container-low rounded-xl overflow-hidden card-shadow transition-all duration-300 hover:-translate-y-1">
+<div class="aspect-[3/4] relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="A high-resolution, cinematic product photograph of the Splendor board game box featuring a wealthy renaissance merchant and glittering gemstones. The lighting is dramatic and moody, casting deep shadows that emphasize the premium gold foil accents of the logo. The background is a dark, sophisticated wood grain that feels like a private luxury study. The entire image has a rich, saturated color grade that makes the jewels pop with intense clarity." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBV49RARwOmmr3vXGcawiehDeTutSmmmtejIu-DSVfM5i3Qux3nrshUVmrvlOfDPCLJ2Zt-SdvfqvlWNewmpG-rlAxXZT2yqHBiX3KgxqddS1CUaMaWzeoEEGKhnSc7cJD1Zje6xcVAKWGAROXNs6kHLoO0b-17IHmYvj6spgVKe0iPCL_k-U-tk4WSr28386lMrNEIYYjtjHOCQRb0HNdLAQn6cwuqdwvrfKZaMV4jEBABlVHxAmKbaL8ffPaUkSafRopLuuMLAg')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80"></div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-card-padding">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Splendor</h3>
+<div class="flex items-center gap-stack-sm text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">groups</span>
+<span class="font-label-md text-label-md">2-4</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span class="font-label-md text-label-md">30m</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Clue Card -->
+<div class="group relative bg-surface-container-low rounded-xl overflow-hidden card-shadow transition-all duration-300 hover:-translate-y-1">
+<div class="aspect-[3/4] relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="A professional studio photograph of the classic Clue board game logo rendered in a sleek, modern metallic finish. The scene is set in a dark, atmospheric mansion corridor with mysterious, long-reaching shadows and a single spotlight highlighting the iconic red typography. The style is noir-inspired, utilizing deep blues and stark highlights to create a sense of intrigue and sophisticated mystery. The lighting is carefully controlled to reflect off the sharp edges of the logo." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAa6g-J3gj1VJmyvE0IpspOAY8Ijyn0clGYFMCkKLq5MMYAOKQIn2C73LAsFFUM6Mnu4FpH6BBRIfcqoT4x8SIxSooLM5-n7m9kYneQJM6oVynfAwFGU25wQw9YY3J_m_BpIdU39P38bT6d77-XmxrdLqlpetInIG0GFhbBogkHV6u2g0heUCxEJpsJTdxQMDGLeo3RpL9Bz0Mw8u456lPZ1ftwQHxZEWSxeS55Rb3khY5dqWqjlKEuBZX1Xpo4U5NLSwxzFFJI7A')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80"></div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-card-padding">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Clue</h3>
+<div class="flex items-center gap-stack-sm text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">groups</span>
+<span class="font-label-md text-label-md">3-6</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span class="font-label-md text-label-md">45m</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sushi Go Card -->
+<div class="group relative bg-surface-container-low rounded-xl overflow-hidden card-shadow transition-all duration-300 hover:-translate-y-1">
+<div class="aspect-[3/4] relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="A vibrant and playful digital illustration of the Sushi Go board game branding, reimagined with a high-end gourmet aesthetic. Cute, stylized sushi characters with glowing expressive eyes are arranged on a minimalist dark ceramic platter. The lighting is soft and diffused, creating a premium 'pop-art' feel with rich reds, greens, and pinks against a deep charcoal background. The composition is clean and modern, focusing on the whimsical charm of the game's design." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBCQ1tqCBUuQjWBYzv6HW4iA5NKnuaicqNjh8eDGk2KySa3JrTlFpeCUbubU71Pb4s70e8N8fi412Ts2D8pCwEb8VlWouhepZasID_utlGEHc3ImslAeeg-fyS-tig9Y9XbpRh_9JIH2slI42Sh2ddp2KMS4zDdVvHObIkB26AFrB0UQDJNx2mFqc2VXqHEh7-5Z4wqiA1YGLXIN7q4KkbAMfYTzhW-YgglIjymQ1P6dSSu4E6zLMtMW49zvsuXTzOdsBCKjO-FrA')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80"></div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-card-padding">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Sushi Go!</h3>
+<div class="flex items-center gap-stack-sm text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">groups</span>
+<span class="font-label-md text-label-md">2-5</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span class="font-label-md text-label-md">15m</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Dominion Card -->
+<div class="group relative bg-surface-container-low rounded-xl overflow-hidden card-shadow transition-all duration-300 hover:-translate-y-1">
+<div class="aspect-[3/4] relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="A majestic digital painting showing the Dominion board game logo set against a sprawling medieval landscape at twilight. The sky is a deep purple and gold, with a silhouette of a grand castle on the horizon. The logo itself appears to be forged from weathered silver and blue glass, reflecting the dying sunlight. The overall mood is epic and adventurous, capturing the high-fantasy spirit of deck-building with a refined, artistic touch." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAVPLXUss5aSed9Y316tcSSIBdz6sw3z__rCb8Uhcf4lWmfvJaI78ATPhZdDflgyPxV0rG2OnIPlFOGfsqwS4AHPJBJIW7J3Uc5s6eeWqh0AAKADlnYBI0jC-u1ikI_9cU6Gf_jsaD3jIntm3jMy9YK06rR2ar4S2uNsT2mRIRkMLuQGBv5qrkN2_l4wmGs3MuyQdPjZg1350sCIW_aIxBT8UzI-PUkc668PGWwxxGTXfVmju4obdYXURHuoy-R5Htw2m4SfRLAJQ')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80"></div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-card-padding">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Dominion</h3>
+<div class="flex items-center gap-stack-sm text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">groups</span>
+<span class="font-label-md text-label-md">2-4</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span class="font-label-md text-label-md">30m</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Fantasy Realms Card -->
+<div class="group relative bg-surface-container-low rounded-xl overflow-hidden card-shadow transition-all duration-300 hover:-translate-y-1">
+<div class="aspect-[3/4] relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="A mystical digital art piece featuring the Fantasy Realms logo floating amidst ethereal magical particles and glowing runes. The color palette is dominated by deep ambers, burnt oranges, and rich blacks, creating a warm yet mysterious atmosphere. The lighting seems to emanate from the logo itself, casting a soft glow on surrounding floating parchment scrolls and enchanted artifacts. The style is highly detailed and polished, evoking a sense of ancient wisdom and power." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3dfyERExQBHMDDzj_TDJOQmPeYmv6smyJ--Hr8-82v-2aECJ85RH-H_f0LHbQo-5yJOJ19fPHk5669bq6ZBHb0TAvgJcUKwmrnIcdaeIzqX_EZKPJ8TIdgnHDSNPkV6I-mZ92uz6v-FiBqvHQWd1hF8DidEabVoUw78dk-afT63SpoUrkGjvVTywDY97D3J4_gYwbNLkDLFDqOBkQwbujpGoGUZF52YwqGHT9I05HG9CvjfMIzXfRrTk1FfC7A795VAVh7RmtYg')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80"></div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-card-padding">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Fantasy Realms</h3>
+<div class="flex items-center gap-stack-sm text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">groups</span>
+<span class="font-label-md text-label-md">2-6</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span class="font-label-md text-label-md">20m</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Can't Stop Card -->
+<div class="group relative bg-surface-container-low rounded-xl overflow-hidden card-shadow transition-all duration-300 hover:-translate-y-1">
+<div class="aspect-[3/4] relative overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="A high-contrast, energetic digital graphic of the Can't Stop board game logo. The bold blue typography is surrounded by streaks of motion and vibrant white energy lines, suggesting speed and high stakes. The background is a clean, dark obsidian surface that makes the electric blue of the logo vibrate with intensity. The lighting is sharp and clinical, highlighting the geometric precision of the design in a modern, arcade-inspired aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCZwuTN-XPXNAikaAlA2sod8o6u4pHe3Ono6DsfzdEWkxWSTEvUcJ0yrRJ3TcMGAh2UpCrSOaFQXy11J65tf9MVZA4baCleW6ANKrZBNy5o37c8u2vViXp_M3dhgCh42II3xftjBX00qMU1EN7RZOAhf7zjBCgBNtrtxboRZZmXEu41VIi8VQD1vz8W0V87UN72xsRlTEsXtNrGvkjts9qWNDMv7gZhL7YACAfjdtLdaCa0KffoAOA6ek3W-zKVjaOfEt-U8gdhTA')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80"></div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-card-padding">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Can't Stop</h3>
+<div class="flex items-center gap-stack-sm text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">groups</span>
+<span class="font-label-md text-label-md">2-4</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span class="font-label-md text-label-md">30m</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button (Contextual for Home/Collection) -->
+<button class="fixed right-container-margin bottom-24 bg-primary text-on-primary w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-40">
+<span class="material-symbols-outlined">add</span>
+</button>
+<!-- BottomNavBar -->
+
+<script>
+        // Micro-interactions
+        document.querySelectorAll('button, .cursor-pointer').forEach(el => {
+            el.addEventListener('touchstart', function() {
+                this.classList.add('opacity-70');
+            });
+            el.addEventListener('touchend', function() {
+                this.classList.remove('opacity-70');
+            });
+        });
+
+        // Sticky header transparency logic
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 20) {
+                header.classList.add('shadow-lg', 'bg-background');
+                header.classList.remove('shadow-sm', 'bg-background/90');
+            } else {
+                header.classList.remove('shadow-lg', 'bg-background');
+                header.classList.add('shadow-sm', 'bg-background/90');
+            }
+        });
+    </script>
+
+</body></html>

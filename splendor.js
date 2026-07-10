@@ -292,6 +292,8 @@
       `;
       els.playersList.appendChild(card);
     });
+    // Re-attach any active speech bubble that renderAll wiped out (e.g. after a buy/gem action).
+    DIALOGUE._reapplyActiveBubble();
   }
 
   /* ── Board Rendering ── */
@@ -1715,6 +1717,7 @@
       return dlg[idx];
     },
 
+    _activeBubble: null,  // { playerIndex, text, removeTimer }
     _showOnCard(playerIndex, text) {
       const playerCard = els.playersList?.querySelector(`[data-player-index="${playerIndex}"]`);
       if (!playerCard) return;
@@ -1724,7 +1727,36 @@
       bubble.className = "splendor-speech-bubble";
       bubble.textContent = text;
       playerCard.appendChild(bubble);
-      setTimeout(() => bubble.remove(), this.displayMs);
+      const removeTimer = setTimeout(() => {
+        if (this._activeBubble && this._activeBubble.bubble === bubble) {
+          this._activeBubble = null;
+        }
+        bubble.remove();
+      }, this.displayMs);
+      this._activeBubble = { playerIndex, text, bubble, removeTimer };
+    },
+    /** Re-attach the currently-displayed bubble if renderPlayers wiped it out. */
+    _reapplyActiveBubble() {
+      if (!this._activeBubble) return;
+      const { playerIndex, text, bubble, removeTimer } = this._activeBubble;
+      // If the original bubble node is still in the DOM, leave it alone.
+      if (bubble.isConnected) return;
+      // Otherwise re-create it without resetting the timer.
+      const playerCard = els.playersList?.querySelector(`[data-player-index="${playerIndex}"]`);
+      if (!playerCard) return;
+      const fresh = document.createElement("div");
+      fresh.className = "splendor-speech-bubble";
+      fresh.textContent = text;
+      playerCard.appendChild(fresh);
+      this._activeBubble.bubble = fresh;
+      // The existing removeTimer will clear the original reference; nothing to change.
+      clearTimeout(removeTimer);
+      this._activeBubble.removeTimer = setTimeout(() => {
+        if (this._activeBubble && this._activeBubble.bubble === fresh) {
+          this._activeBubble = null;
+        }
+        fresh.remove();
+      }, this.displayMs);
     },
 
     _processQueue() {
