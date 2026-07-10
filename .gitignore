@@ -29,3 +29,9 @@ npm-debug.log*
 # Editor
 *.swp
 *.swo
+
+# Private / non-public board-game-hub page (Stitch design preview)
+# board-game-hub.* files have been promoted to public index.html / index.js
+# board-game-hub.html
+# board-game-hub.js
+# board-game-hub.css
