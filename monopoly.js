@@ -2369,19 +2369,51 @@
   /* ── Game Start ── */
   function startGame() {
     clearAiTimer();
-    const count = Math.min(4, Math.max(2, Number(els.playerCount?.value || 3)));
-    const humanName = currentHumanNickname() || (els.nameInput?.value || "").trim() || "플레이어";
-    const pool = shuffle(aiProfiles());
-    const startMoney = (count === 2 ? 5860 : 2930) * SCALE_FACTOR;
+    // 즉시 UI 응답: 시작 버튼 비활성화 + setup 패널 숨김 (클릭 피드백 즉시)
+    if (els.startButton) {
+      els.startButton.disabled = true;
+      els.startButton.dataset.starting = "1";
+    }
+    document.body.classList.add("monopoly-playing");
+    els.setupPanel?.classList.add("hidden");
+    els.gamePanel?.classList.remove("hidden");
 
-    state.players = Array.from({ length: count }, (_, i) => {
-      if (i === 0) {
+    // 무거운 초기화(보드/플레이어/로그 렌더링)는 다음 틱으로 분리해 클릭 응답성 확보
+    setTimeout(() => {
+      const count = Math.min(4, Math.max(2, Number(els.playerCount?.value || 3)));
+      const humanName = currentHumanNickname() || (els.nameInput?.value || "").trim() || "플레이어";
+      const pool = shuffle(aiProfiles());
+      const startMoney = (count === 2 ? 5860 : 2930) * SCALE_FACTOR;
+
+      state.players = Array.from({ length: count }, (_, i) => {
+        if (i === 0) {
+          return {
+            index: i,
+            id: "human",
+            human: true,
+            name: humanName,
+            avatarUrl: currentHumanAvatarUrl(),
+            emoji: TOKEN_EMOJIS[i],
+            tokenColor: TOKEN_COLORS[i],
+            money: startMoney,
+            position: 0,
+            properties: [],
+            buildings: {},
+            inJail: false,
+            jailTurns: 0,
+            spaceTravelReady: false,
+            bankrupt: false,
+            exemptionCards: 0,
+            jailEscapeCards: 0
+          };
+        }
+        const profile = pool[i - 1] || { name: `AI ${i}`, avatarUrl: profileImageUrl("보통-건일.jpg") };
         return {
           index: i,
-          id: "human",
-          human: true,
-          name: humanName,
-          avatarUrl: currentHumanAvatarUrl(),
+          id: `ai${i}`,
+          human: false,
+          name: profile.name || `AI ${i}`,
+          avatarUrl: profile.avatarUrl,
           emoji: TOKEN_EMOJIS[i],
           tokenColor: TOKEN_COLORS[i],
           money: startMoney,
@@ -2395,56 +2427,39 @@
           exemptionCards: 0,
           jailEscapeCards: 0
         };
+      });
+
+      state.currentPlayer = 0;
+      state.selectedAssetPlayerIndex = 0;
+      state.phase = "awaitRoll";
+      state.dice = [];
+      state.diceRolling = false;
+      state.chanceDeck = shuffle([...CHANCE_CARDS]);
+      state.fundDeck = shuffle([...FUND_CARDS]);
+      state.log = [];
+      state.turnCount = 1;
+      state.lastDoubleCount = 0;
+      state.socialFundPool = 0;
+      state.rentDiceTotal = 0;
+      state.suppressDoubleExtraTurn = false;
+      state.purchasedThisTurn = null;
+
+      addLog(`🌐 부루마불 게임 시작! ${count}명 참가.`);
+      addLog(`💰 각 플레이어 ₩${startMoney.toLocaleString()} 보유.`);
+
+      renderAll();
+      const firstPlayer = state.players[0];
+
+      if (els.startButton) {
+        els.startButton.disabled = false;
+        delete els.startButton.dataset.starting;
       }
-      const profile = pool[i - 1] || { name: `AI ${i}`, avatarUrl: profileImageUrl("보통-건일.jpg") };
-      return {
-        index: i,
-        id: `ai${i}`,
-        human: false,
-        name: profile.name || `AI ${i}`,
-        avatarUrl: profile.avatarUrl,
-        emoji: TOKEN_EMOJIS[i],
-        tokenColor: TOKEN_COLORS[i],
-        money: startMoney,
-        position: 0,
-        properties: [],
-        buildings: {},
-        inJail: false,
-        jailTurns: 0,
-        spaceTravelReady: false,
-        bankrupt: false,
-        exemptionCards: 0,
-        jailEscapeCards: 0
-      };
-    });
 
-    state.currentPlayer = 0;
-    state.selectedAssetPlayerIndex = 0;
-    state.phase = "awaitRoll";
-    state.dice = [];
-    state.diceRolling = false;
-    state.chanceDeck = shuffle([...CHANCE_CARDS]);
-    state.fundDeck = shuffle([...FUND_CARDS]);
-    state.log = [];
-    state.turnCount = 1;
-    state.lastDoubleCount = 0;
-    state.socialFundPool = 0;
-    state.rentDiceTotal = 0;
-    state.suppressDoubleExtraTurn = false;
-    state.purchasedThisTurn = null;
-
-    addLog(`🌐 부루마불 게임 시작! ${count}명 참가.`);
-    addLog(`💰 각 플레이어 ₩${startMoney.toLocaleString()} 보유.`);
-
-    document.body.classList.add("monopoly-playing");
-    els.setupPanel?.classList.add("hidden");
-    els.gamePanel?.classList.remove("hidden");
-    renderAll();
-    const firstPlayer = state.players[0];
-    // Show first turn popup notice
-    setTimeout(() => {
-      showTurnToast(firstPlayer);
-    }, 400);
+      // Show first turn popup notice
+      setTimeout(() => {
+        showTurnToast(firstPlayer);
+      }, 300);
+    }, 0);
   }
 
   function resetToSetup() {

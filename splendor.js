@@ -756,14 +756,14 @@
     const isDistinctTake = state.selectedTokens.length === Math.min(3, numAvailableColors);
 
     if (isDoubleTake || (isDistinctTake && state.selectedTokens.length > 0)) {
-      // Show selected state first, then take after brief delay
+      // Show selected state first, then take after brief delay (for yellow border feedback)
       state._tokensPending = true;
       renderTokens();
       renderControls();
       setTimeout(() => {
         takeTokens(state.selectedTokens);
         state._tokensPending = false;
-      }, 300);
+      }, 180);
       return;
     }
 
