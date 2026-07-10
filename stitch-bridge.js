@@ -309,7 +309,15 @@
               await connectMCP();
               status.textContent = mcpConnected ? "✅ MCP 연결됨" : "❌ 실패";
             } catch (e) {
-              status.textContent = "❌ " + e;
+              // Event 객체 또는 문자열 처리
+              let msg = "연결 실패";
+              if (typeof e === "string") msg = e;
+              else if (e?.code === 400) msg = "MCP 400 (인증 필요)";
+              else if (e?.code) msg = `MCP ${e.code}`;
+              else if (e?.message) msg = e.message;
+              else if (e?.type) msg = `${e.type} (third-party 차단)`;
+              status.textContent = "❌ " + msg;
+              status.title = "VS Code Stitch 확장 또는 새 창 워크플로우를 사용하세요";
             }
           }
         } catch (err) {
