@@ -792,6 +792,11 @@
     });
     const labels = gems.map(g => GEM_LABELS[g]).join(", ");
     addLog(`${p.name}: 보석 ${labels} 획득`);
+    // Dialogue: user gem reaction (random AI)
+    if (p.human) {
+      const ais = state.players.map((_, i) => i).filter(i => !state.players[i].human);
+      if (ais.length) DIALOGUE.speak(ais[Math.floor(Math.random() * ais.length)], "userGem");
+    }
     state.selectedTokens = [];
     if (!p.human) state.phase = "done";
     // Delay render slightly so bubbles are visible
@@ -832,6 +837,11 @@
     }
     showBuyAnimation(tier, index, p.name);
     payForCard(card, p);
+    // Dialogue: user buy reaction
+    if (p.human) {
+      const ais = state.players.map((_, i) => i).filter(i => !state.players[i].human);
+      if (ais.length) DIALOGUE.speak(ais[Math.floor(Math.random() * ais.length)], "userBuy");
+    }
     // Delay card replacement so animation plays
     setTimeout(() => {
       state.visibleCards[tier][index] = drawCard(tier);
@@ -1064,6 +1074,7 @@
       state.visibleCards[bestTier][bestIdx] = drawCard(bestTier);
       addLog(`${player.name}: 카드 구매 (${bestCard.points}점)`);
       checkNobles(player);
+      DIALOGUE.speak(player.index, "aiBuy");
       return;
     }
 
@@ -1105,10 +1116,12 @@
 
     if (sortedGems.length >= 3) {
       takeTokens(sortedGems.slice(0, 3));
+      DIALOGUE.speak(player.index, "aiGem");
     } else if (sortedGems.length >= 1) {
       const picks = sortedGems.filter(g => state.tokenBank[g] > 0).slice(0, 3);
       if (picks.length >= 1) {
         takeTokens(picks);
+        DIALOGUE.speak(player.index, "aiGem");
       } else {
         const any = GEMS.filter(g => state.tokenBank[g] > 0).slice(0, 3);
         if (any.length) takeTokens(any);
@@ -1238,8 +1251,14 @@
     const winnerNames = winners.map(w => w.name).join(", ");
     addLog(`🏆 ${winnerNames} 승리! (${maxPoints}점)`);
     renderAll();
-    // Show result modal
-    setTimeout(() => showResultModal(sorted, winners), 500);
+    DIALOGUE.stopIdleLoop();
+    // Dialogue: win/loss (everyone speaks)
+    state.players.forEach((p, i) => {
+      if (p.human) return;
+      const section = winners.includes(p) ? "aiWin" : "aiLoss";
+      setTimeout(() => DIALOGUE.speak(i, section), Math.random() * 1000);
+    });
+    setTimeout(() => showResultModal(sorted, winners), 2000);
   }
 
   function showResultModal(sorted, winners) {
@@ -1322,6 +1341,9 @@
     els.setupPanel?.classList.add("hidden");
     els.gamePanel?.classList.remove("hidden");
     renderAll();
+    // Dialogue: game start (everyone speaks)
+    DIALOGUE.speakAll("gameStart");
+    DIALOGUE.startIdleLoop();
   }
 
   function resetToSetup() {
@@ -1333,6 +1355,7 @@
   }
 
   function leaveGame() {
+    DIALOGUE.stopIdleLoop();
     window.location.href = "./";
   }
 
@@ -1460,6 +1483,121 @@
   function initializeZoomControls() {
     setZoomPercent(loadZoomPercent(), false);
   }
+
+  /* ── Dialogue System ── */
+  const DIALOGUE = {
+    displayMs: 3000,
+    idleChance: 0.15,
+    _queue: [],
+    _busy: false,
+    _lastSpeakers: [],  // track last 2 speakers
+    _usedLines: {},     // per-section used indices
+
+    _getTone(characterName) {
+      const dlg = window.SPLENDOR_DIALOGUES;
+      if (!dlg) return null;
+      for (const [tone, info] of Object.entries(dlg)) {
+        if (info.characters.includes(characterName)) return tone;
+      }
+      return null;
+    },
+
+    _pick(tone, section) {
+      const dlg = window.SPLENDOR_DIALOGUES?.[tone]?.dialogues?.[section];
+      if (!dlg || !dlg.length) return null;
+      const key = `${tone}:${section}`;
+      if (!this._usedLines[key] || this._usedLines[key].length >= dlg.length) {
+        this._usedLines[key] = [];
+      }
+      // Pick random unused line
+      let idx;
+      let attempts = 0;
+      do {
+        idx = Math.floor(Math.random() * dlg.length);
+        attempts++;
+      } while (this._usedLines[key].includes(idx) && attempts < 20);
+      this._usedLines[key].push(idx);
+      return dlg[idx];
+    },
+
+    _showOnCard(playerIndex, text) {
+      const playerCard = els.playersList?.querySelector(`[data-player-index="${playerIndex}"]`);
+      if (!playerCard) return;
+      // Remove existing bubble on this card
+      playerCard.querySelectorAll(".splendor-speech-bubble").forEach(b => b.remove());
+      const bubble = document.createElement("div");
+      bubble.className = "splendor-speech-bubble";
+      bubble.textContent = text;
+      playerCard.appendChild(bubble);
+      setTimeout(() => bubble.remove(), this.displayMs);
+    },
+
+    _processQueue() {
+      if (this._busy || !this._queue.length) return;
+      this._busy = true;
+      const { playerIndex, text } = this._queue.shift();
+      this._showOnCard(playerIndex, text);
+      setTimeout(() => {
+        this._busy = false;
+        this._processQueue();
+      }, this.displayMs);
+    },
+
+    speak(playerIndex, section) {
+      const p = state.players[playerIndex];
+      if (!p || p.human) return;
+      const tone = this._getTone(p.name);
+      if (!tone) return;
+
+      // Rule 3: No same character 3 times in a row
+      const last2 = this._lastSpeakers.slice(-2);
+      if (last2.length === 2 && last2[0] === playerIndex && last2[1] === playerIndex) return;
+
+      // Rule 2: Don't speak if busy (another dialogue is showing)
+      // Rule 4: Queue it
+      const text = this._pick(tone, section);
+      if (!text) return;
+
+      this._lastSpeakers.push(playerIndex);
+      if (this._lastSpeakers.length > 3) this._lastSpeakers.shift();
+
+      this._queue.push({ playerIndex, text });
+      this._processQueue();
+    },
+
+    // Rule 1: Everyone speaks simultaneously for game start/end
+    speakAll(section) {
+      if (!window.SPLENDOR_DIALOGUES) return;
+      state.players.forEach((p, i) => {
+        if (p.human) return;
+        const tone = this._getTone(p.name);
+        if (!tone) return;
+        const text = this._pick(tone, section);
+        if (text) {
+          setTimeout(() => this._showOnCard(i, text), Math.random() * 500);
+        }
+      });
+    },
+
+    // Idle dialogue timer
+    _idleTimer: null,
+    startIdleLoop() {
+      this.stopIdleLoop();
+      this._idleTimer = setInterval(() => {
+        if (state.phase !== "action" || !activePlayer()?.human) return;
+        // Pick a random AI player
+        const ais = state.players.map((p, i) => ({ p, i })).filter(x => !x.p.human);
+        if (!ais.length) return;
+        const pick = ais[Math.floor(Math.random() * ais.length)];
+        if (Math.random() < this.idleChance) {
+          this.speak(pick.i, "idle");
+        }
+      }, 8000);
+    },
+    stopIdleLoop() {
+      if (this._idleTimer) { clearInterval(this._idleTimer); this._idleTimer = null; }
+    }
+  };
 
   /* ── Init ── */
   function init() {
