@@ -166,18 +166,8 @@ function renderGameGrid(filter = 'all', query = '') {
     return;
   }
 
-  // 데스크탑에서만 "+ Add to Collection" 카드 표시 (모바일은 FAB로 처리)
-  const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
-  const addCard = isDesktop ? `
-    <a href="#" class="hub-game-card group relative aspect-[3/4] bg-surface-container rounded-xl flex flex-col items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-300">
-      <div class="border-2 border-dashed border-outline-variant rounded-xl w-3/4 h-2/3 flex flex-col items-center justify-center gap-2 group-hover:border-primary">
-        <span class="material-symbols-outlined text-5xl">add_circle</span>
-        <span class="font-label-lg uppercase tracking-widest text-label-lg">컬렉션에 추가</span>
-      </div>
-    </a>
-  ` : '';
-
-  grid.innerHTML = filtered.map(g => gameCardHtml(g)).join('') + addCard;
+  // 게임 카드만 렌더링 ("컬렉션에 추가" 카드는 제거됨)
+  grid.innerHTML = filtered.map(g => gameCardHtml(g)).join('');
 }
 
 function gameCardHtml(g) {
