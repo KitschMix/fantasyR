@@ -168,11 +168,12 @@ function renderGameGrid(filter = 'all', query = '') {
 
   // 게임 카드만 렌더링 ("컬렉션에 추가" 카드는 제거됨)
   grid.innerHTML = filtered.map(g => gameCardHtml(g)).join('');
+  if (typeof setupGameCardGuard === 'function') setupGameCardGuard();
 }
 
 function gameCardHtml(g) {
   return `
-    <a href="${g.file}" class="hub-game-card group relative aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden card-shadow transition-all duration-300 hover:-translate-y-1">
+    <a href="${g.file}" data-game-file="${g.file}" class="hub-game-card group relative aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden card-shadow transition-all duration-300 hover:-translate-y-1">
       <div class="absolute inset-0">
         <div class="absolute inset-0 transition-transform duration-500 group-hover:scale-110" style="background:radial-gradient(ellipse at 30% 20%, ${g.accent}, transparent 60%), radial-gradient(ellipse at 70% 80%, ${g.accent2}, transparent 60%), linear-gradient(135deg, #1a1a1a, #0e0e0e);"></div>
         <div class="absolute inset-0 opacity-25 mix-blend-overlay" style="background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 8px);"></div>
@@ -303,10 +304,249 @@ function setupInteractions() {
 }
 
 // ============================================
-// 부트
+// 닉네임/프로필 (메인에서 통합 관리)
 // ============================================
+const NICKNAME_STORAGE_KEY = 'fantasyKingdom.humanProfile.v1';
+const NICKNAME_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const NICKNAME_BLOCKED_NAME = '나';
+
+function readHumanProfile() {
+  try {
+    const raw = window.localStorage?.getItem(NICKNAME_STORAGE_KEY);
+    if (!raw) return { nickname: '', lastChangedAt: '' };
+    const profile = JSON.parse(raw);
+    return {
+      nickname: (profile?.nickname || '').trim(),
+      lastChangedAt: profile?.lastChangedAt || ''
+    };
+  } catch {
+    return { nickname: '', lastChangedAt: '' };
+  }
+}
+
+function saveHumanProfile(profile) {
+  try {
+    window.localStorage?.setItem(NICKNAME_STORAGE_KEY, JSON.stringify({
+      nickname: (profile?.nickname || '').trim(),
+      lastChangedAt: profile?.lastChangedAt || new Date().toISOString()
+    }));
+  } catch (err) {
+    console.warn('saveHumanProfile 실패', err);
+  }
+}
+
+function nicknameValidationMessage(nickname) {
+  if (nickname.length < 2) return '닉네임은 2글자 이상이어야 합니다.';
+  if (nickname.length > 12) return '닉네임은 12자 이하여야 합니다.';
+  if (nickname === NICKNAME_BLOCKED_NAME) return "'나'는 닉네임으로 사용할 수 없습니다.";
+  return '';
+}
+
+function nicknameRemainingMs(lastChangedAt) {
+  const t = Date.parse(lastChangedAt || '');
+  if (!t) return 0;
+  return Math.max(0, NICKNAME_INTERVAL_MS - (Date.now() - t));
+}
+
+function nicknameRemainingLabel(ms) {
+  if (ms <= 0) return '';
+  const hours = Math.floor(ms / (60 * 60 * 1000));
+  const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+  if (hours > 0) return `다음 변경까지 약 ${hours}시간 ${minutes}분 남았습니다.`;
+  return `다음 변경까지 약 ${minutes}분 남았습니다.`;
+}
+
+// 프로필 칩의 닉네임/이니셜을 화면에 반영
+function refreshProfileChrome() {
+  const profile = readHumanProfile();
+  const nickname = profile.nickname || '';
+  const isGuest = nickname.length === 0;
+  const initial = isGuest ? '게' : nickname.trim().charAt(0);
+
+  const desktopName = document.getElementById('desktopProfileName');
+  const desktopAvatar = document.getElementById('desktopProfileAvatar');
+  const mobileBtn = document.getElementById('mobileProfileButton');
+  const drawerName = document.getElementById('drawerProfileName');
+  const drawerAvatar = document.getElementById('drawerProfileAvatar');
+
+  if (desktopName) desktopName.textContent = isGuest ? '게스트' : nickname;
+  if (desktopAvatar) desktopAvatar.textContent = isGuest ? '게' : initial;
+  if (mobileBtn) mobileBtn.textContent = isGuest ? '게' : initial;
+  if (drawerName) drawerName.textContent = isGuest ? '게스트' : nickname;
+  if (drawerAvatar) drawerAvatar.textContent = isGuest ? '게' : initial;
+}
+
+// 모달 컨트롤
+let profileModalState = {
+  pendingHref: null,    // 닉네임 저장 후 진입할 게임 파일
+  mode: 'edit',         // 'edit' | 'firstRun'
+};
+
+function openProfileModal(mode = 'edit') {
+  profileModalState.mode = mode;
+  const profile = readHumanProfile();
+  const modal = document.getElementById('profileModal');
+  const input = document.getElementById('profileModalInput');
+  const title = document.getElementById('profileModalTitle');
+  const intro = document.getElementById('profileModalIntro');
+  const warning = document.getElementById('profileModalRankingWarning');
+  const errorEl = document.getElementById('profileModalError');
+  const cooldown = document.getElementById('profileModalCooldown');
+
+  if (!modal || !input) return;
+
+  input.value = profile.nickname || '';
+  errorEl.textContent = '';
+
+  const remaining = nicknameRemainingMs(profile.lastChangedAt);
+  if (remaining > 0 && profile.nickname) {
+    cooldown.textContent = nicknameRemainingLabel(remaining);
+    cooldown.classList.remove('hidden');
+  } else {
+    cooldown.textContent = '';
+    cooldown.classList.add('hidden');
+  }
+
+  const confirmCheckbox = document.getElementById('profileModalRankingConfirm');
+
+  if (mode === 'firstRun') {
+    title.textContent = '닉네임 설정';
+    intro.textContent = '게임을 시작하려면 먼저 사용할 닉네임을 정해주세요.';
+    warning.classList.add('hidden');
+    if (confirmCheckbox) {
+      confirmCheckbox.checked = false;
+      confirmCheckbox.classList.add('hidden');
+    }
+  } else {
+    title.textContent = '닉네임 변경';
+    intro.textContent = '변경 시 랭킹과 플레이 기록이 초기화됩니다.';
+    warning.classList.remove('hidden');
+    if (confirmCheckbox) {
+      confirmCheckbox.checked = false;
+      confirmCheckbox.classList.remove('hidden');
+    }
+  }
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  modal.setAttribute('aria-hidden', 'false');
+
+  setTimeout(() => {
+    input.focus();
+    input.select();
+  }, 60);
+}
+
+function closeProfileModal() {
+  const modal = document.getElementById('profileModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  modal.setAttribute('aria-hidden', 'true');
+  profileModalState.pendingHref = null;
+}
+
+function handleProfileSave() {
+  const input = document.getElementById('profileModalInput');
+  const errorEl = document.getElementById('profileModalError');
+  if (!input || !errorEl) return;
+
+  const nickname = input.value.trim();
+  const validation = nicknameValidationMessage(nickname);
+  if (validation) {
+    errorEl.textContent = validation;
+    input.focus();
+    return;
+  }
+
+  const profile = readHumanProfile();
+  // 동일 이름이면 저장하지 않고 닫기 (쿨다운 검사 불필요)
+  if (profile.nickname === nickname) {
+    errorEl.textContent = '';
+    refreshProfileChrome();
+    const pendingHref = profileModalState.pendingHref;
+    closeProfileModal();
+    if (pendingHref) window.location.href = pendingHref;
+    return;
+  }
+
+  // 변경 쿨다운 체크
+  const remaining = nicknameRemainingMs(profile.lastChangedAt);
+  if (remaining > 0 && profile.nickname) {
+    errorEl.textContent = '아직 닉네임을 변경할 수 없습니다. ' + nicknameRemainingLabel(remaining);
+    return;
+  }
+
+  // 랭킹 초기화 경고(체크박스) — 있을 때만 강제
+  const confirmCheckbox = document.getElementById('profileModalRankingConfirm');
+  if (confirmCheckbox && !confirmCheckbox.classList.contains('hidden') && !confirmCheckbox.checked) {
+    errorEl.textContent = '랭킹 초기화 안내에 동의해야 변경할 수 있습니다.';
+    return;
+  }
+
+  saveHumanProfile({ nickname });
+  errorEl.textContent = '';
+  refreshProfileChrome();
+
+  const pendingHref = profileModalState.pendingHref;
+  closeProfileModal();
+  if (pendingHref) window.location.href = pendingHref;
+}
+
+function setupProfileModal() {
+  document.getElementById('profileModalCloseButton')?.addEventListener('click', () => {
+    profileModalState.pendingHref = null;
+    closeProfileModal();
+  });
+  document.getElementById('profileModalCancelButton')?.addEventListener('click', () => {
+    profileModalState.pendingHref = null;
+    closeProfileModal();
+  });
+  document.getElementById('profileModalSaveButton')?.addEventListener('click', handleProfileSave);
+  document.getElementById('profileModalInput')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleProfileSave();
+    }
+  });
+
+  // 백드롭 클릭으로 닫기
+  const modal = document.getElementById('profileModal');
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      profileModalState.pendingHref = null;
+      closeProfileModal();
+    }
+  });
+
+  // 진입 트리거들
+  document.getElementById('desktopProfileButton')?.addEventListener('click', () => openProfileModal('edit'));
+  document.getElementById('mobileProfileButton')?.addEventListener('click', () => openProfileModal('edit'));
+  document.getElementById('mobileNavProfileButton')?.addEventListener('click', () => openProfileModal('edit'));
+  document.getElementById('drawerProfileEditButton')?.addEventListener('click', () => openProfileModal('edit'));
+
+  refreshProfileChrome();
+}
+
+function setupGameCardGuard() {
+  document.querySelectorAll('.hub-game-card').forEach((card) => {
+    card.addEventListener('click', (e) => {
+      const profile = readHumanProfile();
+      if (!profile.nickname) {
+        e.preventDefault();
+        const href = card.getAttribute('data-game-file') || card.getAttribute('href') || '';
+        profileModalState.pendingHref = href;
+        openProfileModal('firstRun');
+      }
+    });
+  });
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
   renderGameGrid();
   renderSessions();
   setupInteractions();
+  setupProfileModal();
+  setupGameCardGuard();
 });

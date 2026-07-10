@@ -186,8 +186,10 @@
       <button id="mobileMenuBtn" class="material-symbols-outlined text-primary hover:opacity-80 cursor-pointer" onclick="document.getElementById('mobileDrawer').classList.toggle('translate-x-full')">menu</button>
       <h1 class="font-headline-md text-headline-md font-bold tracking-tight text-primary">BOARD GAME ROOM</h1>
     </div>
-    <div class="flex items-center">
-      <span class="material-symbols-outlined text-on-surface-variant hover:opacity-80 cursor-pointer">notifications</span>
+    <div class="flex items-center gap-3">
+      <button id="mobileProfileButton" type="button" class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-container border border-primary/30 flex items-center justify-center text-on-primary font-bold text-xs shrink-0 hover:opacity-90 active:scale-95 transition-transform cursor-pointer" title="프로필 / 닉네임 변경">
+        게
+      </button>
     </div>
   </header>
 
@@ -212,12 +214,12 @@
         </a>
       </nav>
       <div class="p-3 bg-surface-container rounded-xl border border-outline-variant/30 flex items-center gap-3">
-        <div class="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary-container border border-primary/30 flex items-center justify-center text-on-primary font-bold text-base shrink-0">게</div>
+        <div id="drawerProfileAvatar" class="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary-container border border-primary/30 flex items-center justify-center text-on-primary font-bold text-base shrink-0">게</div>
         <div class="min-w-0 flex-1">
-          <p class="font-label-lg text-on-surface truncate text-sm">게스트</p>
-          <p class="text-[10px] text-primary uppercase tracking-widest font-bold">그랜드마스터</p>
-          <p class="text-[10px] text-on-surface-variant/60 mt-0.5">ELO 1,847</p>
+          <p id="drawerProfileName" class="font-label-lg text-on-surface truncate text-sm">게스트</p>
+          <p class="text-[10px] text-primary uppercase tracking-widest font-bold">마이 프로필</p>
         </div>
+        <button id="drawerProfileEditButton" type="button" class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer" title="닉네임 변경">edit</button>
       </div>
     </aside>
   </div>
@@ -235,15 +237,15 @@
         <span class="material-symbols-outlined">notifications</span>
         <span class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
       </button>
-      <div class="flex items-center gap-3 pl-4 border-l border-outline-variant/30">
+      <button id="desktopProfileButton" type="button" class="flex items-center gap-3 pl-4 border-l border-outline-variant/30 hover:opacity-90 transition-opacity cursor-pointer group">
         <div class="text-right hidden xl:block">
-          <p class="font-label-lg text-on-surface">나 (게스트)</p>
-          <p class="text-[10px] text-primary uppercase tracking-widest font-bold">그랜드마스터</p>
+          <p id="desktopProfileName" class="font-label-lg text-on-surface truncate max-w-[160px]">게스트</p>
+          <p class="text-[10px] text-primary uppercase tracking-widest font-bold">마이 프로필</p>
         </div>
-        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-container border border-primary/30 flex items-center justify-center text-on-primary font-bold text-sm">
+        <div id="desktopProfileAvatar" class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-container border border-primary/30 flex items-center justify-center text-on-primary font-bold text-sm shrink-0 group-hover:scale-105 transition-transform">
           게
         </div>
-      </div>
+      </button>
     </div>
   </header>
 
@@ -348,11 +350,53 @@
     <span class="material-symbols-outlined">search</span>
     <span class="font-label-md text-label-md mt-1">Search</span>
   </a>
-  <a href="#" onclick="event.preventDefault(); document.getElementById('mobileDrawer').classList.remove('opacity-0','pointer-events-none'); document.getElementById('mobileDrawer').classList.add('opacity-100'); document.getElementById('mobileDrawerPanel').classList.remove('translate-x-full'); setTimeout(()=>{ const el = document.querySelector('#mobileDrawerPanel .bg-surface-container.rounded-xl'); if(el){ el.classList.remove('profile-pulse'); void el.offsetWidth; el.classList.add('profile-pulse'); setTimeout(()=>el.classList.remove('profile-pulse'),1400);} }, 320);" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary-fixed active:scale-95 transition-transform duration-200 cursor-pointer">
+  <button id="mobileNavProfileButton" type="button" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary-fixed active:scale-95 transition-transform duration-200 cursor-pointer">
     <span class="material-symbols-outlined">person</span>
     <span class="font-label-md text-label-md mt-1">Profile</span>
-  </a>
+  </button>
 </nav>
+
+<!-- ═══ 닉네임 프로필 모달 (입력/변경 통합) ═══ -->
+<div id="profileModal" class="fixed inset-0 z-[80] hidden items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-sm" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+  <div class="w-full max-w-md bg-surface-container-highest border border-outline-variant/40 rounded-2xl shadow-2xl overflow-hidden anim-fade">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
+      <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary">badge</span>
+        <h3 id="profileModalTitle" class="font-headline-md text-headline-md text-on-surface">닉네임 설정</h3>
+      </div>
+      <button id="profileModalCloseButton" type="button" class="material-symbols-outlined text-on-surface-variant hover:text-on-surface" aria-label="닫기">close</button>
+    </div>
+
+    <div class="px-6 py-5">
+      <p id="profileModalIntro" class="text-on-surface-variant text-sm mb-4 leading-relaxed">
+        게임에서 사용할 닉네임을 정해주세요. 다른 플레이어에게 보이는 이름입니다.
+      </p>
+
+      <label for="profileModalInput" class="block text-label-lg text-on-surface-variant mb-2">닉네임</label>
+      <input id="profileModalInput" type="text" maxlength="12" minlength="2" placeholder="2글자 이상"
+        class="w-full bg-surface-container border border-outline-variant/50 rounded-lg px-4 py-3 text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+        autocomplete="nickname">
+
+      <p id="profileModalHint" class="text-[12px] text-on-surface-variant/70 mt-2">
+        2~12자 · '나'는 사용할 수 없음 · 변경 후 24시간 동안 재변경 불가
+      </p>
+      <p id="profileModalCooldown" class="hidden text-[12px] text-primary mt-1 font-semibold"></p>
+      <p id="profileModalError" class="text-[12px] text-error mt-2 min-h-[1.25rem]" role="alert" aria-live="polite"></p>
+
+      <label class="flex items-start gap-2 mt-4 cursor-pointer select-none">
+        <input id="profileModalRankingConfirm" type="checkbox" class="mt-1 accent-primary hidden">
+        <span id="profileModalRankingWarning" class="text-[12px] text-error leading-snug">
+          ⚠️ 닉네임을 변경하면 랭킹과 플레이 기록이 초기화됩니다.
+        </span>
+      </label>
+    </div>
+
+    <div class="px-6 py-4 flex justify-end gap-2 border-t border-outline-variant/30 bg-surface-container/40">
+      <button id="profileModalCancelButton" type="button" class="secondary-button">취소</button>
+      <button id="profileModalSaveButton" type="button" class="primary-button">저장</button>
+    </div>
+  </div>
+</div>
 
 <script src="index.js"></script>
 </body>

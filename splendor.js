@@ -144,7 +144,6 @@
     gamePanel:      $("#splendorGamePanel"),
     startButton:    $("#startSplendorButton"),
     playerCount:    $("#splendorPlayerCountSelect"),
-    nameInput:      $("#splendorNameInput"),
     backButton:     $("#splendorBackButton"),
     newGameButton:  $("#splendorNewGameButton"),
     exitButton:     $("#splendorExitButton"),
@@ -562,7 +561,7 @@
     return Array.from({ length: count }, (_, i) => {
       const isHuman = i === 0;
       const profile = isHuman ? null : pool[i - 1] || { name: `AI ${i}`, avatarUrl: profileImageUrl("보통-건일.jpg") };
-      const humanName = currentHumanNickname() || (els.nameInput?.value || "").trim() || "플레이어";
+      const humanName = currentHumanNickname() || "플레이어";
       return {
         index: i,
         id: isHuman ? "human" : `ai${i}`,
@@ -1797,12 +1796,6 @@
 
   /* ── Init ── */
   function init() {
-    // Load saved nickname
-    try {
-      const profile = JSON.parse(localStorage.getItem("fantasyKingdom.humanProfile.v1") || "null");
-      if (profile?.nickname && els.nameInput) els.nameInput.value = profile.nickname;
-    } catch {}
-
     els.startButton?.addEventListener("click", startGame);
     els.newGameButton?.addEventListener("click", resetToSetup);
     els.exitButton?.addEventListener("click", leaveGame);
