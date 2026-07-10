@@ -173,13 +173,16 @@ function renderGameGrid(filter = 'all', query = '') {
   }
 
   // 게임 카드만 렌더링 ("컬렉션에 추가" 카드는 제거됨)
-  grid.innerHTML = filtered.map(g => gameCardHtml(g)).join('');
+  // 첫 줄 4장은 LCP 이므로 fetchpriority="high", 나머지는 fetchpriority="low"
+  grid.innerHTML = filtered.map((g, idx) => gameCardHtml(g, idx)).join('');
   if (typeof setupGameCardGuard === 'function') setupGameCardGuard();
 }
 
-function gameCardHtml(g) {
+function gameCardHtml(g, idx) {
+  const isFirstRow = idx < 4;
+  const fpAttrs = isFirstRow ? 'fetchpriority="high"' : 'fetchpriority="low"';
   const heroInner = g.coverArt
-    ? `<img class="hub-game-cover transition-transform duration-500 group-hover:scale-110" src="${g.coverArt}" alt="${g.title} 카드 아트" loading="lazy" decoding="async" />`
+    ? `<img class="hub-game-cover transition-transform duration-500 group-hover:scale-110" src="${g.coverArt}" alt="${g.title} 카드 아트" loading="eager" decoding="async" ${fpAttrs} onload="this.classList.add('is-loaded')" onerror="this.classList.add('is-loaded')" />`
     : `<div class="absolute inset-0 transition-transform duration-500 group-hover:scale-110" style="background:radial-gradient(ellipse at 30% 20%, ${g.accent}, transparent 60%), radial-gradient(ellipse at 70% 80%, ${g.accent2}, transparent 60%), linear-gradient(135deg, #1a1a1a, #0e0e0e);"></div>
        <div class="absolute inset-0 opacity-25 mix-blend-overlay" style="background:repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 8px);"></div>
        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15">
