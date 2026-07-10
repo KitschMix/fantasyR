@@ -20,6 +20,7 @@ const GAMES = [
     accent: 'rgba(80,40,200,0.6)',     // 보석 보라
     accent2: 'rgba(212,160,55,0.5)',     // 골드
     symbol: 'diamond',
+    coverArt: 'assets/main/스플렌더.jpg',
     desc: '보석을 모아 귀족의 후원을 받으세요.'
   },
   {
@@ -35,7 +36,7 @@ const GAMES = [
     accent: 'rgba(20,80,40,0.6)',        // 깊은 그린
     accent2: 'rgba(242,202,80,0.5)',
     symbol: 'apartment',
-    coverArt: 'assets/main/부루마불.png',
+    coverArt: 'assets/main/부루마불.jpg',
     desc: '서울 시내를 점령하고 부의 전쟁에 승리하세요.'
   },
   {
@@ -51,7 +52,7 @@ const GAMES = [
     accent: 'rgba(140,15,30,0.6)',        // 미스터리 레드
     accent2: 'rgba(0,0,0,0.4)',
     symbol: 'psychology',
-    coverArt: 'assets/main/클루.png',
+    coverArt: 'assets/main/클루.jpg',
     desc: '범인을 추리라! 섹튼 가의 비밀.'
   },
   {
@@ -67,7 +68,7 @@ const GAMES = [
     accent: 'rgba(200,140,40,0.6)',       // 사바나 오렌지
     accent2: 'rgba(120,80,30,0.5)',
     symbol: 'pets',
-    coverArt: 'assets/main/텔리호.png',
+    coverArt: 'assets/main/텔리호.jpg',
     desc: '잉글랜드 사냥개와 늑대. 야생의 전쟁.'
   },
   {
@@ -83,7 +84,7 @@ const GAMES = [
     accent: 'rgba(220,40,80,0.6)',        // 일본식 핑크-레드
     accent2: 'rgba(255,255,255,0.3)',
     symbol: 'restaurant',
-    coverArt: 'assets/main/스시고.png',
+    coverArt: 'assets/main/스시고.jpg',
     desc: '일본 회전초밥, 카드를 모아 최고의 점수.'
   },
   {
@@ -99,7 +100,7 @@ const GAMES = [
     accent: 'rgba(15,80,140,0.6)',        // 산 블루
     accent2: 'rgba(255,140,0,0.5)',
     symbol: 'terrain',
-    coverArt: 'assets/main/캔트스탑.png',
+    coverArt: 'assets/main/캔트스탑.jpg',
     desc: '주사위 굴리기, 과감한 결정!'
   },
   {
