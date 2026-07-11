@@ -1,6 +1,11 @@
 var cursedHoardItems = false;
 var cursedHoardSuits = false;
 var playerCount = 2;
+// Shared with hand.js via window (allows vendor decoupling)
+if (typeof window !== "undefined") {
+  window.__fantasyExpansionEnabled = false;
+  window.__fantasyCursedItems = false;
+}
 
 const TYPE_META = {
   land: { label: "땅", color: "#5a6534" },
@@ -497,14 +502,7 @@ let currentCenterToastMode = "";
 let currentCenterToastKey = "";
 let dismissedCenterToastKey = "";
 
-function shuffle(items) {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
+// shuffle() moved to scripts/utils.js (Phase 6 partial split)
 
 function profileImageUrl(fileName) {
   return encodeURI(`${PROFILE_ASSET_ROOT}/${fileName}`);
@@ -640,6 +638,10 @@ function configureDeckOptions() {
   cursedHoardSuits = state.includeExpansion;
   cursedHoardItems = state.includeCursedItems;
   playerCount = state.playerCount;
+  if (typeof window !== "undefined") {
+    window.__fantasyExpansionEnabled = state.includeExpansion;
+    window.__fantasyCursedItems = state.includeCursedItems;
+  }
 
   disableSourceDeckSuits();
   disableSourceDeckItems();
@@ -3642,7 +3644,7 @@ function buildScoringDiscard() {
 }
 
 function scoreSourceHand(hand, cursedItems = []) {
-  const scoringHand = new Hand();
+  const scoringHand = new Hand({ expansionEnabled: cursedHoardSuits });
   const originalCanAdd = scoringHand._canAdd;
   scoringHand._canAdd = () => true;
   const scoringCards = [...hand, ...cursedItems];

@@ -1,0 +1,17 @@
+{
+  "name": "fantasy-kingdom-pc-tests",
+  "version": "1.0.0",
+  "description": "Unit tests for fantasy-kingdom-pc scoring engine",
+  "private": true,
+  "scripts": {
+    "test": "node tests/run-all.js",
+    "test:basic": "node tests/hand-basic.test.js",
+    "test:size": "node tests/hand-size.test.js",
+    "test:bonus": "node tests/hand-bonus.test.js",
+    "test:penalty": "node tests/hand-penalty.test.js",
+    "test:blanking": "node tests/hand-blanking.test.js",
+    "test:phoenix": "node tests/phoenix.test.js",
+    "test:cursed": "node tests/cursed-item.test.js",
+    "test:regression": "node tests/regression.test.js"
+  }
+}

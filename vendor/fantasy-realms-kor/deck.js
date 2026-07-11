@@ -78,8 +78,12 @@ var base = {
     bonus: true,
     penalty: false,
     bonusScore: function (hand) {
+      // FIX [BUG-005] 2026-07-12: 본인 strength를 max에 포함하면 alone일 때 1+1=2점.
+      // 룰북: "다른 카드의 strength 중 가장 큰 값". 본인은 제외.
+      // 검증: FR06 alone → 1점 (수정 전 2점)
       var max = 0;
       for (const card of hand.nonBlankedCards()) {
+        if (card.id === this.id) continue; // 본인은 제외
         if (card.suit === 'weapon' || card.suit === 'flood' || card.suit === 'flame' || card.suit === 'land' || card.suit === 'weather' || isPhoenix(card)) {
           if (card.strength > max) {
             max = card.strength;
@@ -826,12 +830,16 @@ var base = {
     penalty: false,
     bonusScore: function (hand) {
       var oddCount = 0;
-      for (const card of hand.nonBlankedCards()) {
+      var nonBlanked = hand.nonBlankedCards();
+      for (const card of nonBlanked) {
         if (card.strength % 2 === 1) {
           oddCount++;
         }
       }
-      if (oddCount === hand.size()) {
+      // FIX [BUG-001] 2026-07-12: hand.size()는 blanked 카드 포함. blanked 카드가
+      // 있으면 oddCount === hand.size() 절대 false → +50 영원히 미적용.
+      // 룰북: "non-blanked 카드의 strength가 모두 홀수면 +50". 따라서 nonBlanked 길이 비교.
+      if (oddCount === nonBlanked.length) {
         return 50;
       } else {
         return (oddCount - 1) * 3;
@@ -966,7 +974,9 @@ var cursedHoard = {
     bonus: true,
     penalty: false,
     bonusScore: function (hand) {
-      return 10 * (playerCount - 1);
+      // FIX [BUG-003] 2026-07-12: 전역 `playerCount` 대신 hand의 playerCount 사용.
+      // 이전: 3인+ 게임에서도 10 (2인용 점수) 적용. 룰 오류.
+      return 10 * (hand.playerCount - 1);
     },
     relatedSuits: [],
     relatedCards: ['Leprechaun'],
@@ -1127,8 +1137,12 @@ var cursedHoard = {
     bonus: true,
     penalty: false,
     bonusScore: function (hand) {
+      // FIX [BUG-005] 2026-07-12: 본인 strength를 max에 포함하면 alone일 때 1+1=2점.
+      // 룰북: "다른 카드의 strength 중 가장 큰 값". 본인은 제외.
+      // 검증: CH17 alone → 1점 (수정 전 2점)
       var max = 0;
       for (const card of hand.nonBlankedCards()) {
+        if (card.id === this.id) continue; // 본인은 제외
         if (card.suit === 'building' || card.suit === 'weapon' || card.suit === 'flood' || card.suit === 'flame' || card.suit === 'land' || card.suit === 'weather' || isPhoenix(card)) {
           if (card.strength > max) {
             max = card.strength;
@@ -1248,8 +1262,10 @@ var cursedItems = {
     timing: 'any-time',
     bonus: true,
     penalty: true,
-    penaltyScore: function () {
-      return playerCount === 2 ? -9 : 0;
+    penaltyScore: function (hand) {
+      // FIX [BUG-003] 2026-07-12: 전역 `playerCount` 대신 hand의 playerCount 사용.
+      // 이전: 3인+ 게임에서도 -9 (2인 패널티) 적용. 룰 오류.
+      return hand.playerCount === 2 ? -9 : 0;
     },
     strength: -1,
     referencesPlayerCount: true

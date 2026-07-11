@@ -1,8 +1,17 @@
 class Hand {
 
-  constructor() {
+  constructor(options = {}) {
     this.cardsInHand = {};
     this.cursedItems = {};
+    this._expansionEnabled = options.expansionEnabled;
+    // FIX [BUG-003] 2026-07-12: CH06 Genie bonus, CH24 Spyglass penalty가
+    // deck.js의 `var playerCount = 2` 전역변수를 참조해서 3인+ 게임에서도
+    // 2인용 점수가 적용되는 버그. hand에 playerCount 보관하여 동적 참조.
+    this._playerCount = options.playerCount || 2;
+  }
+
+  get playerCount() {
+    return this._playerCount;
   }
 
   addCard(card) {
@@ -93,54 +102,47 @@ class Hand {
     return this.cardsInHand[cardId] !== undefined && (!this.cardsInHand[cardId].blanked || allowBlanked);
   }
 
-  containsSuit(suitName) {
-    if (this.containsId(PHOENIX_PROMO, true) && (suitName === this.getCardById(PHOENIX_PROMO).suit || suitName === 'weather' || suitName === 'flame')) {
-      return true;
-    }
-    for (const card of this.nonBlankedCards()) {
-      if (card.suit === suitName || (card.id === PHOENIX && (suitName === 'weather' || suitName === 'flame'))) {
+  /**
+   * Internal helper: does this card match the given suit?
+   * Encapsulates Phoenix / Phoenix Promo special cases (counted as
+   * weather/flame and their own suit) so the 4 public methods below
+   * don't repeat the same logic.
+   */
+  _matchesSuit(card, suitName) {
+    // Phoenix Promo: counts as its own suit + weather + flame (if in hand, not blanked)
+    if (card.id === PHOENIX_PROMO && this.containsId(PHOENIX_PROMO, true)) {
+      if (suitName === this.getCardById(PHOENIX_PROMO).suit
+          || suitName === 'weather'
+          || suitName === 'flame') {
         return true;
       }
     }
+    if (card.suit === suitName) return true;
+    // Phoenix (FR55): counts as weather + flame
+    if (card.id === PHOENIX && (suitName === 'weather' || suitName === 'flame')) {
+      return true;
+    }
     return false;
+  }
+
+  containsSuit(suitName) {
+    return this.nonBlankedCards().some(card => this._matchesSuit(card, suitName));
   }
 
   containsSuitExcluding(suitName, excludingCardId) {
-    if (excludingCardId !== PHOENIX_PROMO && this.containsId(PHOENIX_PROMO, true) && (suitName === this.getCardById(PHOENIX_PROMO).suit || suitName === 'weather' || suitName === 'flame')) {
-      return true;
-    }
-    for (const card of this.nonBlankedCards()) {
-      if ((card.suit === suitName || (card.id === PHOENIX && (suitName === 'weather' || suitName === 'flame'))) && card.id !== excludingCardId) {
-        return true;
-      }
-    }
-    return false;
+    return this.nonBlankedCards().some(card =>
+      card.id !== excludingCardId && this._matchesSuit(card, suitName)
+    );
   }
 
   countSuit(suitName) {
-    var count = 0;
-    if (this.containsId(PHOENIX_PROMO, true) && (suitName === this.getCardById(PHOENIX_PROMO).suit || suitName === 'weather' || suitName === 'flame')) {
-      count++;
-    }
-    for (const card of this.nonBlankedCards()) {
-      if (card.id !== PHOENIX_PROMO && (card.suit === suitName || (card.id === PHOENIX && (suitName === 'weather' || suitName === 'flame')))) {
-        count++;
-      }
-    }
-    return count;
+    return this.nonBlankedCards().filter(card => this._matchesSuit(card, suitName)).length;
   }
 
   countSuitExcluding(suitName, excludingCardId) {
-    var count = 0;
-    if (excludingCardId !== PHOENIX_PROMO && this.containsId(PHOENIX_PROMO, true) && (suitName === this.getCardById(PHOENIX_PROMO).suit || suitName === 'weather' || suitName === 'flame')) {
-      count++;
-    }
-    for (const card of this.nonBlankedCards()) {
-      if (card.id !== PHOENIX_PROMO && (card.suit === suitName || (card.id === PHOENIX && (suitName === 'weather' || suitName === 'flame'))) && card.id !== excludingCardId) {
-        count++;
-      }
-    }
-    return count;
+    return this.nonBlankedCards().filter(card =>
+      card.id !== excludingCardId && this._matchesSuit(card, suitName)
+    ).length;
   }
 
   nonBlankedCards() {
@@ -164,6 +166,12 @@ class Hand {
   }
 
   score(discard) {
+    // FIX [BUG-004] 2026-07-12: discard 의존 카드(CH11 Dark Queen, CH12 Ghoul,
+    // CH13 Specter, CH15 Death Knight)가 손패에 있을 때 discard 없이 score() 호출
+    // 시 `discard.countSuit(...)`에서 TypeError 크래시. 안전한 빈 객체 기본값.
+    if (discard === undefined) {
+      discard = { countSuit: () => 0, contains: () => false, containsSuit: () => false, cards: () => [] };
+    }
     var score = 0;
     this._resetHand();
     this._performCardActions();
@@ -336,7 +344,30 @@ class Hand {
   }
 
   _defaultLimit() {
-    return 7 + (cursedHoardSuits ? 1 : 0);
+    return 7 + (this._getExpansionEnabled() ? 1 : 0);
+  }
+
+  /**
+   * Get whether expansion mode is enabled.
+   * Prefers explicit instance option (set via Hand constructor),
+   * falls back to window.__fantasyExpansionEnabled, then to legacy
+   * global cursedHoardSuits, then to false.
+   */
+  _getExpansionEnabled() {
+    if (this._expansionEnabled !== undefined) {
+      return !!this._expansionEnabled;
+    }
+    try {
+      if (typeof window !== 'undefined' && window.__fantasyExpansionEnabled !== undefined) {
+        return !!window.__fantasyExpansionEnabled;
+      }
+    } catch (e) { /* not in browser */ }
+    try {
+      if (typeof cursedHoardSuits !== 'undefined' && cursedHoardSuits) {
+        return true;
+      }
+    } catch (e) { /* not defined */ }
+    return false;
   }
 
   _limitWithoutNecromancer() {
@@ -456,6 +487,12 @@ class CardInHand {
           this.strength = selectedCard.strength;
           this.penalty = selectedCard.penalty;
           this.penaltyScore = selectedCard.penaltyScore;
+          // FIX [BUG-002] 2026-07-12: Doppelganger가 카드를 흉내낼 때
+          // bonusScore/relatedSuits/relatedCards 미복사 → 효과 일부 누락.
+          // 룰북: Doppelganger는 카드를 완전히 흉내 (effect 전부).
+          this.bonusScore = selectedCard.bonusScore;
+          this.relatedSuits = selectedCard.relatedSuits;
+          this.relatedCards = selectedCard.relatedCards;
           this.blanks = selectedCard.blanks;
           this.blankedIf = selectedCard.blankedIf
           this.magic = true;
