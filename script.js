@@ -392,11 +392,6 @@ const lobbyChatState = {
   initialized: false
 };
 
-const nicknameForceChangeState = {
-  clicks: 0,
-  lastClickAt: 0
-};
-
 const els = {
   loadingOverlay: document.querySelector("#loadingOverlay"),
   turnToast: document.querySelector("#turnToast"),
@@ -407,7 +402,6 @@ const els = {
   clueSetupPanel: document.querySelector("#clueSetupPanel"),
   clueBackButton: document.querySelector("#clueBackButton"),
   startClueButton: document.querySelector("#startClueButton"),
-  homeLogoButton: document.querySelector("#homeLogoButton"),
   uiScaleDownButton: document.querySelector("#uiScaleDownButton"),
   uiScaleUpButton: document.querySelector("#uiScaleUpButton"),
   uiScaleValue: document.querySelector("#uiScaleValue"),
@@ -415,15 +409,11 @@ const els = {
   gameBoard: document.querySelector("#gameBoard"),
   playerCountSelect: document.querySelector("#playerCountSelect"),
   aiDifficultySelect: document.querySelector("#aiDifficultySelect"),
-  humanNameInput: document.querySelector("#humanNameInput"),
-  confirmNicknameButton: document.querySelector("#confirmNicknameButton"),
-  nicknameStatus: document.querySelector("#nicknameStatus"),
   expansionCheckbox: document.querySelector("#expansionCheckbox"),
   cursedItemsCheckbox: document.querySelector("#cursedItemsCheckbox"),
   startButton: document.querySelector("#startButton"),
   onlinePanel: document.querySelector("#onlinePanel"),
   onlineStatus: document.querySelector("#onlineStatus"),
-  onlineNameInput: document.querySelector("#onlineNameInput"),
   roomCodeInput: document.querySelector("#roomCodeInput"),
   createRoomButton: document.querySelector("#createRoomButton"),
   rejoinRoomButton: document.querySelector("#rejoinRoomButton"),
@@ -443,6 +433,7 @@ const els = {
   lobbyChatStatus: document.querySelector("#lobbyChatStatus"),
   newGameButton: document.querySelector("#newGameButton"),
   rulesButton: document.querySelector("#rulesButton"),
+  backButton: document.querySelector("#fantasyBackButton"),
   rulesDialog: document.querySelector("#rulesDialog"),
   cardCatalogButton: document.querySelector("#cardCatalogButton"),
   turnTimer: document.querySelector("#turnTimer"),
@@ -870,7 +861,10 @@ function returnToGameLauncher() {
 }
 
 function startGame() {
-  if (!confirmHumanNicknameChange(els.humanNameInput)) return;
+  if (!currentHumanNickname()) {
+    window.alert("홈 화면(첫 화면)에서 닉네임을 먼저 설정해주세요.");
+    return;
+  }
   resetTurnToastState();
   resetDialogueState();
   state.leaderboardSubmitted = false;
@@ -991,146 +985,25 @@ function readHumanProfile() {
     if (profile?.nickname) {
       const nickname = normalizeHumanNickname(profile.nickname);
       if (nicknameValidationMessage(nickname)) {
-        return { nickname: "", lastChangedAt: "" };
+        return "";
       }
-      return {
-        nickname,
-        lastChangedAt: profile.lastChangedAt || ""
-      };
+      return nickname;
     }
   } catch {
     // ignore broken local profile data
   }
-  return { nickname: "", lastChangedAt: "" };
-}
-
-function saveHumanProfile(profile) {
-  window.localStorage?.setItem(HUMAN_PROFILE_STORAGE_KEY, JSON.stringify({
-    nickname: normalizeHumanNickname(profile.nickname),
-    lastChangedAt: profile.lastChangedAt || ""
-  }));
+  return "";
 }
 
 function currentHumanNickname() {
-  return readHumanProfile().nickname;
+  return readHumanProfile();
 }
 
 function lobbyChatNickname() {
   const nickname = currentHumanNickname();
   if (nickname) return nickname;
-  const sourceInput = els.onlineNameInput?.value ? els.onlineNameInput : els.humanNameInput;
-  if (!confirmHumanNicknameChange(sourceInput)) return "";
-  return currentHumanNickname();
-}
-
-function nicknameChangeRemainingText(lastChangedAt) {
-  const changedAt = Date.parse(lastChangedAt || "");
-  if (!changedAt) return "";
-  const remainingMs = Math.max(0, NICKNAME_CHANGE_INTERVAL_MS - (Date.now() - changedAt));
-  const hours = Math.floor(remainingMs / (60 * 60 * 1000));
-  const minutes = Math.ceil((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
-  if (hours <= 0) return `${Math.max(1, minutes)}분 후 변경 가능`;
-  return `${hours}시간 ${minutes}분 후 변경 가능`;
-}
-
-function setNicknameStatus(message, error = false) {
-  if (!els.nicknameStatus) return;
-  els.nicknameStatus.textContent = message;
-  els.nicknameStatus.classList.toggle("error", error);
-}
-
-function syncHumanNicknameInputs(force = false) {
-  const nickname = currentHumanNickname();
-  if (els.humanNameInput && (force || document.activeElement !== els.humanNameInput)) {
-    els.humanNameInput.value = nickname;
-  }
-  if (els.onlineNameInput && (force || document.activeElement !== els.onlineNameInput)) {
-    els.onlineNameInput.value = nickname;
-  }
-}
-
-function confirmHumanNicknameChange(sourceInput = els.humanNameInput, options = {}) {
-  const force = Boolean(options.force);
-  const profile = readHumanProfile();
-  const desired = normalizeHumanNickname(sourceInput?.value ?? profile.nickname);
-  const validationMessage = nicknameValidationMessage(desired);
-  if (validationMessage) {
-    window.alert(validationMessage);
-    setNicknameStatus(validationMessage, true);
-    sourceInput?.focus();
-    return false;
-  }
-
-  if (desired === profile.nickname) {
-    syncHumanNicknameInputs(true);
-    setNicknameStatus(`현재 닉네임: ${profile.nickname}`);
-    return true;
-  }
-
-  const changedAt = Date.parse(profile.lastChangedAt || "");
-  if (!force && changedAt && Date.now() - changedAt < NICKNAME_CHANGE_INTERVAL_MS) {
-    const remaining = nicknameChangeRemainingText(profile.lastChangedAt);
-    window.alert(`닉네임은 하루에 한 번만 변경할 수 있습니다.\n${remaining}`);
-    syncHumanNicknameInputs(true);
-    setNicknameStatus(`닉네임 변경 제한 중 (${remaining})`, true);
-    return false;
-  }
-
-  const confirmed = window.confirm(force
-    ? `숨겨진 변경키로 '${desired}' 닉네임을 강제 저장할까요?`
-    : "닉네임은 하루에 한 번만 변경할 수 있습니다.\n"
-      + `확인하면 오늘은 '${desired}' 닉네임으로 고정됩니다.\n`
-      + "저장할까요?");
-  if (!confirmed) {
-    syncHumanNicknameInputs(true);
-    setNicknameStatus(profile.nickname ? `현재 닉네임: ${profile.nickname}` : "닉네임을 설정해야 시작할 수 있습니다.", !profile.nickname);
-    return false;
-  }
-
-  saveHumanProfile({ nickname: desired, lastChangedAt: new Date().toISOString() });
-  syncHumanNicknameInputs(true);
-  setNicknameStatus(`${force ? "닉네임 강제 변경 완료" : "닉네임 저장 완료"}: ${desired}`);
-  return true;
-}
-
-function consumeNicknameForceChangeClick(event) {
-  if (!event?.shiftKey) {
-    nicknameForceChangeState.clicks = 0;
-    nicknameForceChangeState.lastClickAt = 0;
-    return false;
-  }
-
-  const now = Date.now();
-  if (now - nicknameForceChangeState.lastClickAt > 5000) {
-    nicknameForceChangeState.clicks = 0;
-  }
-  nicknameForceChangeState.lastClickAt = now;
-  nicknameForceChangeState.clicks += 1;
-
-  if (nicknameForceChangeState.clicks < 5) {
-    setNicknameStatus(`숨겨진 변경키 ${nicknameForceChangeState.clicks}/5`);
-    return null;
-  }
-
-  nicknameForceChangeState.clicks = 0;
-  nicknameForceChangeState.lastClickAt = 0;
-  setNicknameStatus("숨겨진 변경키 활성화");
-  return true;
-}
-
-function handleConfirmNicknameButtonClick(event) {
-  const force = consumeNicknameForceChangeClick(event);
-  if (force === null) return;
-  confirmHumanNicknameChange(els.humanNameInput, { force });
-}
-
-function initializeHumanNicknameControls() {
-  syncHumanNicknameInputs();
-  const nickname = currentHumanNickname();
-  setNicknameStatus(
-    nickname ? `현재 닉네임: ${nickname}` : "닉네임을 2글자 이상으로 설정해야 시작할 수 있습니다.",
-    !nickname
-  );
+  window.alert("홈 화면(첫 화면)에서 닉네임을 먼저 설정해주세요.");
+  return "";
 }
 
 function setLeaderboardStatus(message, error = false) {
@@ -2233,7 +2106,10 @@ async function subscribeOnlineRoom(roomId) {
 async function createOnlineRoom() {
   const client = getSupabaseClient();
   if (!client || onlineState.loading) return;
-  if (!confirmHumanNicknameChange(els.onlineNameInput)) return;
+  if (!currentHumanNickname()) {
+    window.alert("홈 화면(첫 화면)에서 닉네임을 먼저 설정해주세요.");
+    return;
+  }
   onlineState.loading = true;
   setOnlineStatus("방 생성 중");
   renderOnlinePanel();
@@ -2282,7 +2158,10 @@ async function createOnlineRoom() {
 async function joinOnlineRoom() {
   const client = getSupabaseClient();
   if (!client || onlineState.loading) return;
-  if (!confirmHumanNicknameChange(els.onlineNameInput)) return;
+  if (!currentHumanNickname()) {
+    window.alert("홈 화면(첫 화면)에서 닉네임을 먼저 설정해주세요.");
+    return;
+  }
   const code = normalizeRoomCode(els.roomCodeInput?.value);
   if (!code) {
     setOnlineStatus("코드 필요", true);
@@ -5984,24 +5863,12 @@ document.addEventListener("visibilitychange", () => {
 
 els.uiScaleDownButton?.addEventListener("click", () => adjustUiScalePercent(-UI_SCALE_STEP_PERCENT));
 els.uiScaleUpButton?.addEventListener("click", () => adjustUiScalePercent(UI_SCALE_STEP_PERCENT));
-els.confirmNicknameButton?.addEventListener("click", handleConfirmNicknameButtonClick);
-els.humanNameInput?.addEventListener("keydown", (event) => {
-  if (event.key !== "Enter") return;
-  event.preventDefault();
-  confirmHumanNicknameChange(els.humanNameInput);
-});
-els.onlineNameInput?.addEventListener("keydown", (event) => {
-  if (event.key !== "Enter") return;
-  event.preventDefault();
-  confirmHumanNicknameChange(els.onlineNameInput);
-});
 els.refreshLeaderboardButton?.addEventListener("click", loadLeaderboard);
 els.refreshLeaderboardButton?.addEventListener("click", loadHallOfFame);
 els.turnToast?.addEventListener("click", dismissCenterToast);
 els.enterFantasyButton?.addEventListener("click", enterFantasyKingdom);
 els.enterClueButton?.addEventListener("click", enterClueSetup);
 els.clueBackButton?.addEventListener("click", returnToGameLauncher);
-els.homeLogoButton?.addEventListener("click", returnToGameLauncher);
 els.startButton.addEventListener("click", startGame);
 els.createRoomButton?.addEventListener("click", createOnlineRoom);
 els.rejoinRoomButton?.addEventListener("click", restoreOnlineRoom);
@@ -6058,13 +5925,15 @@ els.cardCatalogDialog?.addEventListener("click", (event) => {
 });
 els.sortButton.addEventListener("click", sortHand);
 els.rulesButton.addEventListener("click", () => els.rulesDialog.showModal());
+els.backButton?.addEventListener("click", () => {
+  window.location.href = "index.html";
+});
 els.restartGameButton.addEventListener("click", () => {
   els.endDialog.close();
   startGame();
 });
 els.leaveFinishedGameButton?.addEventListener("click", leaveOnlineRoom);
 
-initializeHumanNicknameControls();
 updateTitleArt();
 loadHallOfFame();
 loadLeaderboard();

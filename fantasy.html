@@ -23,11 +23,11 @@
       <header class="topbar">
               <div class="brand">
                 <div class="brand-copy">
-                  <button id="homeLogoButton" class="brand-title-art-wrap" type="button" aria-label="첫 화면으로 이동">
+                  <div class="brand-title-art-wrap" aria-hidden="true">
                     <img class="brand-title-art brand-title-base" src="assets/titles/title-base.png" alt="판타지 왕국" />
                     <img class="brand-title-art brand-title-expansion" src="assets/titles/title-expansion.png" alt="판타지 왕국 저주받은 무리" />
-                    <h1 class="sr-only">판타지왕국 PC버전</h1>
-                  </button>
+                  </div>
+                  <h1 class="sr-only">판타지왕국 PC버전</h1>
                 </div>
                 <div class="ui-scale-control" aria-label="전체 UI 배율">
                   <button id="uiScaleDownButton" class="icon-button ui-scale-button" type="button" title="전체 UI 축소" aria-label="전체 UI 축소">-</button>
@@ -36,7 +36,7 @@
                 </div>
               </div>
               <div class="top-actions">
-                <a href="stitch.html" class="stitch-launcher" title="Google Stitch로 UI 디자인">🎨 Stitch</a>
+                <button id="fantasyBackButton" class="secondary-button" type="button">첫 화면</button>
                 <button id="rulesButton" class="icon-button" type="button" title="규칙 보기" aria-label="규칙 보기">?</button>
                 <button id="newGameButton" class="primary-button" type="button">새 게임</button>
               </div>
@@ -49,14 +49,6 @@
                   <span>AI와 바로 시작</span>
                 </div>
                 <div class="setup-controls">
-                  <div class="nickname-control">
-                    <label>
-                      내 닉네임
-                      <input id="humanNameInput" type="text" minlength="2" maxlength="12" required placeholder="2글자 이상" autocomplete="nickname" />
-                    </label>
-                    <button id="confirmNicknameButton" class="secondary-button" type="button">확인</button>
-                    <small id="nicknameStatus">닉네임은 2글자 이상이어야 하며, 하루에 한 번만 변경할 수 있습니다.</small>
-                  </div>
                   <label>
                     플레이어 수
                     <select id="playerCountSelect">
@@ -87,16 +79,9 @@
                   <span id="onlineStatus" class="online-status">연결 대기</span>
                 </div>
                 <div class="online-controls">
-                  <label>
-                    닉네임
-                    <input id="onlineNameInput" type="text" minlength="2" maxlength="12" required placeholder="2글자 이상" autocomplete="nickname" />
-                  </label>
                   <button id="createRoomButton" class="secondary-button" type="button">방 만들기</button>
                   <button id="rejoinRoomButton" class="secondary-button hidden" type="button">이전 방 재입장</button>
-                  <label>
-                    방 코드
-                    <input id="roomCodeInput" type="text" maxlength="6" autocomplete="off" />
-                  </label>
+                  <input id="roomCodeInput" type="text" maxlength="6" autocomplete="off" placeholder="방 코드" />
                   <button id="joinRoomButton" class="secondary-button" type="button">입장</button>
                 </div>
                 <div id="onlineRoomCard" class="online-room-card hidden">
