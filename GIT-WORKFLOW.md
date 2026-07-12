@@ -154,6 +154,71 @@ git push origin v1.0-monopoly
 
 ---
 
+## 🎨 디자인 규칙 (모든 게임 공통, 2026-07-12 확립)
+
+본 저장소의 모든 게임 페이지는 다음 디자인 패턴을 따릅니다. 새 게임 추가 시에도 동일하게 적용합니다.
+
+### 1. 카드 비율 — **정사각형** (1:1) 유지 필수
+
+- 모든 게임 카드의 종횡비는 **정사각형**이어야 합니다 (예: 120×120, 170×170 등 1:1 비율).
+- 직사각형 / 와이드 / 세로형 카드는 사용하지 않습니다 (오리지널 Splendor 63×88mm 비율도 본 프로젝트에서는 정사각형 통일).
+- 귀족(Noble) / 개발 / 보너스 / 패널티 / 특수 카드 모두 포함.
+- 단, 보드게임 카드 외의 UI 요소(게임 보드, 패널, 이미지 등)는 자유 비율 가능.
+
+### 2. 로고 — **클릭 가능한 버튼 ❌, 단순 이미지 ✅**
+
+- 게임 페이지의 로고 이미지는 `<img>` 또는 `<div>`로 감싸고 클릭 가능 영역에서 제외합니다 (`aria-hidden="true"` 권장, `<button>` 사용 금지).
+- 로고 자체에 페이지 이동 동작을 넣지 않습니다 — 같은 페이지 내 다른 기능과 충돌합니다.
+- **이유**: 다른 게임 페이지(splendor, monopoly, clue 등)도 모두 단순 이미지 패턴을 따릅니다.
+- 판타지왕국은 2026-07-12에 `<button id="homeLogoButton">` → `<div>` 패턴으로 통일 완료.
+
+### 3. 첫 화면 버튼 — **모든 게임에 명시적 텍스트 버튼**
+
+- 모든 게임 페이지에는 우측 상단 또는 적절한 위치에 `<button id="xxxBackButton" class="secondary-button">첫 화면</button>` 형식의 명시적 첫 화면 버튼이 있어야 합니다 (이미지/아이콘 ❌, 텍스트 ✅, `secondary-button` 클래스 사용).
+- 클릭 시 `window.location.href = "index.html"`로 첫 화면(게임 허브) 이동.
+- 판타지왕국은 2026-07-12에 `<button id="fantasyBackButton">첫 화면</button>` 추가 완료.
+- 다른 게임들(splendor, monopoly, clue, cant-stop, tally-ho, sushi-go, dominion)은 이미 이 패턴을 따르고 있어 변경 불필요.
+
+### 4. Stitch 링크 — **메인 게임 페이지에서 제거** ⛔
+
+- 게임 페이지(`*.html`)에는 `<a href="stitch.html">` 링크를 두지 않습니다 (개발 도구이므로 메인 진입 경로에 노출 안 함).
+- 필요 시 별도 디버그/개발 경로(`/dev/` 등)로 분리.
+- 판타지왕국은 2026-07-12에 제거 완료.
+
+### 5. 닉네임 — **홈 화면에서만 입력, 게임에서는 읽기만**
+
+- 닉네임 입력 UI는 **홈 화면(`index.html`)만** 가집니다.
+- 게임 페이지(`fantasy.html`, `splendor.html`, 등)는 자체 닉네임 입력 폼을 가지지 않고, `localStorage["fantasyKingdom.humanProfile.v1"]`에서 읽기만 합니다 (`currentHumanNickname()` 사용).
+- 판타지왕국은 2026-07-12에 자체 폼 제거 → 통합 모달 읽기로 통일 완료 (커밋 `b99c602`).
+
+### 6. 온라인 input — **readonly, 자동 prefill**
+
+- 게임 페이지의 온라인 모드 input(예: `onlineNameInput`, `cantOnlineNameInput`)은 `readonly` 또는 `disabled`로 설정하여 사용자 변경 불가.
+- 페이지 로드 시 `localStorage`의 닉네임을 자동으로 input value에 채움 (`syncOnlineNicknameInput()` 같은 함수).
+- 플레이어 수 / AI 난이도 같은 게임 옵션은 일반 select/checkbox 유지 (변경 가능).
+
+### 7. input/버튼/label 높이 — **57px 통일** (`.secondary-button` 기준)
+
+- 모든 입력 컨트롤(`input`, `select`, `button`)은 `.secondary-button`의 `min-height: 57px`와 동일하게 맞춥니다.
+- 라벨 텍스트는 input 위/안에 placeholder로 통합 (별도 라벨 영역 ❌).
+- 예: `<input placeholder="방 코드">` 형태 권장 (라벨 + input 분리 ❌).
+
+### 8. CSS 클래스 통일
+
+- 게임 페이지에서 공통으로 쓰는 스타일:
+  - `.secondary-button`: 보조 버튼 (57px 높이, 다크 배경)
+  - `.primary-button`: 주요 버튼 (골드 배경, 게임 시작 등)
+  - `.icon-button`: 작은 아이콘 버튼 (57×57)
+  - `.mode-panel`: 게임 설정 패널
+  - `.online-controls`: 온라인 모드 영역
+
+### 변경 이력
+
+- **2026-07-12**: 판타지왕국 디자인 통일 + 로고 클릭 제거 + Stitch 링크 제거 + 첫 화면 버튼 추가 + 닉네임 통합 (`b99c602`, `dd830ec`).
+- 이 시점에 splendor / monopoly / clue / cant-stop / tally-ho / sushi-go / dominion은 이미 위 규칙을 따르고 있어 변경 불필요.
+
+---
+
 ## 🤖 AI 어시스턴트 작업 가이드
 
 본 저장소에서 작업하는 AI는 다음을 준수해야 합니다:
@@ -164,7 +229,8 @@ git push origin v1.0-monopoly
 4. **충돌 시 작업 중단 + 보고** — cherry-pick/rebase 중 충돌이 발견되면 사용자 확인.
 5. **Vercel 배포 영향 인지** — main push 전 안정성 한 번 더 확인.
 6. **로컬 main을 임의로 푸시하지 않음** — 사용자 명시 허락 후에만.
-7. **카드 비율 정사각형 유지** — 디자인 규칙 (자세한 내용은 사용자 메모리 참조).
+7. **디자인 규칙 준수** — 위 "🎨 디자인 규칙" 섹션의 8가지 항목 (카드 정사각형, 로고 이미지, 첫 화면 버튼, Stitch 링크 제거, 닉네임 통합, input readonly, 높이 통일, CSS 클래스)을 항상 따른다.
+8. **utils.js 의존성 인지** — `script.js`(판타지왕국)는 `scripts/utils.js`의 `shuffle` 함수를 사용하므로 `fantasy.html`에서 utils.js를 로드해야 한다. 새 페이지에서 utils.js의 함수를 사용할 때도 같은 패턴 적용.
 
 ---
 
