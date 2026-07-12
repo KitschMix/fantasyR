@@ -887,6 +887,7 @@
   /* ── Game Start ── */
   function startGame() {
     state.startedAt = Date.now();
+    state.aiDifficulty = els.difficultySelect?.value || els.aiDifficultySelect?.value || "normal";
     clearAiTimer();
     const count = Math.min(4, Math.max(2, Number(els.playerCount?.value || 3)));
 

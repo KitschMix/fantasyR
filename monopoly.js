@@ -2305,6 +2305,7 @@
   /* ── Game Start ── */
   function startGame() {
     state.startedAt = Date.now();
+    state.aiDifficulty = els.difficultySelect?.value || els.aiDifficultySelect?.value || "normal";
     clearAiTimer();
     // 즉시 UI 응답: 시작 버튼 비활성화 + setup 패널 숨김 (클릭 피드백 즉시)
     if (els.startButton) {

@@ -8,6 +8,22 @@
 // ============================================
 const GAMES = [
   {
+    id: 'fantasy',
+    title: '판타지왕국',
+    subtitle: 'FANTASY REALM',
+    file: 'fantasy.html',
+    category: 'strategy',
+    categoryLabel: 'STRATEGY',
+    players: '2-4',
+    duration: '30-45m',
+    rating: 4.9,
+    accent: 'rgba(212,160,55,0.6)',     // 골드
+    accent2: 'rgba(140,80,30,0.5)',
+    symbol: 'castle',
+    coverArt: 'assets/main/판타지왕국.jpg',
+    desc: '54장의 카드 중 가장 강한 판타지 왕국을 세우세요.'
+  },
+  {
     id: 'splendor',
     title: '스플렌더',
     subtitle: 'SPLENDOR',

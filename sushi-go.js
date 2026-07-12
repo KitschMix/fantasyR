@@ -459,6 +459,7 @@
   /* ── Game Start ── */
   function startGame() {
     state.startedAt = Date.now();
+    state.aiDifficulty = els.difficultySelect?.value || els.aiDifficultySelect?.value || "normal";
     const count = Math.min(5, Math.max(2, Number(els.playerCount?.value || 3)));
     const pool = shuffle(aiProfiles());
 

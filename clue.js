@@ -1926,6 +1926,7 @@
 
   function startClueGame() {
     state.startedAt = Date.now();
+    state.aiDifficulty = els.difficultySelect?.value || els.aiDifficultySelect?.value || "normal";
     clearAiTimer();
     clearDiceRollTimer();
     clearIdleSpeechTimer();
