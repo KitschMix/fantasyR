@@ -523,6 +523,7 @@
   }
 
   function startCantGame() {
+    state.startedAt = Date.now();
     state.humanName = currentHumanNickname();
     if (!state.humanName) {
       renderCantSetup();
@@ -888,6 +889,16 @@
     clearAiTimer();
     state.finished = true;
     state.phase = "finished";
+    if (state.startedAt && window.FANTASY_PLAYER_STATS && winnerActor && winnerActor.role === "human") {
+      window.FANTASY_PLAYER_STATS.recordGame({
+        gameType: "cant-stop",
+        result: "win",
+        score: 0,
+        durationSec: Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)),
+        playerCount: (state.players || []).length,
+        deckList: null,
+      });
+    }
     const winner = actorLabel(winnerActor);
     log(`${winner} 승리. 기둥 3개 완주!`);
     toast(`${winner} 승리`, 1800);

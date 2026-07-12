@@ -1447,6 +1447,7 @@
     const sorted = [...state.players].sort((a, b) => b.points - a.points || a.cards.length - b.cards.length);
     const winnerNames = winners.map(w => w.name).join(", ");
     addLog(`🏆 ${winnerNames} 승리! (${maxPoints}점)`);
+    recordGameResult({ winners, sorted, maxPoints });
     renderAll();
     DIALOGUE.stopIdleLoop();
     // Dialogue: win/loss (everyone speaks)
@@ -1510,6 +1511,7 @@
 
   /* ── Game Start ── */
   function startGame() {
+    state.startedAt = Date.now();
     const count = Math.min(4, Math.max(2, Number(els.playerCount?.value || 3)));
     const tc = tokenCount(count);
     state.players = buildPlayers(count);
@@ -1914,3 +1916,21 @@
   init();
   window.SplendorGame = { start: startGame, leave: leaveGame };
 })();
+
+function recordGameResult({ winners, sorted, maxPoints }) {
+  const statsApi = window.FANTASY_PLAYER_STATS;
+  if (!statsApi || typeof statsApi.recordGame !== "function") return;
+  const humanEntry = sorted.find((p) => p && p.human);
+  if (!humanEntry) return;
+  const isWin = Array.isArray(winners) && winners.some((w) => w && w.human);
+  const result = isWin ? "win" : "loss";
+  const durationSec = state.startedAt ? Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)) : 0;
+  statsApi.recordGame({
+    gameType: "splendor",
+    result,
+    score: maxPoints || humanEntry.points || 0,
+    durationSec,
+    playerCount: sorted.length,
+    deckList: null,
+  });
+}

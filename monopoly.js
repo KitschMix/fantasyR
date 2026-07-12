@@ -2304,6 +2304,7 @@
 
   /* ── Game Start ── */
   function startGame() {
+    state.startedAt = Date.now();
     clearAiTimer();
     // 즉시 UI 응답: 시작 버튼 비활성화 + setup 패널 숨김 (클릭 피드백 즉시)
     if (els.startButton) {
@@ -2489,6 +2490,22 @@
   }
 
   function leaveGame() {
+    if (state.phase === "finished" && state.startedAt) {
+      const statsApi = window.FANTASY_PLAYER_STATS;
+      if (statsApi) {
+        const human = state.players?.[0];
+        const alive = (state.players || []).filter((p) => p && !p.bankrupt);
+        const isWin = human && !human.bankrupt && alive.length === 1;
+        statsApi.recordGame({
+          gameType: "monopoly",
+          result: isWin ? "win" : "loss",
+          score: human?.money || 0,
+          durationSec: Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)),
+          playerCount: (state.players || []).length,
+          deckList: null,
+        });
+      }
+    }
     clearAiTimer();
     window.location.href = "./";
   }

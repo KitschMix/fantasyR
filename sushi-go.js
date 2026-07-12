@@ -417,6 +417,21 @@
   /* ── Game End ── */
   function endGame() {
     state.phase = "finished";
+    if (state.startedAt && window.FANTASY_PLAYER_STATS) {
+      const sorted = [...state.players].sort((a, b) => b.totalScore - a.totalScore);
+      const human = state.players.find((p) => p && p.human);
+      if (human) {
+        const isWin = sorted[0] && sorted[0].id === human.id;
+        window.FANTASY_PLAYER_STATS.recordGame({
+          gameType: "sushi-go",
+          result: isWin ? "win" : "loss",
+          score: human.totalScore || 0,
+          durationSec: Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)),
+          playerCount: state.players.length,
+          deckList: null,
+        });
+      }
+    }
     const puddingScores = scorePudding();
     puddingScores.forEach((score, i) => { state.players[i].gameEndScore += score; });
     state.players.forEach(p => { p.totalScore = p.roundScore + p.gameEndScore; });
@@ -443,6 +458,7 @@
 
   /* ── Game Start ── */
   function startGame() {
+    state.startedAt = Date.now();
     const count = Math.min(5, Math.max(2, Number(els.playerCount?.value || 3)));
     const pool = shuffle(aiProfiles());
 

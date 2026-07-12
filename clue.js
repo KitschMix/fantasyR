@@ -1852,6 +1852,17 @@
   function finishGame(player, success, accusation) {
     state.finished = true;
     state.phase = "finished";
+    if (state.startedAt && window.FANTASY_PLAYER_STATS && player && player.human) {
+      const statsApi = window.FANTASY_PLAYER_STATS;
+      statsApi.recordGame({
+        gameType: "clue",
+        result: success ? "win" : "loss",
+        score: 0,
+        durationSec: Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)),
+        playerCount: (state.players || []).length,
+        deckList: null,
+      });
+    }
     clearAiTimer();
     if (success) {
       log(`${playerDisplayName(player)} 승리! 정답은 ${state.solution.suspect.name}, ${state.solution.room.name}, ${state.solution.weapon.name}입니다.`);
@@ -1914,6 +1925,7 @@
   }
 
   function startClueGame() {
+    state.startedAt = Date.now();
     clearAiTimer();
     clearDiceRollTimer();
     clearIdleSpeechTimer();

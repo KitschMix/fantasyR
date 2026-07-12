@@ -860,6 +860,20 @@
       human: p.human
     })).sort((a, b) => b.vp - a.vp);
 
+    if (state.startedAt && window.FANTASY_PLAYER_STATS) {
+      const human = results.find((r) => r.human);
+      if (human) {
+        const isWin = results[0] && results[0].human;
+        window.FANTASY_PLAYER_STATS.recordGame({
+          gameType: "dominion",
+          result: isWin ? "win" : "loss",
+          score: human.vp || 0,
+          durationSec: Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)),
+          playerCount: state.players.length,
+          deckList: null,
+        });
+      }
+    }
     addLog("=== 게임 종료 ===");
     results.forEach((r, i) => {
       addLog(`${i + 1}위: ${r.name} — ${r.vp} VP`);
@@ -872,6 +886,7 @@
 
   /* ── Game Start ── */
   function startGame() {
+    state.startedAt = Date.now();
     clearAiTimer();
     const count = Math.min(4, Math.max(2, Number(els.playerCount?.value || 3)));
 

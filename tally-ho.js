@@ -613,6 +613,7 @@
   }
 
   function startTallyGame() {
+    state.startedAt = Date.now();
     state.humanName = currentHumanNickname();
     if (!state.humanName) {
       renderTallySetup();
@@ -1121,6 +1122,21 @@
     clearAiTurnTimer();
     state.finished = true;
     state.selected = null;
+    if (state.startedAt && window.FANTASY_PLAYER_STATS) {
+      const blue = state.scores.blue;
+      const brown = state.scores.brown;
+      const winnerSide = blue === brown ? "" : blue > brown ? "blue" : "brown";
+      const humanSide = sidesAssigned() ? sideOwnerLabel("blue") : null;
+      const isWin = winnerSide === "blue" && sidesAssigned();
+      window.FANTASY_PLAYER_STATS.recordGame({
+        gameType: "tally-ho",
+        result: winnerSide === "" ? "draw" : (isWin ? "win" : "loss"),
+        score: state.scores.blue || 0,
+        durationSec: Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)),
+        playerCount: 2,
+        deckList: null,
+      });
+    }
     const blue = state.scores.blue;
     const brown = state.scores.brown;
     const winnerSide = blue === brown ? "" : blue > brown ? "blue" : "brown";
