@@ -304,6 +304,13 @@
       </div>
     </section>
 
+    <!-- ═══ 플레이어 통계 위젯 (Supabase 기반) ═══ -->
+    <section class="py-6">
+      <div id="statsWidget">
+        <!-- JS로 렌더링 (player-stats.js / renderHubWidget) -->
+      </div>
+    </section>
+
     </div>
 </main>
 
@@ -351,6 +358,9 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="scripts/player-stats.js"></script>
 <script src="index.js"></script>
 </body>
 </html>

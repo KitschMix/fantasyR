@@ -564,4 +564,9 @@ document.addEventListener('DOMContentLoaded', () => {
   setupInteractions();
   setupProfileModal();
   setupGameCardGuard();
+  // 플레이어 통계 위젯 렌더링 (Supabase 기반)
+  const statsWidget = document.getElementById('statsWidget');
+  if (statsWidget && window.FANTASY_PLAYER_STATS?.renderHubWidget) {
+    window.FANTASY_PLAYER_STATS.renderHubWidget(statsWidget);
+  }
 });

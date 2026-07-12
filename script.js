@@ -869,6 +869,7 @@ function startGame() {
   resetDialogueState();
   state.leaderboardSubmitted = false;
   state.hallOfFameSubmitted = false;
+  state.startedAt = Date.now();
   state.playerCount = Number(els.playerCountSelect.value);
   state.aiDifficulty = els.aiDifficultySelect?.value || "normal";
   state.includeExpansion = Boolean(els.expansionCheckbox?.checked);
@@ -4347,6 +4348,31 @@ function finishGame() {
   showEndNotification(ranked);
   submitLeaderboardScore(ranked);
   submitBeomryeHallOfFame(ranked);
+  recordPlayerGameStats(ranked);
+}
+
+function recordPlayerGameStats(ranked) {
+  if (state.onlineGame) return;
+  const statsApi = window.FANTASY_PLAYER_STATS;
+  if (!statsApi || typeof statsApi.recordGame !== "function") return;
+  const humanEntry = ranked.find((entry) => entry.player.human);
+  if (!humanEntry) return;
+  const humanWon = ranked[0]?.player.id === humanEntry.player.id;
+  const result = humanWon ? "win" : "loss";
+  const durationSec = state.startedAt
+    ? Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000))
+    : 0;
+  const deckList = Array.isArray(humanEntry.player?.hand)
+    ? humanEntry.player.hand.map((card) => card?.name || card?.id || String(card))
+    : null;
+  statsApi.recordGame({
+    gameType: "fantasy",
+    result,
+    score: humanEntry.score,
+    durationSec,
+    playerCount: state.playerCount,
+    deckList,
+  });
 }
 
 function showEndNotification(ranked) {
