@@ -223,6 +223,25 @@
 
   function aiProfiles() {
     const groups = SHARED_PROFILES.groups || {};
+    const difficulty = (typeof state !== "undefined" && state.aiDifficulty) || "normal";
+    if (difficulty === "random") {
+      return AI_PROFILE_DIFFICULTY_KEYS.flatMap((key) =>
+        (groups[key] || []).map((profile) => ({
+          ...profile,
+          difficulty: key
+        }))
+      );
+    }
+    const group = groups[difficulty] || groups.normal || [];
+    return group.map((profile) => ({
+      ...profile,
+      difficulty: difficulty
+    }));
+  }
+
+  // Legacy (unused if above works)
+  function _aiProfilesLegacy() {
+    const groups = SHARED_PROFILES.groups || {};
     return AI_PROFILE_DIFFICULTY_KEYS.flatMap((key) =>
       (groups[key] || []).map((profile) => ({
         ...profile,

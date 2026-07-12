@@ -90,7 +90,13 @@
   function imgUrl(f) { return encodeURI(`${PROFILE_ROOT}/${f}`); }
   function aiProfiles() {
     const g = SHARED.groups || {};
-    return (SHARED.difficultyKeys || ["normal", "hard", "expert"]).flatMap(k => (g[k] || []).map(p => ({ ...p, difficulty: k })));
+    const keys = SHARED.difficultyKeys || ["normal", "hard", "expert"];
+    const difficulty = (typeof state !== "undefined" && state.aiDifficulty) || "normal";
+    if (difficulty === "random") {
+      return keys.flatMap((k) => (g[k] || []).map((p) => ({ ...p, difficulty: k })));
+    }
+    const group = g[difficulty] || g.normal || [];
+    return group.map((p) => ({ ...p, difficulty }));
   }
 
   /* ── Helpers ── */

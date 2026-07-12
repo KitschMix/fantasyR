@@ -195,8 +195,12 @@
   function profileImageUrl(f) { return encodeURI(`${PROFILE_ASSET_ROOT}/${f}`); }
   function aiProfiles() {
     const groups = SHARED_PROFILES.groups || {};
-    return (SHARED_PROFILES.difficultyKeys || ["normal", "hard", "expert"])
-      .flatMap(k => (groups[k] || []).map(p => ({ ...p, difficulty: k })));
+    const keys = SHARED_PROFILES.difficultyKeys || ["normal", "hard", "expert"];
+    const difficulty = (typeof state !== "undefined" && state.aiDifficulty) || "normal";
+    const pool = difficulty === "random"
+      ? keys.flatMap((k) => (groups[k] || []).map((p) => ({ ...p, difficulty: k })))
+      : groups[difficulty] || groups.normal || keys.flatMap((k) => (groups[k] || []));
+    return pool.map((p) => ({ ...p, difficulty: difficulty === "random" ? p.difficulty : difficulty }));
   }
 
   /* ── Helpers ── */
