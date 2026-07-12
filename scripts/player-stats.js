@@ -238,6 +238,108 @@
     `;
   }
 
+  /**
+   * 게임별 TOP N 랭킹 조회
+   * @param {string} gameType
+   * @param {number} [limit=10]
+   * @returns {Promise<Array>}
+   */
+  async function fetchTopRankings(gameType, limit = 10) {
+    const client = await getClient();
+    if (!client) return [];
+    try {
+      const { data, error } = await client
+        .from(SUMMARY_VIEW)
+        .select("nickname, total_games, wins, losses, draws, win_rate_pct, total_score, total_duration_sec, last_played_at")
+        .order("total_score", { ascending: false })
+        .limit(100);
+      if (error) return [];
+      const filtered = (data || []).filter((row) => {
+        // 한 번이라도 해당 game_type을 플레이한 적이 있어야 함
+        // fantasy_player_summary 뷰는 닉네임별 합계이므로 game_type 필터는 클라이언트에서 처리 불가
+        // → 별도 쿼리: 해당 닉네임들이 game_type을 플레이했는지 확인
+        return row && row.nickname;
+      });
+      // game_type을 플레이한 닉네임만 필터링 (2차 쿼리)
+      const playerCheckPromises = filtered.map(async (row) => {
+        const { count } = await client
+          .from(STATS_TABLE)
+          .select("id", { count: "exact", head: true })
+          .eq("nickname", row.nickname)
+          .eq("game_type", gameType);
+        return { row, played: count > 0 };
+      });
+      const results = await Promise.all(playerCheckPromises);
+      return results.filter((r) => r.played).slice(0, limit).map((r) => r.row);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * 게임별 TOP 10 랭킹 패널을 컨테이너에 렌더링
+   * @param {HTMLElement} container
+   * @param {string} gameType
+   * @param {Object} [options]
+   * @param {string} [options.title] - 패널 제목
+   * @param {string} [options.emptyMessage] - 데이터 없을 때 메시지
+   */
+  async function renderTopRankings(container, gameType, options = {}) {
+    if (!container) return;
+    const title = options.title || "🏆 TOP 10 랭킹";
+    const emptyMessage = options.emptyMessage || "아직 기록이 없습니다.";
+
+    container.innerHTML = `
+      <div class="bg-surface-container-low border border-outline-variant/30 rounded-xl p-card-padding">
+        <div class="flex items-center justify-between mb-4">
+          <span class="font-headline-md text-headline-md text-on-surface">${title}</span>
+          <button class="text-on-surface-variant hover:text-on-surface" data-ranking-refresh type="button" aria-label="새로고침">
+            <span class="material-symbols-outlined">refresh</span>
+          </button>
+        </div>
+        <div data-ranking-body>
+          <div class="text-center py-6 text-on-surface-variant/60 text-sm">불러오는 중...</div>
+        </div>
+      </div>
+    `;
+
+    const body = container.querySelector("[data-ranking-body]");
+    const refreshBtn = container.querySelector("[data-ranking-refresh]");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", () => renderTopRankings(container, gameType, options));
+    }
+
+    const rankings = await fetchTopRankings(gameType, 10);
+
+    if (!rankings || rankings.length === 0) {
+      body.innerHTML = `<div class="text-center py-6 text-on-surface-variant/60 text-sm">${emptyMessage}</div>`;
+      return;
+    }
+
+    body.innerHTML = rankings.map((r, i) => {
+      const rank = i + 1;
+      const rankColor = rank === 1 ? "text-primary" : rank <= 3 ? "text-secondary" : "text-on-surface-variant";
+      const winRate = `${r.win_rate_pct}%`;
+      return `
+        <div class="flex items-center justify-between py-2 border-b border-outline-variant/20 last:border-b-0">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <span class="font-headline-md text-headline-md ${rankColor} w-6 text-center">${rank}</span>
+            <span class="text-on-surface truncate">${escapeHtml(r.nickname)}</span>
+          </div>
+          <div class="flex items-center gap-3 shrink-0 text-sm">
+            <span class="text-on-surface-variant">${winRate}</span>
+            <span class="text-on-surface">${r.total_score}점</span>
+            <span class="text-on-surface-variant text-xs">${r.total_games}게임</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function escapeHtml(str) {
+    return String(str || "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+  }
+
   // 전역 노출
   window.FANTASY_PLAYER_STATS = {
     recordGame,
@@ -245,6 +347,8 @@
     fetchRecentGames,
     fetchHubWidgetData,
     renderHubWidget,
+    fetchTopRankings,
+    renderTopRankings,
     formatDuration,
     GAME_TYPES,
   };

@@ -123,33 +123,7 @@ const GAMES = [
 // ============================================
 // 세션 히스토리 (한국어)
 // ============================================
-const SESSIONS = [
-  {
-    game: '스플렌더', icon: 'diamond', status: 'victory',
-    tier: 'VICTORY', time: '오늘 14:32', score: '점수 24', players: '나 vs 3 AI',
-    accent: 'rgba(80,40,200,0.5)'
-  },
-  {
-    game: '부루마불', icon: 'apartment', status: 'ongoing',
-    tier: 'ONGOING SESSION', time: '3시간 전', score: '8라운드', players: '나 vs 3 AI',
-    accent: 'rgba(20,80,40,0.5)', isRejoin: true
-  },
-  {
-    game: '캔트스탑', icon: 'terrain', status: 'victory',
-    tier: 'VICTORY', time: '어제 21:14', score: '3 컬럼 완성', players: '나 vs 1 AI',
-    accent: 'rgba(15,80,140,0.5)'
-  },
-  {
-    game: '클루', icon: 'psychology', status: 'victory',
-    tier: 'VICTORY', time: '2일 전', score: '정답! 3턴 만에', players: '나 vs 5 AI',
-    accent: 'rgba(140,15,30,0.5)'
-  },
-  {
-    game: '텔리호', icon: 'pets', status: 'defeat',
-    tier: 'DEFEAT', time: '3일 전', score: '점수 38', players: '나 vs 5 AI',
-    accent: 'rgba(120,80,30,0.5)'
-  }
-];
+// SESSIONS 하드코딩 제거됨 — Supabase fantasy_player_stats에서 fetchRecentGames()로 실시간 데이터 표시
 
 // ============================================
 // 렌더링: 게임 카드
@@ -230,7 +204,71 @@ function renderSessions() {
   const list = document.getElementById('sessionList');
   if (!list) return;
 
-  list.innerHTML = SESSIONS.map(s => sessionHtml(s)).join('');
+  // SESSIONS 하드코딩 제거됨 — Supabase fantasy_player_stats에서 실제 최근 게임 fetch
+  if (window.FANTASY_PLAYER_STATS?.fetchRecentGames) {
+    window.FANTASY_PLAYER_STATS.fetchRecentGames(5).then((games) => {
+      if (!games || games.length === 0) {
+        list.innerHTML = `
+          <div class="p-8 text-center text-on-surface-variant/60">
+            <span class="material-symbols-outlined text-4xl mb-2 block">history</span>
+            <p class="text-sm">아직 플레이한 게임이 없습니다.</p>
+            <p class="text-xs mt-1">게임을 끝까지 플레이하면 여기에 표시됩니다.</p>
+          </div>
+        `;
+        return;
+      }
+      list.innerHTML = games.map((g) => realSessionHtml(g)).join('');
+    }).catch(() => {
+      list.innerHTML = `<div class="p-4 text-center text-on-surface-variant/60 text-sm">세션 기록을 불러올 수 없습니다.</div>`;
+    });
+  } else {
+    list.innerHTML = `<div class="p-4 text-center text-on-surface-variant/60 text-sm">통계 모듈을 로드 중입니다.</div>`;
+  }
+}
+
+function realSessionHtml(g) {
+  const gameNames = { fantasy: '판타지왕국', splendor: '스플렌더', monopoly: '부루마불', clue: '클루', 'cant-stop': '캔트스탑', 'tally-ho': '텔리호', 'sushi-go': '스시고', dominion: '도미니언' };
+  const gameIcons = { fantasy: 'castle', splendor: 'diamond', monopoly: 'apartment', clue: 'psychology', 'cant-stop': 'terrain', 'tally-ho': 'pets', 'sushi-go': 'restaurant', dominion: 'shield' };
+  const gameAccents = { fantasy: 'rgba(212,160,55,0.5)', splendor: 'rgba(80,40,200,0.5)', monopoly: 'rgba(20,80,40,0.5)', clue: 'rgba(140,15,30,0.5)', 'cant-stop': 'rgba(15,80,140,0.5)', 'tally-ho': 'rgba(120,80,30,0.5)', 'sushi-go': 'rgba(200,60,80,0.5)', dominion: 'rgba(40,100,80,0.5)' };
+  const win = g.result === 'win';
+  const played = new Date(g.played_at);
+  const timeText = formatRelativeTime(played);
+  return `
+    <div class="flex items-center justify-between p-4 hover:bg-surface-container transition-colors">
+      <div class="flex items-center gap-4 flex-1 min-w-0">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background:${gameAccents[g.game_type] || 'rgba(100,100,100,0.5)'};">
+          <span class="material-symbols-outlined text-on-surface">${gameIcons[g.game_type] || 'games'}</span>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h4 class="font-headline-md text-headline-md text-on-surface truncate">${gameNames[g.game_type] || g.game_type}</h4>
+          <p class="text-xs text-on-surface-variant flex items-center gap-1 mt-1">
+            <span class="material-symbols-outlined text-[14px]">schedule</span>
+            ${timeText} · ${g.player_count}명
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 shrink-0">
+        <p class="text-sm text-on-surface">점수 ${g.score}</p>
+        <span class="px-3 py-1 ${win ? 'bg-primary text-on-primary' : 'bg-surface-bright text-on-surface-variant'} text-[10px] font-bold rounded-full uppercase tracking-wider">
+          ${win ? 'VICTORY' : 'DEFEAT'}
+        </span>
+      </div>
+    </div>
+  `;
+}
+
+function formatRelativeTime(date) {
+  if (Number.isNaN(date.getTime())) return '';
+  const now = Date.now();
+  const diff = now - date.getTime();
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (diff < minute) return '방금';
+  if (diff < hour) return `${Math.floor(diff / minute)}분 전`;
+  if (diff < day) return `${Math.floor(diff / hour)}시간 전`;
+  if (diff < 7 * day) return `${Math.floor(diff / day)}일 전`;
+  return date.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' });
 }
 
 function sessionHtml(s) {
