@@ -498,6 +498,66 @@ body.monopoly-active .monopoly-ranking-panel .leaderboard-status {
   color: var(--muted);
 }
 
+/* Sushi Go and Splendor use the shared setup shell while retaining game themes. */
+.sushi-setup-panel,
+.splendor-setup-panel {
+  align-items: flex-start;
+  min-height: calc(100vh - 28px);
+  padding: 14px 24px 28px;
+}
+
+.sushi-setup-shell .sushi-panel,
+.splendor-setup-shell .splendor-panel {
+  width: auto;
+  min-height: var(--setup-panel-min-height);
+  padding: 20px 22px;
+}
+
+.sushi-setup-shell .sushi-setup-logo {
+  width: min(350px, 42vw);
+  max-height: 112px;
+}
+
+.splendor-setup-shell .splendor-setup-logo {
+  width: min(350px, 42vw);
+  height: auto;
+  max-height: 104px;
+}
+
+.sushi-setup-controls,
+.splendor-setup-controls {
+  flex: 1 1 auto;
+  align-content: start;
+}
+
+.sushi-setup-controls .setup-profile-source,
+.splendor-setup-controls .setup-profile-source {
+  margin-top: auto;
+}
+
+.sushi-ranking-panel,
+.splendor-ranking-panel {
+  border-color: rgba(242, 207, 120, 0.26);
+  background: rgba(31, 28, 23, 0.94);
+}
+
+.sushi-ranking-panel .leaderboard-board,
+.splendor-ranking-panel .leaderboard-board {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.leaderboard-list .leaderboard-empty {
+  display: block;
+  min-height: 58px;
+  padding: 18px;
+  text-align: center;
+}
+
+.leaderboard-list .leaderboard-empty strong {
+  color: var(--muted);
+  font-size: 15px;
+}
+
 @media (max-width: 1180px) {
   .game-setup-shell,
   .game-setup-header,
@@ -547,7 +607,9 @@ body.monopoly-active .monopoly-ranking-panel .leaderboard-status {
   }
 
   .clue-setup-panel,
-  body.monopoly-active .monopoly-setup-panel {
+  body.monopoly-active .monopoly-setup-panel,
+  .sushi-setup-panel,
+  .splendor-setup-panel {
     padding: 12px;
   }
 }

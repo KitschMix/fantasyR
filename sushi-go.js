@@ -27,6 +27,7 @@
     gamePanel:     $("#sushiGamePanel"),
     startButton:   $("#startSushiButton"),
     playerCount:   $("#sushiPlayerCountSelect"),
+    difficultySelect: $("#sushiDifficultySelect"),
     backButton:    $("#sushiBackButton"),
     newGameButton: $("#sushiNewGameButton"),
     exitButton:    $("#sushiExitButton"),

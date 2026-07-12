@@ -144,6 +144,7 @@
     gamePanel:      $("#splendorGamePanel"),
     startButton:    $("#startSplendorButton"),
     playerCount:    $("#splendorPlayerCountSelect"),
+    difficultySelect: $("#splendorDifficultySelect"),
     backButton:     $("#splendorBackButton"),
     newGameButton:  $("#splendorNewGameButton"),
     exitButton:     $("#splendorExitButton"),

@@ -8,6 +8,7 @@
 
     <link rel="stylesheet" href="styles.css?v=20260707-splendor-restyle" />
     <link rel="stylesheet" href="splendor.css?v=20260709-bubble-fix" />
+    <link rel="stylesheet" href="setup-shell.css?v=20260712-sushi-splendor" />
   </head>
   <body class="splendor-active app-loading">
     <div id="turnToast" class="turn-toast" role="status" aria-live="assertive" aria-hidden="true">
@@ -24,36 +25,91 @@
     <main class="app-shell">
       <!-- Setup Panel -->
       <section id="splendorSetupPanel" class="splendor-setup-panel" aria-label="스플렌더 설정">
-        <div class="mode-panel splendor-panel">
-          <div class="splendor-panel-top">
-            <img class="splendor-setup-logo" src="assets/titles/title-splendor.png" alt="스플렌더" />
-            <button id="splendorBackButton" class="secondary-button" type="button">첫 화면</button>
+        <div id="splendorSetupShell" class="game-setup-shell splendor-setup-shell">
+          <header class="game-setup-header">
+            <div class="game-setup-brand">
+              <img class="game-setup-logo splendor-setup-logo" src="assets/titles/title-splendor.png" alt="스플렌더" />
+            </div>
+            <div class="game-setup-actions">
+              <button class="icon-button" type="button" title="스플렌더 도움말" aria-label="스플렌더 도움말" data-dialog-target="#splendorRulesDialog">?</button>
+              <div class="setup-scale-control" data-setup-scale data-scale-target="#splendorSetupShell" aria-label="스플렌더 시작 화면 배율">
+                <button class="icon-button" data-scale-down type="button" title="축소" aria-label="축소">-</button>
+                <span class="setup-scale-value" data-scale-value>100%</span>
+                <button class="icon-button" data-scale-up type="button" title="확대" aria-label="확대">+</button>
+              </div>
+              <button id="splendorBackButton" class="secondary-button" type="button">첫 화면</button>
+            </div>
+          </header>
+
+          <div class="game-setup-grid splendor-setup-grid">
+            <div class="mode-panel single-panel splendor-panel game-setup-mode">
+              <div class="mode-panel-head">
+                <strong>싱글플레이</strong>
+                <span>AI와 보석 경쟁</span>
+              </div>
+              <div class="splendor-setup-controls setup-controls">
+                <label>
+                  플레이어 수
+                  <select id="splendorPlayerCountSelect">
+                    <option value="2">2명</option>
+                    <option value="3" selected>3명</option>
+                    <option value="4">4명</option>
+                  </select>
+                </label>
+                <label class="setup-tooltip" data-tooltip="보통: 가벼운 점수 판단. 어려움: 가져오기/버리기 후 예상 점수 비교. 매우어려움: 보너스·패널티·특수 선택까지 더 깊게 평가. 완전랜덤: 프로필과 실제 난이도가 섞입니다.">
+                  AI 난이도
+                  <select id="splendorDifficultySelect">
+                    <option value="normal">보통</option>
+                    <option value="hard">어려움</option>
+                    <option value="expert">매우어려움</option>
+                    <option value="random">완전랜덤</option>
+                  </select>
+                </label>
+                <div class="setup-profile-source">
+                  <span>플레이어</span>
+                  <strong>첫 화면 프로필 사용</strong>
+                </div>
+                <button id="startSplendorButton" class="primary-button" type="button">게임 시작</button>
+              </div>
+            </div>
+
+            <div class="mode-panel online-panel splendor-panel game-setup-mode">
+              <div class="mode-panel-head online-panel-head">
+                <strong>멀티플레이</strong>
+                <span class="online-status">준비 중</span>
+              </div>
+              <div class="online-controls">
+                <div class="setup-profile-source">
+                  <span>플레이어</span>
+                  <strong>첫 화면 프로필 사용</strong>
+                </div>
+                <button class="secondary-button" type="button" disabled>방 만들기</button>
+                <label>
+                  방 코드
+                  <input type="text" maxlength="6" placeholder="6자리 코드" disabled />
+                </label>
+                <button class="secondary-button" type="button" disabled>입장</button>
+              </div>
+              <div class="setup-online-note">
+                <strong>온라인 보석 경쟁을 준비하고 있습니다.</strong>
+                <small>방에 입장하면 참가자와 준비 상태를 확인한 뒤 같은 보석 시장에서 시작하게 됩니다.</small>
+              </div>
+            </div>
+
+            <section id="splendorRanking" class="mode-panel leaderboard-panel game-ranking-panel splendor-ranking-panel" aria-label="스플렌더 랭킹">
+              <div class="mode-panel-head">
+                <strong>스플렌더 랭킹</strong>
+                <button class="secondary-button leaderboard-refresh-button" data-live-ranking-refresh="#splendorLeaderboardList" type="button">새로고침</button>
+              </div>
+              <div class="leaderboard-board">
+                <section class="leaderboard-column" aria-label="스플렌더 누적 점수 랭킹">
+                  <h3>누적 점수 TOP 10</h3>
+                  <ol id="splendorLeaderboardList" class="leaderboard-list" data-live-ranking data-game-type="splendor"></ol>
+                </section>
+              </div>
+              <div id="splendorLeaderboardStatus" class="leaderboard-status" data-ranking-status>랭킹을 불러오는 중입니다.</div>
+            </section>
           </div>
-          <div class="mode-panel-head">
-            <strong>스플렌더</strong>
-            <span>보석 엔진 빌딩</span>
-          </div>
-          <div class="splendor-setup-controls">
-            <label>
-              플레이어 수
-              <select id="splendorPlayerCountSelect">
-                <option value="2">2명</option>
-                <option value="3" selected>3명</option>
-                <option value="4">4명</option>
-              </select>
-            </label>
-            <label class="setup-tooltip" data-tooltip="보통: 가벼운 점수 판단. 어려움: 가져오기/버리기 후 예상 점수 비교. 매우어려움: 보너스·패널티·특수 선택까지 더 깊게 평가. 완전랜덤: 프로필과 실제 난이도가 섞입니다.">
-              AI 난이도
-              <select id="splendorDifficultySelect">
-                <option value="normal">보통</option>
-                <option value="hard">어려움</option>
-                <option value="expert">매우어려움</option>
-                <option value="random">완전랜덤</option>
-              </select>
-            </label>
-            <button id="startSplendorButton" class="primary-button" type="button">게임 시작</button>
-          </div>
-          <div id="splendorRanking" class="mt-6"></div>
         </div>
       </section>
 
@@ -174,8 +230,12 @@
       <!-- Card Hover Preview -->
       <div id="splendorCardPreview" class="splendor-card-preview hidden"></div>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="shared-ui.js?v=20260707-splendor-restyle"></script>
     <script src="shared-profiles.js?v=20260712-original-names"></script>
+    <script src="scripts/player-stats.js?v=20260712-rankings"></script>
+    <script src="setup-shell.js?v=20260712-sushi-splendor"></script>
     <script src="splendor-dialogues.js"></script>
     <script src="splendor.js?v=20260709-bubble-fix"></script>
   </body>
