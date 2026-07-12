@@ -92,7 +92,10 @@ function score(cardIds, actions = [], options = {}) {
     deck.disableCursedHoardSuits();
   }
 
-  const hand = new Hand();
+  const hand = new Hand({
+    expansionEnabled: Boolean(options.expansion),
+    playerCount: options.playerCount || context.playerCount,
+  });
   hand.loadFromArrays(cardIds, actions);
   const discard = options.discardIds ? makeDiscard(options.discardIds) : options.discard || emptyDiscard();
   const total = hand.score(discard);

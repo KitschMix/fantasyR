@@ -61,13 +61,11 @@ suite('hand-doppelganger-bug: Doppelganger bonusScore 미복사 (BUG-002)', () =
     pass++;
   });
 
-  total++; test('FR53가 Swamp 흉내 (penaltyScore 미복사 시 합 47 — 회귀 방지)', () => {
-    // 같은 손패지만 penaltyScore 미복사 시 47, 복사 시 41
-    // 이 테스트는 위와 같은 결과 기대 (41) — 정상
+  total++; test('FR53가 Swamp 흉내 (불꽃/군대가 없으면 패널티 없음)', () => {
     const h = makeHand(ctx, ['FR53', 'FR07']);
     injectAction(h, 'FR53', ['FR07']);
-    // Doppelganger 15 + Swamp 15 = 30
-    assertEqual(h.score(), 30, 'Doppelganger Swamp 흉내 (no flame) + Swamp ');
+    // Doppelganger 18 + Swamp 18 = 36
+    assertEqual(h.score(), 36, 'Doppelganger Swamp 흉내 (no flame/army) + Swamp ');
     pass++;
   });
 });

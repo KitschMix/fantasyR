@@ -20,30 +20,20 @@ suite('hand-jester-bug: Jester +50 blanked 카드 영향', () => {
     pass++;
   });
 
-  total++; test('FR54 + Smoke(blanked) + Mountain: 버그 — +50 누락', () => {
+  total++; test('FR54 + Smoke(blanked) + Mountain: blanked 카드 제외 후 +50', () => {
     // 손패: Jester(3, 홀수) + Smoke(27, blanked, no flame) + Mountain(9, 홀수)
     // 룰북: blanked 카드 제외한 모든 카드의 strength가 홀수 → Jester +50
     // → 기대: Jester(3+50=53) + Mountain(9) + Smoke(blanked=0) = 62
-    // 현재 코드: hand.size()=3 (blanked 포함), oddCount=2, (2-1)*3=3 → Jester(3+3=6)
-    // → 실제: 6 + 9 + 0 = 15
     const h = makeHand(ctx, ['FR54', 'FR13', 'FR01']);
-    // 현재(버그) 결과: 15, 수정 후 기대 결과: 62
-    // 버그 확인을 위해 15를 기대값으로 검증
-    assertEqual(h.score(), 15, '현재 동작(버그): 15. 수정 후엔 62여야 함 ');
+    assertEqual(h.score(), 62, 'Jester + blanked Smoke + Mountain ');
     pass++;
   });
 
-  total++; test('FR54 + 4장 모두 홀수 (Mountain, handLimit 확장시): +50 정상', () => {
-    // 4장 모두 홀수 + 1장 짝수: (odd-1)*3 = (3-1)*3 = 6
-    // 손패: Jester(3) + Mountain(9) + Wildfire(40, 짝) + Light Cavalry(17) = 5장 (CH 활성화)
-    // 5장 모두 non-blanked. oddCount: 3 (3,9,17) + 1 (40 짝) = 3 odd.
-    // hand.size() = 4 (CH 활성화 안 했으니 4장 OK)
-    // 3 !== 4, (3-1)*3 = 6
-    // Jester score: 3+6=9
-    // Mountain 9+0=9, Wildfire 40+0=40, Light Cavalry 17-0=17
-    // 합: 9+9+40+17 = 75
-    const h = makeHand(ctx, ['FR54', 'FR01', 'FR16', 'FR23']); // Jester + Mountain + Wildfire + Light Cavalry
-    assertEqual(h.score(), 75, '4장 손패, Jester +6 (odd-1)*3, 기대 75 ');
+  total++; test('FR54 + 홀수 3장 + 짝수 1장: 홀수마다 +3', () => {
+    // Jester(3), Mountain(9), Whirlwind(13)은 홀수이고 Wildfire(40)는 짝수다.
+    // 네 카드가 모두 유효하므로 Jester 보너스는 (3-1)*3 = 6.
+    const h = makeHand(ctx, ['FR54', 'FR01', 'FR16', 'FR14']);
+    assertEqual(h.score(), 71, '4장 손패, Jester +6 ');
     pass++;
   });
 });

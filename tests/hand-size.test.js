@@ -34,7 +34,7 @@ suite('hand-size: hand size limits', () => {
   const ctxExp = loadEngine(true);
 
   total++; test('expansion: 8 cards allowed', () => {
-    const h = makeHand(ctxExp, ['FR01','FR02','FR03','FR04','FR05','FR06','FR07','FR08']);
+    const h = makeHand(ctxExp, ['FR01','FR02','FR04','FR05','FR07','CH16','CH17','CH18']);
     assertEqual(h.cards().length, 8, 'size ');
     pass++;
   });
