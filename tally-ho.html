@@ -8,6 +8,7 @@
 
     <link rel="stylesheet" href="styles.css?v=20260706-split-pages" />
     <link rel="stylesheet" href="tally-ho.css?v=20260708-event-toasts" />
+    <link rel="stylesheet" href="setup-shell.css?v=local-preview" />
   </head>
   <body class="tally-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -23,9 +24,9 @@
     <main class="app-shell">
       <section id="tallyHoPanel" class="tally-ho-panel" aria-label="탤리 호 게임">
               <div class="tally-shell">
-                <div class="tally-top">
-                  <img class="tally-title-art" src="assets/titles/title-tally-ho.png" alt="Tally Ho! 탤리 호" />
-                  <div class="tally-top-actions">
+                <div class="tally-top game-setup-header">
+                  <img class="tally-title-art game-setup-logo" src="assets/titles/title-tally-ho.png" alt="Tally Ho! 탤리 호" />
+                  <div class="tally-top-actions game-setup-actions">
                     <button id="tallyNewGameButton" class="secondary-button" type="button">새 게임</button>
                     <button id="tallyRulesButton" class="icon-button tally-help-button" type="button" title="탤리 호 도움말" aria-label="탤리 호 도움말">?</button>
                     <div class="tally-zoom-controls" aria-label="탤리 호 확대 축소">
@@ -37,8 +38,8 @@
                   </div>
                 </div>
                 <section id="tallySetupView" class="tally-setup-view" aria-label="탤리 호 시작 설정">
-                  <div class="tally-setup-grid">
-                    <div class="mode-panel single-panel tally-single-panel">
+                  <div class="tally-setup-grid game-setup-grid">
+                    <div class="mode-panel single-panel tally-single-panel game-setup-mode">
                       <div class="mode-panel-head">
                         <strong>싱글플레이</strong>
                         <span>AI와 바로 시작</span>
@@ -63,16 +64,16 @@
                         <button id="tallyStartButton" class="primary-button" type="button">게임 시작</button>
                       </div>
                     </div>
-                    <div class="mode-panel online-panel tally-online-panel">
+                    <div class="mode-panel online-panel tally-online-panel game-setup-mode">
                       <div class="mode-panel-head online-panel-head">
                         <strong>멀티플레이</strong>
                         <span class="online-status">준비중</span>
                       </div>
                       <div class="online-controls">
-                        <label>
-                          닉네임
-                          <input id="tallyOnlineNameInput" type="text" maxlength="12" placeholder="공유 닉네임 사용" disabled />
-                        </label>
+                        <div class="setup-profile-source">
+                          <span>플레이어</span>
+                          <strong>첫 화면 프로필 사용</strong>
+                        </div>
                         <button class="secondary-button" type="button" disabled>방 만들기</button>
                         <label>
                           방 코드
@@ -85,7 +86,7 @@
                         <small>구조만 먼저 잡아두고, 이후 Supabase 동기화를 붙이면 바로 확장할 수 있습니다.</small>
                       </div>
                     </div>
-                    <div class="mode-panel leaderboard-panel tally-leaderboard-panel">
+                    <div class="mode-panel leaderboard-panel tally-leaderboard-panel game-ranking-panel">
                       <div class="mode-panel-head">
                         <strong>탤리 호 랭킹</strong>
                         <button id="tallyRefreshLeaderboardButton" class="secondary-button leaderboard-refresh-button" type="button">새로고침</button>
@@ -202,6 +203,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="shared-ui.js?v=20260706-split-pages"></script>
+    <script src="setup-shell.js?v=local-preview"></script>
     <script src="shared-profiles.js?v=20260706-split-pages"></script>
     <script src="tally-ho.js?v=20260708-event-toasts"></script>
   </body>

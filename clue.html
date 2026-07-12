@@ -8,6 +8,7 @@
 
     <link rel="stylesheet" href="styles.css?v=20260706-split-pages" />
     <link rel="stylesheet" href="clue.css?v=20260706-split-pages" />
+    <link rel="stylesheet" href="setup-shell.css?v=local-preview" />
   </head>
   <body class="clue-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -22,47 +23,111 @@
         </div>
     <main class="app-shell">
       <section id="clueSetupPanel" class="clue-setup-panel" aria-label="클루 게임 설정">
-              <div class="mode-panel clue-panel">
-                <div class="clue-panel-top">
-                  <img class="clue-setup-logo" src="assets/titles/title-clue.jpg" alt="클루" />
-                  <button id="clueBackButton" class="secondary-button" type="button">첫 화면</button>
+        <div class="game-setup-shell clue-setup-shell">
+          <header class="game-setup-header">
+            <div class="game-setup-brand">
+              <img class="clue-setup-logo game-setup-logo" src="assets/titles/title-clue.jpg" alt="클루" />
+            </div>
+            <div class="game-setup-actions">
+              <button class="icon-button clue-help-button" data-dialog-target="#clueRulesDialog" type="button" title="클루 도움말" aria-label="클루 도움말">?</button>
+              <div class="setup-scale-control" data-setup-scale data-scale-target=".clue-setup-shell" aria-label="클루 시작 화면 배율">
+                <button class="icon-button" data-scale-down type="button" title="축소" aria-label="축소">-</button>
+                <span class="setup-scale-value" data-scale-value>100%</span>
+                <button class="icon-button" data-scale-up type="button" title="확대" aria-label="확대">+</button>
+              </div>
+              <button id="clueBackButton" class="secondary-button" type="button">첫 화면</button>
+            </div>
+          </header>
+
+          <div class="game-setup-grid">
+            <div class="mode-panel single-panel clue-panel game-setup-mode">
+              <div class="mode-panel-head">
+                <strong>싱글플레이</strong>
+                <span>AI와 사건 해결</span>
+              </div>
+              <div class="clue-setup-controls setup-controls">
+                <label>
+                  플레이어 수
+                  <select id="cluePlayerCountSelect">
+                    <option value="3">3명</option>
+                    <option value="4" selected>4명</option>
+                    <option value="5">5명</option>
+                    <option value="6">6명</option>
+                  </select>
+                </label>
+                <label>
+                  용의자 카드
+                  <select disabled>
+                    <option>기본 6명</option>
+                  </select>
+                </label>
+                <label>
+                  장소 카드
+                  <select disabled>
+                    <option>저택 9곳</option>
+                  </select>
+                </label>
+                <label>
+                  도구 카드
+                  <select disabled>
+                    <option>기본 6종</option>
+                  </select>
+                </label>
+                <button id="startClueButton" class="primary-button" type="button">게임 시작</button>
+              </div>
+            </div>
+
+            <div class="mode-panel online-panel clue-panel game-setup-mode">
+              <div class="mode-panel-head online-panel-head">
+                <strong>멀티플레이</strong>
+                <span class="online-status">준비 중</span>
+              </div>
+              <div class="setup-coming-actions">
+                <div class="setup-profile-source">
+                  <span>플레이어</span>
+                  <strong>첫 화면 프로필 사용</strong>
                 </div>
-                <div class="mode-panel-head">
-                  <strong>클루</strong>
-                  <span>초기 설정</span>
-                </div>
-                <div class="clue-setup-controls">
-                  <label>
-                    플레이어 수
-                    <select id="cluePlayerCountSelect">
-                      <option value="3">3명</option>
-                      <option value="4" selected>4명</option>
-                      <option value="5">5명</option>
-                      <option value="6">6명</option>
-                    </select>
-                  </label>
-                  <label>
-                    용의자 카드
-                    <select disabled>
-                      <option>기본 6명</option>
-                    </select>
-                  </label>
-                  <label>
-                    장소 카드
-                    <select disabled>
-                      <option>저택 9곳</option>
-                    </select>
-                  </label>
-                  <label>
-                    도구 카드
-                    <select disabled>
-                      <option>기본 6종</option>
-                    </select>
-                  </label>
-                  <button id="startClueButton" class="primary-button" type="button">게임 시작</button>
+                <button class="secondary-button" type="button" disabled>방 만들기</button>
+                <label>
+                  방 코드
+                  <input type="text" maxlength="6" placeholder="6자리 코드" disabled />
+                </label>
+                <button class="secondary-button" type="button" disabled>입장</button>
+                <div class="setup-online-note">
+                  <strong>온라인 추리전을 준비하고 있습니다.</strong>
+                  <small>방에 입장하면 참가자와 준비 상태를 확인한 뒤 게임을 시작하게 됩니다.</small>
                 </div>
               </div>
-            </section>
+            </div>
+          </div>
+
+          <section class="mode-panel leaderboard-panel game-ranking-panel clue-ranking-panel" aria-label="클루 랭킹">
+            <div class="mode-panel-head">
+              <strong>클루 랭킹</strong>
+              <button class="secondary-button leaderboard-refresh-button" data-preview-ranking-refresh data-status-target="#cluePreviewRankingStatus" type="button">새로고침</button>
+            </div>
+            <div class="leaderboard-board">
+              <section class="leaderboard-column" aria-label="클루 최단 해결 랭킹">
+                <h3>최단 해결</h3>
+                <ol class="leaderboard-list">
+                  <li><span class="leaderboard-rank">1</span><strong>명탐정</strong><b>9턴</b><small>4인 · 저택 사건</small></li>
+                  <li><span class="leaderboard-rank">2</span><strong>붉은실</strong><b>11턴</b><small>5인 · 저택 사건</small></li>
+                  <li><span class="leaderboard-rank">3</span><strong>알리바이</strong><b>13턴</b><small>6인 · 저택 사건</small></li>
+                </ol>
+              </section>
+              <section class="leaderboard-column" aria-label="클루 연승 랭킹">
+                <h3>연승 기록</h3>
+                <ol class="leaderboard-list">
+                  <li><span class="leaderboard-rank">1</span><strong>돋보기</strong><b>7승</b><small>정확한 고발 7회</small></li>
+                  <li><span class="leaderboard-rank">2</span><strong>회중시계</strong><b>5승</b><small>정확한 고발 5회</small></li>
+                  <li><span class="leaderboard-rank">3</span><strong>밀실</strong><b>4승</b><small>정확한 고발 4회</small></li>
+                </ol>
+              </section>
+            </div>
+            <div id="cluePreviewRankingStatus" class="leaderboard-status">싱글플레이 승리 기록이 표시됩니다. 현재 내용은 디자인 시안용입니다.</div>
+          </section>
+        </div>
+      </section>
 
       <section id="clueGamePanel" class="clue-game-panel hidden" aria-label="클루 플레이 화면">
               <div class="clue-shell">
@@ -194,6 +259,7 @@
             </dialog>
     </main>
     <script src="shared-ui.js?v=20260706-split-pages"></script>
+    <script src="setup-shell.js?v=local-preview"></script>
     <script src="shared-profiles.js?v=20260706-split-pages"></script>
     <script src="clue-dialogues.js?v=20260703-clue-dialogue-events"></script>
     <script src="clue.js?v=20260706-split-pages"></script>

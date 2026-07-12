@@ -12,6 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="setup-shell.css?v=local-preview" />
   </head>
   <body class="app-loading monopoly-active">
     <div id="loadingOverlay" class="loading-overlay">
@@ -22,30 +23,97 @@
       <strong id="turnToastText">플레이어의 턴</strong>
     </div>
     <main class="app-shell">
-      <!-- Setup Panel -->
       <section id="monopolySetupPanel" class="monopoly-setup-panel" aria-label="부루마불 게임 설정">
-        <div class="mode-panel monopoly-panel single-panel">
-          <div class="monopoly-panel-top">
-            <h1 class="monopoly-setup-title">
-              <img class="monopoly-title-logo" src="assets/titles/brumable-logo.webp" alt="부루마불" />
-            </h1>
-            <button id="monopolyBackButton" class="secondary-button" type="button">첫 화면</button>
+        <div class="game-setup-shell monopoly-setup-shell">
+          <header class="game-setup-header">
+            <div class="game-setup-brand">
+              <h1 class="monopoly-setup-title">
+                <img class="monopoly-title-logo game-setup-logo" src="assets/titles/brumable-logo.webp" alt="부루마불" />
+              </h1>
+            </div>
+            <div class="game-setup-actions">
+              <button class="icon-button monopoly-help-button" data-dialog-target="#monopolyRulesDialog" type="button" title="부루마불 도움말" aria-label="부루마불 도움말">?</button>
+              <div class="setup-scale-control" data-setup-scale data-scale-target=".monopoly-setup-shell" aria-label="부루마불 시작 화면 배율">
+                <button class="icon-button" data-scale-down type="button" title="축소" aria-label="축소">-</button>
+                <span class="setup-scale-value" data-scale-value>100%</span>
+                <button class="icon-button" data-scale-up type="button" title="확대" aria-label="확대">+</button>
+              </div>
+              <button id="monopolyBackButton" class="secondary-button" type="button">첫 화면</button>
+            </div>
+          </header>
+
+          <div class="game-setup-grid">
+            <div class="mode-panel single-panel monopoly-panel game-setup-mode">
+              <div class="mode-panel-head">
+                <strong>싱글플레이</strong>
+                <span>AI와 세계 여행</span>
+              </div>
+              <div class="monopoly-setup-controls setup-controls">
+                <label>
+                  플레이어 수
+                  <select id="monopolyPlayerCountSelect">
+                    <option value="2">2명</option>
+                    <option value="3" selected>3명</option>
+                    <option value="4">4명</option>
+                  </select>
+                </label>
+                <div class="setup-online-note">
+                  <strong>도시를 사고 세계 일주에 도전하세요.</strong>
+                  <small>나머지 자리는 AI 여행자가 참여합니다.</small>
+                </div>
+                <button id="startMonopolyButton" class="primary-button" type="button">게임 시작</button>
+              </div>
+            </div>
+
+            <div class="mode-panel online-panel monopoly-panel game-setup-mode">
+              <div class="mode-panel-head online-panel-head">
+                <strong>멀티플레이</strong>
+                <span class="online-status">준비 중</span>
+              </div>
+              <div class="setup-coming-actions">
+                <div class="setup-profile-source">
+                  <span>플레이어</span>
+                  <strong>첫 화면 프로필 사용</strong>
+                </div>
+                <button class="secondary-button" type="button" disabled>방 만들기</button>
+                <label>
+                  방 코드
+                  <input type="text" maxlength="6" placeholder="6자리 코드" disabled />
+                </label>
+                <button class="secondary-button" type="button" disabled>입장</button>
+                <div class="setup-online-note">
+                  <strong>친구와 함께하는 세계 여행을 준비 중입니다.</strong>
+                  <small>온라인 로비에서 참가자를 확인한 뒤 같은 보드에서 시작하게 됩니다.</small>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="mode-panel-head">
-            <strong>세계 여행 보드게임</strong>
-            <span>2~4인 · 주사위 · 도시 투자</span>
-          </div>
-          <div class="setup-controls monopoly-setup-controls">
-            <label>
-              플레이어 수
-              <select id="monopolyPlayerCountSelect">
-                <option value="2">2명</option>
-                <option value="3" selected>3명</option>
-                <option value="4">4명</option>
-              </select>
-            </label>
-            <button id="startMonopolyButton" class="primary-button" type="button">게임 시작</button>
-          </div>
+
+          <section class="mode-panel leaderboard-panel game-ranking-panel monopoly-ranking-panel" aria-label="부루마불 랭킹">
+            <div class="mode-panel-head">
+              <strong>부루마불 랭킹</strong>
+              <button class="secondary-button leaderboard-refresh-button" data-preview-ranking-refresh data-status-target="#monopolyPreviewRankingStatus" type="button">새로고침</button>
+            </div>
+            <div class="leaderboard-board">
+              <section class="leaderboard-column" aria-label="부루마불 최종 자산 랭킹">
+                <h3>최종 자산</h3>
+                <ol class="leaderboard-list">
+                  <li><span class="leaderboard-rank">1</span><strong>세계일주</strong><b>₩8,420</b><small>4인 · 31턴</small></li>
+                  <li><span class="leaderboard-rank">2</span><strong>황금열쇠</strong><b>₩7,880</b><small>3인 · 27턴</small></li>
+                  <li><span class="leaderboard-rank">3</span><strong>우주여행</strong><b>₩7,150</b><small>4인 · 35턴</small></li>
+                </ol>
+              </section>
+              <section class="leaderboard-column" aria-label="부루마불 완주 랭킹">
+                <h3>빠른 완주</h3>
+                <ol class="leaderboard-list">
+                  <li><span class="leaderboard-rank">1</span><strong>서울출발</strong><b>22턴</b><small>3인 · 세계 일주</small></li>
+                  <li><span class="leaderboard-rank">2</span><strong>무인도탈출</strong><b>25턴</b><small>4인 · 세계 일주</small></li>
+                  <li><span class="leaderboard-rank">3</span><strong>도시왕</strong><b>28턴</b><small>3인 · 세계 일주</small></li>
+                </ol>
+              </section>
+            </div>
+            <div id="monopolyPreviewRankingStatus" class="leaderboard-status">싱글플레이 종료 기록이 표시됩니다. 현재 내용은 디자인 시안용입니다.</div>
+          </section>
         </div>
       </section>
 
@@ -226,6 +294,7 @@
       </dialog>
     </main>
     <script src="shared-ui.js?v=20260706-brumable"></script>
+    <script src="setup-shell.js?v=local-preview"></script>
     <script src="shared-profiles.js?v=20260706-brumable"></script>
     <script src="monopoly.js?v=20260709-no-bail"></script>
   </body>

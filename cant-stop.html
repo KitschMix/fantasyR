@@ -8,6 +8,7 @@
 
     <link rel="stylesheet" href="styles.css?v=20260706-split-pages" />
     <link rel="stylesheet" href="cant-stop.css?v=20260707-markers-v6" />
+    <link rel="stylesheet" href="setup-shell.css?v=local-preview" />
   </head>
   <body class="cant-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -23,18 +24,23 @@
     <main class="app-shell">
       <section id="cantStopPanel" class="cant-stop-panel" aria-label="캔트스탑 게임">
               <div class="cant-shell">
-                <div class="cant-top">
-                  <img class="cant-title-art" src="assets/titles/title-cant-stop.png" alt="Can't Stop 캔트스탑" />
-                  <div class="cant-top-actions">
+                <div class="cant-top game-setup-header">
+                  <img class="cant-title-art game-setup-logo" src="assets/titles/title-cant-stop.png" alt="Can't Stop 캔트스탑" />
+                  <div class="cant-top-actions game-setup-actions">
                     <button id="cantNewGameButton" class="secondary-button" type="button">새 게임</button>
                     <button id="cantRulesButton" class="icon-button cant-help-button" type="button" title="캔트스탑 도움말" aria-label="캔트스탑 도움말">?</button>
+                    <div class="setup-scale-control" data-setup-scale data-scale-target="#cantSetupView" aria-label="캔트스탑 시작 화면 배율">
+                      <button class="icon-button" data-scale-down type="button" title="축소" aria-label="축소">-</button>
+                      <span class="setup-scale-value" data-scale-value>100%</span>
+                      <button class="icon-button" data-scale-up type="button" title="확대" aria-label="확대">+</button>
+                    </div>
                     <button id="cantBackButton" class="secondary-button" type="button">첫 화면</button>
                   </div>
                 </div>
 
                 <section id="cantSetupView" class="cant-setup-view" aria-label="캔트스탑 시작 설정">
-                  <div class="cant-setup-grid">
-                    <div class="mode-panel single-panel cant-single-panel">
+                  <div class="cant-setup-grid game-setup-grid">
+                    <div class="mode-panel single-panel cant-single-panel game-setup-mode">
                       <div class="mode-panel-head">
                         <strong>싱글플레이</strong>
                         <span>AI와 등반 대결</span>
@@ -67,16 +73,16 @@
                         <button id="cantStartButton" class="primary-button" type="button">게임 시작</button>
                       </div>
                     </div>
-                    <div class="mode-panel online-panel cant-online-panel">
+                    <div class="mode-panel online-panel cant-online-panel game-setup-mode">
                       <div class="mode-panel-head online-panel-head">
                         <strong>멀티플레이</strong>
                         <span class="online-status">준비중</span>
                       </div>
                       <div class="online-controls">
-                        <label>
-                          닉네임
-                          <input id="cantOnlineNameInput" type="text" maxlength="12" placeholder="공유 닉네임 사용" disabled />
-                        </label>
+                        <div class="setup-profile-source">
+                          <span>플레이어</span>
+                          <strong>첫 화면 프로필 사용</strong>
+                        </div>
                         <button class="secondary-button" type="button" disabled>방 만들기</button>
                         <label>
                           방 코드
@@ -89,7 +95,7 @@
                         <small>턴제라서 이후 Supabase 동기화를 붙이면 비교적 가볍게 확장할 수 있습니다.</small>
                       </div>
                     </div>
-                    <div class="mode-panel leaderboard-panel cant-leaderboard-panel">
+                    <div class="mode-panel leaderboard-panel cant-leaderboard-panel game-ranking-panel">
                       <div class="mode-panel-head">
                         <strong>캔트스탑 랭킹</strong>
                         <button id="cantRefreshLeaderboardButton" class="secondary-button leaderboard-refresh-button" type="button">새로고침</button>
@@ -175,6 +181,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="shared-ui.js?v=20260706-split-pages"></script>
+    <script src="setup-shell.js?v=local-preview"></script>
     <script src="shared-profiles.js?v=20260706-split-pages"></script>
     <script src="cant-stop.js?v=20260707-markers-v6"></script>
   </body>
