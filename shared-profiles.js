@@ -25,9 +25,9 @@
   };
   const AI_PROFILE_GROUPS = {
     easy: [
-      { name: "초보", avatarUrl: profileImageUrl("보통-건일.jpg") },
-      { name: "연습", avatarUrl: profileImageUrl("보통-루나.jpg") },
-      { name: "학습", avatarUrl: profileImageUrl("보통-이지.jpg") }
+      { name: "건일", avatarUrl: profileImageUrl("보통-건일.jpg") },
+      { name: "루나", avatarUrl: profileImageUrl("보통-루나.jpg") },
+      { name: "이지", avatarUrl: profileImageUrl("보통-이지.jpg") }
     ],
     normal: [
       { name: "건일", avatarUrl: profileImageUrl("보통-건일.jpg") },
@@ -53,9 +53,9 @@
       { name: "채춘미", avatarUrl: profileImageUrl("매우어려움-채춘미.jpg") }
     ],
     boss: [
-      { name: "마스터", avatarUrl: profileImageUrl("매우어려움-강범례.jpg") },
-      { name: "전설", avatarUrl: profileImageUrl("매우어려움-변판길.jpg") },
-      { name: "챔피언", avatarUrl: profileImageUrl("매우어려움-제갈혜정.jpg") }
+      { name: "강범례", avatarUrl: profileImageUrl("매우어려움-강범례.jpg") },
+      { name: "변판길", avatarUrl: profileImageUrl("매우어려움-변판길.jpg") },
+      { name: "제갈혜정", avatarUrl: profileImageUrl("매우어려움-제갈혜정.jpg") }
     ]
   };
 
