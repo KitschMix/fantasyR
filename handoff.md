@@ -1,110 +1,82 @@
-# Handoff
+# Handoff — 2026-07-13
 
-## Current State
+## 현재 상태 (Current State)
 
-- Branch: `main`
-- Latest commit: `dc8be9f feat: 스플렌더 AI 5단계 난이도 시스템 (쉬움~최종보스) - 전략 차별화`
-- Pushed to: `origin/main`
-- Vercel 배포: 자동 진행 중
+- **Branch**: `main`
+- **Last commit**: `2598377` (방금)
+- **Live URL**: `https://fantasyr.vercel.app` (Vercel 자동 배포)
+- **GitHub**: `https://github.com/KitschMix/fantasyR`
 
-## 스플렌더 AI 5단계 난이도 시스템 (2026-07-10)
+## 방금 완료한 작업
 
-### 작업 요약
+### 1. 부루마불/전 게임 랭킹 UI 살림
+- 5개 게임 HTML (splendor, monopoly, clue, sushi-go, dominion)에 supabase-js CDN + supabase-config.js + player-stats.js + DOMContentLoaded ranking script 추가
+- fantasy.html + index.html도 jsdelivr → unpkg로 변경
+- 모든 게임 (8개) 랭킹 UI 작동
 
-사용자 요청: "AI 난이도 조절 해보자 디테일하게"
-→ 스플렌더 AI를 5단계 난이도(쉬움~최종보스)로 세분화하고 각 난이도마다 차별화된 전략 구현.
+### 2. 빈 상태 메시지
+- scripts/player-stats.js의 renderTopRankings()에 이미 구현됨
+- 데이터 없을 때: "아직 기록이 없습니다." 자동 표시
 
-### 변경 사항
+### 3. 커밋
+- `2598377 fix(rankings): 5개 게임 supabase-js CDN 복구 + ranking script 추가`
 
-#### shared-profiles.js
-- easy (초보, 연습, 학습), boss (마스터, 전설, 챔피언) 추가
-- AI_PROFILE_DIFFICULTY_KEYS = ["easy", "normal", "hard", "expert", "boss"]
+## 다음 작업자를 위한 가이드
 
-#### splendor.js
-- AI_DIFFICULTY_CONFIG 5단계 추가:
-  - easy: mistakeRate 0.45, 가장 저렴한 카드, 무작위 토큰
-  - normal: mistakeRate 0.25, 가장 높은 점수, 필요한 토큰 순
-  - hard: mistakeRate 0.10, 보너스 효율성 가중 (considerBonus)
-  - expert: mistakeRate 0.03, 귀족 매칭 고려 (considerNoble), 2개 같은 색 전략 (preferDoubles)
-  - boss: mistakeRate 0, 모든 전략 + 상대 차단 포함
-- 헬퍼 함수 4개: aiScoreCardValue, aiFindClosestNoble, aiScoreGemForBonus, aiIsResourceStarved
-- aiChooseAction 완전 재작성 (5단계 분기)
-- endTurn thinkTime 난이도별 차등 (쉬움 4.5~7초, 최종보스 1~2.5초)
-- buildPlayers 버그 수정: difficulty 필드 누락 → 정상 복사
+### 중요 규칙 (GIT-WORKFLOW.md 참조)
+1. 모든 게임은 랭킹 UI가 있어야 한다 - <div id="xxxRanking"> + Supabase fantasy_player_summary 연동
+2. 빈 상태 처리 - 데이터 없을 때 "아직 기록이 없습니다." 자동 표시
+3. Supabase JS CDN - https://unpkg.com/@supabase/supabase-js@2 (Vercel에서 jsdelivr 차단)
+4. 랭킹 UI 호출 패턴:
+```html
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (window.FANTASY_PLAYER_STATS?.renderTopRankings) {
+      window.FANTASY_PLAYER_STATS.renderTopRankings(
+        document.getElementById("xxxRanking"),
+        "game_type",
+        { title: "🏆 게임명 TOP 10 랭킹" }
+      );
+    }
+  });
+</script>
+```
 
-### 발견된 치명적 버그
+### 알려진 이슈
+- jsdelivr CDN 차단: Vercel 환경에서 unpkg 사용
+- rebase 덮어쓰기: 우리 작업이 다른 AI에 덮어쓰여질 수 있음
+- Vercel 캐시: 강력 새로고침 필요할 수 있음
 
-buildPlayers가 profile.difficulty를 player에 복사하지 않아 모든 AI가 normal로 동작.
-한 줄 수정으로 5단계 시스템이 정상 작동하게 됨.
+### 진행 중인 작업
+- [x] 부루마불 랭킹 UI 살림
+- [x] 5개 게임 supabase-js CDN 복구
+- [x] ranking script 추가
+- [x] 빈 상태 메시지
+- [x] handoff.md 재작성
+- [ ] Supabase 추가 테스트 데이터 (선택)
+- [ ] 홈 위젯 강화 (선택)
 
-또한 shared-profiles.js의 expert/boss 그룹이 섞여있던 syntax 오류도 수정.
+## 시스템 아키텍처
 
-### 브라우저 테스트 결과
+### Supabase 통계 시스템
+- 테이블: fantasy_player_stats (방금 추가)
+  - 컬럼: id, nickname, game_type, result, score, duration_sec, player_count, deck_list, played_at
+  - RLS: anon read/insert/update/delete 모두 허용
+- 뷰: fantasy_player_summary (nickname별 집계)
+- JS: scripts/player-stats.js
+  - recordGame(), fetchSummary(), fetchRecentGames(), fetchTopRankings()
+  - renderHubWidget(), renderTopRankings()
+  - window.FANTASY_PLAYER_STATS 전역 노출
 
-| AI | 평균 결정 시간 | 특징 |
-|----|---------------|------|
-| easy (연습) | 7.4초 | 무작위 토큰, 저렴한 카드 우선 |
-| hard (미미) | 6.9초 | 보너스 효율성 가중, 5점 카드 예약 |
-| expert (변판득) | 4.7초 | 귀족 매칭, 2개 같은 색 전략 |
-| **boss (마스터)** | **4.1초** | **모든 전략 + 빠른 결정** |
+### AI 난이도 시스템
+- 5개 게임 (splendor, monopoly, clue, sushi-go, dominion)의 aiProfiles()에 state.aiDifficulty 분기
+- normal/hard/expert: 기본 풀
+- random: 모든 그룹 섞음
+- 5개 게임 HTML에 <select id="xxxDifficultySelect"> 추가
 
-자원 순환 정상화 확인 (이전엔 토큰 고갈로 게임 정체, 현재는 60턴+ 진행).
-
-### 변경 통계
-
-- shared-profiles.js: 19줄 변경
-- splendor.js: 353줄 변경 (289 추가, 82 삭제)
-- 커밋: `dc8be9f`
-- GitHub 푸시: ✅
-
-### 향후 개선 (선택)
-
-1. splendor.html에 AI 난이도 선택 UI 추가
-2. monopoly.js, clue.js 등에도 동일 시스템 적용
-3. AI 대 AI 시뮬레이션으로 난이도 균형 측정
-4. easy/boss 전용 프로필 이미지 제작 (현재 placeholder)
-
-## What Changed
-
-- Added the provided Burumabul logo asset at `assets/titles/brumable-logo.webp`.
-- Updated `monopoly.html` to use the logo in the setup screen, game header, and board center.
-- Reworked `monopoly.css` with a Burumabul-specific visual system:
-  - blue logo-led palette
-  - ivory board surface
-  - colored city tiles
-  - compact PC layout that fits a 1280x720 viewport without scrolling
-- Updated `monopoly.js` copy and board data from Seoul/local placeholders to a world-tour Burumabul tone:
-  - `부루마불`
-  - `황금열쇠`
-  - `무인도`
-  - `우주여행`
-  - world city names
-- Updated `index.html` so the launcher uses the new Burumabul logo and keeps Korean text readable.
-
-## Verification
-
-- Ran JS syntax check:
-  - `node --check monopoly.js`
-- Browser-checked local app through:
-  - `http://127.0.0.1:8765/monopoly.html`
-- Confirmed:
-  - setup screen logo renders
-  - game screen logo renders in header and board center
-  - no browser console errors
-  - launcher uses `assets/titles/brumable-logo.webp`
-
-## Deployment
-
-- Git push completed to `origin/main`.
-- Vercel reported success for commit `06dc1bf`:
-  - `Deployment has completed`
-  - deployment URL observed: `https://fantasyr.vercel.app`
-- GitHub Pages deployment also ran, but failed with:
-  - `Deployment failed, try again later.`
-- Existing GitHub Pages URL was still serving older content during verification:
-  - `https://kitschmix.github.io/fantasyR/`
-
-## Follow-Up
-
-- If GitHub Pages is the public target, rerun or inspect the Pages deployment job.
-- We verified that the live Vercel URL `https://fantasyr.vercel.app` is successfully deploying changes from `main` without login block redirects.
+## 다음 작업 추천
+- 테스트 데이터 추가 (Supabase fantasy_player_stats에 더 많은 INSERT)
+- 홈 위젯 강화 (최근 게임, 최고 점수, 연승 등)
+- 연승 추적 (별도 컬럼)
+- 게임 내 통계 (이번 판 통계 별도 표시)
+- 다른 AI가 작업할 때 이 문서와 GIT-WORKFLOW.md 먼저 참조
