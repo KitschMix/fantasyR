@@ -21,12 +21,17 @@
     </div>
     <main class="app-shell">
       <!-- Setup -->
-      <section id="dominionSetupPanel" class="dominion-setup-panel" aria-label="도미니언 설정">
-        <div class="mode-panel dominion-panel">
-          <div class="dominion-panel-top">
-            <img class="dominion-setup-logo" src="assets/titles/title-dominion.webp" alt="도미니언" />
+      <section id="dominionSetupPanel" class="game-setup-shell dominion-setup-shell" aria-label="도미니언 설정">
+        <header class="game-setup-header">
+          <div class="game-setup-brand">
+            <img class="game-setup-logo dominion-setup-logo" src="assets/titles/title-dominion.webp" alt="도미니언" />
+          </div>
+          <div class="game-setup-actions">
             <button id="dominionBackButton" class="secondary-button" type="button">첫 화면</button>
           </div>
+        </header>
+        <div class="game-setup-grid dominion-setup-grid">
+        <div class="mode-panel dominion-panel game-setup-mode">
           <div class="mode-panel-head">
             <strong>도미니언</strong>
             <span>덱 빌딩</span>
@@ -65,6 +70,7 @@
             </section>
           </div>
           <div id="dominionLeaderboardStatus" class="leaderboard-status" data-ranking-status>랭킹을 불러오는 중입니다.</div>
+        </div>
         </div>
       </section>
 
@@ -168,6 +174,7 @@
     </main>
     <script src="shared-ui.js?v=20260707-dominion"></script>
     <script src="shared-profiles.js?v=20260712-original-names"></script>
+    <script src="setup-shell.js?v=20260713-shared-leaderboard"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <script src="scripts/player-stats.js"></script>

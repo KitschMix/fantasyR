@@ -24,7 +24,7 @@ body.splendor-active .tally-ho-panel,
 body.splendor-active .cant-stop-panel,
 body.splendor-active .monopoly-setup-panel,
 body.splendor-active .monopoly-game-panel,
-body.splendor-active .dominion-setup-panel,
+body.splendor-active .dominion-setup-shell,
 body.splendor-active .dominion-game-panel,
 body.splendor-active .game-board {
   display: none !important;

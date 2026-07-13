@@ -27,7 +27,7 @@ body.sushi-active .monopoly-setup-panel,
 body.sushi-active .monopoly-game-panel,
 body.sushi-active .splendor-setup-panel,
 body.sushi-active .splendor-game-panel,
-body.sushi-active .dominion-setup-panel,
+body.sushi-active .dominion-setup-shell,
 body.sushi-active .dominion-game-panel,
 body.sushi-active .game-board {
   display: none !important;

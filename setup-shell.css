@@ -1,10 +1,17 @@
 /* Shared setup-screen structure. Game styles provide the theme; this file owns the layout. */
 .game-setup-shell {
-  --setup-gap: 18px;
+  /* Theme tokens (per START_SCREEN_UNIFICATION_HANDOFF.md). Override per game via
+     `.game-setup-shell--<game>` modifier or descendant <game>-setup-shell class. */
+  --setup-accent: #d4a853;
+  --setup-max-width: 1120px;
+  --setup-panel-radius: 20px;
+  --setup-gap: 24px;
+  --setup-logo-height: 72px;
   --setup-panel-min-height: 430px;
+
   display: grid;
   gap: var(--setup-gap);
-  width: min(1180px, 100%);
+  width: min(var(--setup-max-width), 100%);
   margin: 0 auto;
 }
 
@@ -12,8 +19,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  width: min(1180px, 100%);
+  gap: var(--setup-gap);
+  width: min(var(--setup-max-width), 100%);
   min-height: 126px;
   margin: 0 auto;
   padding: 12px 4px 18px;
@@ -29,7 +36,7 @@
 .game-setup-logo {
   display: block;
   width: min(420px, 42vw);
-  max-height: 132px;
+  max-height: var(--setup-logo-height);
   object-fit: contain;
   object-position: left center;
   filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.32));
@@ -96,7 +103,7 @@
 .game-setup-mode {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--setup-gap);
   min-width: 0;
   min-height: var(--setup-panel-min-height);
 }
@@ -263,7 +270,7 @@
 }
 
 #setupPanel.game-setup-grid {
-  width: min(1180px, 100%);
+  width: min(var(--setup-max-width), 100%);
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--setup-gap);
   margin: 18px auto 0;
@@ -294,8 +301,11 @@ body:has(#setupPanel:not(.hidden)) #newGameButton {
 
 /* Existing games adopt the same measurements without losing their themes. */
 .cant-shell,
-.tally-shell {
-  width: min(1180px, 100%);
+.tally-shell,
+.cant-setup-shell,
+.tally-setup-shell,
+.fantasy-setup-shell {
+  width: min(var(--setup-max-width), 100%);
 }
 
 .cant-top.game-setup-header,
@@ -520,7 +530,13 @@ body.monopoly-active .monopoly-setup-shell .setup-profile-source {
   .game-setup-shell,
   .game-setup-header,
   .cant-shell,
-  .tally-shell {
+  .tally-shell,
+  .cant-setup-shell,
+  .tally-setup-shell {
+    width: min(940px, 100%);
+  }
+
+  .fantasy-setup-shell {
     width: min(940px, 100%);
   }
 

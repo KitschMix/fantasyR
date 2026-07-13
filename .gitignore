@@ -35,3 +35,19 @@ npm-debug.log*
 # board-game-hub.html
 # board-game-hub.js
 # board-game-hub.css
+
+# Transient / debug artifacts (one-off test data, manual seeds, alternative servers)
+test-encode*.json
+seed-monopoly.json
+serve-utf8.py
+
+# Dialogue extraction intermediates (data is embedded in splendor-dialogues.js / clue-dialogues.js)
+assets/splendor/dialogues-raw.json
+assets/splendor/dialogues-parsed.json
+
+# Legacy cover-art optimization scripts (replaced by ImageMagick batch, kept out of repo)
+tools/optimize-cover-art.ps1
+tools/optimize-cover-art-v2.ps1
+
+# Orphan upload scratch space
+파일업로드/

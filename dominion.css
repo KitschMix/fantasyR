@@ -1,17 +1,17 @@
 /* ===== Dominion / 도미니언 ===== */
 
 /* --- Visibility --- */
-body.launcher-active .dominion-setup-panel,
+body.launcher-active .dominion-setup-shell,
 body.launcher-active .dominion-game-panel,
-body.clue-active .dominion-setup-panel,
+body.clue-active .dominion-setup-shell,
 body.clue-active .dominion-game-panel,
-body.tally-active .dominion-setup-panel,
+body.tally-active .dominion-setup-shell,
 body.tally-active .dominion-game-panel,
-body.cant-active .dominion-setup-panel,
+body.cant-active .dominion-setup-shell,
 body.cant-active .dominion-game-panel,
-body.monopoly-active .dominion-setup-panel,
+body.monopoly-active .dominion-setup-shell,
 body.monopoly-active .dominion-game-panel,
-body.splendor-active .dominion-setup-panel,
+body.splendor-active .dominion-setup-shell,
 body.splendor-active .dominion-game-panel {
   display: none !important;
 }
@@ -29,12 +29,12 @@ body.dominion-active .game-board {
   display: none !important;
 }
 
-body:not(.dominion-active) .dominion-setup-panel,
+body:not(.dominion-active) .dominion-setup-shell,
 body:not(.dominion-active) .dominion-game-panel {
   display: none !important;
 }
 
-body.dominion-active.dominion-playing .dominion-setup-panel {
+body.dominion-active.dominion-playing .dominion-setup-shell {
   display: none !important;
 }
 
@@ -43,15 +43,18 @@ body.dominion-active.dominion-playing .dominion-game-panel {
 }
 
 /* --- Setup --- */
-.dominion-setup-panel {
+.dominion-setup-shell {
+  --setup-gap: 16px;
+  min-height: calc(100vh - 28px);
+  padding: 24px;
+}
+
+.dominion-setup-grid {
   display: grid;
   grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.1fr);
   gap: 16px;
   align-items: start;
-  width: min(1180px, 100%);
-  min-height: calc(100vh - 28px);
-  padding: 24px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .dominion-panel {

@@ -239,7 +239,7 @@
   }
 
   /**
-   * 게임별 TOP N 랭킹 조회
+   * 게임별 TOP N 랭킹 조회 (누적 점수)
    * @param {string} gameType
    * @param {number} [limit=10]
    * @returns {Promise<Array>}
@@ -271,6 +271,76 @@
       });
       const results = await Promise.all(playerCheckPromises);
       return results.filter((r) => r.played).slice(0, limit).map((r) => r.row);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * 게임별 단일 게임 최고 점수 랭킹 조회 (닉네임별 MAX(score))
+   * @param {string} gameType
+   * @param {number} [limit=10]
+   * @returns {Promise<Array<{nickname, best_score, player_count, played_at}>>}
+   */
+  async function fetchTopRankingsByScore(gameType, limit = 10) {
+    const client = await getClient();
+    if (!client) return [];
+    try {
+      // 닉네임별 최고 점수 1건씩만 가져오기 위해 전체 row를 닉네임 기준 그룹핑
+      const { data, error } = await client
+        .from(STATS_TABLE)
+        .select("nickname, score, duration_sec, player_count, played_at")
+        .eq("game_type", gameType)
+        .gt("score", 0)
+        .order("score", { ascending: false })
+        .limit(500);
+      if (error) return [];
+      const bestByNick = new Map();
+      (data || []).forEach((row) => {
+        if (!row?.nickname) return;
+        const prev = bestByNick.get(row.nickname);
+        if (!prev || row.score > prev.score) {
+          bestByNick.set(row.nickname, row);
+        }
+      });
+      return Array.from(bestByNick.values())
+        .sort((a, b) => (b.score - a.score) || (a.duration_sec - b.duration_sec))
+        .slice(0, limit);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * 게임별 최단 시간 랭킹 조회 (승리 게임 중 닉네임별 MIN(duration_sec))
+   * @param {string} gameType
+   * @param {number} [limit=10]
+   * @returns {Promise<Array<{nickname, duration_sec, score, player_count, played_at}>>}
+   */
+  async function fetchTopRankingsByDuration(gameType, limit = 10) {
+    const client = await getClient();
+    if (!client) return [];
+    try {
+      const { data, error } = await client
+        .from(STATS_TABLE)
+        .select("nickname, score, duration_sec, player_count, played_at, result")
+        .eq("game_type", gameType)
+        .eq("result", "win")
+        .gt("duration_sec", 0)
+        .order("duration_sec", { ascending: true })
+        .limit(500);
+      if (error) return [];
+      const bestByNick = new Map();
+      (data || []).forEach((row) => {
+        if (!row?.nickname) return;
+        const prev = bestByNick.get(row.nickname);
+        if (!prev || row.duration_sec < prev.duration_sec) {
+          bestByNick.set(row.nickname, row);
+        }
+      });
+      return Array.from(bestByNick.values())
+        .sort((a, b) => (a.duration_sec - b.duration_sec) || (b.score - a.score))
+        .slice(0, limit);
     } catch {
       return [];
     }
@@ -348,6 +418,8 @@
     fetchHubWidgetData,
     renderHubWidget,
     fetchTopRankings,
+    fetchTopRankingsByScore,
+    fetchTopRankingsByDuration,
     renderTopRankings,
     formatDuration,
     GAME_TYPES,

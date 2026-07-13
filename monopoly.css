@@ -903,6 +903,153 @@ body.monopoly-active .monopoly-panel::before {
   background: linear-gradient(90deg, var(--monopoly-blue), var(--monopoly-red), var(--monopoly-gold), var(--monopoly-green));
 }
 
+/* --- Ranking Panel (부루마불 테마) --- */
+body.monopoly-active .monopoly-leaderboard-panel {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid rgba(13, 110, 184, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 247, 229, 0.94)),
+    var(--monopoly-paper);
+  box-shadow: 0 22px 48px rgba(4, 51, 86, 0.2);
+}
+
+body.monopoly-active .monopoly-leaderboard-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 7px;
+  z-index: 1;
+  background: linear-gradient(90deg, var(--monopoly-blue), var(--monopoly-red), var(--monopoly-gold), var(--monopoly-green));
+}
+
+body.monopoly-active .monopoly-leaderboard-panel > * {
+  position: relative;
+  z-index: 2;
+}
+
+body.monopoly-active .monopoly-leaderboard-panel .mode-panel-head {
+  border-bottom: 1px solid rgba(13, 110, 184, 0.18);
+}
+
+body.monopoly-active .monopoly-leaderboard-panel .mode-panel-head strong {
+  color: var(--monopoly-blue-deep);
+}
+
+body.monopoly-active .monopoly-leaderboard-column h3 {
+  color: var(--monopoly-blue-deep);
+  font-size: 19px;
+  font-weight: 900;
+  padding-bottom: 6px;
+  border-bottom: 2px dashed rgba(13, 110, 184, 0.22);
+}
+
+body.monopoly-active .monopoly-leaderboard-column h3::before {
+  content: "★";
+  margin-right: 6px;
+  color: var(--monopoly-gold);
+}
+
+body.monopoly-active .monopoly-leaderboard-list,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-list {
+  gap: 8px;
+}
+
+body.monopoly-active .monopoly-leaderboard-list li,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-list li {
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 1px solid rgba(13, 110, 184, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 4px 10px rgba(4, 51, 86, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+body.monopoly-active .monopoly-leaderboard-list li:hover,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-list li:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(4, 51, 86, 0.14);
+}
+
+body.monopoly-active .monopoly-leaderboard-list li.leaderboard-empty,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-list li.leaderboard-empty {
+  display: block;
+  text-align: center;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+body.monopoly-active .monopoly-leaderboard-list .leaderboard-rank,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-rank {
+  width: 32px;
+  height: 32px;
+  color: #1f180b;
+  background: var(--monopoly-gold);
+  border: 2px solid #1f180b;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+  font-size: 16px;
+}
+
+body.monopoly-active .monopoly-leaderboard-list li:nth-child(1) .leaderboard-rank,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-list li:nth-child(1) .leaderboard-rank {
+  background: var(--monopoly-gold);
+  color: var(--monopoly-blue-deep);
+}
+
+body.monopoly-active .monopoly-leaderboard-list li:nth-child(2) .leaderboard-rank,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-list li:nth-child(2) .leaderboard-rank {
+  background: #c7d4dc;
+  color: var(--monopoly-blue-deep);
+}
+
+body.monopoly-active .monopoly-leaderboard-list li:nth-child(3) .leaderboard-rank,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-list li:nth-child(3) .leaderboard-rank {
+  background: #d39b6a;
+  color: var(--monopoly-blue-deep);
+}
+
+body.monopoly-active .monopoly-leaderboard-list strong,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-list strong {
+  color: var(--monopoly-blue-deep);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+body.monopoly-active .monopoly-leaderboard-list b,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-list b {
+  color: var(--monopoly-red);
+  font-size: 19px;
+  font-weight: 900;
+}
+
+body.monopoly-active .monopoly-leaderboard-list small,
+body.monopoly-active .monopoly-leaderboard-column .leaderboard-list small {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+body.monopoly-active #monopolyLeaderboardStatus,
+body.monopoly-active .monopoly-leaderboard-panel .leaderboard-status {
+  color: var(--monopoly-blue-deep);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 6px 4px 0;
+}
+
+body.monopoly-active .monopoly-leaderboard-panel .leaderboard-refresh-button {
+  color: var(--monopoly-blue-deep);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(13, 110, 184, 0.3);
+  font-weight: 800;
+}
+
+body.monopoly-active .monopoly-leaderboard-panel .leaderboard-refresh-button:hover {
+  border-color: var(--monopoly-blue);
+  background: #ffffff;
+}
+
 body.monopoly-active .monopoly-panel-top,
 body.monopoly-active .monopoly-game-top {
   align-items: center;

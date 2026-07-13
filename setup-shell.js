@@ -68,33 +68,83 @@
     const panel = list.closest(".game-ranking-panel");
     const status = panel?.querySelector("[data-ranking-status]");
     const gameType = list.dataset.gameType || "";
+    const mode = list.dataset.rankingMode || "score";
     const stats = window.FANTASY_PLAYER_STATS;
 
     list.innerHTML = '<li class="leaderboard-empty"><strong>불러오는 중...</strong></li>';
     if (status) status.textContent = "랭킹을 불러오는 중입니다.";
 
-    if (!gameType || typeof stats?.fetchTopRankings !== "function") {
+    if (!gameType || !stats) {
       list.innerHTML = '<li class="leaderboard-empty"><strong>랭킹 연결을 확인해주세요.</strong></li>';
       if (status) status.textContent = "랭킹 서비스를 불러오지 못했습니다.";
       return;
     }
 
-    const rankings = await stats.fetchTopRankings(gameType, 10);
-    if (!rankings.length) {
-      list.innerHTML = '<li class="leaderboard-empty"><strong>아직 등록된 기록이 없습니다.</strong></li>';
-      if (status) status.textContent = "싱글플레이 기록이 등록되면 이곳에 표시됩니다.";
+    let rankings = [];
+    let emptyMessage = "아직 등록된 기록이 없습니다.";
+    let fetchOk = false;
+
+    if (mode === "duration") {
+      if (typeof stats.fetchTopRankingsByDuration === "function") {
+        rankings = await stats.fetchTopRankingsByDuration(gameType, 10);
+        emptyMessage = "아직 승리 기록이 없습니다.";
+        fetchOk = true;
+      }
+    } else {
+      if (typeof stats.fetchTopRankingsByScore === "function") {
+        rankings = await stats.fetchTopRankingsByScore(gameType, 10);
+        fetchOk = true;
+      } else if (typeof stats.fetchTopRankings === "function") {
+        rankings = await stats.fetchTopRankings(gameType, 10);
+        fetchOk = true;
+      }
+    }
+
+    if (!fetchOk) {
+      list.innerHTML = '<li class="leaderboard-empty"><strong>랭킹 연결을 확인해주세요.</strong></li>';
+      if (status) status.textContent = "랭킹 서비스를 불러오지 못했습니다.";
       return;
     }
 
-    list.innerHTML = rankings.map((entry, index) => `
-      <li>
-        <span class="leaderboard-rank">${index + 1}</span>
-        <strong>${escapeHtml(entry.nickname || "익명")}</strong>
-        <b>${Number(entry.total_score || 0).toLocaleString("ko-KR")}점</b>
-        <small>승률 ${Number(entry.win_rate_pct || 0)}% · ${Number(entry.total_games || 0)}게임</small>
-      </li>
-    `).join("");
-    if (status) status.textContent = "닉네임별 누적 점수 기준 TOP 10입니다.";
+    if (!rankings.length) {
+      list.innerHTML = `<li class="leaderboard-empty"><strong>${escapeHtml(emptyMessage)}</strong></li>`;
+      return;
+    }
+
+    if (mode === "duration") {
+      list.innerHTML = rankings.map((entry, index) => `
+        <li>
+          <span class="leaderboard-rank">${index + 1}</span>
+          <strong>${escapeHtml(entry.nickname || "익명")}</strong>
+          <b>${formatRankingDuration(entry.duration_sec)}</b>
+          <small>${Number(entry.player_count || 0)}명 · ${Number(entry.score || 0).toLocaleString("ko-KR")}점</small>
+        </li>
+      `).join("");
+    } else {
+      list.innerHTML = rankings.map((entry, index) => `
+        <li>
+          <span class="leaderboard-rank">${index + 1}</span>
+          <strong>${escapeHtml(entry.nickname || "익명")}</strong>
+          <b>${Number(entry.score || entry.total_score || 0).toLocaleString("ko-KR")}점</b>
+          <small>${Number(entry.player_count || 0)}명 · ${formatRankingDuration(entry.duration_sec)}</small>
+        </li>
+      `).join("");
+    }
+
+    if (status) {
+      status.textContent = mode === "duration"
+        ? "닉네임별 최단 승리 게임 기준 TOP 10입니다."
+        : "닉네임별 단일 게임 최고 점수 기준 TOP 10입니다.";
+    }
+  }
+
+  function formatRankingDuration(sec) {
+    const total = Math.max(0, Math.floor(Number(sec) || 0));
+    if (!total) return "기록 없음";
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    if (h > 0) return `${h}시간 ${m}분`;
+    return `${m}분`;
   }
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -108,9 +158,15 @@
     document.querySelectorAll("[data-live-ranking]").forEach(loadLiveRanking);
     document.querySelectorAll("[data-live-ranking-refresh]").forEach((button) => {
       button.addEventListener("click", async () => {
-        const list = document.querySelector(button.dataset.liveRankingRefresh || "");
         button.disabled = true;
-        await loadLiveRanking(list);
+        // 특정 타겟이 있으면 그 리스트만, 없으면 패널 안의 모든 라이브 랭킹을 새로고침
+        const scope = button.dataset.rankingTarget
+          ? document.querySelectorAll(button.dataset.rankingTarget)
+          : button.closest(".game-ranking-panel")?.querySelectorAll("[data-live-ranking]") || [];
+        const lists = button.dataset.liveRankingRefresh
+          ? [document.querySelector(button.dataset.liveRankingRefresh)].filter(Boolean)
+          : Array.from(scope);
+        await Promise.all(lists.map(loadLiveRanking));
         button.disabled = false;
       });
     });
