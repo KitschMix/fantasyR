@@ -154,6 +154,20 @@
     </main>
     <script src="shared-ui.js?v=20260707-dominion"></script>
     <script src="shared-profiles.js?v=20260712-original-names"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="scripts/player-stats.js"></script>
     <script src="dominion.js?v=20260707-dominion-zoom"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        if (window.FANTASY_PLAYER_STATS?.renderTopRankings) {
+          window.FANTASY_PLAYER_STATS.renderTopRankings(
+            document.getElementById("dominionRanking"),
+            "dominion",
+            { title: "👑 도미니언 TOP 10 랭킹" }
+          );
+        }
+      });
+    </script>
   </body>
 </html>

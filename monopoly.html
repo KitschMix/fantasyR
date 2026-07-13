@@ -280,6 +280,20 @@
     <script src="shared-ui.js?v=20260706-brumable"></script>
     <script src="setup-shell.js?v=local-preview"></script>
     <script src="shared-profiles.js?v=20260712-original-names"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="scripts/player-stats.js"></script>
     <script src="monopoly.js?v=20260709-no-bail"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        if (window.FANTASY_PLAYER_STATS?.renderTopRankings) {
+          window.FANTASY_PLAYER_STATS.renderTopRankings(
+            document.getElementById("monopolyRanking"),
+            "monopoly",
+            { title: "🏆 부루마불 TOP 10 랭킹" }
+          );
+        }
+      });
+    </script>
   </body>
 </html>
