@@ -74,6 +74,28 @@
   });
 
   /**
+   * 멀티플레이(온라인) 섹션 라벨 — 8게임 공통.
+   * 새 게임 HTML 에 멀티플레이 모드 패널이 없어도 아래 기본값으로 자동 부착됨.
+   * - panelTitle / panelStatus : 헤더
+   * - createButton / joinLabel / joinPlaceholder / joinButton : 컨트롤
+   * - waitingHeadline / waitingDetail : 준비 중 안내 메시지
+   * - profileSource : "첫 화면 프로필 사용" 안내
+   */
+  const MULTIPLAYER_LABELS = Object.freeze({
+    panelTitle: "멀티플레이",
+    panelStatus: "준비 중",
+    profileSource: "첫 화면 프로필 사용",
+    createButton: "방 만들기",
+    joinLabel: "방 코드",
+    joinPlaceholder: "6자리 코드",
+    joinButton: "입장",
+    waitingHeadline:
+      "친구와 함께하는 보드게임을 준비하고 있습니다.",
+    waitingDetail:
+      "방에 입장하면 참가자와 준비 상태를 확인한 뒤 같은 보드에서 게임을 시작하게 됩니다.",
+  });
+
+  /**
    * 랭킹 컬럼 안의 <h3> 보장.
    * HTML에 이미 <h3> 있으면 그대로 두고, 없으면 RANKING_LABELS[mode] 또는 data-ranking-title 로 자동 삽입.
    * - data-ranking-title="..." → 명시적 라벨 오버라이드 (예: "누적 점수 TOP 10")
@@ -90,6 +112,53 @@
     const heading = document.createElement("h3");
     heading.textContent = title;
     list.parentNode.insertBefore(heading, list);
+  }
+
+  /**
+   * 멀티플레이(온라인) 모드 패널 보장.
+   * - HTML 에 이미 .online-panel / .online-controls / [data-setup-mode="multi"] 있으면 그대로 둠
+   * - 없으면 멀티플레이 grid 안 마지막 mode-panel 뒤에 기본 "준비 중" 패널 자동 주입
+   * - gameName 인자가 있으면 aria-label / 메시지에 게임명 추가 가능 (현재는 기본값 사용)
+   */
+  function ensureMultiplayerPanel(grid) {
+    if (!grid) return;
+    if (grid.querySelector(".online-panel, [data-setup-mode='multi']")) return;
+
+    const m = MULTIPLAYER_LABELS;
+    const panel = document.createElement("div");
+    panel.className = "mode-panel online-panel game-setup-mode";
+    panel.setAttribute("data-setup-mode", "multi");
+    panel.setAttribute("aria-label", "온라인 모드 준비 중");
+    panel.innerHTML = `
+      <div class="mode-panel-head online-panel-head">
+        <strong>${escapeHtml(m.panelTitle)}</strong>
+        <span class="online-status">${escapeHtml(m.panelStatus)}</span>
+      </div>
+      <div class="setup-coming-actions">
+        <div class="setup-profile-source">
+          <span>플레이어</span>
+          <strong>${escapeHtml(m.profileSource)}</strong>
+        </div>
+        <button class="secondary-button" type="button" disabled>${escapeHtml(m.createButton)}</button>
+        <label>
+          ${escapeHtml(m.joinLabel)}
+          <input type="text" maxlength="6" placeholder="${escapeHtml(m.joinPlaceholder)}" disabled />
+        </label>
+        <button class="secondary-button" type="button" disabled>${escapeHtml(m.joinButton)}</button>
+        <div class="setup-online-note">
+          <strong>${escapeHtml(m.waitingHeadline)}</strong>
+          <small>${escapeHtml(m.waitingDetail)}</small>
+        </div>
+      </div>
+    `;
+
+    // 마지막 mode-panel 뒤에 부착 (단일 모드 옆에 형제로)
+    const panels = grid.querySelectorAll(".mode-panel");
+    if (panels.length > 0) {
+      panels[panels.length - 1].after(panel);
+    } else {
+      grid.appendChild(panel);
+    }
   }
 
   async function loadLiveRanking(list) {
@@ -195,6 +264,9 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    // 멀티플레이 모드 패널 자동 부착 — 게임별 game-setup-grid 별로 1회
+    document.querySelectorAll(".game-setup-grid").forEach(ensureMultiplayerPanel);
+
     document.querySelectorAll("[data-setup-scale]").forEach(setupScaleControl);
     document.querySelectorAll("[data-dialog-target]").forEach((button) => {
       button.addEventListener("click", () => openDialog(button));
