@@ -914,6 +914,11 @@ body.monopoly-active .monopoly-leaderboard-panel {
   box-shadow: 0 22px 48px rgba(4, 51, 86, 0.2);
 }
 
+/* 모노폴리는 "최단 턴" 단일 컬럼만 사용 → 그리드를 단일 컬럼으로 오버라이드 */
+body.monopoly-active .monopoly-leaderboard-board {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 body.monopoly-active .monopoly-leaderboard-panel::before {
   content: "";
   position: absolute;

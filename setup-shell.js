@@ -90,6 +90,12 @@
         emptyMessage = "아직 승리 기록이 없습니다.";
         fetchOk = true;
       }
+    } else if (mode === "turns") {
+      if (typeof stats.fetchTopRankingsByTurns === "function") {
+        rankings = await stats.fetchTopRankingsByTurns(gameType, 10);
+        emptyMessage = "아직 승리 기록이 없습니다.";
+        fetchOk = true;
+      }
     } else {
       if (typeof stats.fetchTopRankingsByScore === "function") {
         rankings = await stats.fetchTopRankingsByScore(gameType, 10);
@@ -120,6 +126,15 @@
           <small>${Number(entry.player_count || 0)}명 · ${Number(entry.score || 0).toLocaleString("ko-KR")}점</small>
         </li>
       `).join("");
+    } else if (mode === "turns") {
+      list.innerHTML = rankings.map((entry, index) => `
+        <li>
+          <span class="leaderboard-rank">${index + 1}</span>
+          <strong>${escapeHtml(entry.nickname || "익명")}</strong>
+          <b>${Number(entry.turns || 0)}턴</b>
+          <small>${Number(entry.player_count || 0)}명 · ${formatRankingDuration(entry.duration_sec)}</small>
+        </li>
+      `).join("");
     } else {
       list.innerHTML = rankings.map((entry, index) => `
         <li>
@@ -134,6 +149,8 @@
     if (status) {
       status.textContent = mode === "duration"
         ? "닉네임별 최단 승리 게임 기준 TOP 10입니다."
+        : mode === "turns"
+        ? "닉네임별 최단 턴 승리 게임 기준 TOP 10입니다."
         : "닉네임별 단일 게임 최고 점수 기준 TOP 10입니다.";
     }
   }

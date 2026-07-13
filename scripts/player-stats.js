@@ -75,6 +75,7 @@
       result: entry.result,
       score: Math.max(0, Math.floor(entry.score || 0)),
       duration_sec: Math.max(0, Math.floor(entry.durationSec || 0)),
+      turns: Math.max(0, Math.floor(entry.turns || 0)),
       player_count: Math.max(2, Math.min(4, Math.floor(entry.playerCount || 2))),
       deck_list: Array.isArray(entry.deckList) ? entry.deckList : null,
     };
@@ -347,6 +348,43 @@
   }
 
   /**
+   * 게임별 최단 턴 랭킹 조회 (승리 게임 중 닉네임별 MIN(turns))
+   * 보드게임의 "최단 승리"는 경과 시간이 아닌 턴 수로 측정하는 것이 자연스러움
+   * @param {string} gameType
+   * @param {number} [limit=10]
+   * @returns {Promise<Array<{nickname, turns, score, duration_sec, player_count, played_at}>>}
+   */
+  async function fetchTopRankingsByTurns(gameType, limit = 10) {
+    const client = await getClient();
+    if (!client) return [];
+    try {
+      const { data, error } = await client
+        .from(STATS_TABLE)
+        .select("nickname, turns, score, duration_sec, player_count, played_at, result")
+        .eq("game_type", gameType)
+        .eq("result", "win")
+        .gt("turns", 0)
+        .order("turns", { ascending: true })
+        .order("duration_sec", { ascending: true })
+        .limit(500);
+      if (error) return [];
+      const bestByNick = new Map();
+      (data || []).forEach((row) => {
+        if (!row?.nickname) return;
+        const prev = bestByNick.get(row.nickname);
+        if (!prev || row.turns < prev.turns || (row.turns === prev.turns && row.duration_sec < prev.duration_sec)) {
+          bestByNick.set(row.nickname, row);
+        }
+      });
+      return Array.from(bestByNick.values())
+        .sort((a, b) => (a.turns - b.turns) || (a.duration_sec - b.duration_sec))
+        .slice(0, limit);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * 게임별 TOP 10 랭킹 패널을 컨테이너에 렌더링
    * @param {HTMLElement} container
    * @param {string} gameType
@@ -420,6 +458,7 @@
     fetchTopRankings,
     fetchTopRankingsByScore,
     fetchTopRankingsByDuration,
+    fetchTopRankingsByTurns,
     renderTopRankings,
     formatDuration,
     GAME_TYPES,

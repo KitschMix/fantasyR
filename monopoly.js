@@ -2535,6 +2535,7 @@
           result: isWin ? "win" : "loss",
           score: human?.money || 0,
           durationSec: Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)),
+          turns: Math.max(0, Math.floor(state.turnCount || 0)),
           playerCount: (state.players || []).length,
           deckList: null,
         });
