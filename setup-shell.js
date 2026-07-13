@@ -63,8 +63,38 @@
     })[character]);
   }
 
+  /**
+   * 랭킹 모드별 자동 라벨 (HTML에 <h3>가 없을 때 fallback).
+   * 새 게임은 <ol data-ranking-mode="..."> 한 줄만 적으면 자동 적용.
+   */
+  const RANKING_LABELS = Object.freeze({
+    turns: "최단 턴 TOP 10",
+    duration: "최단 시간 TOP 10",
+    score: "최고 점수 TOP 10",
+  });
+
+  /**
+   * 랭킹 컬럼 안의 <h3> 보장.
+   * HTML에 이미 <h3> 있으면 그대로 두고, 없으면 RANKING_LABELS[mode] 또는 data-ranking-title 로 자동 삽입.
+   * - data-ranking-title="..." → 명시적 라벨 오버라이드 (예: "누적 점수 TOP 10")
+   * - 기존 aria-label 건드리지 않음 (게임별 표시명 보존)
+   */
+  function ensureRankingHeading(list) {
+    if (!list) return;
+    const column = list.closest(".leaderboard-column");
+    if (!column) return;
+    if (column.querySelector(":scope > h3, :scope > section > h3, h3")) return;
+
+    const mode = list.dataset.rankingMode || "score";
+    const title = (list.dataset.rankingTitle || "").trim() || RANKING_LABELS[mode] || mode;
+    const heading = document.createElement("h3");
+    heading.textContent = title;
+    list.parentNode.insertBefore(heading, list);
+  }
+
   async function loadLiveRanking(list) {
     if (!list) return;
+    ensureRankingHeading(list);
     const panel = list.closest(".game-ranking-panel");
     const status = panel?.querySelector("[data-ranking-status]");
     const gameType = list.dataset.gameType || "";
