@@ -2226,6 +2226,12 @@
           await movePlayer(player, dice[0] + dice[1]);
           await wait(600);
           await handleTileLanding(player);
+          if (activePlayer() === player && state.phase === "buyDecision") {
+            await endTurn();
+          } else if (activePlayer() === player && state.phase !== "finished" && !player.bankrupt) {
+            await wait(400);
+            await endTurn();
+          }
           return;
         } else if (player.jailTurns <= 0) {
           player.inJail = false;
@@ -2233,12 +2239,20 @@
           await movePlayer(player, dice[0] + dice[1]);
           await wait(600);
           await handleTileLanding(player);
+          if (activePlayer() === player && state.phase === "buyDecision") {
+            await endTurn();
+          } else if (activePlayer() === player && state.phase !== "finished" && !player.bankrupt) {
+            await wait(400);
+            await endTurn();
+          }
           return;
         } else {
           addLog(`🔒 무인도 구금 중 (${player.jailTurns}턴 남음)`);
-          state.phase = "buyDecision";
+          state.phase = "rolled";
           renderAll();
           renderControls();
+          await wait(400);
+          await endTurn();
           return;
         }
       }
@@ -2565,6 +2579,7 @@
   }
 
   init();
+
 
   window.MonopolyGame = { start: startGame, leave: leaveGame };
 })();
