@@ -44,11 +44,14 @@ body.dominion-active.dominion-playing .dominion-game-panel {
 
 /* --- Setup --- */
 .dominion-setup-panel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.1fr);
+  gap: 16px;
+  align-items: start;
+  width: min(1180px, 100%);
   min-height: calc(100vh - 28px);
   padding: 24px;
+  margin: 0 auto;
 }
 
 .dominion-panel {
@@ -59,7 +62,7 @@ body.dominion-active.dominion-playing .dominion-game-panel {
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow);
-  width: min(520px, 92vw);
+  width: 100%;
 }
 
 .dominion-panel-top {

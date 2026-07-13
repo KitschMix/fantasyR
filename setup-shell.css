@@ -414,11 +414,6 @@ body:has(#setupPanel:not(.hidden)) #newGameButton {
   background: linear-gradient(135deg, rgba(26, 25, 23, 0.97), rgba(44, 25, 22, 0.94));
 }
 
-.clue-ranking-panel {
-  border-color: rgba(216, 47, 40, 0.3);
-  background: rgba(31, 25, 23, 0.94);
-}
-
 /* Burumabul keeps its bright paper theme inside the same shell. */
 body.monopoly-active .monopoly-setup-panel {
   align-items: flex-start;
@@ -463,41 +458,6 @@ body.monopoly-active .monopoly-setup-shell .setup-profile-source {
   background: rgba(255, 255, 255, 0.68);
 }
 
-body.monopoly-active .monopoly-ranking-panel {
-  border: 2px solid rgba(13, 110, 184, 0.22);
-  background: rgba(255, 249, 233, 0.94);
-  box-shadow: 0 18px 38px rgba(4, 51, 86, 0.14);
-}
-
-body.monopoly-active .monopoly-ranking-panel .mode-panel-head {
-  border-bottom-color: rgba(13, 110, 184, 0.18);
-}
-
-body.monopoly-active .monopoly-ranking-panel .mode-panel-head strong,
-body.monopoly-active .monopoly-ranking-panel .leaderboard-column h3,
-body.monopoly-active .monopoly-ranking-panel .leaderboard-list b {
-  color: var(--monopoly-blue-deep);
-}
-
-body.monopoly-active .monopoly-ranking-panel .leaderboard-list li {
-  border-color: rgba(13, 110, 184, 0.16);
-  background: rgba(255, 255, 255, 0.76);
-}
-
-body.monopoly-active .monopoly-ranking-panel .leaderboard-rank {
-  color: #ffffff;
-  background: var(--monopoly-blue);
-}
-
-body.monopoly-active .monopoly-ranking-panel .leaderboard-list strong {
-  color: var(--monopoly-blue-deep);
-}
-
-body.monopoly-active .monopoly-ranking-panel .leaderboard-list small,
-body.monopoly-active .monopoly-ranking-panel .leaderboard-status {
-  color: var(--muted);
-}
-
 /* Sushi Go and Splendor use the shared setup shell while retaining game themes. */
 .sushi-setup-panel,
 .splendor-setup-panel {
@@ -535,14 +495,12 @@ body.monopoly-active .monopoly-ranking-panel .leaderboard-status {
   margin-top: auto;
 }
 
-.sushi-ranking-panel,
-.splendor-ranking-panel {
-  border-color: rgba(242, 207, 120, 0.26);
-  background: rgba(31, 28, 23, 0.94);
-}
-
-.sushi-ranking-panel .leaderboard-board,
-.splendor-ranking-panel .leaderboard-board {
+/* Single-column ranking boards (one leaderboard list per game). */
+.sushi-leaderboard-board,
+.splendor-leaderboard-board,
+.monopoly-leaderboard-board,
+.clue-leaderboard-board,
+.dominion-leaderboard-board {
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -570,14 +528,6 @@ body.monopoly-active .monopoly-ranking-panel .leaderboard-status {
   .cant-setup-grid.game-setup-grid,
   .tally-setup-grid.game-setup-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 860px) {
-  .game-setup-header {
-    display: grid;
-    min-height: 0;
-    padding-inline: 0;
   }
 
   .game-setup-logo,
@@ -609,6 +559,18 @@ body.monopoly-active .monopoly-ranking-panel .leaderboard-status {
   .clue-setup-panel,
   body.monopoly-active .monopoly-setup-panel,
   .sushi-setup-panel,
+  .splendor-setup-panel {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 860px) {
+  .game-setup-header {
+    display: grid;
+    min-height: 0;
+    padding-inline: 0;
+  }
+
   .splendor-setup-panel {
     padding: 12px;
   }
