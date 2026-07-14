@@ -1744,14 +1744,15 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
   .splendor-tokens {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    padding: 8px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+    padding: 8px 10px;
     justify-items: center;
   }
 
   .splendor-token {
-    width: min(100%, 56px);
+    width: 100%;
+    max-width: 84px;
     height: auto;
     aspect-ratio: 1;
   }
