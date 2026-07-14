@@ -387,19 +387,17 @@ font-weight: 850
 | **fantasy** | ✅ 표준 | (없음) | "AI와 바로 시작" |
 | **dominion** | ✅ 표준 | 멀티 플레이 패널 미존재 | "덱 빌딩" |
 | **cant-stop** | ✅ 완전 표준 | (없음) | "AI와 등반 대결" |
-| **tally-ho** | ⚠️ 톤 강조 | 자체 큰 카드 74px, 자체 보더 골드, 자체 멀티 placeholder | "AI와 바로 시작" |
+| **tally-ho** | ✅ 완전 표준 | (없음) | "AI와 바로 시작" |
 
-### 표준 패턴 vs 톤 강조 패턴
+### 표준 패턴 (8 게임 전체)
 
-**표준 패턴 (7 게임)**: 셸 토큰 + 표준 셀렉터만 사용. 게임 톤 추가 거의 없음.
+**모든 게임이 동일한 표준 셸을 사용**: 셸 토큰 + 표준 셀렉터만 사용.
 - 모든 카드: `data-profile-name` 자동 동기화, 표준 `.setup-profile-source.setup-profile-card` (44px)
 - 모든 멀티플레이 패널: `.setup-online-note` 사용
 - 모든 헤더: 표준 `.game-setup-logo` (72px), `min-height: 126px`
+- 모든 setup-controls: 표준 2컬럼
 
-**톤 강조 패턴 (1 게임: tally-ho)**: 게임 안에서 쓰는 자기 톤을 시작화면에도 들여옴.
-- 자체 큰 프로필 카드 (74px) — 게임 내 player card와 톤 일치
-- 자체 멀티플레이 placeholder (.tally-online-placeholder)
-- 시그니처 보더 색
+> 톤 강조 패턴 게임은 더 이상 없음 — 8게임 모두 표준 패턴 준수.
 
 > 모든 카드는 `data-profile-name`을 가져서 첫 화면에서 닉네임을 바꾸면 setup-shell.js가 즉시 모든 카드를 갱신한다.
 
@@ -429,7 +427,8 @@ font-weight: 850
 ## 변경 이력
 
 - **2026-07-14**:
-  - 캔트스탑 시작화면 톤 강조 요소들을 6게임 표준 패턴으로 통일 (74px 자체 카드 → 44px 표준 카드, 자체 placeholder → 표준 online-note, 시그니처 블루 보더 → 표준)
+  - 텔리 호 시작화면 톤 강조 요소들을 표준 패턴으로 통일 (74px 자체 카드 → 44px 표준 카드, 자체 placeholder → 표준 online-note, 시그니처 골드 보더 → 표준)
+  - 캔트스탑 시작화면 톤 강조 요소들을 6게임 표준 패턴으로 통일
   - 캔트스탑 로고 사이즈 180px → 표준 72px
   - 스플렌더 기준으로 md 재작성
 - **2026-07-06**: 시작화면 8게임 통일 (setup-shell.css/.js 분리, [START_SCREEN_UNIFICATION_HANDOFF.md](START_SCREEN_UNIFICATION_HANDOFF.md))
