@@ -1339,6 +1339,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   width: 100%;
   aspect-ratio: 1 / 1;
   border-radius: 10px;
+  overflow: hidden;
 }
 
 .splendor-card {
@@ -1346,6 +1347,16 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   background: linear-gradient(180deg, rgba(43,38,31,0.98), rgba(28,25,21,0.98));
   border: 1px solid rgba(246,232,202,0.16);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 14px rgba(0,0,0,0.24);
+}
+
+.splendor-card-cost {
+  flex-wrap: nowrap;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.splendor-cost-pip {
+  flex: 0 0 auto;
 }
 
 .splendor-card:hover {
@@ -1529,14 +1540,20 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-token-count {
-  width: 40px;
-  height: 40px;
-  right: -4px;
-  bottom: -4px;
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  right: 2px;
+  bottom: 2px;
   background: rgba(17,15,13,0.92);
-  font-size: 28px;
+  font-size: 12px;
+  font-weight: 900;
   border-radius: 999px;
-  border: 2px solid rgba(246,232,202,0.2);
+  border: 1px solid rgba(246,232,202,0.2);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  line-height: 1;
 }
 
 .splendor-actions-panel {
@@ -1726,13 +1743,23 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   }
 
   .splendor-tokens {
-    gap: 10px;
-    padding: 10px;
+    gap: 8px;
+    padding: 8px;
+    flex-wrap: nowrap;
   }
 
   .splendor-token {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+  }
+
+  .splendor-token-count {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    right: 1px;
+    bottom: 1px;
   }
 }
 
