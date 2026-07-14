@@ -63,12 +63,10 @@
                             <option value="random">완전랜덤</option>
                           </select>
                         </label>
-                        <div class="cant-profile-preview" aria-label="캔트스탑 플레이어">
-                          <div class="cant-profile-card">
-                            <img id="cantHumanAvatar" src="assets/profiles/user/유저.jpg" alt="" />
-                            <span>플레이어</span>
-                            <strong id="cantHumanPreviewName" data-profile-name>닉네임 필요</strong>
-                          </div>
+                        <div class="setup-profile-source setup-profile-card" aria-label="캔트스탑 플레이어">
+                          <img id="cantHumanAvatar" src="assets/profiles/user/유저.jpg" alt="" />
+                          <span>플레이어</span>
+                          <strong id="cantHumanPreviewName" data-profile-name>닉네임 필요</strong>
                         </div>
                         <button id="cantStartButton" class="primary-button" type="button">게임 시작</button>
                       </div>
@@ -86,7 +84,7 @@
                         </label>
                         <button class="secondary-button" type="button" disabled>입장</button>
                       </div>
-                      <div class="cant-online-placeholder">
+                      <div class="setup-online-note">
                         <strong>온라인 방 코드 멀티는 아직 준비중입니다.</strong>
                         <small>턴제라서 이후 Supabase 동기화를 붙이면 비교적 가볍게 확장할 수 있습니다.</small>
                       </div>
