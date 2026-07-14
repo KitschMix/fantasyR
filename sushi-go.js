@@ -3,22 +3,25 @@
   "use strict";
 
   /* ── Card Definitions ── */
+  // 공식 스시고! 분배 (handoff §5, §6 참조). 합계 88장 — 새우튀김 8→14, 사시미 10→6,
+  // 와사비 4→6, 연어 5→10, 문어 3→5, 김밥2 5→6, 계란 4→5. (원본은 88장 기준)
   const CARD_DEFS = [
-    { type: "nigiri",   name: "계란 초밥",   emoji: "🥚", points: 1, copies: 4 },
-    { type: "nigiri",   name: "연어 초밥",   emoji: "🍣", points: 2, copies: 5 },
-    { type: "nigiri",    name: "문어 초밥",   emoji: "🐙", points: 3, copies: 3 },
+    { type: "nigiri",   name: "계란 초밥",   emoji: "🥚", points: 1, copies: 5 },
+    { type: "nigiri",   name: "연어 초밥",   emoji: "🍣", points: 2, copies: 10 },
+    { type: "nigiri",   name: "문어 초밥",   emoji: "🐙", points: 3, copies: 5 },
     { type: "maki",     name: "김밥 3",      emoji: "🍱", points: 0, maki: 3, copies: 8 },
-    { type: "maki",     name: "김밥 2",      emoji: "🍙", points: 0, maki: 2, copies: 5 },
+    { type: "maki",     name: "김밥 2",      emoji: "🍙", points: 0, maki: 2, copies: 6 },
     { type: "maki",     name: "김밥 1",      emoji: "🍘", points: 0, maki: 1, copies: 4 },
-    { type: "tempura",  name: "새우튀김",    emoji: "🍤", points: 0, copies: 8 },
-    { type: "sashimi",  name: "사시미",      emoji: "🐟", points: 0, copies: 10 },
+    { type: "tempura",  name: "새우튀김",    emoji: "🍤", points: 0, copies: 14 },
+    { type: "sashimi",  name: "사시미",      emoji: "🐟", points: 0, copies: 6 },
     { type: "dumpling", name: "만두",        emoji: "🥟", points: 0, copies: 14 },
-    { type: "wasabi",   name: "와사비",      emoji: "🟢", points: 0, copies: 4 },
+    { type: "wasabi",   name: "와사비",      emoji: "🟢", points: 0, copies: 6 },
     { type: "pudding",  name: "푸딩",        emoji: "🍮", points: 0, copies: 10 }
   ];
 
   const TOTAL_ROUNDS = 3;
   const DUMPLING_SCORES = [0, 1, 3, 5, 8, 11];
+  const HAND_SIZES = { 2: 10, 3: 9, 4: 8, 5: 7 }; // 공식 스시고! 분배
 
   /* ── DOM ── */
   const $ = (sel) => document.querySelector(sel);
@@ -96,7 +99,7 @@
   /* ── Deal ── */
   function dealCards(playerCount) {
     const deck = buildDeck();
-    const handSize = playerCount === 2 ? 10 : playerCount === 3 ? 9 : 8;
+    const handSize = HAND_SIZES[playerCount] || 8;
     state.hands = [];
     for (let i = 0; i < playerCount; i++) {
       state.hands.push(deck.splice(0, handSize));
@@ -107,6 +110,10 @@
   function scoreRound() {
     const playerCount = state.players.length;
     const roundScores = new Array(playerCount).fill(0);
+    // 분해용: [{ nigiri, wasabiBonus, tempura, sashimi, dumpling, maki, makiBonus }, ...]
+    const breakdown = Array.from({ length: playerCount }, () => ({
+      nigiri: 0, wasabiBonus: 0, tempura: 0, sashimi: 0, dumpling: 0, maki: 0, makiBonus: 0
+    }));
 
     // Count maki
     const makiCounts = state.pickedThisRound.map(cards => cards.reduce((s, c) => s + (c.maki || 0), 0));
@@ -117,9 +124,9 @@
 
     if (maxMaki > 0) {
       // 원본 룰: 1등 동점이면 모든 동점자가 6점씩. 2등 점수는 1등 단독일 때만 3점.
-      makiWinners.forEach(i => { roundScores[i] += 6; });
+      makiWinners.forEach(i => { roundScores[i] += 6; breakdown[i].makiBonus = 6; });
       if (makiWinners.length === 1 && makiSeconds.length > 0) {
-        makiSeconds.forEach(i => { roundScores[i] += 3; });
+        makiSeconds.forEach(i => { roundScores[i] += 3; breakdown[i].makiBonus = 3; });
       }
     }
 
@@ -133,10 +140,14 @@
 
       cards.forEach(card => {
         switch (card.type) {
-          case "nigiri":
-            roundScores[i] += card.points * wasabiMultiplier;
+          case "nigiri": {
+            const pts = card.points * wasabiMultiplier;
+            roundScores[i] += pts;
+            breakdown[i].nigiri += pts;
+            if (wasabiMultiplier === 3) breakdown[i].wasabiBonus += card.points * 2;
             wasabiMultiplier = 1;
             break;
+          }
           case "wasabi":
             wasabiMultiplier = 3;
             break;
@@ -153,12 +164,16 @@
         }
       });
 
-      roundScores[i] += Math.floor(tempuraCount / 2) * 5;
-      roundScores[i] += Math.floor(sashimiCount / 3) * 10;
-      roundScores[i] += DUMPLING_SCORES[Math.min(dumplingCount, 5)];
+      const tp = Math.floor(tempuraCount / 2) * 5;
+      const sh = Math.floor(sashimiCount / 3) * 10;
+      const dm = DUMPLING_SCORES[Math.min(dumplingCount, 5)];
+      roundScores[i] += tp + sh + dm;
+      breakdown[i].tempura = tp;
+      breakdown[i].sashimi = sh;
+      breakdown[i].dumpling = dm;
     }
 
-    return roundScores;
+    return { totals: roundScores, breakdown };
   }
 
   function scorePudding() {
@@ -180,26 +195,82 @@
   }
 
   /* ── AI Card Selection ── */
-  function aiSelectCard(handIndex) {
+  function aiSelectCard(handIndex, difficulty) {
     const hand = state.hands[handIndex];
     if (!hand.length) return 0;
+    const diff = difficulty || "normal";
 
-    // Simple AI: prefer high-value cards
-    const scores = hand.map(card => {
+    // 베이스 가중치 (난이도 공통)
+    const baseScores = hand.map(card => {
       switch (card.type) {
-        case "nigiri": return card.points * 1.5;
-        case "wasabi": return 2.5;
-        case "tempura": return 2.5;
-        case "sashimi": return 3.3;
+        case "nigiri":   return card.points * 1.5;
+        case "wasabi":   return 2.5;
+        case "tempura":  return 2.5;
+        case "sashimi":  return 3.3;
         case "dumpling": return 2;
-        case "maki": return card.maki * 1.2;
-        case "pudding": return 1.5;
-        default: return 1;
+        case "maki":     return card.maki * 1.2;
+        case "pudding":  return 1.5;
+        default:         return 1;
       }
     });
-    let bestIdx = 0;
-    let bestScore = -1;
-    scores.forEach((s, i) => { if (s > bestScore) { bestScore = s; bestIdx = i; } });
+
+    if (diff === "normal") return argmax(baseScores);
+
+    // ── hard/expert 공통: 핸드 컨텍스트 (쌍 완성, 와사비 페어링) ──
+    const picked = state.pickedThisRound[handIndex] || [];
+    const pickedTypes = picked.reduce((acc, c) => { acc[c.type] = (acc[c.type] || 0) + 1; return acc; }, {});
+    const player = state.players[handIndex];
+    const scores = baseScores.map((s, i) => {
+      const card = hand[i];
+      let v = s;
+      // 새우튀김: 이미 홀수 장이면 다음 1장에 큰 가중
+      if (card.type === "tempura") v += (pickedTypes.tempura % 2) ? 4 : -1;
+      // 사시미: 1,4,7…장일 때 다음 1장에 큰 가중
+      if (card.type === "sashimi") v += (pickedTypes.sashimi % 3 === 1) ? 5 : (pickedTypes.sashimi % 3 === 2 ? -1 : 0);
+      // 만두: 많이 모을수록 보너스 곡선이므로 항상 약간 가산
+      if (card.type === "dumpling") v += Math.min(pickedTypes.dumpling || 0, 4) * 0.3;
+      // 와사비: 미보유 시 가중, 보유 중이면 페어링할 고가치 초밥 우선 (다음 턴에서 소비)
+      if (card.type === "wasabi" && player.wasabiHeld === 0) v += 1.5;
+      // 다음 턴 고가치 초밥 + 보유 와사비 = 큰 가치
+      if (card.type === "nigiri" && player.wasabiHeld > 0) v += card.points * 1.5; // 3배 효과의 즉시 가산
+      // 푸딩: 이미 3개 이상이면 추가 가중 낮춤
+      if (card.type === "pudding") v -= Math.max(0, (player.puddings - 2)) * 0.8;
+      return v;
+    });
+
+    if (diff === "hard") return argmax(scores);
+
+    // ── expert: 김밥 선두 견제 + 푸딩 게임 인식 ──
+    // 다른 플레이어들의 김밥 합계 계산
+    const othersMaki = state.players.reduce((max, p, idx) => {
+      if (idx === handIndex) return max;
+      const mine = (state.pickedThisRound[idx] || []).reduce((s, c) => s + (c.maki || 0), 0);
+      return Math.max(max, mine);
+    }, 0);
+    const myMaki = pickedTypes.maki || 0;
+    const isMakiLeader = myMaki > othersMaki;
+    const isMakiTrailing = myMaki + 0 < othersMaki;
+
+    return argmax(scores.map((v, i) => {
+      const card = hand[i];
+      // 김밥: 선두면 추가 가치 ↓ (1등 확정 시 불필요), 뒤지면 ↑
+      if (card.type === "maki") {
+        v += isMakiTrailing ? card.maki * 0.8 : (isMakiLeader ? -card.maki * 0.5 : 0);
+      }
+      // 푸딩: 마지막 라운드이고 0개면 패널티 위험 → 반드시 가지기
+      if (card.type === "pudding") {
+        const roundsLeft = TOTAL_ROUNDS - state.currentRound + 1;
+        if (roundsLeft <= 1 && player.puddings === 0) v += 3;
+      }
+      // expert: 약간의 노이즈 (동점 방지)
+      v += Math.random() * 0.4;
+      return v;
+    }));
+  }
+
+  function argmax(arr) {
+    let bestIdx = 0, bestScore = -Infinity;
+    arr.forEach((s, i) => { if (s > bestScore) { bestScore = s; bestIdx = i; } });
     return bestIdx;
   }
 
@@ -209,10 +280,14 @@
     els.playersList.innerHTML = state.players.map((p, i) => {
       const picks = state.pickedThisRound[i] || [];
       const pickBadges = picks.map(c => `<span class="sushi-pick-badge">${c.emoji}</span>`).join("");
+      const wasabiBadge = p.wasabiHeld > 0
+        ? `<span class="sushi-wasabi-indicator" title="다음 초밥 3배">🟢×${p.wasabiHeld}</span>`
+        : "";
       return `<section class="sushi-player-card${i === 0 ? " active" : ""}">
         <div class="sushi-player-header">
           <img class="sushi-player-avatar" src="${esc(p.avatarUrl)}" alt="" />
           <span class="sushi-player-name">${esc(p.name)}</span>
+          ${wasabiBadge}
           <span class="sushi-player-score">${p.totalScore}점</span>
         </div>
         <div class="sushi-player-picks">${pickBadges || "<small style='color:var(--muted)'>아직 없음</small>"}</div>
@@ -298,6 +373,12 @@
     if (card.type === "pudding") {
       state.players[playerIndex].puddings++;
     }
+    if (card.type === "wasabi") {
+      state.players[playerIndex].wasabiHeld++;
+    }
+    if (card.type === "nigiri" && state.players[playerIndex].wasabiHeld > 0) {
+      state.players[playerIndex].wasabiHeld--;
+    }
 
     const p = state.players[playerIndex];
     addLog(`${p.emoji} ${p.name}: ${card.emoji} ${card.name} 선택`);
@@ -314,14 +395,14 @@
       }
     }
 
-    // Wait for animation then process
+    // Wait for animation then process (가속: 450→250ms)
     setTimeout(() => {
       if (!selectCardForPlayer(playerIndex, cardIndex)) return;
 
       // Animate passing (remaining hand slides left)
       if (playerIndex === 0 && els.hand) {
         els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
-          el.style.animationDelay = `${i * 40}ms`;
+          el.style.animationDelay = `${i * 25}ms`;
           el.classList.add("passing");
         });
       }
@@ -329,12 +410,12 @@
       // AI picks for this turn
       for (let i = 1; i < state.players.length; i++) {
         if (state.hands[i] && state.hands[i].length > 0) {
-          const aiIdx = aiSelectCard(i);
+          const aiIdx = aiSelectCard(i, state.aiDifficulty);
           selectCardForPlayer(i, aiIdx);
         }
       }
 
-      // Pass hands left after animation
+      // Pass hands left after animation (가속: 400→200ms)
       setTimeout(() => {
         const firstHand = state.hands.shift();
         state.hands.push(firstHand);
@@ -342,14 +423,14 @@
         // Check if round over
         if (state.hands[0].length === 0) {
           renderAll();
-          // Animate round end
+          // Animate round end (가속: 600→350ms)
           if (els.hand) {
             els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
-              el.style.animationDelay = `${i * 60}ms`;
+              el.style.animationDelay = `${i * 35}ms`;
               el.classList.add("round-end");
             });
           }
-          setTimeout(() => endRound(), 600);
+          setTimeout(() => endRound(), 350);
           return;
         }
 
@@ -357,12 +438,12 @@
         // Animate new hand appearing
         if (els.hand) {
           els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
-            el.style.animationDelay = `${i * 50}ms`;
+            el.style.animationDelay = `${i * 30}ms`;
             el.classList.add("dealing");
           });
         }
-      }, 400);
-    }, 450);
+      }, 200);
+    }, 250);
   }
 
   function startDrafting() {
@@ -374,7 +455,7 @@
   /* ── Round End ── */
   function endRound() {
     state.phase = "roundEnd";
-    const roundScores = scoreRound();
+    const { totals: roundScores, breakdown } = scoreRound();
     roundScores.forEach((score, i) => { state.players[i].roundScore += score; });
     state.players.forEach((p, i) => { p.totalScore = p.roundScore + p.gameEndScore; });
 
@@ -382,12 +463,22 @@
     els.roundEnd?.classList.remove("hidden");
     if (els.roundEndTitle) els.roundEndTitle.textContent = `라운드 ${state.currentRound} 종료`;
     if (els.roundEndScores) {
-      els.roundEndScores.innerHTML = state.players.map((p, i) => `
-        <div class="sushi-score-row">
-          <span class="sushi-score-row-name">${p.emoji} ${p.name}</span>
-          <span class="sushi-score-row-points">+${roundScores[i]}점 (총 ${p.totalScore}점)</span>
-        </div>
-      `).join("");
+      els.roundEndScores.innerHTML = state.players.map((p, i) => {
+        const b = breakdown[i];
+        const lines = [];
+        if (b.nigiri) lines.push(`🍣 회전 초밥 <strong>+${b.nigiri}</strong>` + (b.wasabiBonus ? ` <small>(와사비 보너스 +${b.wasabiBonus})</small>` : ""));
+        if (b.tempura) lines.push(`🍤 새우튀김 쌍 <strong>+${b.tempura}</strong>`);
+        if (b.sashimi) lines.push(`🐟 사시미 트리플 <strong>+${b.sashimi}</strong>`);
+        if (b.dumpling) lines.push(`🥟 만두 <strong>+${b.dumpling}</strong>`);
+        if (b.makiBonus) lines.push(`🍱 김밥 보너스 <strong>+${b.makiBonus}</strong>`);
+        return `<div class="sushi-score-block">
+          <div class="sushi-score-row">
+            <span class="sushi-score-row-name">${p.emoji} ${p.name}</span>
+            <span class="sushi-score-row-points">+${roundScores[i]}점 (총 ${p.totalScore}점)</span>
+          </div>
+          ${lines.length ? `<ul class="sushi-score-breakdown">${lines.map(l => `<li>${l}</li>`).join("")}</ul>` : ""}
+        </div>`;
+      }).join("");
     }
 
     // Log maki winners
@@ -420,6 +511,7 @@
   /* ── Game End ── */
   function endGame() {
     state.phase = "finished";
+    state.currentRound = TOTAL_ROUNDS; // 라운드 라벨 "4/3" 깜빡임 방지
     if (state.startedAt && window.FANTASY_PLAYER_STATS) {
       const sorted = [...state.players].sort((a, b) => b.totalScore - a.totalScore);
       const human = state.players.find((p) => p && p.human);
@@ -478,7 +570,8 @@
         totalScore: 0,
         roundScore: 0,
         gameEndScore: 0,
-        puddings: 0
+        puddings: 0,
+        wasabiHeld: 0
       };
     });
 

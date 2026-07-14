@@ -212,6 +212,26 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
   color: var(--text);
 }
 
+/* --- Wasabi Held Indicator (다음 초밥 3배) --- */
+.sushi-wasabi-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #d0f0d0, #80c060);
+  color: #1a3a00;
+  border: 1px solid #5a9a30;
+  animation: sushiWasabiPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes sushiWasabiPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(106, 168, 64, 0.5); }
+  50%      { box-shadow: 0 0 0 4px rgba(106, 168, 64, 0); }
+}
+
 /* --- Center: Hand Area (Fantasy Kingdom table-area style) --- */
 .sushi-center {
   display: grid;
@@ -478,6 +498,32 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 .sushi-score-row-points {
   font-weight: 900;
   color: var(--accent);
+}
+
+/* --- Score Block (라운드 종료 시 카드별 분해) --- */
+.sushi-score-block {
+  text-align: left;
+}
+
+.sushi-score-breakdown {
+  list-style: none;
+  margin: 4px 0 0 0;
+  padding: 6px 12px;
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 0 0 6px 6px;
+}
+
+.sushi-score-breakdown li {
+  line-height: 1.4;
+}
+
+.sushi-score-breakdown small {
+  color: #9ad19a;
+  font-weight: 700;
 }
 
 /* --- Log --- */
