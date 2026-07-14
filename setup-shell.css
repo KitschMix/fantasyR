@@ -402,8 +402,7 @@ body:has(#setupPanel:not(.hidden)) #newGameButton {
 .cant-single-panel .nickname-control,
 .cant-single-panel .primary-button,
 .tally-single-panel .nickname-control,
-.tally-single-panel .primary-button,
-.tally-profile-preview {
+.tally-single-panel .primary-button {
   grid-column: 1 / -1;
 }
 
@@ -417,11 +416,7 @@ body:has(#setupPanel:not(.hidden)) #newGameButton {
   grid-column: 1 / -1;
 }
 
-.tally-online-placeholder {
-  min-height: 92px;
-  align-content: center;
-  margin-top: auto;
-}
+/* tally-online-placeholder: 표준화됨 (setup-online-note 사용) */
 
 .cant-stop-panel:not(.setup-mode) .setup-scale-control {
   display: none;

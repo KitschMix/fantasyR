@@ -54,12 +54,10 @@
                             <option value="random">완전랜덤</option>
                           </select>
                         </label>
-                        <div class="tally-profile-preview" aria-label="탤리 호 플레이어">
-                          <div class="tally-profile-card">
-                            <img id="tallyHumanAvatar" src="assets/profiles/user/유저.jpg" alt="" />
-                            <span>플레이어</span>
-                            <strong id="tallyHumanPreviewName" data-profile-name>닉네임 필요</strong>
-                          </div>
+                        <div class="setup-profile-source setup-profile-card" aria-label="탤리 호 플레이어">
+                          <img id="tallyHumanAvatar" src="assets/profiles/user/유저.jpg" alt="" />
+                          <span>플레이어</span>
+                          <strong id="tallyHumanPreviewName" data-profile-name>닉네임 필요</strong>
                         </div>
                         <button id="tallyStartButton" class="primary-button" type="button">게임 시작</button>
                       </div>
@@ -77,7 +75,7 @@
                         </label>
                         <button class="secondary-button" type="button" disabled>입장</button>
                       </div>
-                      <div class="tally-online-placeholder">
+                      <div class="setup-online-note">
                         <strong>온라인 방 코드 멀티는 아직 준비중입니다.</strong>
                         <small>구조만 먼저 잡아두고, 이후 Supabase 동기화를 붙이면 바로 확장할 수 있습니다.</small>
                       </div>
