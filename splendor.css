@@ -294,16 +294,17 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-cards-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   flex: 1;
-  min-height: 150px;
+  align-items: start;
 }
 
 /* --- Development Cards --- */
 .splendor-card {
-  width: 130px;
-  min-height: 155px;
+  width: 150px;
+  aspect-ratio: 1 / 1;
   border-radius: 10px;
   background: linear-gradient(160deg, var(--surface) 0%, var(--surface-2) 100%);
   border: 1px solid var(--line);
@@ -544,8 +545,8 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 .splendor-token-count {
   position: absolute;
-  bottom: -4px;
-  right: -4px;
+  bottom: 2px;
+  right: 2px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -1326,18 +1327,16 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 .splendor-cards-row {
   display: grid;
-  grid-template-columns: 170px repeat(4, 170px);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
-  min-height: 170px;
-  align-items: stretch;
+  align-items: start;
   overflow: visible;
   scrollbar-width: thin;
 }
 
 .splendor-card,
 .splendor-card-back {
-  width: 170px;
-  min-height: 170px;
+  width: 100%;
   aspect-ratio: 1 / 1;
   border-radius: 10px;
 }
@@ -1680,12 +1679,14 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   }
 
   .splendor-cards-row {
-    grid-template-columns: repeat(5, 104px);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .splendor-card,
   .splendor-card-back {
-    width: 104px;
+    width: 100%;
+    max-width: 130px;
+    aspect-ratio: 1 / 1;
   }
 }
 
@@ -1714,14 +1715,19 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   }
 
   .splendor-cards-row {
-    grid-template-columns: repeat(5, 94px);
-    min-height: 132px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
   }
 
   .splendor-card,
   .splendor-card-back {
-    width: 94px;
-    min-height: 132px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+  }
+
+  .splendor-tokens {
+    gap: 10px;
+    padding: 10px;
   }
 
   .splendor-token {
