@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="styles.css?v=20260706-split-pages" />
     <link rel="stylesheet" href="cant-stop.css?v=20260707-markers-v6" />
     <link rel="stylesheet" href="setup-shell.css?v=local-preview" />
+    <link rel="stylesheet" href="confirm-dialog.css?v=confirm-isolated" />
   </head>
   <body class="cant-active app-loading">
     <div id="loadingOverlay" class="loading-overlay" aria-live="polite">
@@ -172,6 +173,21 @@
               </form>
             </dialog>
     </main>
+    <!-- Fantasy Confirm Dialog (공통 확인 팝업) -->
+    <dialog id="fantasyConfirmDialog" class="fantasy-confirm-dialog">
+      <div class="fantasy-confirm-popup">
+        <div id="fantasyConfirmHeader" class="fantasy-confirm-header">⚠️ 확인</div>
+        <div class="fantasy-confirm-body">
+          <div id="fantasyConfirmIcon" class="fantasy-confirm-icon">⚠️</div>
+          <p id="fantasyConfirmMessage" class="fantasy-confirm-message"></p>
+        </div>
+        <div class="fantasy-confirm-footer">
+          <button id="fantasyConfirmCancel" class="fantasy-confirm-button fantasy-confirm-cancel" type="button">취소</button>
+          <button id="fantasyConfirmOk" class="fantasy-confirm-button fantasy-confirm-ok" type="button">확인</button>
+        </div>
+      </div>
+    </dialog>
+
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="shared-ui.js?v=20260706-split-pages"></script>

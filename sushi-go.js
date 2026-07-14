@@ -514,7 +514,18 @@
     els.gameEnd?.classList.add("hidden");
   }
 
-  function leaveGame() { window.location.href = "./"; }
+  async function leaveGame() {
+    const ok = await window.showConfirm({
+      title: "첫 화면으로",
+      message: "게임이 진행 중이면 진행 상황이 사라집니다.\n첫 화면으로 돌아가시겠습니까?",
+      confirmText: "첫 화면으로",
+      cancelText: "취소",
+      tone: "danger",
+      icon: "⚠️"
+    });
+    if (!ok) return;
+    window.location.href = "./index.html";
+  }
 
   /* ── Init ── */
   /* ── Tutorial ── */

@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="setup-shell.css?v=local-preview" />
+    <link rel="stylesheet" href="confirm-dialog.css?v=confirm-isolated" />
   </head>
   <body class="app-loading monopoly-active">
     <div id="loadingOverlay" class="loading-overlay">
@@ -291,6 +292,21 @@
         </div>
       </dialog>
     </main>
+    <!-- Fantasy Confirm Dialog (공통 확인 팝업) -->
+    <dialog id="fantasyConfirmDialog" class="fantasy-confirm-dialog">
+      <div class="fantasy-confirm-popup">
+        <div id="fantasyConfirmHeader" class="fantasy-confirm-header">⚠️ 확인</div>
+        <div class="fantasy-confirm-body">
+          <div id="fantasyConfirmIcon" class="fantasy-confirm-icon">⚠️</div>
+          <p id="fantasyConfirmMessage" class="fantasy-confirm-message"></p>
+        </div>
+        <div class="fantasy-confirm-footer">
+          <button id="fantasyConfirmCancel" class="fantasy-confirm-button fantasy-confirm-cancel" type="button">취소</button>
+          <button id="fantasyConfirmOk" class="fantasy-confirm-button fantasy-confirm-ok" type="button">확인</button>
+        </div>
+      </div>
+    </dialog>
+
     <script src="shared-ui.js?v=20260706-brumable"></script>
     <script src="setup-shell.js?v=local-preview"></script>
     <script src="shared-profiles.js?v=20260712-original-names"></script>

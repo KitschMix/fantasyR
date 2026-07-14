@@ -380,11 +380,13 @@
           executeSpaceTravel(activePlayer(), i);
           return;
         }
-        
+
         if (tile.type === "property" && state.phase !== "diceRolling" && state.phase !== "idle" && state.phase !== "finished") {
           const human = state.players.find(p => p.human);
           if (human && !human.bankrupt) {
-            showPropertyPopup(human, tile);
+            // 내 턴이 아닐 때는 정보만 보여주는 읽기 전용 팝업
+            const isMyTurn = state.currentPlayer === human.index;
+            showPropertyPopup(human, tile, { readOnly: !isMyTurn });
           }
         }
       });
@@ -610,7 +612,9 @@
         if (state.phase !== "diceRolling" && state.phase !== "idle" && state.phase !== "finished") {
           const human = state.players.find(p => p.human);
           if (human && !human.bankrupt) {
-            showPropertyPopup(human, tile);
+            // 내 턴이 아닐 때는 정보만 보여주는 읽기 전용 팝업
+            const isMyTurn = state.currentPlayer === human.index;
+            showPropertyPopup(human, tile, { readOnly: !isMyTurn });
           }
         }
       });
@@ -1328,7 +1332,8 @@
     }
   }
 
-  function showPropertyPopup(player, tile) {
+  function showPropertyPopup(player, tile, options) {
+    const readOnly = !!(options && options.readOnly);
     return new Promise(resolve => {
       const dialog = document.querySelector("#monopolyPropertyDialog");
       if (!dialog) {
@@ -1427,6 +1432,20 @@
         renderAll();
         resolve();
       };
+
+      // 읽기 전용 모드: 액션 버튼 없이 "확인"만 표시 (내 턴이 아닐 때)
+      if (readOnly) {
+        const okBtn = document.createElement("button");
+        okBtn.className = "primary-button";
+        okBtn.type = "button";
+        okBtn.textContent = "확인";
+        okBtn.addEventListener("click", closeDialog);
+        footer.appendChild(okBtn);
+
+        dialog.addEventListener("cancel", preventCancel);
+        dialog.showModal();
+        return;
+      }
 
       const isStandingOn = player.position === tile.id;
 
@@ -2523,7 +2542,16 @@
     setMonopolyZoomPercent(loadMonopolyZoomPercent(), false);
   }
 
-  function leaveGame() {
+  async function leaveGame() {
+    const ok = await window.showConfirm({
+      title: "첫 화면으로",
+      message: "게임이 진행 중이면 진행 상황이 사라집니다.\n첫 화면으로 돌아가시겠습니까?",
+      confirmText: "첫 화면으로",
+      cancelText: "취소",
+      tone: "danger",
+      icon: "⚠️"
+    });
+    if (!ok) return;
     if (state.phase === "finished" && state.startedAt) {
       const statsApi = window.FANTASY_PLAYER_STATS;
       if (statsApi) {
@@ -2542,7 +2570,7 @@
       }
     }
     clearAiTimer();
-    window.location.href = "./";
+    window.location.href = "./index.html";
   }
 
   /* ── Init ── */

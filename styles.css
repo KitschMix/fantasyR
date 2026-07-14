@@ -1,4 +1,4 @@
-@font-face {
+﻿@font-face {
   font-family: "FantasyUIVariable";
   src:
     url("assets/fonts/PretendardVariable.woff2") format("woff2-variations"),
@@ -3048,7 +3048,7 @@ select {
 }
 
 /* ============================================================
- * Game cover art (각 게임 첫화면 상단 카드 아트)
+ * Game cover art (媛?寃뚯엫 泥ロ솕硫??곷떒 移대뱶 ?꾪듃)
  * ============================================================ */
 .game-cover-art {
   display: block;
@@ -3087,7 +3087,7 @@ select {
   }
 }
 
-/* 기존 큰 title-art 자리에 들어가는 경우(이미지 자체 교체) */
+/* 湲곗〈 ??title-art ?먮━???ㅼ뼱媛??寃쎌슦(?대?吏 ?먯껜 援먯껜) */
 .game-cover-art.is-replacement {
   margin: 0 auto;
 }
@@ -3587,4 +3587,3 @@ select {
   .top-actions {
     justify-content: flex-end;
   }
-}

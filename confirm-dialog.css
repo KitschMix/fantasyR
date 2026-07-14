@@ -1,0 +1,154 @@
+/* === Fantasy Confirm Dialog (공통 확인 팝업) ===
+ * 이 파일은 모든 게임 HTML의 <head> 마지막에 로드되어야 합니다.
+ * 게임별 CSS(monopoly.css, clue.css 등)에서 --accent, --text, --primary-button 등을
+ * 어떻게 override하든, 이 파일은 항상 마지막에 적용되어 골드 톤을 유지합니다.
+ */
+
+/* 게임별 --accent / --text 변수가 무엇이든 골드 톤으로 고정 */
+#fantasyConfirmDialog .fantasy-confirm-popup {
+  --accent: #d9a63c !important;
+  --text: #f7ecd9 !important;
+  --surface: #24201a !important;
+  --surface-2: #302a21 !important;
+  --surface-3: #3d352a !important;
+  --line: rgba(246, 232, 202, 0.16) !important;
+}
+
+/* dialog 자체 */
+#fantasyConfirmDialog.fantasy-confirm-dialog {
+  border: none;
+  background: transparent;
+  padding: 0;
+  overflow: visible;
+}
+
+#fantasyConfirmDialog.fantasy-confirm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+/* 팝업 본체 */
+#fantasyConfirmDialog .fantasy-confirm-popup {
+  width: min(360px, 92vw) !important;
+  background: #24201a !important;
+  color: #f7ecd9 !important;
+  border: 2px solid #d9a63c !important;
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fantasy-confirm-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 헤더 (제목 영역) */
+#fantasyConfirmDialog .fantasy-confirm-header {
+  padding: 14px 16px;
+  font-size: 17px !important;
+  font-weight: 900 !important;
+  text-align: center;
+  background: #d9a63c !important;
+  color: #1a1410 !important;
+  letter-spacing: 0.4px;
+}
+
+/* 본문 */
+#fantasyConfirmDialog .fantasy-confirm-body {
+  padding: 22px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+#fantasyConfirmDialog .fantasy-confirm-icon {
+  font-size: 40px;
+  line-height: 1;
+}
+
+/* 메시지 텍스트 - 항상 밝은 색 */
+#fantasyConfirmDialog .fantasy-confirm-message {
+  text-align: center;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 1.6;
+  margin: 0;
+  color: #f7ecd9 !important;
+  white-space: pre-line;
+  word-break: keep-all;
+}
+
+/* 푸터 (버튼 영역) */
+#fantasyConfirmDialog .fantasy-confirm-footer {
+  padding: 6px 16px 18px;
+  display: flex;
+  gap: 10px;
+}
+
+/* 공통 버튼 */
+#fantasyConfirmDialog .fantasy-confirm-button {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 0.08s ease, background 0.15s ease;
+  font-family: inherit;
+}
+
+#fantasyConfirmDialog .fantasy-confirm-button:active {
+  transform: translateY(1px);
+}
+
+/* 취소 버튼 - 어두운 배경에 밝은 텍스트 */
+#fantasyConfirmDialog .fantasy-confirm-cancel {
+  background: #302a21 !important;
+  color: #f7ecd9 !important;
+  border-color: rgba(246, 232, 202, 0.16) !important;
+}
+
+#fantasyConfirmDialog .fantasy-confirm-cancel:hover {
+  background: #3d352a !important;
+}
+
+/* 확인 버튼 - 골드 그라데이션 */
+#fantasyConfirmDialog .fantasy-confirm-ok {
+  background: linear-gradient(180deg, #e6b651, #d9a63c) !important;
+  color: #1a1410 !important;
+  border-color: rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 6px 16px rgba(217, 166, 60, 0.32) !important;
+}
+
+#fantasyConfirmDialog .fantasy-confirm-ok:hover {
+  background: linear-gradient(180deg, #f0c46a, #c89632) !important;
+}
+
+/* 위험 톤 - 골드 그대로 (분홍/빨강 안 씀) */
+#fantasyConfirmDialog[data-tone="danger"] .fantasy-confirm-header {
+  background: #d9a63c !important;
+  color: #1a1410 !important;
+}
+
+#fantasyConfirmDialog[data-tone="danger"] .fantasy-confirm-ok {
+  background: linear-gradient(180deg, #e6b651, #d9a63c) !important;
+  color: #1a1410 !important;
+}
+
+#fantasyConfirmDialog[data-tone="danger"] .fantasy-confirm-ok:hover {
+  background: linear-gradient(180deg, #f0c46a, #c89632) !important;
+}
+
+/* 등장 애니메이션 */
+@keyframes fantasy-confirm-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
