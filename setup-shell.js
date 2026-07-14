@@ -263,6 +263,41 @@
     return `${m}분`;
   }
 
+  // ── Profile card sync (옵션 B) ──────────────────────────────────────────
+  // 모든 [data-profile-name] 요소를 localStorage의 humanProfile.nickname으로 동기화.
+  // 첫 화면에서 닉네임을 바꾸면 setup 패널이 다시 보여질 때 자동으로 반영됨.
+  const HUMAN_PROFILE_STORAGE_KEY = (window.FANTASY_SHARED_NICKNAME_RULES && window.FANTASY_SHARED_NICKNAME_RULES.storageKey) || "fantasyKingdom.humanProfile.v1";
+
+  function readStoredNickname() {
+    try {
+      const raw = window.localStorage?.getItem(HUMAN_PROFILE_STORAGE_KEY);
+      if (!raw) return "";
+      const parsed = JSON.parse(raw);
+      return String(parsed?.nickname || "").trim();
+    } catch (err) {
+      return "";
+    }
+  }
+
+  function refreshProfileCards() {
+    const nickname = readStoredNickname();
+    const label = nickname || "닉네임 필요";
+    document.querySelectorAll("[data-profile-name]").forEach((el) => {
+      if (el.textContent !== label) el.textContent = label;
+    });
+  }
+
+  function attachProfileCards() {
+    if (document.querySelectorAll("[data-profile-name]").length === 0) return;
+    refreshProfileCards();
+    // 첫 화면에서 닉네임이 바뀌면 setup 패널도 즉시 갱신
+    window.addEventListener("storage", (event) => {
+      if (event.key === HUMAN_PROFILE_STORAGE_KEY) refreshProfileCards();
+    });
+    // 같은 탭 안에서 직접 변경되는 경우를 위한 커스텀 이벤트
+    window.addEventListener("fantasy:profile-updated", refreshProfileCards);
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     // 멀티플레이 모드 패널 자동 부착 — 게임별 game-setup-grid 별로 1회
     document.querySelectorAll(".game-setup-grid").forEach(ensureMultiplayerPanel);
@@ -275,6 +310,7 @@
       button.addEventListener("click", () => refreshPreviewRanking(button));
     });
     document.querySelectorAll("[data-live-ranking]").forEach(loadLiveRanking);
+    attachProfileCards();
     document.querySelectorAll("[data-live-ranking-refresh]").forEach((button) => {
       button.addEventListener("click", async () => {
         button.disabled = true;

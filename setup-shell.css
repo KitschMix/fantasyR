@@ -248,6 +248,60 @@
   white-space: nowrap;
 }
 
+/* Profile card variant (옵션 B) — 8개 게임 통일: 아바타 + 라벨 + 닉네임 */
+.setup-profile-source.setup-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+}
+
+.setup-profile-source.setup-profile-card > img {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(246, 232, 202, 0.22);
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.setup-profile-source.setup-profile-card > span {
+  flex: 0 0 auto;
+}
+
+.setup-profile-source.setup-profile-card > strong {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Single-panel inline description (모드 헤드 아래 보조 설명 — 예: "도시를 사고...").
+   Previously reused `.setup-online-note` in single panels, which only styles
+   the online-panel note block. */
+.setup-mode-description {
+  grid-column: 1 / -1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(48, 42, 33, 0.34);
+  border: 1px solid rgba(246, 232, 202, 0.10);
+  color: var(--muted);
+}
+
+.setup-mode-description strong {
+  display: block;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.setup-mode-description small {
+  display: block;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
 .setup-coming-actions .setup-online-note {
   grid-column: 1 / -1;
 }
@@ -458,7 +512,8 @@ body.monopoly-active .monopoly-setup-shell .online-panel::before {
   background: linear-gradient(90deg, var(--monopoly-green), var(--monopoly-blue));
 }
 
-body.monopoly-active .monopoly-setup-shell .setup-online-note {
+body.monopoly-active .monopoly-setup-shell .setup-online-note,
+body.monopoly-active .monopoly-setup-shell .setup-mode-description {
   border-color: rgba(45, 154, 103, 0.22);
   background: rgba(45, 154, 103, 0.07);
 }
