@@ -1776,6 +1776,37 @@ body.splendor-active.splendor-playing .splendor-game-panel {
     bottom: 2px;
   }
 
+  .splendor-card-cost {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    justify-content: flex-end;
+    gap: 2px;
+    row-gap: 2px;
+    overflow: hidden;
+  }
+
+  .splendor-cost-pip {
+    flex: 0 0 auto;
+    gap: 2px;
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  .splendor-cost-pip > img {
+    width: 16px !important;
+    height: 16px !important;
+    object-fit: contain;
+  }
+
+  .splendor-cost-num {
+    min-width: 7px;
+    text-align: center;
+  }
+
   .splendor-bank-label-wrap {
     display: flex !important;
     flex-wrap: wrap;
