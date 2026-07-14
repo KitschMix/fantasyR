@@ -63,12 +63,12 @@ CSS는 공통 토큰을 기준으로 작성한다.
 부루마불은 공통화 시범 화면으로 사용한다. 이미 4인 최단 턴 랭킹 UI와 연동 로직이 구현되어 있다.
 
 - `monopoly.html`: 시작 화면 및 랭킹 패널
-- `monopoly.js`: 게임 종료 후 랭킹 기록 제출
-- `shared-fastest-turn-rankings.js`: 랭킹 조회, 렌더링, Supabase 연동
-- `styles.css`: `.fastest-ranking-*` 공통 랭킹 스타일
-- `supabase-ranking-only.sql`, `supabase-schema.sql`: 랭킹 테이블/RPC
+- `monopoly.js`: 게임 종료 후 랭킹 기록 제출 (`turns` 컬럼 포함)
+- `setup-shell.js` + `scripts/player-stats.js`: `data-live-ranking` + `data-ranking-mode="turns"` 자동 부착 / `fetchTopRankingsByTurns()` 호출
+- `supabase-monopoly-turns.sql`: `fantasy_player_stats.turns` 컬럼 + `fantasy_player_stats_turns_idx` 인덱스
+- `supabase-player-stats.sql` (또는 `supabase-schema.sql` 통합본): `fantasy_player_stats` 메인 테이블
 
-관련 변경은 `2e897c3` (`feat: add four-player fastest-turn rankings`)에 있고, 이전 `codex/fastest-turn-rankings` 브랜치에서 `main`으로 병합됐다.
+> **참고 (구버전)**: 초기 구현은 `shared-fastest-turn-rankings.js` + `fantasy_monopoly_leaderboard` 별도 테이블을 사용했으나 (`2e897c3`), 후속 리팩토링(`263f2d1`/`44d5c0a`/`de03bc8`)에서 **`fantasy_player_stats` + `turns` 컬럼으로 통합**되었다. `.fastest-ranking-*` CSS 클래스 및 `codex/fastest-turn-rankings` 브랜치는 통합 작업으로 제거됨.
 
 ## 반드시 지킬 안전 규칙
 
