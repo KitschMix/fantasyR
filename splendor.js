@@ -227,9 +227,10 @@
     return `<span class="splendor-mini-gem">${gemImg(gem, 28)}${count}</span>`;
   }
   function tokenEl(gem, count, disabled) {
-    return `<span class="splendor-token${disabled ? " disabled" : ""}" data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개">
-      ${gemImg(gem, 100)}<span class="splendor-token-count">${count}</span>
-    </span>`;
+    return `<button type="button" class="splendor-token${disabled ? " disabled" : ""}" data-gem="${gem}"
+      aria-label="${GEM_LABELS[gem]} 보석 ${count}개${disabled ? ", 선택 불가" : ""}"${disabled ? " disabled" : ""}>
+      ${gemImg(gem, 100)}<span class="splendor-token-count" aria-hidden="true">${count}</span>
+    </button>`;
   }
 
   /* ── Card Rendering ── */
@@ -241,23 +242,32 @@
     const p = activePlayer();
     const affordable = p && p.human && !reserved && canAffordWithGems(card, p) && state.phase === "action";
     const bgUrl = CARD_BG_IMAGES[card.bonus];
-    return `<div class="splendor-card${reserved ? " splendor-card-reserved" : ""}${state.selectedCard?.tier === tier && state.selectedCard?.index === index ? " selected" : ""}${affordable ? " affordable" : ""}"
+    const costText = Object.entries(card.cost)
+      .filter(([, n]) => n > 0)
+      .map(([g, n]) => `${GEM_LABELS[g]} ${n}`)
+      .join(", ");
+    const label = `티어 ${tier}, ${GEM_LABELS[card.bonus]} 보너스, ${card.points}점, 비용 ${costText || "없음"}${reserved ? ", 예약됨" : ""}${affordable ? ", 구매 가능" : ""}`;
+    return `<button type="button" class="splendor-card${reserved ? " splendor-card-reserved" : ""}${state.selectedCard?.tier === tier && state.selectedCard?.index === index ? " selected" : ""}${affordable ? " affordable" : ""}"
       data-tier="${tier}" data-index="${index}" ${reserved ? 'data-reserved="1"' : ""}
+      aria-label="${label}"
       style="border-top: 4px solid ${tierColors[tier] || "var(--line)"}; background-image: url('${bgUrl}'); background-size: cover; background-position: center;">
-      <div class="splendor-card-top">
-        <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
-        <span class="splendor-card-bonus" title="${GEM_LABELS[card.bonus]} 보너스">${gemImg(card.bonus, 40)}</span>
-      </div>
-      <div class="splendor-card-middle"></div>
-      <div class="splendor-card-cost">${costHtml}</div>
-    </div>`;
+      <span class="splendor-card-top">
+        <span class="splendor-card-points" aria-hidden="true">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
+        <span class="splendor-card-bonus" title="${GEM_LABELS[card.bonus]} 보너스" aria-hidden="true">${gemImg(card.bonus, 40)}</span>
+      </span>
+      <span class="splendor-card-middle" aria-hidden="true"></span>
+      <span class="splendor-card-cost" aria-hidden="true">${costHtml}</span>
+    </button>`;
   }
 
   function cardBackHtml(tier) {
     const deck = state.tiers[tier];
-    return `<div class="splendor-card-back" data-tier="${tier}" style="background-image: url('assets/splendor/티어${tier}.jpg?v=2'); background-size: cover; background-position: center;">
-      <span class="splendor-deck-count">${deck.length}</span>
-    </div>`;
+    return `<button type="button" class="splendor-card-back" data-tier="${tier}"
+      aria-label="티어 ${tier} 덱, 남은 카드 ${deck.length}장, 클릭하여 무작위 카드 예약"
+      style="background-image: url('assets/splendor/티어${tier}.jpg?v=2'); background-size: cover; background-position: center;">
+      <span class="splendor-deck-count" aria-hidden="true">${deck.length}</span>
+      <span class="splendor-deck-reserve-hint" aria-hidden="true">🔒 덱에서 예약</span>
+    </button>`;
   }
 
   /* ── Noble Rendering ── */
@@ -832,14 +842,49 @@
     }
   }
 
+  function getPurchaseBlockReason(card, player) {
+    const cost = effectiveCost(card, player);
+    const shortages = GEMS
+      .map(gem => ({
+        gem,
+        missing: Math.max(0, (cost[gem] || 0) - (player.gems[gem] || 0))
+      }))
+      .filter(({ missing }) => missing > 0);
+    const totalMissing = shortages.reduce((sum, item) => sum + item.missing, 0);
+    const gold = player.gems.gold || 0;
+    const text = shortages
+      .map(({ gem, missing }) => `${GEM_LABELS[gem]} ${missing}개`)
+      .join(", ");
+    if (!text) return "구매 비용을 계산할 수 없습니다";
+    return gold
+      ? `${text} 부족 · 골드 ${gold}개 사용 가능`
+      : `${text} 부족 · 골드도 없음`;
+  }
+
+  function showCardFeedback(tier, index, message) {
+    const cardEl = document.querySelector(
+      `.splendor-card[data-tier="${tier}"][data-index="${index}"]`
+    );
+    if (!cardEl) return;
+    cardEl.style.position = cardEl.style.position || "relative";
+    const feedback = document.createElement("span");
+    feedback.className = "splendor-card-feedback";
+    feedback.setAttribute("role", "status");
+    feedback.textContent = message;
+    cardEl.appendChild(feedback);
+    setTimeout(() => feedback.remove(), 1800);
+  }
+
   function attemptBuyCard(tier, index) {
     const p = activePlayer();
     if (state.phase !== "action" || !p.human) return;
     const card = state.visibleCards[tier]?.[index];
     if (!card) return;
     if (!canAffordWithGems(card, p)) {
-      addLog(`${p.name}: 비용 부족으로 구매 불가`);
+      const reason = getPurchaseBlockReason(card, p);
+      addLog(`${p.name}: ${reason} — 구매 불가`);
       renderLog();
+      showCardFeedback(tier, index, reason);
       return;
     }
     showBuyAnimation(tier, index, p.name);
@@ -880,8 +925,20 @@
     const card = p.reserved[ri];
     if (!card) return;
     if (!canAffordWithGems(card, p)) {
-      addLog(`${p.name}: 비용 부족으로 예약 카드 구매 불가`);
+      const reason = getPurchaseBlockReason(card, p);
+      addLog(`${p.name}: ${reason} — 예약 카드 구매 불가`);
       renderLog();
+      // 예약 카드는 메인 보드 카드가 아니므로 reserved 영역에 피드백 표시
+      const reservedEl = els.myReserved?.querySelector(`[data-rindex="${ri}"]`);
+      if (reservedEl) {
+        reservedEl.style.position = "relative";
+        const feedback = document.createElement("span");
+        feedback.className = "splendor-card-feedback";
+        feedback.setAttribute("role", "status");
+        feedback.textContent = reason;
+        reservedEl.appendChild(feedback);
+        setTimeout(() => feedback.remove(), 1800);
+      }
       return;
     }
     // Animate reserved card

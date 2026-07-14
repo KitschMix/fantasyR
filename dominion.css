@@ -1042,3 +1042,56 @@ body.dominion-active.dominion-playing .dominion-game-panel {
     min-height: 116px;
   }
 }
+
+/* === 버튼 접근성: 기본 모양 제거 + 키보드 포커스 === */
+.dominion-card,
+.dominion-supply-pile {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+
+/* 카드 안의 자식 요소들은 클릭을 부모 button에 그대로 위임 */
+.dominion-card > *,
+.dominion-supply-pile > * {
+  pointer-events: none;
+}
+
+.dominion-card:focus-visible,
+.dominion-supply-pile:focus-visible {
+  outline: 3px solid #f2cf78;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(242, 207, 120, 0.22);
+}
+
+.dominion-supply-pile[disabled],
+.dominion-card[disabled] {
+  cursor: not-allowed;
+}
+
+/* === 구매 불가 사유 카드 위 툴팁 === */
+.dominion-pile-feedback {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 200px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: #7f2525;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  animation: dominion-feedback-pop 0.25s ease-out;
+}
+
+@keyframes dominion-feedback-pop {
+  from { opacity: 0; transform: translate(-50%, 4px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}

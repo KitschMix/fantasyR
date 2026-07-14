@@ -339,6 +339,13 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   align-items: center;
 }
 
+/* 카드 안의 자식 요소들은 클릭을 부모 button에 그대로 위임 */
+.splendor-card > *,
+.splendor-token > *,
+.splendor-card-back > * {
+  pointer-events: none;
+}
+
 .splendor-card-points {
   font-size: 22px;
   font-weight: 900;
@@ -411,6 +418,70 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 /* --- Bank Area --- */
 .splendor-bank-area {
   margin-top: 10px;
+}
+
+/* === 버튼 기본 모양 제거 + 키보드 포커스 강조 (접근성) === */
+.splendor-card,
+.splendor-token,
+.splendor-card-back {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  padding: 0;
+}
+
+.splendor-card:focus-visible,
+.splendor-token:focus-visible,
+.splendor-card-back:focus-visible {
+  outline: 3px solid #f2cf78;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(242, 207, 120, 0.22);
+}
+
+.splendor-card-back {
+  cursor: pointer;
+}
+
+/* === 덱 예약 힌트 (덱 카드 위 작은 배지) === */
+.splendor-deck-reserve-hint {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+/* === 구매 불가 사유 카드 위 툴팁 === */
+.splendor-card-feedback {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 220px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: #7f2525;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  animation: splendor-feedback-pop 0.25s ease-out;
+}
+
+@keyframes splendor-feedback-pop {
+  from { opacity: 0; transform: translate(-50%, 4px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
 .splendor-bank-label {

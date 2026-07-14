@@ -268,6 +268,23 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
   border: 2px solid var(--line);
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  background: transparent;
+}
+
+.sushi-card:focus-visible {
+  outline: 3px solid #f2cf78;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(242, 207, 120, 0.22);
+}
+
+/* 카드 안의 자식 요소들은 클릭을 부모 button에 그대로 위임 */
+.sushi-card > * {
+  pointer-events: none;
 }
 
 .sushi-card:hover {

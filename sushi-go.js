@@ -240,11 +240,12 @@
       else if (card.type === "wasabi") desc = "다음 초밥 ×3";
       else if (card.type === "pudding") desc = "최종 푸딩";
 
-      return `<div class="sushi-card ${card.type}" data-index="${i}">
-        <div class="sushi-card-emoji">${card.emoji}</div>
-        <div class="sushi-card-name">${esc(card.name)}</div>
-        <div class="sushi-card-desc">${desc}</div>
-      </div>`;
+      return `<button type="button" class="sushi-card ${card.type}" data-index="${i}"
+        aria-label="${esc(card.name)}, ${desc}, 선택하여 손에 추가">
+        <span class="sushi-card-emoji" aria-hidden="true">${card.emoji}</span>
+        <span class="sushi-card-name" aria-hidden="true">${esc(card.name)}</span>
+        <span class="sushi-card-desc" aria-hidden="true">${desc}</span>
+      </button>`;
     }).join("");
 
     els.hand.querySelectorAll(".sushi-card").forEach(el => {

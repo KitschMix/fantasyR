@@ -268,12 +268,35 @@
 
   /* ── Rendering ── */
   function cardHtml(card, disabled, extraClass) {
-    return `<div class="dominion-card ${card.type}${disabled ? " disabled" : ""}${extraClass ? " " + extraClass : ""}" data-card-id="${esc(card.id)}" title="${esc(card.desc || card.name)}">
-      <span class="dominion-card-cost">${cardCost(card)}</span>
-      <span class="dominion-card-name">${card.emoji || ""} ${esc(card.name)}</span>
-      ${card.desc ? `<span class="dominion-card-desc">${esc(card.desc)}</span>` : ""}
-      <span class="dominion-card-type">${card.type}</span>
-    </div>`;
+    return `<button type="button" class="dominion-card ${card.type}${disabled ? " disabled" : ""}${extraClass ? " " + extraClass : ""}" data-card-id="${esc(card.id)}"${disabled ? " disabled" : ""}
+      aria-label="${esc(card.name)}, 비용 ${cardCost(card)}코인, ${card.type}${disabled ? ", 비활성화됨" : ""}">
+      <span class="dominion-card-cost" aria-hidden="true">${cardCost(card)}</span>
+      <span class="dominion-card-name" aria-hidden="true">${card.emoji || ""} ${esc(card.name)}</span>
+      ${card.desc ? `<span class="dominion-card-desc" aria-hidden="true">${esc(card.desc)}</span>` : ""}
+      <span class="dominion-card-type" aria-hidden="true">${card.type}</span>
+    </button>`;
+  }
+
+  function getPurchaseBlockReason(cardName, player) {
+    const pile = state.supply[cardName] || [];
+    const card = pile[pile.length - 1];
+    const parts = [];
+    if (!pile.length) parts.push("재고 없음");
+    if (card && cardCost(card) > player.coins) parts.push(`${cardCost(card)}코인 필요(현재 ${player.coins})`);
+    if (player.buys <= 0) parts.push("구매 횟수 없음");
+    return parts.join(" · ") || "구매 불가";
+  }
+
+  function showPileFeedback(pileName, message) {
+    const el = els.supply?.querySelector(`.dominion-supply-pile[data-pile="${pileName}"]`);
+    if (!el) return;
+    el.style.position = "relative";
+    const feedback = document.createElement("span");
+    feedback.className = "dominion-pile-feedback";
+    feedback.setAttribute("role", "status");
+    feedback.textContent = message;
+    el.appendChild(feedback);
+    setTimeout(() => feedback.remove(), 1800);
   }
 
   function renderSupply() {
@@ -289,12 +312,14 @@
       const empty = count <= 0;
       const affordable = player && !empty && player.coins >= (card ? cardCost(card) : 999) && player.buys > 0;
       const isVP = card && isVictory(card);
-      return `<div class="dominion-supply-pile${card ? " " + card.type : ""}${empty ? " empty" : ""}${affordable ? " highlight" : ""}" data-pile="${esc(name)}">
-        <span class="dominion-pile-count">${count}</span>
-        <span class="dominion-pile-cost">${card ? cardCost(card) : "-"}</span>
-        <span class="dominion-pile-name">${card ? (card.emoji || "") + " " : ""}${esc(name)}</span>
-        <span class="dominion-pile-type${isVP ? " dominion-pile-vp" : ""}">${card ? card.type : ""}</span>
-      </div>`;
+      const label = `${esc(name)}${card ? `, 비용 ${cardCost(card)}코인, ${count}장 남음, ${card.type}` : `, 재고 ${count}장`}${empty ? ", 소진됨" : ""}${affordable ? ", 구매 가능" : ""}`;
+      return `<button type="button" class="dominion-supply-pile${card ? " " + card.type : ""}${empty ? " empty" : ""}${affordable ? " highlight" : ""}" data-pile="${esc(name)}"${empty ? " disabled" : ""}
+        aria-label="${label}">
+        <span class="dominion-pile-count" aria-hidden="true">${count}</span>
+        <span class="dominion-pile-cost" aria-hidden="true">${card ? cardCost(card) : "-"}</span>
+        <span class="dominion-pile-name" aria-hidden="true">${card ? (card.emoji || "") + " " : ""}${esc(name)}</span>
+        <span class="dominion-pile-type${isVP ? " dominion-pile-vp" : ""}" aria-hidden="true">${card ? card.type : ""}</span>
+      </button>`;
     }).join("");
 
     els.supply.querySelectorAll(".dominion-supply-pile:not(.empty)").forEach(el => {
@@ -632,6 +657,11 @@
       addLog(`${p.name}: ${cardName} 구매 (남은 코인: ${p.coins})`);
       if (p.buys <= 0) endBuyPhase();
       renderAll();
+    } else {
+      const reason = getPurchaseBlockReason(cardName, p);
+      addLog(`${p.name}: ${cardName} 구매 실패 — ${reason}`);
+      renderAll();
+      showPileFeedback(cardName, reason);
     }
   }
 
