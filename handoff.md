@@ -11,7 +11,7 @@
 |---|---|
 | 작업 폴더 | `e:\Download\fantasy-kingdom-pc\fantasy-kingdom-pc` |
 | 브랜치 | `main` |
-| 마지막 커밋 | `de03bc8 feat(multiplay): 라벨 통합 + 자동 부착 (8게임 공통)` |
+| 마지막 커밋 | `c9e37da sushi-go 룰 수정: 김밥/푸딩 동점 시 모든 동점자가 보너스 점수 받도록` |
 | 직전 통합 커밋 | `00b0f01 refactor(setup): 5게임 시작화면을 공통 setup-shell로 통합 + handoff 5토큰 일괄 도입` |
 | 로컬 서버 | `python -m http.server 8765 --bind 127.0.0.1` (필요 시 수동 실행) |
 | 터미널 | PowerShell 5.1 (Windows) |
@@ -35,6 +35,22 @@
 - §3.3: 랭킹 패널 모드 변경 (monopoly/clue → turns, dominion → score 첫 테스트)
 - §3.4: 신규 SQL `supabase-monopoly-turns.sql` 추가
 - §5: 다음 세션 후보 보강 (로컬 잔존 브랜치 1개)
+
+### 2.3 스플렌더 모바일 카드 — 별(점수) 2줄 표시 (`e5b018d`)
+- **문제**: 모바일(≤640px)에서 카드 별이 한 줄로 표시되어 `★★★★★`가 106px 폭으로 카드 폭을 거의 다 차지
+- **원인 분석**: `.splendor-card-points` 안의 ★가 단일 text node라서 grid item으로 인식 안 됨
+- **수정**:
+  - [splendor.js](splendor.js) — 글자별 `<span class="splendor-card-star">` 로 분리
+  - [splendor.css](splendor.css) — 모바일 @media 안에서 `.splendor-card-points`를 `grid-template-columns: repeat(3, minmax(0, 1fr))` + `font-size: 20px` 로 적용
+- **결과**: 5★ → `★★★`+`★★` (3+2), 4★ → `★★★`+`★` (3+1), 1~3★ → 1줄. PC 뷰는 grid 미적용으로 기존 한 줄 유지
+
+### 2.4 스시고 게임 룰 검증 + 동점 룰 수정 (`c9e37da`)
+- **플레이 검증**: 3명 게임 자동 플레이로 한 게임 완주 (라운드 3개 + 게임 종료). 카드 분배/왼쪽 패스/점수 계산/승자 결정 모두 정상 동작
+- **발견된 룰 버그 2건** (원본 스시고! 룰북 위반):
+  1. **김밥 동점 분배** (line 113): `Math.floor(6 / N)`으로 나누던 것을 → **모든 1등 동점자가 6점씩** 받도록 수정. 2등 점수는 1등 단독일 때만 3점
+  2. **푸딩 동점 분배** (line 187): 동일 패턴 → **모든 1등 +6점, 모든 꼴등 -6점** 으로 수정
+- **검증**: 9개 시나리오 (김밥 단독/2명동점/3명동점, 푸딩 단독/동점/모두같음) 콘솔 재현으로 모두 원본 룰과 일치 확인
+- **검증 도구**: Playwright(412×900 모바일 뷰) + 브라우저 콘솔 단위 테스트. sushi-go.js IIFE 내부 함수 직접 호출 불가 → 동일 로직 재현으로 비교
 
 ---
 
@@ -113,6 +129,8 @@ python -m http.server 8765 --bind 127.0.0.1
 | 🟢 낮음 | 연승 추적 컬럼 | 별도 컬럼 추가 또는 별도 RPC |
 | 🟢 낮음 | 게임 내 통계 | 이번 판 통계 별도 표시 |
 | 🟢 낮음 | 타 게임 랭킹 모드 통일 점검 | sushi-go, splendor, cant-stop, tally-ho, fantasy — 현재 `score` 기본값. `turns`/`duration` 으로 전환할지 결정 |
+| 🟢 낮음 | sushi-go 카드 카운트 원본(110장)에 맞추기 | 현 75장. 새우튀김 14→8, 사시미 6→10, 와사비 6→4, 연어 10→5, 문어 5→3, 김밥2 6→5, 계란 5→4 |
+| 🟢 낮음 | sushi-go 라운드 라벨 깜빡임 정리 | endGame에서 currentRound 강제 갱신 또는 라벨 갱신 분리 |
 | 🔵 선택 | 새 게임 추가 (예: Azul, Wingspan) | [START_SCREEN_GUIDE.md §7](START_SCREEN_GUIDE.md) 8단계 따르기 |
 
 ---
@@ -125,6 +143,8 @@ python -m http.server 8765 --bind 127.0.0.1
 4. **CP949 인코딩 파일**: 일부 오래된 `.md`는 EUC-KR/CP949 — `Get-Content -Encoding 51949`로 읽기
 5. **강력 새로고침**: Vercel 캐시 때문에 CSS/JS 변경이 안 보이면 `Ctrl+Shift+R`
 6. **`data-ranking-mode="turns"` 호환**: 새 게임이 이 모드를 쓰려면 Supabase `fantasy_player_stats.turns` 컬럼이 반드시 0 이상으로 기록돼야 함. `recordGame()`에서 `turns: 0` 도 허용하지만 랭킹에서는 `turns > 0` 만 집계
+7. **sushi-go 라운드 라벨 깜빡임**: `nextRound()`에서 `currentRound++` 후 `TOTAL_ROUNDS` 초과 시 `endGame()`이 호출되는데, `endGame()` 내부 `renderAll()`이 라운드 라벨을 "라운드 4/3"으로 잠시 갱신함. 게임 종료 모달이 덮어 가시 영향 미미하지만 UI 정합성 측면에서 다음 세션에서 정리 가능 (수정안: endGame에서 renderAll 직전 `currentRound = TOTAL_ROUNDS` 로 강제)
+8. **sushi-go 카드 카운트 차이**: 구현 75장 vs 원본 110장. 새우튀김 14→8, 사시미 6→10, 와사비 6→4 등. 게임 진행(8~10장×인원)에는 영향 없음. 원본 밸런스 의도와는 다른 디자인 선택
 
 ---
 
@@ -136,6 +156,7 @@ python -m http.server 8765 --bind 127.0.0.1
 - **가이드 vs handoff**: 둘을 분리함. 가이드는 영구 SSOT, handoff는 일회성 상태 스냅샷
 - **턴 vs 시간 랭킹**: monopoly·clue는 "최단 시간"보다 "최단 턴"이 보드게임의 자연스러운 승리 척도라고 보고 `data-ranking-mode="turns"`로 전환. dominion은 첫 테스트로 `score` 유지 (`f5ccf44`)
 - **멀티플레이 라벨 통합**: 8게임 공통으로 묶음. HTML에 `.online-panel`이 없으면 `ensureMultiplayerPanel()`이 기본 "준비 중" 패널 자동 부착 → 새 게임 추가 시 마크업 부담 0
+- **sushi-go 동점 룰**: 원본 스시고! 룰북은 "동점이면 모든 동점자가 보너스 점수" (1등 둘 다 6점, 1등 셋 다 6점). 초기에 `Math.floor(6/N)` 으로 분배한 것은 명백한 오류. 스시고 게임 뿐 아니라 향후 추가 게임도 원본 룰북을 SSOT로 삼고, 동점 처리 시 분배 대신 "모든 동점자에게 보너스" 패턴을 기본으로 채택
 
 ---
 
@@ -148,4 +169,4 @@ python -m http.server 8765 --bind 127.0.0.1
 
 ---
 
-마지막 갱신: 2026-07-14 (저녁) · `de03bc8`
+마지막 갱신: 2026-07-14 (늦은 저녁, 추가 세션) · `c9e37da`
