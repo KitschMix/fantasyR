@@ -252,7 +252,7 @@
       aria-label="${label}"
       style="border-top: 4px solid ${tierColors[tier] || "var(--line)"}; background-image: url('${bgUrl}'); background-size: cover; background-position: center;">
       <span class="splendor-card-top">
-        <span class="splendor-card-points" aria-hidden="true">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
+        <span class="splendor-card-points" aria-hidden="true">${card.points ? Array.from({ length: Math.min(card.points, 5) }, () => '<span class="splendor-card-star">★</span>').join("") : ""}</span>
         <span class="splendor-card-bonus" title="${GEM_LABELS[card.bonus]} 보너스" aria-hidden="true">${gemImg(card.bonus, 40)}</span>
       </span>
       <span class="splendor-card-middle" aria-hidden="true"></span>
