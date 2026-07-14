@@ -116,15 +116,10 @@
     const makiSeconds = makiCounts.map((m, i) => m === secondMaki && m < maxMaki ? i : -1).filter(i => i >= 0);
 
     if (maxMaki > 0) {
-      if (makiWinners.length === 1) {
-        roundScores[makiWinners[0]] += 6;
-      } else {
-        makiWinners.forEach(i => { roundScores[i] += Math.floor(6 / makiWinners.length); });
-      }
-      if (makiSeconds.length === 1) {
-        roundScores[makiSeconds[0]] += 3;
-      } else if (makiSeconds.length > 1) {
-        makiSeconds.forEach(i => { roundScores[i] += Math.floor(3 / makiSeconds.length); });
+      // 원본 룰: 1등 동점이면 모든 동점자가 6점씩. 2등 점수는 1등 단독일 때만 3점.
+      makiWinners.forEach(i => { roundScores[i] += 6; });
+      if (makiWinners.length === 1 && makiSeconds.length > 0) {
+        makiSeconds.forEach(i => { roundScores[i] += 3; });
       }
     }
 
@@ -175,11 +170,11 @@
 
     if (maxP === minP) return puddingScores; // Tie = no bonus/penalty
 
-    const maxWinners = puddingCounts.map((p, i) => p === maxP ? i : -1).filter(i => i >= 0);
-    const minLosers = puddingCounts.map((p, i) => p === minP ? i : -1).filter(i => i >= 0);
-
-    maxWinners.forEach(i => { puddingScores[i] += Math.floor(6 / maxWinners.length); });
-    minLosers.forEach(i => { puddingScores[i] -= Math.floor(6 / minLosers.length); });
+    // 원본 룰: 1등 동점이면 모든 동점자가 +6점, 동점 꼴등 모두 -6점
+    puddingCounts.forEach((p, i) => {
+      if (p === maxP) puddingScores[i] += 6;
+      if (p === minP) puddingScores[i] -= 6;
+    });
 
     return puddingScores;
   }
