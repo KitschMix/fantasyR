@@ -2122,6 +2122,9 @@
     clearAiTimer();
     const player = activePlayer();
     if (!player || player.human || player.bankrupt || state.phase === "finished") return;
+    // 명시적 AI 진행 phase로 설정하여 인간 click과 명확히 분리
+    state.phase = "aiTurn";
+    renderAll();
 
     // Jail logic (Difficulty 분기)
     if (player.inJail) {
@@ -2237,7 +2240,7 @@
       addLog(`🔄 ${playerDisplayName(p)} 더블로 한 번 더!`);
       showTurnToast(p, true);
       await wait(800);
-      state.phase = "awaitRoll";
+      state.phase = p.human ? "awaitRoll" : "aiTurn";
       renderAll();
       if (!p.human) scheduleAiTurn();
       return;
@@ -2274,7 +2277,7 @@
       return;
     }
 
-    state.phase = "awaitRoll";
+    state.phase = np.human ? "awaitRoll" : "aiTurn";
     renderAll();
     if (!np.human) scheduleAiTurn();
   }
