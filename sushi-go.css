@@ -397,6 +397,7 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 .sushi-card.dumpling { background: linear-gradient(135deg, #f0e0f0, #d0b0d0); color: #4a1a4a; }
 .sushi-card.wasabi { background: linear-gradient(135deg, #d0f0d0, #80c060); color: #1a3a00; }
 .sushi-card.pudding { background: linear-gradient(135deg, #ffe8f0, #ffb0d0); color: #5a1a3a; }
+.sushi-card.chopsticks { background: linear-gradient(135deg, #f5e8d0, #d8c0a0); color: #3a2a10; }
 
 /* --- Action Card --- */
 .sushi-action-card {

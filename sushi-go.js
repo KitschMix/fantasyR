@@ -3,20 +3,22 @@
   "use strict";
 
   /* ── Card Definitions ── */
-  // 공식 스시고! 분배 (handoff §5, §6 참조). 합계 88장 — 새우튀김 8→14, 사시미 10→6,
-  // 와사비 4→6, 연어 5→10, 문어 3→5, 김밥2 5→6, 계란 4→5. (원본은 88장 기준)
+  // 공식 스시고! 분배 (handoff §5, §6 참조). 합계 110장 — 새우튀김 14, 사시미 14, 만두 14,
+  // 김밥 6/12/8, 계란 5, 연어 10, 문어 5, 푸딩 10, 와사비 6, 젓가락 6.
+  // (원본 Gamewright 108장 + 젓가락 2장 추가 = 110장. 스왑 메커닉은 미구현 → 0점 데코.)
   const CARD_DEFS = [
-    { type: "nigiri",   name: "계란 초밥",   emoji: "🥚", points: 1, copies: 5 },
-    { type: "nigiri",   name: "연어 초밥",   emoji: "🍣", points: 2, copies: 10 },
-    { type: "nigiri",   name: "문어 초밥",   emoji: "🐙", points: 3, copies: 5 },
-    { type: "maki",     name: "김밥 3",      emoji: "🍱", points: 0, maki: 3, copies: 8 },
-    { type: "maki",     name: "김밥 2",      emoji: "🍙", points: 0, maki: 2, copies: 6 },
-    { type: "maki",     name: "김밥 1",      emoji: "🍘", points: 0, maki: 1, copies: 4 },
-    { type: "tempura",  name: "새우튀김",    emoji: "🍤", points: 0, copies: 14 },
-    { type: "sashimi",  name: "사시미",      emoji: "🐟", points: 0, copies: 6 },
-    { type: "dumpling", name: "만두",        emoji: "🥟", points: 0, copies: 14 },
-    { type: "wasabi",   name: "와사비",      emoji: "🟢", points: 0, copies: 6 },
-    { type: "pudding",  name: "푸딩",        emoji: "🍮", points: 0, copies: 10 }
+    { type: "nigiri",     name: "계란 초밥",   emoji: "🥚", points: 1, copies: 5 },
+    { type: "nigiri",     name: "연어 초밥",   emoji: "🍣", points: 2, copies: 10 },
+    { type: "nigiri",     name: "문어 초밥",   emoji: "🐙", points: 3, copies: 5 },
+    { type: "maki",       name: "김밥 3",      emoji: "🍱", points: 0, maki: 3, copies: 8 },
+    { type: "maki",       name: "김밥 2",      emoji: "🍙", points: 0, maki: 2, copies: 12 },
+    { type: "maki",       name: "김밥 1",      emoji: "🍘", points: 0, maki: 1, copies: 6 },
+    { type: "tempura",    name: "새우튀김",    emoji: "🍤", points: 0, copies: 14 },
+    { type: "sashimi",    name: "사시미",      emoji: "🐟", points: 0, copies: 14 },
+    { type: "dumpling",   name: "만두",        emoji: "🥟", points: 0, copies: 14 },
+    { type: "wasabi",     name: "와사비",      emoji: "🟢", points: 0, copies: 6 },
+    { type: "pudding",    name: "푸딩",        emoji: "🍮", points: 0, copies: 10 },
+    { type: "chopsticks", name: "젓가락",      emoji: "🥢", points: 0, copies: 6 }
   ];
 
   const TOTAL_ROUNDS = 3;
@@ -160,6 +162,9 @@
           case "dumpling":
             dumplingCount++;
             break;
+          case "chopsticks":
+            // 젓가락: 스왑 메커닉 미구현 → 점수 없음 (데코 카드)
+            break;
           // maki scored above, pudding scored at game end
         }
       });
@@ -203,14 +208,15 @@
     // 베이스 가중치 (난이도 공통)
     const baseScores = hand.map(card => {
       switch (card.type) {
-        case "nigiri":   return card.points * 1.5;
-        case "wasabi":   return 2.5;
-        case "tempura":  return 2.5;
-        case "sashimi":  return 3.3;
-        case "dumpling": return 2;
-        case "maki":     return card.maki * 1.2;
-        case "pudding":  return 1.5;
-        default:         return 1;
+        case "nigiri":     return card.points * 1.5;
+        case "wasabi":     return 2.5;
+        case "tempura":    return 2.5;
+        case "sashimi":    return 3.3;
+        case "dumpling":   return 2;
+        case "maki":       return card.maki * 1.2;
+        case "pudding":    return 1.5;
+        case "chopsticks": return 0.3; // 스왑 메커닉 미구현 → 최후순위
+        default:           return 1;
       }
     });
 
@@ -309,6 +315,7 @@
       else if (card.type === "dumpling") desc = "1/3/5/8/11점";
       else if (card.type === "wasabi") desc = "다음 초밥 ×3";
       else if (card.type === "pudding") desc = "최종 푸딩";
+      else if (card.type === "chopsticks") desc = "데코 카드";
 
       return `<button type="button" class="sushi-card ${card.type}" data-index="${i}"
         aria-label="${esc(card.name)}, ${desc}, 선택하여 손에 추가">
