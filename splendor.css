@@ -1535,8 +1535,8 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-token {
-  width: 224px;
-  height: 224px;
+  width: 112px;
+  height: 112px;
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;

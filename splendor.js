@@ -274,7 +274,7 @@
   function nobleHtml(noble, index) {
     const reqHtml = Object.entries(noble.requires)
       .map(([g, n]) => gemPip(g, n)).join("");
-    return `<div class="splendor-card splendor-noble" data-nindex="${index}" style="background-image: url('${noble.img}'); background-size: cover; background-position: center;">
+    return `<div class="splendor-noble" data-nindex="${index}" style="background-image: url('${noble.img}'); background-size: cover; background-position: center;">
       <span class="splendor-card-top">
         <span class="splendor-card-points" aria-label="${noble.points}점">${Array.from({ length: noble.points }, () => '<span class="splendor-card-star">★</span>').join("")}</span>
         <span class="splendor-noble-label">귀족</span>
@@ -359,7 +359,7 @@
       const disabled = isGold || count === 0;
       return `<span class="splendor-token${disabled ? " disabled" : ""}${selected ? " selected" : ""}"
         data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개${selected ? " (선택됨 " + selected + ")" : ""}">
-        ${gemImg(gem, 200)}<span class="splendor-token-count">${count}</span>
+        ${gemImg(gem, 100)}<span class="splendor-token-count">${count}</span>
       </span>`;
     }).join("") +
     (hasSelection ? `<button class="splendor-cancel-tokens" type="button" title="선택 취소">✕ 취소</button>` : "");
