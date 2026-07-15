@@ -1876,10 +1876,30 @@
 
   /* ── AI Logic ── */
   function aiBuildIfPossible(player, tile) {
+    const difficulty = monopolyDifficultyKey(player);
+    const tileData = tileAt(tile.id);
+    const isMonopolyGroup = isMonopoly(player, tileData.group);
+    const threatened = hasOpponentMonopolyThreat(player, tileData.group);
+
     while (canBuildOn(player, tile) === "") {
       const level = buildingLevel(player, tile.id);
       const cost = getBuildCost(tile, level + 1);
-      if (player.money < cost + 200 * SCALE_FACTOR) break;
+
+      if (difficulty === "easy" || difficulty === "normal") {
+        // 기본: 가능한 만큼 짓기 (기존 정책)
+        if (player.money < cost + 200 * SCALE_FACTOR) break;
+      } else if (difficulty === "hard") {
+        // 호텔(레벨4) 신중 + buffer 강화
+        if (level >= 3 && player.money < cost + 400 * SCALE_FACTOR) break;
+        if (player.money < cost + 250 * SCALE_FACTOR) break;
+      } else {
+        // expert/boss: 모노폴리 그룹 또는 차단 의도 있을 때만 짓기
+        if (!isMonopolyGroup && !threatened) break;
+        // 호텔은 잔고의 50% 이상이면 skip
+        if (level >= 3 && cost > player.money * 0.5) break;
+        if (player.money < cost + 350 * SCALE_FACTOR) break;
+      }
+
       buildProperty(player, tile.id);
     }
   }
@@ -1895,7 +1915,9 @@
     const owner = getOwner(tile.id);
     if (owner && owner !== player) {
       const rent = getRent(tile, player.position);
-      if ((player.exemptionCards || 0) > 0) {
+      // Difficulty 분기: 우대권 사용 여부
+      const useExemption = shouldAiUseExemptionCard(player, rent);
+      if (useExemption) {
         player.exemptionCards--;
         addLog(`🎫 ${playerDisplayName(player)} 우대권을 사용하여 임대료 면제! (${tile.name})`);
         await showNotice(`🎫 <strong>${playerDisplayName(player)}</strong>이(가)<br>우대권을 사용하여<br>임대료를 면제받았습니다!`, 1800);
@@ -1922,16 +1944,101 @@
       return;
     }
 
-    // AI buys if affordable and money > 200 * SCALE_FACTOR (keep reserve)
-    if (player.money >= tile.price + 200 * SCALE_FACTOR || player.money >= tile.price && state.turnCount > 15) {
+    const difficulty = monopolyDifficultyKey(player);
+    const buy = evaluateAiBuyDecision(player, tile, difficulty);
+    if (buy.should) {
       buyProperty(player);
+      addLog(`✅ ${playerDisplayName(player)} ${tile.name} 구매 (₩${tile.price.toLocaleString()})`);
       aiBuildIfPossible(player, tile);
     } else {
-      addLog(`🚫 ${playerDisplayName(player)} ${tile.name} 구매를 포기.`);
+      addLog(`🚫 ${playerDisplayName(player)} ${tile.name} 구매를 포기. (${buy.reason})`);
     }
     state.phase = "buyDecision";
     renderAll();
     await endTurn();
+  }
+
+  /* ── AI Difficulty Helpers ── */
+  function monopolyDifficultyKey(player) {
+    const profile = player?.profile || null;
+    const difficulty = profile?.difficulty || state.aiDifficulty || "normal";
+    return ["easy", "normal", "hard", "expert", "boss"].includes(difficulty) ? difficulty : "normal";
+  }
+
+  function hasOpponentMonopolyThreat(player, color) {
+    const group = COLOR_GROUPS[color] || [];
+    if (group.length === 0) return false;
+    return state.players.some((p) => {
+      if (p === player || p.bankrupt) return false;
+      const owned = p.properties.filter((id) => group.includes(id)).length;
+      return owned >= group.length - 1; // 1개만 더 사면 모노폴리
+    });
+  }
+
+  function shouldAiUseJailCard(player) {
+    const difficulty = monopolyDifficultyKey(player);
+    const cards = player.jailEscapeCards || 0;
+    // 잔액 임박 → 무조건 카드
+    if (player.money < 200 * SCALE_FACTOR) return true;
+    if (difficulty === "easy") return true;
+    if (difficulty === "normal") return Math.random() < 0.5;
+    // hard/expert/boss: 돈 충분하면 더블 시도 우선 (카드 보존)
+    if (cards === 1 && player.money < 400 * SCALE_FACTOR) return true;
+    return false;
+  }
+
+  function shouldAiUseExemptionCard(player, rent) {
+    const difficulty = monopolyDifficultyKey(player);
+    const cards = player.exemptionCards || 0;
+    if (cards <= 0) return false;
+    if (difficulty === "easy" || difficulty === "normal") return true;
+    // hard+: 큰 rent 일 때만 (잔액 위협 or 자산의 25%+)
+    if (player.money > 0 && rent / player.money >= 0.25) return true;
+    if (player.money - rent <= 100 * SCALE_FACTOR) return true;
+    return false;
+  }
+
+  function evaluateAiBuyDecision(player, tile, difficulty) {
+    const price = tile.price;
+    const buffer = 200 * SCALE_FACTOR;
+    if (player.money < price) return { should: false, reason: "잔액 부족" };
+    if (difficulty === "easy" || difficulty === "normal") {
+      if (player.money >= price + buffer || state.turnCount > 15) {
+        return { should: true, reason: "가격+buffer 충족" };
+      }
+      return { should: false, reason: "buffer 부족" };
+    }
+    // hard+: 임대료 효율 (rent0/price)
+    const rent0 = tile.rent?.[0] || 0;
+    const eff = rent0 / Math.max(1, price);
+    if (player.money >= price + buffer) {
+      if (eff >= 0.10) return { should: true, reason: "효율 좋음" };
+      return { should: false, reason: "효율 낮음" };
+    }
+    return { should: false, reason: "buffer 부족" };
+  }
+
+  function chooseAiSpaceTravelDestination(player, affordables, difficulty) {
+    if (difficulty === "easy" || difficulty === "normal") {
+      return [...affordables].sort((a, b) => b.price - a.price)[0].id;
+    }
+    // hard+: 그룹 보너스 가치 + 차단 가치
+    const scored = affordables.map((t) => {
+      let score = t.price * 0.5;
+      const group = COLOR_GROUPS[t.group] || [];
+      const ownedByMe = player.properties.filter((id) => group.includes(id)).length;
+      const ownedByOpps = state.players
+        .filter((p) => p !== player && !p.bankrupt)
+        .reduce((sum, p) => sum + p.properties.filter((id) => group.includes(id)).length, 0);
+      // 내가 그룹 보너스 가까우면 큰 가산
+      if (ownedByMe > 0) score += 50 + ownedByMe * 30;
+      // 상대가 모노폴리 완성 임박이면 차단 가치
+      if (ownedByOpps >= group.length - 1) {
+        score += difficulty === "expert" || difficulty === "boss" ? 100 : 50;
+      }
+      return { t, score };
+    }).sort((a, b) => b.score - a.score);
+    return scored[0].t.id;
   }
 
   async function runAiTurn() {
@@ -1939,9 +2046,9 @@
     const player = activePlayer();
     if (!player || player.human || player.bankrupt || state.phase === "finished") return;
 
-    // Jail logic
+    // Jail logic (Difficulty 분기)
     if (player.inJail) {
-      if ((player.jailEscapeCards || 0) > 0) {
+      if ((player.jailEscapeCards || 0) > 0 && shouldAiUseJailCard(player)) {
         player.jailEscapeCards--;
         player.inJail = false;
         addLog(`🎫 ${playerDisplayName(player)} 무인도 탈출권을 사용하여 무인도 탈출.`);
@@ -2139,13 +2246,13 @@
     if (!player || player.human || !player.spaceTravelReady) return;
     
     let dest = 0;
-    // AI chooses the most expensive unowned property it can afford, otherwise goes to GO (0)
-    const affordables = TILES.filter(t => t.type === "property" && !getOwner(t.id) && player.money >= t.price)
-                             .sort((a, b) => b.price - a.price);
+    // AI chooses destination by difficulty
+    const affordables = TILES.filter(t => t.type === "property" && !getOwner(t.id) && player.money >= t.price);
     if (affordables.length > 0) {
-      dest = affordables[0].id;
+      const difficulty = monopolyDifficultyKey(player);
+      dest = chooseAiSpaceTravelDestination(player, affordables, difficulty);
     }
-    
+
     await executeSpaceTravel(player, dest);
     
     if (activePlayer() === player && state.phase === "buyDecision") {
