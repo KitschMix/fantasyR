@@ -381,23 +381,35 @@
   /**
    * sourceEl에서 targetEl로 카드를 곡선으로 비행시키는 애니메이션.
    * WAAPI keyframe으로 시작점 → 아치 정점 → 도착점(축소+회전+fade).
-   * sourceEl은 미리 left/top이 출발 위치로 설정되어 있어야 함.
-   * 도착 시 clone은 자동 제거.
+   * sourceRect/targetRect를 인자로 받아 viewport 밖이어도 안전하게 비행.
+   * clone은 left/top=0으로 두고 transform에 절대 좌표를 넣음.
+   * clone은 비행 후 자동 제거. removeSource가 true면 sourceEl도 함께 제거 (AI ghost용).
    */
-  function flyCardToInventory(sourceEl, targetEl) {
+  function flyCardToInventory(sourceEl, targetEl, sourceRect, targetRect, removeSource) {
     if (!sourceEl || !targetEl) return Promise.resolve();
-    const startRect = sourceEl.getBoundingClientRect();
-    const endRect = targetEl.getBoundingClientRect();
+
+    // 출발/도착 위치 (인자가 있으면 사용, 없으면 측정)
+    let startRect = sourceRect || sourceEl.getBoundingClientRect();
+    let endRect = targetRect || targetEl.getBoundingClientRect();
+
+    // viewport 밖이면 fallback (손패 중앙 / 사이드바 상단)
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    if (startRect.top < -50 || startRect.top > H + 50 || startRect.width === 0) {
+      startRect = { left: W / 2 - 70, top: H - 220, width: 140, height: 186 };
+    }
+    if (endRect.top < -50 || endRect.top > H + 50 || endRect.width === 0) {
+      endRect = { left: 30, top: 90, width: 36, height: 48 };
+    }
 
     // 사용자 카드 clone: sourceEl의 innerHTML만 복사하고,
-    // 별도 fixed element를 만들어 sourceRect 위치에 배치.
+    // 별도 fixed element를 만들어 transform으로만 위치 결정.
     const clone = sourceEl.cloneNode(true);
     clone.classList.add("sushi-card-fly-clone");
     clone.removeAttribute("id");
-    // 원본 카드와 동일한 크기/위치로 fixed 배치
     clone.style.position = "fixed";
-    clone.style.left = startRect.left + "px";
-    clone.style.top = startRect.top + "px";
+    clone.style.left = "0px";
+    clone.style.top = "0px";
     clone.style.width = startRect.width + "px";
     clone.style.height = startRect.height + "px";
     clone.style.margin = "0";
@@ -415,11 +427,11 @@
     const midY = Math.min(startY, endY) - archHeight;
     const rotSign = dx >= 0 ? 1 : -1;
 
-    // 상대 transform (clone의 left/top이 이미 출발 위치)
+    // 절대 좌표 transform (clone의 left/top은 0)
     const anim = clone.animate([
-      { transform: "translate(0, 0) scale(1) rotate(0deg)", opacity: 1, offset: 0 },
-      { transform: `translate(${midX - startX}px, ${midY - startY}px) scale(1.12) rotate(${rotSign * 8}deg)`, opacity: 1, offset: 0.55 },
-      { transform: `translate(${dx}px, ${dy}px) scale(0.42) rotate(${rotSign * -12}deg)`, opacity: 0, offset: 1 }
+      { transform: `translate(${startX}px, ${startY}px) scale(1) rotate(0deg)`, opacity: 1, offset: 0 },
+      { transform: `translate(${midX}px, ${midY}px) scale(1.12) rotate(${rotSign * 8}deg)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${endX}px, ${endY}px) scale(0.42) rotate(${rotSign * -12}deg)`, opacity: 0, offset: 1 }
     ], {
       duration: 560,
       easing: "cubic-bezier(0.34, 0.95, 0.5, 1)"
@@ -427,16 +439,20 @@
 
     return anim.finished.then(() => {
       clone.remove();
+      // AI ghost 카드 등 임시 source는 비행 후 제거
+      if (removeSource && sourceEl.parentNode) sourceEl.remove();
     }).catch(() => {
       // 애니메이션 취소 시에도 clone 정리
       if (clone.parentNode) clone.remove();
+      if (removeSource && sourceEl.parentNode) sourceEl.remove();
     });
   }
 
   /**
-   * AI 비행용 ghost 카드 생성. AI 플레이어 헤더 위치에 손패 카드와 동일한 크기로 배치.
+   * AI 비행용 ghost 카드 생성. 손패 카드와 동일한 크기로 body에 추가.
+   * 출발 위치는 dataset에 저장 (flyCardToInventory가 sourceRect로 사용).
+   * left/top=0 고정 (transform으로만 위치 결정).
    * 비행 후 자동 제거됨 (flyCardToInventory에서 clone 처리).
-   * left/top을 명시적으로 설정하여 flyCardToInventory의 절대 좌표 transform과 호환되게.
    */
   function makeGhostCardEl(card, sourceEl, size) {
     const el = document.createElement("div");
@@ -452,12 +468,15 @@
     `;
     const w = size?.width || 140;
     const h = size?.height || 186;
+    el.style.position = "fixed";
+    el.style.left = "0px";
+    el.style.top = "0px";
     el.style.width = w + "px";
     el.style.height = h + "px";
+    // 출발 위치 저장 (flyCardToInventory의 sourceRect로 사용됨)
     const rect = sourceEl.getBoundingClientRect();
-    // 시작 위치를 명시적으로 고정. 비행 시 translate(0,0)이 이 위치 기준.
-    el.style.left = (rect.left + rect.width / 2 - w / 2) + "px";
-    el.style.top = (rect.top + rect.height / 2 - h / 2) + "px";
+    el.dataset.flyStartLeft = String(rect.left + rect.width / 2 - w / 2);
+    el.dataset.flyStartTop = String(rect.top + rect.height / 2 - h / 2);
     document.body.appendChild(el);
     return el;
   }
@@ -519,6 +538,13 @@
 
   function pickCard(playerIndex, cardIndex) {
     if (playerIndex !== 0) return;
+    // 비행 진행 중 중복 클릭 차단. "pick"은 정상, "roundEnd"/"finished"는 종료 상태.
+    if (state.phase === "flying") return;
+
+    // 이전 비행 잔여물 정리 (혹시 남아있으면)
+    document.querySelectorAll('.sushi-card-fly-clone, .sushi-card-ghost').forEach(el => el.remove());
+
+    state.phase = "flying";
 
     // 손패 카드 크기 미리 측정 (AI ghost 카드용)
     const handCardSize = els.hand?.querySelector(".sushi-card")?.getBoundingClientRect();
@@ -527,14 +553,23 @@
     const userCardEls = els.hand?.querySelectorAll(".sushi-card");
     const userSourceEl = userCardEls?.[cardIndex];
     const userTargetEl = els.playersList?.querySelector(".sushi-player-card:first-child .sushi-player-picks");
+
+    // 모든 비행 promise를 모아서 마지막 비행 종료 후 phase 복원
+    const flights = [];
+
     if (userSourceEl && userTargetEl) {
       userSourceEl.classList.add("picked");
-      flyCardToInventory(userSourceEl, userTargetEl);
+      const userRect = userSourceEl.getBoundingClientRect();
+      const userTargetRect = userTargetEl.getBoundingClientRect();
+      flights.push(flyCardToInventory(userSourceEl, userTargetEl, userRect, userTargetRect));
     }
 
     // Wait for animation then process (가속: 450→250ms)
     setTimeout(() => {
-      if (!selectCardForPlayer(playerIndex, cardIndex)) return;
+      if (!selectCardForPlayer(playerIndex, cardIndex)) {
+        Promise.all(flights).finally(() => { state.phase = "idle"; });
+        return;
+      }
 
       // Animate passing (remaining hand slides left)
       if (els.hand) {
@@ -553,7 +588,15 @@
           const aiTargetEl = els.playersList?.querySelector(`.sushi-player-card:nth-child(${i + 1}) .sushi-player-picks`);
           if (aiSourceEl && aiTargetEl) {
             const ghost = makeGhostCardEl(aiCard, aiSourceEl, handCardSize);
-            flyCardToInventory(ghost, aiTargetEl);
+            // ghost dataset에서 출발 위치 읽기
+            const aiStartRect = {
+              left: parseFloat(ghost.dataset.flyStartLeft) || 0,
+              top: parseFloat(ghost.dataset.flyStartTop) || 0,
+              width: parseFloat(ghost.style.width) || 140,
+              height: parseFloat(ghost.style.height) || 186
+            };
+            const aiTargetRect = aiTargetEl.getBoundingClientRect();
+            flights.push(flyCardToInventory(ghost, aiTargetEl, aiStartRect, aiTargetRect, true));
           }
           selectCardForPlayer(i, aiIdx);
         }
@@ -575,6 +618,8 @@
             });
           }
           setTimeout(() => endRound(), 350);
+          // 비행이 모두 끝나면 phase 복원 (endRound 자체에서 phase 변경됨)
+          Promise.all(flights).finally(() => { /* phase는 endRound가 관리 */ });
           return;
         }
 
@@ -586,6 +631,10 @@
             el.classList.add("dealing");
           });
         }
+
+        // 모든 비행 완료 대기. phase는 새 라운드 시작 시 startDrafting이 "pick"으로 설정.
+        // 비행 종료 후 "idle"로 복원하면 새 라운드의 "pick"과 race condition 발생.
+        Promise.all(flights).finally(() => { /* phase 복원은 startDrafting이 담당 */ });
       }, 200);
     }, 250);
   }
