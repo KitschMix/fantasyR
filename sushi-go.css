@@ -390,6 +390,39 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
   100% { transform: translateY(-80px) scale(0.8); opacity: 0; }
 }
 
+/* --- Card fly-to-inventory animation (WAAPI clone) --- */
+.sushi-card-fly-clone {
+  position: fixed !important;
+  margin: 0 !important;
+  pointer-events: none;
+  z-index: 9999;
+  cursor: default;
+  /* hover/transition 효과 제거 - WAAPI transform과 충돌 방지 */
+  transition: none !important;
+  will-change: transform, opacity;
+}
+
+.sushi-card-fly-clone:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* AI 비행용 ghost 카드: 손패 카드와 동일한 크기, source 위치에 fixed 배치 */
+.sushi-card-ghost {
+  position: fixed !important;
+  margin: 0 !important;
+  pointer-events: none;
+  z-index: 9998;
+  cursor: default;
+  transition: none !important;
+  will-change: transform, opacity;
+}
+
+.sushi-card-ghost:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
 /* Pass animation: cards slide left */
 .sushi-card.passing {
   animation: sushiPassCard 0.4s ease-in forwards;

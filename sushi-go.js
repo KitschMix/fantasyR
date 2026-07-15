@@ -378,6 +378,76 @@
     if (els.pickInfo) els.pickInfo.textContent = "카드를 1장 선택하세요";
   }
 
+  /**
+   * sourceEl에서 targetEl로 카드를 곡선으로 비행시키는 애니메이션.
+   * WAAPI keyframe으로 시작점 → 아치 정점 → 도착점(축소+회전+fade).
+   * 도착 시 clone은 자동 제거.
+   */
+  function flyCardToInventory(sourceEl, targetEl) {
+    if (!sourceEl || !targetEl) return Promise.resolve();
+    const startRect = sourceEl.getBoundingClientRect();
+    const endRect = targetEl.getBoundingClientRect();
+
+    const clone = sourceEl.cloneNode(true);
+    clone.classList.add("sushi-card-fly-clone");
+    document.body.appendChild(clone);
+
+    const startX = startRect.left;
+    const startY = startRect.top;
+    const endX = endRect.left;
+    const endY = endRect.top;
+    const dx = endX - startX;
+    const dy = endY - startY;
+    // 곡선 아치 높이: 이동 거리에 비례 (최소 70, 최대 180)
+    const archHeight = Math.max(70, Math.min(180, Math.abs(dx) * 0.25 + Math.abs(dy) * 0.15));
+    const midX = startX + dx * 0.5;
+    const midY = Math.min(startY, endY) - archHeight;
+    const rotSign = dx >= 0 ? 1 : -1;
+
+    const anim = clone.animate([
+      { transform: "translate(0, 0) scale(1) rotate(0deg)", opacity: 1, offset: 0 },
+      { transform: `translate(${midX - startX}px, ${midY - startY}px) scale(1.12) rotate(${rotSign * 8}deg)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${dx}px, ${dy}px) scale(0.42) rotate(${rotSign * -12}deg)`, opacity: 0, offset: 1 }
+    ], {
+      duration: 560,
+      easing: "cubic-bezier(0.34, 0.95, 0.5, 1)"
+    });
+
+    return anim.finished.then(() => {
+      clone.remove();
+    }).catch(() => {
+      // 애니메이션 취소 시에도 clone 정리
+      if (clone.parentNode) clone.remove();
+    });
+  }
+
+  /**
+   * AI 비행용 ghost 카드 생성. AI 플레이어 헤더 위치에 손패 카드와 동일한 크기로 배치.
+   * 비행 후 자동 제거됨 (flyCardToInventory에서 clone 처리).
+   */
+  function makeGhostCardEl(card, sourceEl, size) {
+    const el = document.createElement("div");
+    el.className = `sushi-card ${card.type} sushi-card-ghost`;
+    const visual = card.image
+      ? `<img class="sushi-card-image" src="${esc(card.image)}" alt="" />`
+      : `<span class="sushi-card-emoji">${card.emoji}</span>`;
+    el.innerHTML = `
+      <span class="sushi-card-art">${visual}</span>
+      <span class="sushi-card-text">
+        <span class="sushi-card-name">${esc(card.name)}</span>
+      </span>
+    `;
+    document.body.appendChild(el);
+    const w = size?.width || 140;
+    const h = size?.height || 186;
+    el.style.width = w + "px";
+    el.style.height = h + "px";
+    const rect = sourceEl.getBoundingClientRect();
+    el.style.left = (rect.left + rect.width / 2 - w / 2) + "px";
+    el.style.top = (rect.top + rect.height / 2 - h / 2) + "px";
+    return el;
+  }
+
   function renderPuddingCount() {
     if (!els.puddingCount) return;
     els.puddingCount.innerHTML = state.players.map(p =>
@@ -434,13 +504,18 @@
   }
 
   function pickCard(playerIndex, cardIndex) {
-    // Animate the picked card
-    if (playerIndex === 0) {
-      const cardEls = els.hand?.querySelectorAll(".sushi-card");
-      const targetEl = cardEls?.[cardIndex];
-      if (targetEl) {
-        targetEl.classList.add("picked");
-      }
+    if (playerIndex !== 0) return;
+
+    // 손패 카드 크기 미리 측정 (AI ghost 카드용)
+    const handCardSize = els.hand?.querySelector(".sushi-card")?.getBoundingClientRect();
+
+    // 사용자 카드 비행 시작 (state 업데이트 전, 손패에서 인벤토리로 곡선 비행)
+    const userCardEls = els.hand?.querySelectorAll(".sushi-card");
+    const userSourceEl = userCardEls?.[cardIndex];
+    const userTargetEl = els.playersList?.querySelector(".sushi-player-card:first-child .sushi-player-picks");
+    if (userSourceEl && userTargetEl) {
+      userSourceEl.classList.add("picked");
+      flyCardToInventory(userSourceEl, userTargetEl);
     }
 
     // Wait for animation then process (가속: 450→250ms)
@@ -448,17 +523,24 @@
       if (!selectCardForPlayer(playerIndex, cardIndex)) return;
 
       // Animate passing (remaining hand slides left)
-      if (playerIndex === 0 && els.hand) {
+      if (els.hand) {
         els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
           el.style.animationDelay = `${i * 25}ms`;
           el.classList.add("passing");
         });
       }
 
-      // AI picks for this turn
+      // AI picks for this turn (각 AI 카드를 ghost로 비행 동시 진행)
       for (let i = 1; i < state.players.length; i++) {
         if (state.hands[i] && state.hands[i].length > 0) {
           const aiIdx = aiSelectCard(i, state.aiDifficulty);
+          const aiCard = state.hands[i][aiIdx];
+          const aiSourceEl = els.playersList?.querySelector(`.sushi-player-card:nth-child(${i + 1}) .sushi-player-header`);
+          const aiTargetEl = els.playersList?.querySelector(`.sushi-player-card:nth-child(${i + 1}) .sushi-player-picks`);
+          if (aiSourceEl && aiTargetEl) {
+            const ghost = makeGhostCardEl(aiCard, aiSourceEl, handCardSize);
+            flyCardToInventory(ghost, aiTargetEl);
+          }
           selectCardForPlayer(i, aiIdx);
         }
       }
