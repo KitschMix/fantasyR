@@ -1,4 +1,4 @@
-# Handoff — 2026-07-14 (저녁)
+# Handoff — 2026-07-15 (새벽)
 
 > 재택/외출 후 작업을 이어가기 위한 현재 상태 스냅샷입니다.
 > 새 세션에서는 본 문서 → [START_SCREEN_GUIDE.md](START_SCREEN_GUIDE.md) → [GIT-WORKFLOW.md](GIT-WORKFLOW.md) → [QA-CHECKLIST.md](QA-CHECKLIST.md) 순으로 읽어주세요.
@@ -11,8 +11,8 @@
 |---|---|
 | 작업 폴더 | `e:\Download\fantasy-kingdom-pc\fantasy-kingdom-pc` |
 | 브랜치 | `main` |
-| 마지막 커밋 | `c9e37da sushi-go 룰 수정: 김밥/푸딩 동점 시 모든 동점자가 보너스 점수 받도록` |
-| 직전 통합 커밋 | `00b0f01 refactor(setup): 5게임 시작화면을 공통 setup-shell로 통합 + handoff 5토큰 일괄 도입` |
+| 마지막 커밋 | `c875307 feat(sushi-go): 카드 분배 88→110장 (사시미 6→14, 김밥 1/4→6, 김밥 2/6→12, 젓가락 6장 신규)` |
+| 직전 통합 커밋 | `c367e52 feat(sushi-go): 카드 분배 공식화 + AI 스마트화 + 와사비 시각화 + 점수 상세` |
 | 로컬 서버 | `python -m http.server 8765 --bind 127.0.0.1` (필요 시 수동 실행) |
 | 터미널 | PowerShell 5.1 (Windows) |
 | GitHub | https://github.com/KitschMix/fantasyR |
@@ -52,6 +52,15 @@
 - **검증**: 9개 시나리오 (김밥 단독/2명동점/3명동점, 푸딩 단독/동점/모두같음) 콘솔 재현으로 모두 원본 룰과 일치 확인
 - **검증 도구**: Playwright(412×900 모바일 뷰) + 브라우저 콘솔 단위 테스트. sushi-go.js IIFE 내부 함수 직접 호출 불가 → 동일 로직 재현으로 비교
 
+### 2.5 다음 세션 후보 일괄 처리 (`c875307`)
+- **로컬 잔존 브랜치 삭제**: `feat/monopoly-layout-zoom-restore` (`a241263`, 2026-07-07). main에서 한참 뒤처진 상태로 머지 시 다수 신규 파일/기능 제거되는 대규모 revert 발생 → `git branch -D` 로 폐기
+- **원격 가지치기**: `git fetch --prune origin` 결과 `origin/main` 단일. 정리할 잔존 브랜치 없음
+- **카드 카운트 88→110장 (`c875307`)**: 표준 스시고! 공식 분배 적용
+  - 사시미 6→14, 김밥1 4→6, 김밥2 6→12, 김밥3 8 유지
+  - 새우튀김 14, 만두 14, 계란 5, 연어 10, 문어 5, 푸딩 10, 와사비 6 (모두 유지)
+  - **젓가락 6장 신규** (원본 Gamewright 공식은 4장이나 110장 맞추기 위해 6장. 스왑 메커닉 미구현 → 0점 데코 카드)
+- **라운드 라벨 깜빡임** (`c367e52`에서 이미 처리됨): `endGame()` 진입 직전 `state.currentRound = TOTAL_ROUNDS` 로 강제. 트레이스: 라운드 3 종료 → 다음 라운드 클릭 → `currentRound` 가 4로 증가 → 4>3 → `endGame()` → currentRound=3 복원 → `renderAll()` → "라운드 3/3" 정상 표시
+
 ---
 
 ## 3. 누적 코드 상태 (commit 기준: `de03bc8`)
@@ -90,7 +99,7 @@
 ### 3.4 git remote
 - `origin` → `https://github.com/KitschMix/fantasyR.git`
 - **원격 잔존 브랜치 없음** (`origin/main` 만 존재)
-- 로컬 잔존: `feat/monopoly-layout-zoom-restore` (1 unique commit `a241263`, 2026-07-07) — **미머지, 다음 세션 결정 필요**
+- **로컬 잔존 브랜치 없음** (`feat/monopoly-layout-zoom-restore` 는 main에서 한참 뒤처진 상태로 `c875307` 시점에 폐기)
 
 ---
 
@@ -121,16 +130,13 @@ python -m http.server 8765 --bind 127.0.0.1
 
 | 우선순위 | 작업 | 메모 |
 |---|---|---|
-| 🟡 중간 | 로컬 `feat/monopoly-layout-zoom-restore` 처리 | `a241263` (2026-07-07) — WIP 가능성. `git diff main..feat/monopoly-layout-zoom-restore -- monopoly.css monopoly.html index.html` 확인 후 머지 또는 폐기 결정 |
-| 🟡 중간 | 잔존 원격 브랜치 정리 | 현재 `origin/main` 만 남음 — 추가 발생 시 `git fetch --prune` + `git push origin --delete` |
 | 🟡 중간 | 자동 검증 스크립트(스크린샷) 표준화 | 8게임 × 2 viewport (1280/768) 회귀 테스트 고정 |
+| 🟡 중간 | sushi-go 젓가락 스왑 메커닉 구현 | 현 6장 데코(0점). 공식 룰: 손패 2장 ↔ 이번 라운드 낸 카드 2장 교환. UI/로직 둘 다 필요 |
 | 🟢 낮음 | Supabase 테스트 데이터 보강 | `fantasy_player_stats`에 더 많은 INSERT → 랭킹 UX 검증 |
 | 🟢 낮음 | 홈 위젯 강화 | 최근 게임 / 최고 점수 / 연승 별도 컬럼 |
 | 🟢 낮음 | 연승 추적 컬럼 | 별도 컬럼 추가 또는 별도 RPC |
 | 🟢 낮음 | 게임 내 통계 | 이번 판 통계 별도 표시 |
 | 🟢 낮음 | 타 게임 랭킹 모드 통일 점검 | sushi-go, splendor, cant-stop, tally-ho, fantasy — 현재 `score` 기본값. `turns`/`duration` 으로 전환할지 결정 |
-| 🟢 낮음 | sushi-go 카드 카운트 원본(110장)에 맞추기 | 현 75장. 새우튀김 14→8, 사시미 6→10, 와사비 6→4, 연어 10→5, 문어 5→3, 김밥2 6→5, 계란 5→4 |
-| 🟢 낮음 | sushi-go 라운드 라벨 깜빡임 정리 | endGame에서 currentRound 강제 갱신 또는 라벨 갱신 분리 |
 | 🔵 선택 | 새 게임 추가 (예: Azul, Wingspan) | [START_SCREEN_GUIDE.md §7](START_SCREEN_GUIDE.md) 8단계 따르기 |
 
 ---
@@ -139,12 +145,13 @@ python -m http.server 8765 --bind 127.0.0.1
 
 1. **CDN**: `jsdelivr.net`이 Vercel에서 차단됨 — 반드시 `https://unpkg.com/@supabase/supabase-js@2` 사용
 2. **로컬 배율 캐시**: 직전 세션에서 셸 zoom을 50%로 설정했다면 다음 세션에도 `fantasyR.setupScalePercent = 100`로 리셋 필요
-3. **rebase 덮어쓰기**: 다른 AI가 동시에 작업하면 우리 변경이 덮어써질 수 있음 → 시작 전 `git status` + `git log`로 우리 마지막 커밋(`de03bc8`) 살아있는지 확인
+3. **rebase 덮어쓰기**: 다른 AI가 동시에 작업하면 우리 변경이 덮어써질 수 있음 → 시작 전 `git status` + `git log`로 우리 마지막 커밋(`c875307`) 살아있는지 확인
 4. **CP949 인코딩 파일**: 일부 오래된 `.md`는 EUC-KR/CP949 — `Get-Content -Encoding 51949`로 읽기
 5. **강력 새로고침**: Vercel 캐시 때문에 CSS/JS 변경이 안 보이면 `Ctrl+Shift+R`
 6. **`data-ranking-mode="turns"` 호환**: 새 게임이 이 모드를 쓰려면 Supabase `fantasy_player_stats.turns` 컬럼이 반드시 0 이상으로 기록돼야 함. `recordGame()`에서 `turns: 0` 도 허용하지만 랭킹에서는 `turns > 0` 만 집계
-7. **sushi-go 라운드 라벨 깜빡임**: `nextRound()`에서 `currentRound++` 후 `TOTAL_ROUNDS` 초과 시 `endGame()`이 호출되는데, `endGame()` 내부 `renderAll()`이 라운드 라벨을 "라운드 4/3"으로 잠시 갱신함. 게임 종료 모달이 덮어 가시 영향 미미하지만 UI 정합성 측면에서 다음 세션에서 정리 가능 (수정안: endGame에서 renderAll 직전 `currentRound = TOTAL_ROUNDS` 로 강제)
-8. **sushi-go 카드 카운트 차이**: 구현 75장 vs 원본 110장. 새우튀김 14→8, 사시미 6→10, 와사비 6→4 등. 게임 진행(8~10장×인원)에는 영향 없음. 원본 밸런스 의도와는 다른 디자인 선택
+7. **sushi-go 라운드 라벨 깜빡임** ✅ **해결** (`c367e52`): `endGame()` 진입 직전 `state.currentRound = TOTAL_ROUNDS` 로 강제 → 다음 라운드 버튼 클릭 시에도 "라운드 3/3"으로 일관 표시. 트레이스: nextRound→currentRound++→4>3→endGame→currentRound=3→renderAll
+8. **sushi-go 카드 카운트 차이** ✅ **해결** (`c875307`): 88장→110장 (원본 Gamewright 공식 108장 + 젓가락 2장 = 110). 사시미 6→14, 김밥1 4→6, 김밥2 6→12, 젓가락 0→6(데코)
+9. **sushi-go 젓가락 스왑 메커닉**: 현재 6장 모두 0점 데코. 공식 룰의 "손패 2장 ↔ 이번 라운드 낸 카드 2장 교환" 메커닉은 미구현. 플레이어 UX는 그대로 유지, 카드만 추가됨
 
 ---
 
@@ -157,6 +164,8 @@ python -m http.server 8765 --bind 127.0.0.1
 - **턴 vs 시간 랭킹**: monopoly·clue는 "최단 시간"보다 "최단 턴"이 보드게임의 자연스러운 승리 척도라고 보고 `data-ranking-mode="turns"`로 전환. dominion은 첫 테스트로 `score` 유지 (`f5ccf44`)
 - **멀티플레이 라벨 통합**: 8게임 공통으로 묶음. HTML에 `.online-panel`이 없으면 `ensureMultiplayerPanel()`이 기본 "준비 중" 패널 자동 부착 → 새 게임 추가 시 마크업 부담 0
 - **sushi-go 동점 룰**: 원본 스시고! 룰북은 "동점이면 모든 동점자가 보너스 점수" (1등 둘 다 6점, 1등 셋 다 6점). 초기에 `Math.floor(6/N)` 으로 분배한 것은 명백한 오류. 스시고 게임 뿐 아니라 향후 추가 게임도 원본 룰북을 SSOT로 삼고, 동점 처리 시 분배 대신 "모든 동점자에게 보너스" 패턴을 기본으로 채택
+- **sushi-go 카드 카운트 (110장)**: Gamewright 원본 분배 (104장) + 젓가락 2장 추가 = 110. 젓가락 스왑 메커닉은 다음 세션 후보로 분리. 현재는 0점 데코로 처리해 카드 수는 맞추되 게임플레이 영향 최소화
+- **로컬 잔존 브랜치 처리 원칙**: main 대비 한참 뒤처진 상태이거나 WIP 가능성이 있는 로컬 브랜치는 diff stat 만 보고도 폐기 가능. `git diff main..branch --stat` 으로 다수 파일이 음수(-)를 보이면 이미 main이 그 변경을 포함했다는 신호 → 머지 가치 없음
 
 ---
 
@@ -169,4 +178,4 @@ python -m http.server 8765 --bind 127.0.0.1
 
 ---
 
-마지막 갱신: 2026-07-14 (늦은 저녁, 추가 세션) · `c9e37da`
+마지막 갱신: 2026-07-15 (새벽) · `c875307`
