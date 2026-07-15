@@ -263,20 +263,24 @@
   function cardBackHtml(tier) {
     const deck = state.tiers[tier];
     return `<button type="button" class="splendor-card-back" data-tier="${tier}"
-      aria-label="티어 ${tier} 덱, 남은 카드 ${deck.length}장, 클릭하여 무작위 카드 예약"
+      aria-label="티어 ${tier} 덱, 남은 카드 ${deck.length}장, 2초간 길게 눌러 무작위 카드 예약"
       style="background-image: url('assets/splendor/티어${tier}.jpg?v=2'); background-size: cover; background-position: center;">
       <span class="splendor-deck-count" aria-hidden="true">${deck.length}</span>
-      <span class="splendor-deck-reserve-hint" aria-hidden="true">🔒 덱에서 예약</span>
+      <span class="splendor-deck-reserve-hint" aria-hidden="true">🔒 2초 꾹 눌러 예약</span>
     </button>`;
   }
 
   /* ── Noble Rendering ── */
   function nobleHtml(noble, index) {
     const reqHtml = Object.entries(noble.requires)
-      .map(([g, n]) => `<span class="splendor-noble-req-gem">${gemImg(g, 22)}${n}</span>`).join("");
-    return `<div class="splendor-noble" data-nindex="${index}" style="background-image: url('${noble.img}'); background-size: cover; background-position: center;">
-      <span class="splendor-noble-points">★${noble.points}</span>
-      <div class="splendor-noble-req">${reqHtml}</div>
+      .map(([g, n]) => gemPip(g, n)).join("");
+    return `<div class="splendor-card splendor-noble" data-nindex="${index}" style="background-image: url('${noble.img}'); background-size: cover; background-position: center;">
+      <span class="splendor-card-top">
+        <span class="splendor-card-points" aria-label="${noble.points}점">${Array.from({ length: noble.points }, () => '<span class="splendor-card-star">★</span>').join("")}</span>
+        <span class="splendor-noble-label">귀족</span>
+      </span>
+      <span class="splendor-card-middle" aria-hidden="true"></span>
+      <span class="splendor-card-cost splendor-noble-req" aria-label="필요 보너스">${reqHtml}</span>
     </div>`;
   }
 
@@ -355,7 +359,7 @@
       const disabled = isGold || count === 0;
       return `<span class="splendor-token${disabled ? " disabled" : ""}${selected ? " selected" : ""}"
         data-gem="${gem}" title="${GEM_LABELS[gem]} ${count}개${selected ? " (선택됨 " + selected + ")" : ""}">
-        ${gemImg(gem, 100)}<span class="splendor-token-count">${count}</span>
+        ${gemImg(gem, 200)}<span class="splendor-token-count">${count}</span>
       </span>`;
     }).join("") +
     (hasSelection ? `<button class="splendor-cancel-tokens" type="button" title="선택 취소">✕ 취소</button>` : "");
@@ -516,7 +520,7 @@
   function initCardHover() {
     // Card hover
     document.addEventListener("mouseover", e => {
-      const cardEl = e.target.closest(".splendor-card:not(.splendor-card-back)");
+      const cardEl = e.target.closest(".splendor-card:not(.splendor-card-back):not(.splendor-noble)");
       const nobleEl = e.target.closest(".splendor-noble");
       if (!cardEl && !nobleEl) { clearTimeout(hoverTimer); hideCardPreview(); return; }
 
@@ -1912,15 +1916,15 @@
     els.rulesDialog?.addEventListener("click", e => { if (e.target === els.rulesDialog) els.rulesDialog.close(); });
     // Turn end is automatic (no button)
 
-    // Card click: buy (long-press = reserve)
+    // Card/deck long press: reserve (a short press on a face-up card buys it).
     let _longPressTimer = null;
     let _longPressTriggered = false;
     document.addEventListener("pointerdown", e => {
-      const card = e.target.closest(".splendor-card");
-      if (!card || !activePlayer()?.human || state.phase !== "action") return;
-      if (card.dataset.reserved) return; // reserved cards use normal click
-      const tier = Number(card.dataset.tier);
-      const index = Number(card.dataset.index);
+      const target = e.target.closest(".splendor-card:not(.splendor-noble), .splendor-card-back");
+      if (!target || !activePlayer()?.human || state.phase !== "action") return;
+      if (target.dataset.reserved) return; // reserved cards use normal click
+      const tier = Number(target.dataset.tier);
+      const index = target.classList.contains("splendor-card-back") ? null : Number(target.dataset.index);
       _longPressTriggered = false;
       _longPressTimer = setTimeout(() => {
         _longPressTriggered = true;
@@ -1934,7 +1938,7 @@
       clearTimeout(_longPressTimer);
     });
     document.addEventListener("click", e => {
-      const card = e.target.closest(".splendor-card");
+      const card = e.target.closest(".splendor-card:not(.splendor-noble)");
       if (!card || !activePlayer()?.human || state.phase !== "action") return;
       if (_longPressTriggered) { _longPressTriggered = false; return; }
       const tier = Number(card.dataset.tier);
@@ -1944,14 +1948,6 @@
       } else {
         attemptBuyCard(tier, index);
       }
-    });
-
-    // Deck click = reserve from top
-    document.addEventListener("click", e => {
-      const back = e.target.closest(".splendor-card-back");
-      if (!back || !activePlayer()?.human || state.phase !== "action") return;
-      const tier = Number(back.dataset.tier);
-      attemptReserve(tier, null);
     });
 
     els.zoomOutButton?.addEventListener("click", () => adjustZoom(-ZOOM_STEP_PERCENT));

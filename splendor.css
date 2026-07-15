@@ -1261,6 +1261,25 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   padding: 8px;
 }
 
+/* Nobles use the same point and cost treatment as development cards. */
+.splendor-noble .splendor-card-top {
+  align-items: flex-start;
+}
+
+.splendor-noble-label {
+  padding: 3px 7px;
+  border: 1px solid rgba(246,232,202,0.2);
+  border-radius: 999px;
+  background: rgba(17,15,13,0.7);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.splendor-noble .splendor-card-cost {
+  align-self: end;
+}
+
 .splendor-noble-emoji {
   font-size: 36px;
   opacity: 0.68;
@@ -1516,8 +1535,8 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 }
 
 .splendor-token {
-  width: 112px;
-  height: 112px;
+  width: 224px;
+  height: 224px;
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;
@@ -1541,12 +1560,12 @@ body.splendor-active.splendor-playing .splendor-game-panel {
 
 .splendor-token-count {
   position: absolute;
-  width: 22px;
-  height: 22px;
-  right: 2px;
-  bottom: 2px;
+  width: 44px;
+  height: 44px;
+  right: 4px;
+  bottom: 4px;
   background: rgba(17,15,13,0.92);
-  font-size: 12px;
+  font-size: 24px;
   font-weight: 900;
   border-radius: 999px;
   border: 1px solid rgba(246,232,202,0.2);
