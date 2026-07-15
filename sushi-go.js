@@ -514,6 +514,43 @@
   }
 
   /* ── Drafting ── */
+
+  /**
+   * AI 선택 말풍선 표시. NPC 카드가 사이드바의 헤더에서 인벤토리로 날아가기 전
+   * "xxx가 xxx 선택" 같은 정보를 잠깐 보여줘서 선택을 인지할 수 있게 함.
+   * 1~1.5초 후 hideAiSelectionBubble로 제거 (비행 시작 시점).
+   */
+  function showAiSelectionBubble(playerIndex, card) {
+    if (!els.playersList) return;
+    const cardEl = els.playersList.querySelector(
+      `.sushi-player-card:nth-child(${playerIndex + 1})`
+    );
+    if (!cardEl) return;
+    // 중복 방지
+    if (cardEl.querySelector('.sushi-ai-bubble')) return;
+    const p = state.players[playerIndex];
+    if (!p) return;
+    const bubble = document.createElement('div');
+    bubble.className = 'sushi-ai-bubble';
+    bubble.innerHTML =
+      `<span class="bubble-emoji">${p.emoji}</span>` +
+      `<strong>${p.name}</strong> 선택 ` +
+      `<span class="bubble-card">${card.emoji} ${card.name}</span>`;
+    // AI 카드 사이 살짝 어긋나게 배치 (여러 AI가 있을 때 겹침 방지)
+    const offset = (playerIndex - 1) * 4;
+    bubble.style.top = `${-38 - offset}px`;
+    cardEl.appendChild(bubble);
+  }
+
+  function hideAiSelectionBubble(playerIndex) {
+    if (!els.playersList) return;
+    const cardEl = els.playersList.querySelector(
+      `.sushi-player-card:nth-child(${playerIndex + 1})`
+    );
+    if (!cardEl) return;
+    cardEl.querySelectorAll('.sushi-ai-bubble').forEach(el => el.remove());
+  }
+
   function selectCardForPlayer(playerIndex, cardIndex) {
     const hand = state.hands[playerIndex];
     if (!hand || cardIndex < 0 || cardIndex >= hand.length) return false;
@@ -579,15 +616,32 @@
         });
       }
 
-      // AI picks for this turn (각 AI 카드를 ghost로 비행 동시 진행)
+      // AI picks for this turn
+      // - 결정 즉시 말풍선으로 "xxx가 xxx 선택" 표시
+      // - 1000~1500ms 후 비행 시작 (말풍선이 사라지면서 카드가 인벤토리로 날아감)
+      // - 여러 AI가 있으면 모두 동시 진행 (비행 자체가 stagger되어 시각적으로 자연스러움)
+      const aiTurns = [];
       for (let i = 1; i < state.players.length; i++) {
         if (state.hands[i] && state.hands[i].length > 0) {
           const aiIdx = aiSelectCard(i, state.aiDifficulty);
           const aiCard = state.hands[i][aiIdx];
+          aiTurns.push({ playerIndex: i, aiIdx, aiCard });
+          showAiSelectionBubble(i, aiCard);
+        }
+      }
+
+      // NPC가 결정 후 비행까지의 텀 (1.0~1.5초). 사용자가 어떤 카드를 골랐는지 인지할 시간.
+      const aiFlightDelay = 1000 + Math.floor(Math.random() * 500);
+
+      setTimeout(() => {
+        // 말풍선 제거 + AI 비행 시작 (각 AI 카드를 ghost로 곡선 비행)
+        for (const turn of aiTurns) {
+          hideAiSelectionBubble(turn.playerIndex);
+          const i = turn.playerIndex;
           const aiSourceEl = els.playersList?.querySelector(`.sushi-player-card:nth-child(${i + 1}) .sushi-player-header`);
           const aiTargetEl = els.playersList?.querySelector(`.sushi-player-card:nth-child(${i + 1}) .sushi-player-picks`);
           if (aiSourceEl && aiTargetEl) {
-            const ghost = makeGhostCardEl(aiCard, aiSourceEl, handCardSize);
+            const ghost = makeGhostCardEl(turn.aiCard, aiSourceEl, handCardSize);
             // ghost dataset에서 출발 위치 읽기
             const aiStartRect = {
               left: parseFloat(ghost.dataset.flyStartLeft) || 0,
@@ -598,44 +652,49 @@
             const aiTargetRect = aiTargetEl.getBoundingClientRect();
             flights.push(flyCardToInventory(ghost, aiTargetEl, aiStartRect, aiTargetRect, true));
           }
-          selectCardForPlayer(i, aiIdx);
+          selectCardForPlayer(i, turn.aiIdx);
         }
-      }
 
-      // Pass hands left after animation (가속: 400→200ms)
-      setTimeout(() => {
-        const firstHand = state.hands.shift();
-        state.hands.push(firstHand);
+        // Pass hands left after animation (비행 시작 직후 손패 슬라이드 시작)
+        setTimeout(() => {
+          const firstHand = state.hands.shift();
+          state.hands.push(firstHand);
 
-        // Check if round over
-        if (state.hands[0].length === 0) {
+          // Check if round over
+          if (state.hands[0].length === 0) {
+            renderAll();
+            // Animate round end (가속: 600→350ms)
+            if (els.hand) {
+              els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
+                el.style.animationDelay = `${i * 35}ms`;
+                el.classList.add("round-end");
+              });
+            }
+            setTimeout(() => endRound(), 350);
+            // 비행 종료 후 phase 복원. 라운드 종료(endRound → 'roundEnd')는 변경 안 함.
+            Promise.all(flights).finally(() => {
+              if (state.phase === "flying") state.phase = "pick";
+            });
+            return;
+          }
+
           renderAll();
-          // Animate round end (가속: 600→350ms)
+          // Animate new hand appearing
           if (els.hand) {
             els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
-              el.style.animationDelay = `${i * 35}ms`;
-              el.classList.add("round-end");
+              el.style.animationDelay = `${i * 30}ms`;
+              el.classList.add("dealing");
             });
           }
-          setTimeout(() => endRound(), 350);
-          // 비행이 모두 끝나면 phase 복원 (endRound 자체에서 phase 변경됨)
-          Promise.all(flights).finally(() => { /* phase는 endRound가 관리 */ });
-          return;
-        }
 
-        renderAll();
-        // Animate new hand appearing
-        if (els.hand) {
-          els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
-            el.style.animationDelay = `${i * 30}ms`;
-            el.classList.add("dealing");
+          // 모든 비행 완료 후 phase를 'pick'으로 복원해서 다음 사이클에서 사용자가
+          // 새 손패의 카드를 클릭할 수 있게 함. (라운드 종료 시 endRound가 'roundEnd'로
+          // 변경하므로 race condition 없음.)
+          Promise.all(flights).finally(() => {
+            if (state.phase === "flying") state.phase = "pick";
           });
-        }
-
-        // 모든 비행 완료 대기. phase는 새 라운드 시작 시 startDrafting이 "pick"으로 설정.
-        // 비행 종료 후 "idle"로 복원하면 새 라운드의 "pick"과 race condition 발생.
-        Promise.all(flights).finally(() => { /* phase 복원은 startDrafting이 담당 */ });
-      }, 200);
+        }, 200);
+      }, aiFlightDelay);
     }, 250);
   }
 

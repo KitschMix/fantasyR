@@ -176,6 +176,54 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
   background: var(--surface);
   border: 1px solid var(--line);
   transition: border-color 0.2s;
+  position: relative;
+}
+
+/* --- AI 선택 말풍선 (NPC가 카드 고를 때 떠 있는 표시) --- */
+.sushi-ai-bubble {
+  position: absolute;
+  top: -38px;
+  right: -8px;
+  background: linear-gradient(135deg, rgba(20, 18, 14, 0.95), rgba(40, 30, 20, 0.95));
+  color: #fff;
+  padding: 7px 12px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(242, 207, 120, 0.4);
+  animation: sushiAiBubblePop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sushi-ai-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  right: 16px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 7px solid rgba(20, 18, 14, 0.95);
+}
+
+.sushi-ai-bubble .bubble-emoji {
+  font-size: 14px;
+}
+
+.sushi-ai-bubble .bubble-card {
+  color: var(--accent, #f2cf78);
+}
+
+@keyframes sushiAiBubblePop {
+  0% { opacity: 0; transform: scale(0.6) translateY(6px); }
+  60% { opacity: 1; transform: scale(1.08) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .sushi-player-card.active {
