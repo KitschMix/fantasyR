@@ -136,13 +136,12 @@
 | `MULTIPLAYER_LABELS` | ✅ 신규 | 8게임 공통 (panelTitle/Status/Buttons/Placeholders/Notes) |
 | `scripts/player-stats.js` | ✅ 정상 | `fetchTopRankingsByTurns` 추가 |
 
-### 3.2 배경 이미지 자산
-- `assets/monopoly/bg.jpg` (이전 작업 `07d1682`)
-- `assets/sushi/bg.jpg` (이전 작업)
-- `assets/cantstop/bg.jpg` (432KB, 오늘 추가)
-- `assets/clue/bg.jpg` (341KB, 오늘 추가)
-- `assets/splendor/bg.jpg` (520KB, 오늘 추가)
-- 사용자 폴더 추가 → 동일 bg 패턴 일괄 적용이 SSOT. tally-ho/dominion은 자산 없음.
+### 3.2 배경 이미지 자산 (WebP, `6f14a47`)
+- `assets/{game}/bg.webp` — 모든 게임 1672×941px, q=80
+- `tools/convert-bg-to-webp.js` — sharp 기반 재실행 가능
+- 합계 **1.88 MB → 565 KB (70%↓)**: sushi 224→40KB(82↓), clue 334→77KB(77↓), monopoly 388→155KB(60↓), cantstop 423→122KB(71↓), splendor 509→171KB(66↓)
+- 적용: 5게임 CSS `url('bg.jpg')` → `url('bg.webp')` 9곳. 원본 .jpg 5파일 삭제 (Chrome 2014+/FF 2019+/Safari 2020+ 모두 WebP 지원)
+- 사용자 폴더 추가 → 동일 bg 패턴 일괄 적용이 SSOT. tally-ho/dominion은 자산 없음
 
 ### 3.3 게임별 시작 화면 (8게임 공통 셸)
 | 파일 | 셸 | 랭킹 모드 | 비고 |
@@ -203,6 +202,7 @@ python -m http.server 8765 --bind 127.0.0.1
 | 우선순위 | 작업 | 메모 |
 |---|---|---|
 | 🟡 중간 | 로컬 `feat/monopoly-layout-zoom-restore` 처리 | `a241263` (2026-07-07) — WIP 가능성. `git diff main..feat/monopoly-layout-zoom-restore -- monopoly.css monopoly.html index.html` 확인 후 머지 또는 폐기 결정 |
+| 🟢 낮음 | bg WebP 추가 절감 | 현재 q=80. q=75 또는 모바일 분기(750×422 모바일용 별도 webp)로 추가 30%↓ 가능. `node tools/convert-bg-to-webp.js` 재실행 |
 | 🟡 중간 | 잔존 원격 브랜치 정리 | 현재 `origin/main` 만 남음 — 추가 발생 시 `git fetch --prune` + `git push origin --delete` |
 | 🟡 중간 | 자동 검증 스크립트(스크린샷) 표준화 | 8게임 × 2 viewport (1280/768) 회귀 테스트 고정 |
 | 🟡 중간 | sushi-go 젓가락 스왑 메커닉 구현 | 현 4장 데코(0점). 공식 룰: 손패 2장 ↔ 이번 라운드 낸 카드 2장 교환. UI/로직 둘 다 필요 |
@@ -260,6 +260,7 @@ python -m http.server 8765 --bind 127.0.0.1
 - **점수 분해(`breakdown`)는 별도 객체로**: `scoreRound()`가 `{ totals, breakdown }` 반환. totals는 점수 합계(규칙 검증용), breakdown은 UI 표시용(영향 0). 점수 계산은 totals만 사용 → UI 추가/제거가 게임 로직에 영향 없음
 - **카드 분배 표기**: handoff.md에 "(110장)" 추정값이 있었지만 실제 BGG 공식은 104장. 이번 88장 조정은 그 중간값. 완전 일치가 필요하면 104장으로 추가 조정 가능 (사시미 6→14, 김밥2 6→12, 김밥1 4→6)
 - **handoff 백업 규칙**: 머지 전 handoff는 `_handoff-YYYY-MM-DD-{period}.md` 패턴으로 untracked 보존. 예: `_handoff-2026-07-15-pm.md` (낮), `_handoff-night.md` (심야 임시)
+- **bg WebP 단순 교체 패턴 (`6f14a47`)**: 5장 bg.jpg → bg.webp, sharp(q=80) 변환. image-set 폴백 없이 url() 직접 webp 참조 — Chrome/FF/Safari 모두 2014-2020 사이 WebP 지원했으므로 폴백 불필요. 구형 브라우저 필요 시 `-webkit-image-set(url('bg.webp') 1x, url('bg.jpg') 1x)` 패턴으로 전환 가능 (현재는 미사용). 재변환: `node tools/convert-bg-to-webp.js`
 
 ---
 
