@@ -51,3 +51,7 @@ tools/optimize-cover-art-v2.ps1
 
 # Orphan upload scratch space
 파일업로드/
+
+# handoff backup snapshots (kept locally per the convention in §7 of handoff.md)
+_handoff-*.md
+_handoff-*.markdown
