@@ -3,6 +3,25 @@
   display: grid;
   min-height: calc(100vh - 28px);
   padding: 18px;
+  background-image:
+    linear-gradient(rgba(15, 12, 8, 0.45), rgba(15, 12, 8, 0.55)),
+    url('assets/clue/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.clue-setup-panel {
+  min-height: calc(100vh - 28px);
+  padding: 18px;
+  background-image:
+    linear-gradient(rgba(15, 12, 8, 0.35), rgba(15, 12, 8, 0.45)),
+    url('assets/clue/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 body:not(.clue-active) .clue-game-panel,

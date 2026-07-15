@@ -50,6 +50,13 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   justify-content: center;
   min-height: calc(100vh - 28px);
   padding: 24px;
+  background-image:
+    linear-gradient(rgba(15, 12, 8, 0.35), rgba(15, 12, 8, 0.45)),
+    url('assets/splendor/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 .splendor-panel {
@@ -102,6 +109,13 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   --splendor-ui-zoom: 1;
   min-height: calc(100vh - 28px);
   padding: 14px;
+  background-image:
+    linear-gradient(rgba(15, 12, 8, 0.45), rgba(15, 12, 8, 0.55)),
+    url('assets/splendor/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 .splendor-shell {
