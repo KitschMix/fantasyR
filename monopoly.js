@@ -1940,9 +1940,9 @@
     // Record purchased this turn to prevent immediate building
     state.purchasedThisTurn = tile.id;
 
-    // Show purchase popup notice
+    // Show purchase toast (모달 띄우지 않음, 자동 사라짐)
     setTimeout(() => {
-      showNotice(`🏠 <strong>${playerDisplayName(player)}</strong>이(가)<br><strong>${tile.name}</strong>을(를) 구입했습니다!`, 1500);
+      showToast(`🏠 <strong>${playerDisplayName(player)}</strong> <strong>${tile.name}</strong> 구입!`, { variant: "info", duration: 1800 });
     }, 100);
 
     // Check monopoly
