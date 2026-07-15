@@ -1049,6 +1049,62 @@
     await wait(300);
   }
 
+  /**
+   * 정주행 슬라이드 모션 (출발지 통과 등 긴 이동에 사용)
+   * - fromTile에서 시작해 toTile까지 정주행(0번 타일 경유)으로 한 칸씩 이동
+   * - stepMs가 작을수록 빠름 (카드 이동은 80~100ms 권장)
+   */
+  async function animateForwardSlide(player, fromTile, toTile, stepMs = 100) {
+    if (!els.piecesContainer) return;
+    const piece = els.piecesContainer.querySelector(`.monopoly-piece[data-player-id="${player.id}"]`);
+    const avatar = els.piecesContainer.querySelector(`.monopoly-board-turn-avatar[data-player-id="${player.id}"]`);
+    if (!piece) return;
+
+    const ox = parseFloat(piece.style.getPropertyValue("--piece-offset-x")) || 0;
+    const oy = parseFloat(piece.style.getPropertyValue("--piece-offset-y")) || 0;
+
+    // 정주행 경로 계산
+    const steps = [];
+    let cur = fromTile;
+    for (let i = 0; i < 40; i++) {
+      cur = (cur + 1) % 40;
+      steps.push(cur);
+      if (cur === toTile) break;
+    }
+
+    for (let si = 0; si < steps.length; si++) {
+      const stepTile = steps[si];
+      const prevTile = si === 0 ? fromTile : steps[si - 1];
+      const c = tileCenter(stepTile);
+      const pc = tileCenter(prevTile);
+      const dx = Math.abs(c.x - pc.x);
+      const dy = Math.abs(c.y - pc.y);
+      const direction = dx > dy ? "h" : "v";
+
+      const targetLeft = `calc(${c.x}% + ${ox}%)`;
+      const targetTop = `calc(${c.y}% + ${oy}%)`;
+
+      piece.classList.add(direction === "h" ? "bounce-h" : "bounce-v");
+      if (avatar) avatar.classList.add(direction === "h" ? "bounce-h" : "bounce-v");
+
+      piece.style.left = targetLeft;
+      piece.style.top = targetTop;
+      if (avatar) {
+        avatar.style.left = targetLeft;
+        avatar.style.top = targetTop;
+      }
+
+      await wait(stepMs);
+
+      piece.classList.remove("bounce-h", "bounce-v");
+      if (avatar) avatar.classList.remove("bounce-h", "bounce-v");
+    }
+    const fc = tileCenter(toTile);
+    piece.style.setProperty("--piece-x", `${fc.x}%`);
+    piece.style.setProperty("--piece-y", `${fc.y}%`);
+    piecePositions[player.id] = tilePosition(toTile);
+  }
+
   /* ── Card Decks ── */
   function drawChance() {
     if (!state.chanceDeck.length) state.chanceDeck = shuffle([...CHANCE_CARDS]);
@@ -1268,22 +1324,27 @@
   async function awardGoSalary(player) {
     collectMoney(player, GO_SALARY);
     addLog(`🏁 ${playerDisplayName(player)} 출발지를 지나 ₩${GO_SALARY.toLocaleString()} 획득!`);
-    await showNotice(`🏁 <strong>${playerDisplayName(player)}</strong>이(가)<br>출발지를 통과하여 월급 <strong>₩${GO_SALARY.toLocaleString()}</strong>을 받았습니다!`, 1500);
+    // 토스트로 가볍게 알림 (모달 띄우지 않음)
+    showToast(`🏁 출발지 통과! 월급 <strong>₩${GO_SALARY.toLocaleString()}</strong> 수령`, { variant: "info", duration: 1800 });
   }
 
   function passesGoForward(oldPos, target) {
     return target < oldPos;
   }
 
-  async function movePlayer(player, steps) {
+  async function movePlayer(player, steps, options = {}) {
     const oldPos = player.position;
     const newPos = (player.position + steps) % 40;
     // Pass GO
     if (newPos < oldPos && steps > 0) {
       await awardGoSalary(player);
     }
-    // Animate step by step
-    await animatePlayerMove(player, oldPos, newPos);
+    // Animate step by step (fast: 카드 이동처럼 긴 거리를 빠르게)
+    if (options.fast) {
+      await animateForwardSlide(player, oldPos, newPos, options.stepMs || 100);
+    } else {
+      await animatePlayerMove(player, oldPos, newPos);
+    }
     player.position = newPos;
   }
 
@@ -1751,12 +1812,28 @@
 
   async function executeCard(player, card) {
     switch (card.action) {
-      case "moveTo":
-        await teleportPlayer(player, card.target, card.collect);
+      case "moveTo": {
+        const target = card.target;
+        const oldPos = player.position;
+        if (target === oldPos) {
+          // 제자리 - 이동 없음
+        } else if (target < oldPos) {
+          // 역주행 금지 → 정주행으로 슬라이드 (출발지를 지나면서 월급 발생)
+          const steps = 40 - oldPos + target;
+          await movePlayer(player, steps, { fast: true, stepMs: 100 }); // 슬라이드 + 출발지 월급 자동
+        } else if (target === 0) {
+          // 출발지(0)로 이동: 정주행 (출발지에 정확히 도착)
+          const steps = 40 - oldPos;
+          await movePlayer(player, steps, { fast: true, stepMs: 100 });
+        } else {
+          // 정주행이지만 출발지 안 지나감
+          await teleportPlayer(player, target, card.collect);
+        }
         renderAll();
         await wait(500);
         await handleTileLanding(player);
         return;
+      }
       case "goToJail":
         await sendToJail(player);
         renderAll();
@@ -2283,6 +2360,28 @@
       btn.addEventListener("click", closeNotice);
       timeoutId = setTimeout(closeNotice, duration);
     });
+  }
+
+  /**
+   * 가벼운 토스트 알림 (모달 X, 화면 상단에 잠깐 표시)
+   * @param {string} message - HTML 가능 메시지
+   * @param {object} options - { variant: "info"|"warn"|"error"|undefined, duration: ms }
+   */
+  function showToast(message, options = {}) {
+    const container = document.querySelector("#monopolyToastContainer");
+    if (!container) return;
+    const variant = options.variant || "";
+    const duration = options.duration || 1800;
+
+    const toast = document.createElement("div");
+    toast.className = `monopoly-toast ${variant}`.trim();
+    toast.innerHTML = message;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add("fade-out");
+      setTimeout(() => toast.remove(), 400);
+    }, duration);
   }
 
   function showJailEscapePopup(player) {

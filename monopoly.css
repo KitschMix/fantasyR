@@ -1,4 +1,62 @@
 /* ===== Monopoly / 부루마불 ===== */
+
+/* ── Toast 알림 (가벼운 알림) ── */
+.monopoly-toast-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  max-width: 90vw;
+}
+
+.monopoly-toast {
+  background: linear-gradient(135deg, #2e7d32, #43a047);
+  color: #fff;
+  padding: 16px 28px;
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.35), 0 0 0 2px rgba(255,255,255,0.15) inset;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  animation: monopoly-toast-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: auto;
+  max-width: 520px;
+  min-width: 280px;
+  line-height: 1.4;
+}
+
+.monopoly-toast.info {
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+}
+
+.monopoly-toast.warn {
+  background: linear-gradient(135deg, #e65100, #ff9800);
+}
+
+.monopoly-toast.error {
+  background: linear-gradient(135deg, #c62828, #ef5350);
+}
+
+.monopoly-toast.fade-out {
+  animation: monopoly-toast-out 0.4s ease-in forwards;
+}
+
+@keyframes monopoly-toast-pop {
+  0% { transform: translateY(-30px) scale(0.85); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes monopoly-toast-out {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-30px) scale(0.85); opacity: 0; }
+}
 /* Uses styles.css variables: --bg, --surface, --surface-2, --surface-3, --line, --text, --muted, --accent, --focus, --shadow */
 
 /* --- Layout & Panels --- */
@@ -1523,7 +1581,7 @@ body.monopoly-active .monopoly-rules-help li {
 }
 
 .monopoly-card-popup {
-  width: min(340px, 90vw);
+  width: min(440px, 92vw);
   background: #fff9e9;
   border: 3px solid #d9a63c;
   border-radius: 16px;
@@ -1533,6 +1591,24 @@ body.monopoly-active .monopoly-rules-help li {
   overflow: hidden;
   animation: monopoly-card-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
+}
+
+.monopoly-card-body {
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  color: #24170d;
+}
+
+.monopoly-card-text {
+  font-size: 19px;
+  line-height: 1.6;
+  margin: 0;
+  text-align: center;
+  color: #24170d;
+  font-weight: 600;
 }
 
 @keyframes monopoly-card-pop {
@@ -1859,7 +1935,7 @@ body.monopoly-active .monopoly-all-properties-list {
 }
 
 .monopoly-property-popup {
-  width: min(340px, 90vw);
+  width: min(540px, 92vw);
   aspect-ratio: 1 / 1;
   background: rgba(255, 249, 233, 0.88);
   border: 3px solid #d9a63c;
@@ -1870,6 +1946,38 @@ body.monopoly-active .monopoly-all-properties-list {
   overflow: hidden;
   animation: monopoly-card-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
+}
+
+.property-popup-body {
+  padding: 28px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.property-popup-name {
+  font-size: 28px;
+  font-weight: 900;
+  color: #24170d;
+  margin: 0;
+  text-align: center;
+}
+
+.property-popup-row {
+  font-size: 17px;
+}
+
+.property-popup-footer {
+  padding: 14px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.property-popup-footer button {
+  font-size: 16px;
+  padding: 10px 14px;
 }
 
 .property-popup-header {
