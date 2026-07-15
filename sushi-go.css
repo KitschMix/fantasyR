@@ -99,6 +99,23 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 .sushi-game-panel {
   min-height: calc(100vh - 28px);
   padding: 14px;
+  background-image:
+    linear-gradient(rgba(15, 12, 8, 0.45), rgba(15, 12, 8, 0.55)),
+    url('assets/sushi/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.sushi-setup-panel {
+  background-image:
+    linear-gradient(rgba(15, 12, 8, 0.35), rgba(15, 12, 8, 0.45)),
+    url('assets/sushi/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 .sushi-shell {
@@ -197,19 +214,60 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 4px;
+  margin-top: 6px;
+  min-height: 40px;
+  align-items: flex-start;
 }
 
-.sushi-pick-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px 6px;
-  border-radius: 4px;
+/* --- Pick thumbnail (사이드바에서 선택한 카드 표시) --- */
+.sushi-pick-thumb {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 48px;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  background: var(--surface-2);
+  position: relative;
+  transition: transform 0.15s;
+}
+
+.sushi-pick-thumb:hover { transform: translateY(-2px); }
+
+.sushi-pick-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sushi-pick-thumb-emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.sushi-pick-empty {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* 사람 플레이어는 픽업 영역을 더 강조 */
+.sushi-player-card.human .sushi-player-picks {
+  padding: 6px;
+  border-radius: 6px;
+  background: rgba(242, 207, 120, 0.08);
+  border: 1px dashed rgba(242, 207, 120, 0.3);
+}
+
+.sushi-player-card.human .sushi-player-name::after {
+  content: " (나)";
   font-size: 11px;
   font-weight: 700;
-  background: var(--surface-2);
-  color: var(--text);
+  color: var(--accent);
+  opacity: 0.8;
 }
 
 /* --- Wasabi Held Indicator (다음 초밥 3배) --- */
@@ -278,11 +336,11 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 /* --- Card (Fantasy Kingdom hand-card style) --- */
 .sushi-card {
   width: 140px;
-  min-height: 190px;
+  height: 186px;
   border-radius: 10px;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: 12px 10px;
+  grid-template-rows: 1fr auto;
+  padding: 0;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, opacity 0.4s ease, scale 0.4s ease;
   border: 2px solid var(--line);
@@ -294,6 +352,7 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
   color: inherit;
   text-align: inherit;
   background: transparent;
+  overflow: hidden;
 }
 
 .sushi-card:focus-visible {
@@ -362,42 +421,89 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
   100% { transform: translateY(60px) rotate(5deg); opacity: 0; }
 }
 
+/* --- Card art (top portion: illustration or emoji fallback) --- */
+.sushi-card-art {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px 8px 0 0;
+  background: rgba(255,255,255,0.06);
+}
+
+.sushi-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .sushi-card-emoji {
-  font-size: 48px;
+  font-size: 56px;
   text-align: center;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
-.sushi-card-name {
-  font-size: 14px;
-  font-weight: 900;
-  text-align: center;
-  margin-top: 4px;
+/* --- Card text panel (bottom: name + points + desc) --- */
+.sushi-card-text {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 8px;
+  padding: 6px 10px 7px;
+  background: rgba(0,0,0,0.32);
+  backdrop-filter: blur(2px);
+  border-top: 1px solid rgba(255,255,255,0.12);
 }
 
-.sushi-card-desc {
-  font-size: 11px;
-  text-align: center;
-  opacity: 0.7;
-  margin-top: 2px;
+.sushi-card-name {
+  grid-column: 1 / 2;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: left;
+  line-height: 1.15;
 }
 
 .sushi-card-points {
-  font-size: 18px;
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+  font-size: 14px;
   font-weight: 900;
-  text-align: center;
-  margin-top: 4px;
+  text-align: right;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  color: inherit;
+  align-self: center;
+  letter-spacing: 0.5px;
 }
 
-/* Card type backgrounds */
-.sushi-card.nigiri { background: linear-gradient(135deg, #fff8e0, #ffe8a0); color: #5a4000; }
-.sushi-card.maki { background: linear-gradient(135deg, #e0f0e0, #b0d8b0); color: #1a4a1a; }
-.sushi-card.tempura { background: linear-gradient(135deg, #ffe0d0, #ffc0a0); color: #6a2a00; }
-.sushi-card.sashimi { background: linear-gradient(135deg, #e0e8ff, #b0c0f0); color: #1a2a5a; }
-.sushi-card.dumpling { background: linear-gradient(135deg, #f0e0f0, #d0b0d0); color: #4a1a4a; }
-.sushi-card.wasabi { background: linear-gradient(135deg, #d0f0d0, #80c060); color: #1a3a00; }
-.sushi-card.pudding { background: linear-gradient(135deg, #ffe8f0, #ffb0d0); color: #5a1a3a; }
-.sushi-card.chopsticks { background: linear-gradient(135deg, #f5e8d0, #d8c0a0); color: #3a2a10; }
+.sushi-card-desc {
+  grid-column: 1 / 2;
+  font-size: 10px;
+  text-align: left;
+  opacity: 0.78;
+  margin-top: 1px;
+}
+
+/* Card type backgrounds (그라데이션은 카드 art 영역에만 적용, 텍스트 패널은 반투명 검정) */
+.sushi-card.nigiri     .sushi-card-art { background: linear-gradient(135deg, #fff8e0, #ffe8a0); }
+.sushi-card.maki       .sushi-card-art { background: linear-gradient(135deg, #e0f0e0, #b0d8b0); }
+.sushi-card.tempura    .sushi-card-art { background: linear-gradient(135deg, #ffe0d0, #ffc0a0); }
+.sushi-card.sashimi    .sushi-card-art { background: linear-gradient(135deg, #e0e8ff, #b0c0f0); }
+.sushi-card.dumpling   .sushi-card-art { background: linear-gradient(135deg, #f0e0f0, #d0b0d0); }
+.sushi-card.wasabi     .sushi-card-art { background: linear-gradient(135deg, #d0f0d0, #80c060); }
+.sushi-card.pudding    .sushi-card-art { background: linear-gradient(135deg, #ffe8f0, #ffb0d0); }
+.sushi-card.chopsticks .sushi-card-art { background: linear-gradient(135deg, #f5e8d0, #d8c0a0); }
+
+/* 카드 전체 색상: 텍스트 패널 가독성을 위해 밝은 색 */
+.sushi-card.nigiri     .sushi-card-text { color: #2a1f00; background: rgba(255,240,200,0.92); }
+.sushi-card.maki       .sushi-card-text { color: #0d2a0d; background: rgba(220,240,220,0.92); }
+.sushi-card.tempura    .sushi-card-text { color: #4a1a00; background: rgba(255,225,205,0.92); }
+.sushi-card.sashimi    .sushi-card-text { color: #0d1a3a; background: rgba(220,230,255,0.92); }
+.sushi-card.dumpling   .sushi-card-text { color: #2a0d2a; background: rgba(240,225,240,0.92); }
+.sushi-card.wasabi     .sushi-card-text { color: #0d2200; background: rgba(210,240,210,0.92); }
+.sushi-card.pudding    .sushi-card-text { color: #3a0d1f; background: rgba(255,225,238,0.92); }
+.sushi-card.chopsticks .sushi-card-text { color: #251a08; background: rgba(245,232,208,0.92); }
 
 /* --- Action Card --- */
 .sushi-action-card {

@@ -7,19 +7,20 @@
   //   새우튀김 14, 사시미 14, 만두 14, 김밥 6/12/8, 계란 5, 연어 10, 문어 5,
   //   푸딩 10, 와사비 6, 젓가락 4.
   // 젓가락은 원본 룰의 스왑 메커닉이 미구현이므로 0점 데코로 동작.
+  // image: 카드 일러스트 (WebP, 290px). 사시미는 공식 일러스트가 없어 🐟 이모지로 폴백.
   const CARD_DEFS = [
-    { type: "nigiri",     name: "계란 초밥",   emoji: "🥚", points: 1, copies: 5 },
-    { type: "nigiri",     name: "연어 초밥",   emoji: "🍣", points: 2, copies: 10 },
-    { type: "nigiri",     name: "문어 초밥",   emoji: "🐙", points: 3, copies: 5 },
-    { type: "maki",       name: "김밥 3",      emoji: "🍱", points: 0, maki: 3, copies: 8 },
-    { type: "maki",       name: "김밥 2",      emoji: "🍙", points: 0, maki: 2, copies: 12 },
-    { type: "maki",       name: "김밥 1",      emoji: "🍘", points: 0, maki: 1, copies: 6 },
-    { type: "tempura",    name: "새우튀김",    emoji: "🍤", points: 0, copies: 14 },
-    { type: "sashimi",    name: "사시미",      emoji: "🐟", points: 0, copies: 14 },
-    { type: "dumpling",   name: "만두",        emoji: "🥟", points: 0, copies: 14 },
-    { type: "wasabi",     name: "와사비",      emoji: "🟢", points: 0, copies: 6 },
-    { type: "pudding",    name: "푸딩",        emoji: "🍮", points: 0, copies: 10 },
-    { type: "chopsticks", name: "젓가락",      emoji: "🥢", points: 0, copies: 4 }
+    { type: "nigiri",     name: "계란 초밥",   emoji: "🥚", image: "assets/sushi/계란초밥.webp",   points: 1, copies: 5 },
+    { type: "nigiri",     name: "연어 초밥",   emoji: "🍣", image: "assets/sushi/연어 초밥.webp", points: 2, copies: 10 },
+    { type: "nigiri",     name: "문어 초밥",   emoji: "🐙", image: "assets/sushi/오징어초밥.webp", points: 3, copies: 5 },
+    { type: "maki",       name: "김밥 3",      emoji: "🍱", image: "assets/sushi/김밥3.webp",     points: 0, maki: 3, copies: 8 },
+    { type: "maki",       name: "김밥 2",      emoji: "🍙", image: "assets/sushi/김밥2.webp",     points: 0, maki: 2, copies: 12 },
+    { type: "maki",       name: "김밥 1",      emoji: "🍘", image: "assets/sushi/김밥1.webp",     points: 0, maki: 1, copies: 6 },
+    { type: "tempura",    name: "새우튀김",    emoji: "🍤", image: "assets/sushi/새우튀김.webp",   points: 0, copies: 14 },
+    { type: "sashimi",    name: "사시미",      emoji: "🐟", image: "assets/sushi/생선회.webp",     points: 0, copies: 14 },
+    { type: "dumpling",   name: "만두",        emoji: "🥟", image: "assets/sushi/만두.webp",       points: 0, copies: 14 },
+    { type: "wasabi",     name: "와사비",      emoji: "🟢", image: "assets/sushi/와사비ㅏ.webp",   points: 0, copies: 6 },
+    { type: "pudding",    name: "푸딩",        emoji: "🍮", image: "assets/sushi/푸딩.webp",       points: 0, copies: 10 },
+    { type: "chopsticks", name: "젓가락",      emoji: "🥢", image: "assets/sushi/젓가락.webp",     points: 0, copies: 4 }
   ];
 
   const TOTAL_ROUNDS = 3;
@@ -308,18 +309,26 @@
     if (!els.playersList) return;
     els.playersList.innerHTML = state.players.map((p, i) => {
       const picks = state.pickedThisRound[i] || [];
-      const pickBadges = picks.map(c => `<span class="sushi-pick-badge">${c.emoji}</span>`).join("");
+      const isHuman = i === 0;
+      const pickThumbs = picks.map(c => {
+        const visual = c.image
+          ? `<img class="sushi-pick-thumb-img" src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" />`
+          : `<span class="sushi-pick-thumb-emoji" aria-hidden="true">${c.emoji}</span>`;
+        return `<span class="sushi-pick-thumb" title="${esc(c.name)}">${visual}</span>`;
+      }).join("");
       const wasabiBadge = p.wasabiHeld > 0
         ? `<span class="sushi-wasabi-indicator" title="다음 초밥 3배">🟢×${p.wasabiHeld}</span>`
         : "";
-      return `<section class="sushi-player-card${i === 0 ? " active" : ""}">
+      return `<section class="sushi-player-card${i === 0 ? " active" : ""}${isHuman ? " human" : ""}">
         <div class="sushi-player-header">
           <img class="sushi-player-avatar" src="${esc(p.avatarUrl)}" alt="" />
           <span class="sushi-player-name">${esc(p.name)}</span>
           ${wasabiBadge}
           <span class="sushi-player-score">${p.totalScore}점</span>
         </div>
-        <div class="sushi-player-picks">${pickBadges || "<small style='color:var(--muted)'>아직 없음</small>"}</div>
+        <div class="sushi-player-picks">
+          ${pickThumbs || "<small class='sushi-pick-empty'>아직 없음</small>"}
+        </div>
       </section>`;
     }).join("");
   }
@@ -331,20 +340,29 @@
 
     els.hand.innerHTML = hand.map((card, i) => {
       let desc = "";
-      if (card.type === "nigiri") desc = `${card.points}점`;
-      else if (card.type === "maki") desc = `김밥 ${card.maki}개`;
-      else if (card.type === "tempura") desc = "2장 = 5점";
-      else if (card.type === "sashimi") desc = "3장 = 10점";
-      else if (card.type === "dumpling") desc = "1/3/5/8/11점";
-      else if (card.type === "wasabi") desc = "다음 초밥 ×3";
-      else if (card.type === "pudding") desc = "최종 푸딩";
-      else if (card.type === "chopsticks") desc = "데코 카드";
+      let points = "";
+      if (card.type === "nigiri") { desc = "회전 초밥"; points = `${card.points}점`; }
+      else if (card.type === "maki") { desc = `김밥 ${card.maki}개`; points = card.maki + "●"; }
+      else if (card.type === "tempura") { desc = "2장 = 5점"; points = "5점"; }
+      else if (card.type === "sashimi") { desc = "3장 = 10점"; points = "10점"; }
+      else if (card.type === "dumpling") { desc = "1·3·5·8·11"; points = "+11"; }
+      else if (card.type === "wasabi") { desc = "다음 초밥 ×3"; points = "×3"; }
+      else if (card.type === "pudding") { desc = "최종 +6/-6"; points = "+6"; }
+      else if (card.type === "chopsticks") { desc = "데코 카드"; points = "—"; }
+
+      // 일러스트 또는 이모지 폴백 (사시미는 공식 일러스트 없음 → 🐟)
+      const visual = card.image
+        ? `<img class="sushi-card-image" src="${esc(card.image)}" alt="${esc(card.name)} 일러스트" loading="lazy" />`
+        : `<span class="sushi-card-emoji" aria-hidden="true">${card.emoji}</span>`;
 
       return `<button type="button" class="sushi-card ${card.type}" data-index="${i}"
         aria-label="${esc(card.name)}, ${desc}, 선택하여 손에 추가">
-        <span class="sushi-card-emoji" aria-hidden="true">${card.emoji}</span>
-        <span class="sushi-card-name" aria-hidden="true">${esc(card.name)}</span>
-        <span class="sushi-card-desc" aria-hidden="true">${desc}</span>
+        <span class="sushi-card-art">${visual}</span>
+        <span class="sushi-card-text">
+          <span class="sushi-card-name" aria-hidden="true">${esc(card.name)}</span>
+          <span class="sushi-card-points" aria-hidden="true">${points}</span>
+          <span class="sushi-card-desc" aria-hidden="true">${desc}</span>
+        </span>
       </button>`;
     }).join("");
 
