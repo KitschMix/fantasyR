@@ -3,9 +3,10 @@
   "use strict";
 
   /* ── Card Definitions ── */
-  // 공식 스시고! 분배 (handoff §5, §6 참조). 합계 110장 — 새우튀김 14, 사시미 14, 만두 14,
-  // 김밥 6/12/8, 계란 5, 연어 10, 문어 5, 푸딩 10, 와사비 6, 젓가락 6.
-  // (원본 Gamewright 108장 + 젓가락 2장 추가 = 110장. 스왑 메커닉은 미구현 → 0점 데코.)
+  // 공식 스시고! Gamewright 판 분배 (합계 108장):
+  //   새우튀김 14, 사시미 14, 만두 14, 김밥 6/12/8, 계란 5, 연어 10, 문어 5,
+  //   푸딩 10, 와사비 6, 젓가락 4.
+  // 젓가락은 원본 룰의 스왑 메커닉이 미구현이므로 0점 데코로 동작.
   const CARD_DEFS = [
     { type: "nigiri",     name: "계란 초밥",   emoji: "🥚", points: 1, copies: 5 },
     { type: "nigiri",     name: "연어 초밥",   emoji: "🍣", points: 2, copies: 10 },
@@ -18,7 +19,7 @@
     { type: "dumpling",   name: "만두",        emoji: "🥟", points: 0, copies: 14 },
     { type: "wasabi",     name: "와사비",      emoji: "🟢", points: 0, copies: 6 },
     { type: "pudding",    name: "푸딩",        emoji: "🍮", points: 0, copies: 10 },
-    { type: "chopsticks", name: "젓가락",      emoji: "🥢", points: 0, copies: 6 }
+    { type: "chopsticks", name: "젓가락",      emoji: "🥢", points: 0, copies: 4 }
   ];
 
   const TOTAL_ROUNDS = 3;
@@ -122,13 +123,35 @@
     const maxMaki = Math.max(...makiCounts);
     const secondMaki = Math.max(...makiCounts.filter(m => m < maxMaki));
     const makiWinners = makiCounts.map((m, i) => m === maxMaki ? i : -1).filter(i => i >= 0);
-    const makiSeconds = makiCounts.map((m, i) => m === secondMaki && m < maxMaki ? i : -1).filter(i => i >= 0);
+    const makiSeconds = makiCounts
+      .map((m, i) => m === secondMaki && m < maxMaki && m > 0 ? i : -1)
+      .filter(i => i >= 0);
 
     if (maxMaki > 0) {
-      // 원본 룰: 1등 동점이면 모든 동점자가 6점씩. 2등 점수는 1등 단독일 때만 3점.
-      makiWinners.forEach(i => { roundScores[i] += 6; breakdown[i].makiBonus = 6; });
-      if (makiWinners.length === 1 && makiSeconds.length > 0) {
-        makiSeconds.forEach(i => { roundScores[i] += 3; breakdown[i].makiBonus = 3; });
+      // 공식 룰북: "1등 동점이면 6점을 나눠서 갖습니다. 이 경우에는 두번째로 많은
+      // 사람은 점수를 얻지 못합니다."
+      if (makiWinners.length === 1) {
+        // 1등 단독: 6점
+        roundScores[makiWinners[0]] += 6;
+        breakdown[makiWinners[0]].makiBonus = 6;
+        // 2등은 1등이 단독일 때만 점수. 단독이면 3, 동점이면 3/N 분배.
+        if (makiSeconds.length === 1) {
+          roundScores[makiSeconds[0]] += 3;
+          breakdown[makiSeconds[0]].makiBonus = 3;
+        } else if (makiSeconds.length > 1) {
+          const share = Math.floor(3 / makiSeconds.length);
+          makiSeconds.forEach(i => {
+            roundScores[i] += share;
+            breakdown[i].makiBonus = share;
+          });
+        }
+      } else {
+        // 1등 동점: 6점 분배, 2등 없음
+        const share = Math.floor(6 / makiWinners.length);
+        makiWinners.forEach(i => {
+          roundScores[i] += share;
+          breakdown[i].makiBonus = share;
+        });
       }
     }
 
