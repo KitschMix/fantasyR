@@ -277,7 +277,6 @@
     return `<div class="splendor-noble" data-nindex="${index}" style="background-image: url('${noble.img}'); background-size: cover; background-position: center;">
       <span class="splendor-card-top">
         <span class="splendor-card-points" aria-label="${noble.points}점">${Array.from({ length: noble.points }, () => '<span class="splendor-card-star">★</span>').join("")}</span>
-        <span class="splendor-noble-label">귀족</span>
       </span>
       <span class="splendor-card-middle" aria-hidden="true"></span>
       <span class="splendor-card-cost splendor-noble-req" aria-label="필요 보너스">${reqHtml}</span>
