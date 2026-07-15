@@ -252,7 +252,7 @@
       aria-label="${label}"
       style="border-top: 4px solid ${tierColors[tier] || "var(--line)"}; background-image: url('${bgUrl}'); background-size: cover; background-position: center;">
       <span class="splendor-card-top">
-        <span class="splendor-card-points" aria-hidden="true">${card.points ? Array.from({ length: Math.min(card.points, 5) }, () => '<span class="splendor-card-star">★</span>').join("") : ""}</span>
+        <span class="splendor-card-points" aria-hidden="true">${card.points ? `★${card.points}` : ""}</span>
         <span class="splendor-card-bonus" title="${GEM_LABELS[card.bonus]} 보너스" aria-hidden="true">${gemImg(card.bonus, 40)}</span>
       </span>
       <span class="splendor-card-middle" aria-hidden="true"></span>
@@ -276,7 +276,7 @@
       .map(([g, n]) => gemPip(g, n)).join("");
     return `<div class="splendor-noble" data-nindex="${index}" style="background-image: url('${noble.img}'); background-size: cover; background-position: center;">
       <span class="splendor-card-top">
-        <span class="splendor-card-points" aria-label="${noble.points}점">${Array.from({ length: noble.points }, () => '<span class="splendor-card-star">★</span>').join("")}</span>
+        <span class="splendor-card-points" aria-label="${noble.points}점">★${noble.points}</span>
       </span>
       <span class="splendor-card-middle" aria-hidden="true"></span>
       <span class="splendor-card-cost splendor-noble-req" aria-label="필요 보너스">${reqHtml}</span>
@@ -424,7 +424,7 @@
         data-rindex="${i}" title="예약 카드 ${i + 1} — 클릭해서 구매"
         style="border-top: 4px solid ${tierColors[c.tier] || "var(--line)"}; background-image: url('${bgUrl}'); background-size: cover; background-position: center; position: relative;">
         <div class="splendor-card-top">
-          <span class="splendor-card-points">${c.points ? "★".repeat(Math.min(c.points, 5)) : ""}</span>
+          <span class="splendor-card-points">${c.points ? `★${c.points}` : ""}</span>
           <span class="splendor-card-bonus">${gemImg(c.bonus, 40)}</span>
         </div>
         <div class="splendor-card-middle"></div>
@@ -479,7 +479,7 @@
     const bgUrl = CARD_BG_IMAGES[card.bonus];
     preview.innerHTML = `<div class="splendor-card" style="border-top: 4px solid ${tierColors[card.tier] || tierColors[1] || "var(--line)"}; background-image: url('${bgUrl}'); background-size: cover; background-position: center;">
       <div class="splendor-card-top">
-        <span class="splendor-card-points">${card.points ? "★".repeat(Math.min(card.points, 5)) : ""}</span>
+        <span class="splendor-card-points">${card.points ? `★${card.points}` : ""}</span>
         <span class="splendor-card-bonus">${gemImg(card.bonus, 70)}</span>
       </div>
       <div class="splendor-card-middle"></div>
