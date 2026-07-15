@@ -1,8 +1,8 @@
-# 🎚️ AI 난이도 & 보스 시스템 — 판타지왕국 패턴
+# 🎚️ AI 난이도 & 보스 시스템 (판타지왕국에서 출발한 8개 게임 공통 패턴)
 
 > **용도**: 8개 게임 (fantasy, cant-stop, monopoly, splendor, clue, dominion, tally-ho, sushi-go) 전체의 AI 난이도와 NPC 보스 처리를 일관되게 관리하기 위한 가이드.
 
-판타지왕국(scaffolded from Fantasy Realms) 의 패턴을 정리한 문서입니다. **새 게임을 만들거나 기존 게임에 합류할 때** 참조하세요.
+판타지왕국(Fantasy Realms 기반)이 출발점이자 가장 깊은 사례이지만, **이 패턴은 8개 게임 모두에 공통으로 적용**됩니다. 새 게임을 만들거나 기존 게임에 합류할 때 참조하세요.
 
 ---
 
