@@ -381,6 +381,7 @@
   /**
    * sourceEl에서 targetEl로 카드를 곡선으로 비행시키는 애니메이션.
    * WAAPI keyframe으로 시작점 → 아치 정점 → 도착점(축소+회전+fade).
+   * sourceEl은 미리 left/top이 출발 위치로 설정되어 있어야 함.
    * 도착 시 clone은 자동 제거.
    */
   function flyCardToInventory(sourceEl, targetEl) {
@@ -388,8 +389,18 @@
     const startRect = sourceEl.getBoundingClientRect();
     const endRect = targetEl.getBoundingClientRect();
 
+    // 사용자 카드 clone: sourceEl의 innerHTML만 복사하고,
+    // 별도 fixed element를 만들어 sourceRect 위치에 배치.
     const clone = sourceEl.cloneNode(true);
     clone.classList.add("sushi-card-fly-clone");
+    clone.removeAttribute("id");
+    // 원본 카드와 동일한 크기/위치로 fixed 배치
+    clone.style.position = "fixed";
+    clone.style.left = startRect.left + "px";
+    clone.style.top = startRect.top + "px";
+    clone.style.width = startRect.width + "px";
+    clone.style.height = startRect.height + "px";
+    clone.style.margin = "0";
     document.body.appendChild(clone);
 
     const startX = startRect.left;
@@ -404,6 +415,7 @@
     const midY = Math.min(startY, endY) - archHeight;
     const rotSign = dx >= 0 ? 1 : -1;
 
+    // 상대 transform (clone의 left/top이 이미 출발 위치)
     const anim = clone.animate([
       { transform: "translate(0, 0) scale(1) rotate(0deg)", opacity: 1, offset: 0 },
       { transform: `translate(${midX - startX}px, ${midY - startY}px) scale(1.12) rotate(${rotSign * 8}deg)`, opacity: 1, offset: 0.55 },
@@ -424,6 +436,7 @@
   /**
    * AI 비행용 ghost 카드 생성. AI 플레이어 헤더 위치에 손패 카드와 동일한 크기로 배치.
    * 비행 후 자동 제거됨 (flyCardToInventory에서 clone 처리).
+   * left/top을 명시적으로 설정하여 flyCardToInventory의 절대 좌표 transform과 호환되게.
    */
   function makeGhostCardEl(card, sourceEl, size) {
     const el = document.createElement("div");
@@ -437,14 +450,15 @@
         <span class="sushi-card-name">${esc(card.name)}</span>
       </span>
     `;
-    document.body.appendChild(el);
     const w = size?.width || 140;
     const h = size?.height || 186;
     el.style.width = w + "px";
     el.style.height = h + "px";
     const rect = sourceEl.getBoundingClientRect();
+    // 시작 위치를 명시적으로 고정. 비행 시 translate(0,0)이 이 위치 기준.
     el.style.left = (rect.left + rect.width / 2 - w / 2) + "px";
     el.style.top = (rect.top + rect.height / 2 - h / 2) + "px";
+    document.body.appendChild(el);
     return el;
   }
 
