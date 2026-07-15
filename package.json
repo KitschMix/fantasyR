@@ -13,5 +13,8 @@
     "test:phoenix": "node tests/phoenix.test.js",
     "test:cursed": "node tests/cursed-item.test.js",
     "test:regression": "node tests/regression.test.js"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.3"
   }
 }

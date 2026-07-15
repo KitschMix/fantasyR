@@ -27,7 +27,7 @@ body:not(.cant-active) .cant-stop-panel {
   padding: 18px;
   background-image:
     linear-gradient(rgba(15, 12, 8, 0.45), rgba(15, 12, 8, 0.55)),
-    url('assets/cantstop/bg.jpg');
+    url('assets/cantstop/bg.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

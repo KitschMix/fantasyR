@@ -52,7 +52,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   padding: 24px;
   background-image:
     linear-gradient(rgba(15, 12, 8, 0.35), rgba(15, 12, 8, 0.45)),
-    url('assets/splendor/bg.jpg');
+    url('assets/splendor/bg.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -111,7 +111,7 @@ body.splendor-active.splendor-playing .splendor-game-panel {
   padding: 14px;
   background-image:
     linear-gradient(rgba(15, 12, 8, 0.45), rgba(15, 12, 8, 0.55)),
-    url('assets/splendor/bg.jpg');
+    url('assets/splendor/bg.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
