@@ -342,12 +342,12 @@
       let desc = "";
       let points = "";
       if (card.type === "nigiri") { desc = "회전 초밥"; points = `${card.points}점`; }
-      else if (card.type === "maki") { desc = `김밥 ${card.maki}개`; points = card.maki + "●"; }
-      else if (card.type === "tempura") { desc = "2장 = 5점"; points = "5점"; }
-      else if (card.type === "sashimi") { desc = "3장 = 10점"; points = "10점"; }
-      else if (card.type === "dumpling") { desc = "1·3·5·8·11"; points = "+11"; }
-      else if (card.type === "wasabi") { desc = "다음 초밥 ×3"; points = "×3"; }
-      else if (card.type === "pudding") { desc = "최종 +6/-6"; points = "+6"; }
+      else if (card.type === "maki") { desc = `김밥 ${card.maki}장 ` + "●".repeat(card.maki); points = ""; }
+      else if (card.type === "tempura") { desc = "2장 = 5점"; points = ""; }
+      else if (card.type === "sashimi") { desc = "3장 = 10점"; points = ""; }
+      else if (card.type === "dumpling") { desc = "누적 1·3·5·8·11"; points = ""; }
+      else if (card.type === "wasabi") { desc = "다음 초밥 ×3"; points = ""; }
+      else if (card.type === "pudding") { desc = "최종 +6/-6"; points = ""; }
       else if (card.type === "chopsticks") { desc = "데코 카드"; points = "—"; }
 
       // 일러스트 또는 이모지 폴백 (사시미는 공식 일러스트 없음 → 🐟)

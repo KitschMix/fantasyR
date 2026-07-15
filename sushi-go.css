@@ -496,14 +496,14 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 .sushi-card.chopsticks .sushi-card-art { background: linear-gradient(135deg, #f5e8d0, #d8c0a0); }
 
 /* 카드 전체 색상: 텍스트 패널 가독성을 위해 밝은 색 */
-.sushi-card.nigiri     .sushi-card-text { color: #2a1f00; background: rgba(255,240,200,0.92); }
-.sushi-card.maki       .sushi-card-text { color: #0d2a0d; background: rgba(220,240,220,0.92); }
-.sushi-card.tempura    .sushi-card-text { color: #4a1a00; background: rgba(255,225,205,0.92); }
-.sushi-card.sashimi    .sushi-card-text { color: #0d1a3a; background: rgba(220,230,255,0.92); }
-.sushi-card.dumpling   .sushi-card-text { color: #2a0d2a; background: rgba(240,225,240,0.92); }
-.sushi-card.wasabi     .sushi-card-text { color: #0d2200; background: rgba(210,240,210,0.92); }
-.sushi-card.pudding    .sushi-card-text { color: #3a0d1f; background: rgba(255,225,238,0.92); }
-.sushi-card.chopsticks .sushi-card-text { color: #251a08; background: rgba(245,232,208,0.92); }
+.sushi-card.nigiri     .sushi-card-text { color: #2a1f00; background: rgba(255,240,200,0.70); }
+.sushi-card.maki       .sushi-card-text { color: #0d2a0d; background: rgba(220,240,220,0.70); }
+.sushi-card.tempura    .sushi-card-text { color: #4a1a00; background: rgba(255,225,205,0.70); }
+.sushi-card.sashimi    .sushi-card-text { color: #0d1a3a; background: rgba(220,230,255,0.70); }
+.sushi-card.dumpling   .sushi-card-text { color: #2a0d2a; background: rgba(240,225,240,0.70); }
+.sushi-card.wasabi     .sushi-card-text { color: #0d2200; background: rgba(210,240,210,0.70); }
+.sushi-card.pudding    .sushi-card-text { color: #3a0d1f; background: rgba(255,225,238,0.70); }
+.sushi-card.chopsticks .sushi-card-text { color: #251a08; background: rgba(245,232,208,0.70); }
 
 /* --- Action Card --- */
 .sushi-action-card {
