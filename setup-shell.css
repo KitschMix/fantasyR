@@ -553,6 +553,19 @@ body.monopoly-active .monopoly-setup-shell .setup-profile-source {
   margin-top: auto;
 }
 
+/* Sushi Go: place the ranking panel in the right column on wide viewports
+   so the three panels form a 2x2-ish grid instead of one card dropping down. */
+.sushi-setup-shell .sushi-setup-grid > .game-ranking-panel {
+  grid-column: 2;
+  align-self: stretch;
+}
+
+@media (max-width: 1180px) {
+  .sushi-setup-shell .sushi-setup-grid > .game-ranking-panel {
+    grid-column: 1 / -1;
+  }
+}
+
 /* Single-column ranking boards (one leaderboard list per game). */
 .sushi-leaderboard-board,
 .splendor-leaderboard-board,
