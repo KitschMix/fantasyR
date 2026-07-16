@@ -31,6 +31,13 @@
   const AI_NEXT_REVEAL_MS = 380;
   const AI_TURN_GAP_MS = 160;
 
+  /* ── UI Zoom (gameplay) ── */
+  const SUSHI_ZOOM_STORAGE_KEY = "fantasyR.sushiZoomPercent";
+  const SUSHI_ZOOM_MIN_PERCENT = 70;
+  const SUSHI_ZOOM_MAX_PERCENT = 220;
+  const SUSHI_ZOOM_STEP_PERCENT = 10;
+  let sushiZoomPercent = 100;
+
   /* ── DOM ── */
   const $ = (sel) => document.querySelector(sel);
   const els = {
@@ -43,6 +50,9 @@
     newGameButton: $("#sushiNewGameButton"),
     exitButton:    $("#sushiExitButton"),
     rulesButton:   $("#sushiRulesButton"),
+    zoomOutButton: $("#sushiZoomOutButton"),
+    zoomInButton:  $("#sushiZoomInButton"),
+    zoomLabel:     $("#sushiZoomLabel"),
     rulesDialog:   $("#sushiRulesDialog"),
     roundLabel:    $("#sushiRoundLabel"),
     playersList:   $("#sushiPlayersList"),
@@ -1053,7 +1063,53 @@
     if (nextBtn) nextBtn.textContent = tutorialStep === TUTORIAL_STEPS.length - 1 ? "완료" : "다음 →";
   }
 
+  function loadSushiZoomPercent() {
+    try {
+      const raw = window.localStorage?.getItem(SUSHI_ZOOM_STORAGE_KEY);
+      const numeric = Number.parseInt(raw || "", 10);
+      if (Number.isFinite(numeric)) {
+        return Math.min(SUSHI_ZOOM_MAX_PERCENT, Math.max(SUSHI_ZOOM_MIN_PERCENT, numeric));
+      }
+    } catch (error) {
+      console.warn("[sushi] zoom percent load failed:", error);
+    }
+    return 100;
+  }
+
+  function saveSushiZoomPercent(percent) {
+    try {
+      window.localStorage?.setItem(SUSHI_ZOOM_STORAGE_KEY, String(percent));
+    } catch (error) {
+      console.warn("[sushi] zoom percent save failed:", error);
+    }
+  }
+
+  function renderSushiZoomControls() {
+    els.gamePanel?.style.setProperty("--sushi-ui-zoom", String(sushiZoomPercent / 100));
+    if (els.zoomLabel) els.zoomLabel.textContent = `${sushiZoomPercent}%`;
+    if (els.zoomOutButton) els.zoomOutButton.disabled = sushiZoomPercent <= SUSHI_ZOOM_MIN_PERCENT;
+    if (els.zoomInButton) els.zoomInButton.disabled = sushiZoomPercent >= SUSHI_ZOOM_MAX_PERCENT;
+  }
+
+  function setSushiZoomPercent(percent, persist = true) {
+    sushiZoomPercent = Math.min(
+      SUSHI_ZOOM_MAX_PERCENT,
+      Math.max(SUSHI_ZOOM_MIN_PERCENT, Math.round(percent / SUSHI_ZOOM_STEP_PERCENT) * SUSHI_ZOOM_STEP_PERCENT)
+    );
+    renderSushiZoomControls();
+    if (persist) saveSushiZoomPercent(sushiZoomPercent);
+  }
+
+  function adjustSushiZoom(delta) {
+    setSushiZoomPercent(sushiZoomPercent + delta);
+  }
+
   function init() {
+    sushiZoomPercent = loadSushiZoomPercent();
+    renderSushiZoomControls();
+    els.zoomOutButton?.addEventListener("click", () => adjustSushiZoom(-SUSHI_ZOOM_STEP_PERCENT));
+    els.zoomInButton?.addEventListener("click", () => adjustSushiZoom(SUSHI_ZOOM_STEP_PERCENT));
+
     els.startButton?.addEventListener("click", startGame);
     els.newGameButton?.addEventListener("click", resetToSetup);
     els.exitButton?.addEventListener("click", leaveGame);
