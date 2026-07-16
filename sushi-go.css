@@ -488,12 +488,13 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 }
 
 .sushi-hand {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
   gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
+  justify-items: center;
+  align-items: start;
   padding: 20px;
-  min-height: 200px;
+  min-height: 220px;
   border-radius: 12px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -507,8 +508,10 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 
 /* --- Card (Fantasy Kingdom hand-card style) --- */
 .sushi-card {
-  width: 140px;
-  height: 186px;
+  width: 100%;
+  max-width: 150px;
+  height: auto;
+  aspect-ratio: 140 / 186;
   border-radius: 10px;
   display: grid;
   grid-template-rows: 1fr auto;
