@@ -392,10 +392,18 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 
 .sushi-inventory-preview-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(105px, 140px));
+  grid-template-columns: repeat(auto-fit, minmax(110px, 150px));
   justify-content: center;
   align-items: start;
   gap: 16px;
+  max-width: calc(150px * 6 + 16px * 5);
+  margin: 0 auto;
+}
+
+@media (max-width: 820px) {
+  .sushi-inventory-preview-cards {
+    max-width: calc(150px * 4 + 16px * 3);
+  }
 }
 
 .sushi-inventory-preview-card {
