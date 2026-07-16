@@ -970,15 +970,20 @@
   }
 
   async function leaveGame() {
-    const ok = await window.showConfirm({
-      title: "첫 화면으로",
-      message: "게임이 진행 중이면 진행 상황이 사라집니다.\n첫 화면으로 돌아가시겠습니까?",
-      confirmText: "첫 화면으로",
-      cancelText: "취소",
-      tone: "danger",
-      icon: "⚠️"
-    });
-    if (!ok) return;
+    // 게임이 이미 진행 중일 때만 확인 팝업을 띄운다.
+    // setup 화면에서는 진행 상황이 없으므로 바로 첫 화면으로 돌아간다.
+    const inGame = els.gamePanel && !els.gamePanel.classList.contains("hidden");
+    if (inGame) {
+      const ok = await window.showConfirm({
+        title: "첫 화면으로",
+        message: "게임이 진행 중이면 진행 상황이 사라집니다.\n첫 화면으로 돌아가시겠습니까?",
+        confirmText: "첫 화면으로",
+        cancelText: "취소",
+        tone: "danger",
+        icon: "⚠️"
+      });
+      if (!ok) return;
+    }
     window.location.href = "./index.html";
   }
 
