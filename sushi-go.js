@@ -26,9 +26,9 @@
   const TOTAL_ROUNDS = 3;
   const DUMPLING_SCORES = [0, 1, 3, 5, 8, 11];
   const HAND_SIZES = { 2: 10, 3: 9, 4: 8, 5: 7 }; // 공식 스시고! 분배
-  const AI_FIRST_REVEAL_MIN_MS = 700;
-  const AI_FIRST_REVEAL_VARIANCE_MS = 300;
-  const AI_NEXT_REVEAL_MS = 380;
+  const AI_FIRST_REVEAL_MIN_MS = 900;
+  const AI_FIRST_REVEAL_VARIANCE_MS = 200;
+  const AI_NEXT_REVEAL_MS = 1000;
   const AI_TURN_GAP_MS = 160;
 
   /* ── UI Zoom (gameplay) ── */
@@ -610,7 +610,7 @@
   /**
    * AI 선택 말풍선 표시. NPC 카드가 사이드바의 헤더에서 인벤토리로 날아가기 전
    * "xxx가 xxx 선택" 같은 정보를 잠깐 보여줘서 선택을 인지할 수 있게 함.
-   * 1~1.5초 후 hideAiSelectionBubble로 제거 (비행 시작 시점).
+   * 약 1초 후 hideAiSelectionBubble로 제거 (비행 시작 시점).
    */
   function showAiSelectionBubble(playerIndex, card) {
     if (!els.playersList) return;
