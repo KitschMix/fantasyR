@@ -52,6 +52,11 @@
     pickInfo:      $("#sushiPickInfo"),
     puddingCount:  $("#sushiPuddingCount"),
     log:           $("#sushiLog"),
+    inventoryPreview:       $("#sushiInventoryPreview"),
+    inventoryPreviewAvatar: $("#sushiInventoryPreviewAvatar"),
+    inventoryPreviewTitle:  $("#sushiInventoryPreviewTitle"),
+    inventoryPreviewMeta:   $("#sushiInventoryPreviewMeta"),
+    inventoryPreviewCards:  $("#sushiInventoryPreviewCards"),
     roundEnd:      $("#sushiRoundEnd"),
     roundEndTitle: $("#sushiRoundEndTitle"),
     roundEndScores:$("#sushiRoundEndScores"),
@@ -309,8 +314,61 @@
   }
 
   /* ── Rendering ── */
+  function inventoryPreviewCardMarkup(card) {
+    let desc = "";
+    let points = "";
+    if (card.type === "nigiri") { desc = "회전 초밥"; points = `${card.points}점`; }
+    else if (card.type === "maki") { desc = `김밥 ${card.maki}장 ` + "●".repeat(card.maki); }
+    else if (card.type === "tempura") desc = "2장 = 5점";
+    else if (card.type === "sashimi") desc = "3장 = 10점";
+    else if (card.type === "dumpling") desc = "누적 1·3·5·8·11";
+    else if (card.type === "wasabi") desc = "다음 초밥 ×3";
+    else if (card.type === "pudding") desc = "최종 +6/-6";
+    else if (card.type === "chopsticks") { desc = "데코 카드"; points = "—"; }
+
+    const visual = card.image
+      ? `<img class="sushi-card-image" src="${esc(card.image)}" alt="" loading="lazy" />`
+      : `<span class="sushi-card-emoji" aria-hidden="true">${card.emoji}</span>`;
+
+    return `<article class="sushi-card ${card.type} sushi-inventory-preview-card" aria-label="${esc(card.name)}, ${esc(desc)}">
+      <span class="sushi-card-art">${visual}</span>
+      <span class="sushi-card-text">
+        <span class="sushi-card-name">${esc(card.name)}</span>
+        <span class="sushi-card-points">${points}</span>
+        <span class="sushi-card-desc">${desc}</span>
+      </span>
+    </article>`;
+  }
+
+  function showInventoryPreview(playerIndex) {
+    const player = state.players[playerIndex];
+    if (!player || !els.inventoryPreview || !els.inventoryPreviewCards) return;
+
+    const picks = state.pickedThisRound[playerIndex] || [];
+    if (els.inventoryPreviewAvatar) {
+      els.inventoryPreviewAvatar.src = player.avatarUrl || "";
+      els.inventoryPreviewAvatar.alt = `${player.name} 프로필`;
+    }
+    if (els.inventoryPreviewTitle) els.inventoryPreviewTitle.textContent = `${player.name}의 선택 카드`;
+    if (els.inventoryPreviewMeta) {
+      els.inventoryPreviewMeta.textContent = `라운드 ${state.currentRound} · ${picks.length}장 선택`;
+    }
+    els.inventoryPreviewCards.innerHTML = picks.length
+      ? picks.map(inventoryPreviewCardMarkup).join("")
+      : `<div class="sushi-inventory-preview-empty">아직 선택한 카드가 없습니다.</div>`;
+    els.inventoryPreview.classList.remove("hidden");
+    els.inventoryPreview.setAttribute("aria-hidden", "false");
+  }
+
+  function hideInventoryPreview() {
+    if (!els.inventoryPreview) return;
+    els.inventoryPreview.classList.add("hidden");
+    els.inventoryPreview.setAttribute("aria-hidden", "true");
+  }
+
   function renderPlayers() {
     if (!els.playersList) return;
+    hideInventoryPreview();
     els.playersList.innerHTML = state.players.map((p, i) => {
       const picks = state.pickedThisRound[i] || [];
       const isHuman = i === 0;
@@ -323,7 +381,9 @@
       const wasabiBadge = p.wasabiHeld > 0
         ? `<span class="sushi-wasabi-indicator" title="다음 초밥 3배">🟢×${p.wasabiHeld}</span>`
         : "";
-      return `<section class="sushi-player-card${i === 0 ? " active" : ""}${isHuman ? " human" : ""}">
+      return `<section class="sushi-player-card${i === 0 ? " active" : ""}${isHuman ? " human" : ""}"
+        data-player-index="${i}" tabindex="0"
+        aria-label="${esc(p.name)} 프로필 및 선택 카드 ${picks.length}장. 크게 보려면 포커스하세요.">
         <div class="sushi-player-header">
           <img class="sushi-player-avatar" src="${esc(p.avatarUrl)}" alt="" />
           <span class="sushi-player-name">${esc(p.name)}</span>
@@ -335,6 +395,17 @@
         </div>
       </section>`;
     }).join("");
+
+    els.playersList.querySelectorAll(".sushi-player-card").forEach(cardEl => {
+      const playerIndex = Number(cardEl.dataset.playerIndex);
+      const openPreview = () => showInventoryPreview(playerIndex);
+      cardEl.addEventListener("mouseenter", openPreview);
+      cardEl.addEventListener("mouseleave", hideInventoryPreview);
+      cardEl.addEventListener("focusin", openPreview);
+      cardEl.addEventListener("focusout", event => {
+        if (!cardEl.contains(event.relatedTarget)) hideInventoryPreview();
+      });
+    });
   }
 
   function renderHand() {
@@ -618,6 +689,8 @@
       // Animate passing (remaining hand slides left)
       if (els.hand) {
         els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
+          // 이전 턴의 등장 애니메이션이 passing을 덮어쓰지 않게 정리한다.
+          el.classList.remove("dealing");
           el.style.animationDelay = `${i * 25}ms`;
           el.classList.add("passing");
         });
@@ -697,6 +770,11 @@
         els.hand.querySelectorAll(".sushi-card").forEach((el, i) => {
           el.style.animationDelay = `${i * 30}ms`;
           el.classList.add("dealing");
+          el.addEventListener("animationend", event => {
+            if (event.animationName !== "sushiDealCard") return;
+            el.classList.remove("dealing");
+            el.style.animationDelay = "";
+          }, { once: true });
         });
       }
 
