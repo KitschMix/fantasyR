@@ -449,6 +449,10 @@
       });
     });
 
+    // 카드 수의 절반(반올림)만큼 한 줄에 배치 → 7장은 4+3, 8장은 4+4, 9장은 5+4, 10장은 5+5
+    const halfCols = Math.max(2, Math.ceil(hand.length / 2));
+    els.hand.style.setProperty("--hand-cols", String(halfCols));
+
     if (els.handInfo) els.handInfo.textContent = `${hand.length}장 남음`;
     if (els.pickInfo) els.pickInfo.textContent = "카드를 1장 선택하세요";
   }
