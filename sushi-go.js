@@ -624,13 +624,13 @@
     if (!p) return;
     const bubble = document.createElement('div');
     bubble.className = 'sushi-ai-bubble';
+    const artInner = card.image
+      ? `<img src="${esc(card.image)}" alt="${esc(card.name)}" />`
+      : `<span class="bubble-card-art-emoji" aria-hidden="true">${card.emoji}</span>`;
     bubble.innerHTML =
-      `<span class="bubble-emoji">${p.emoji}</span>` +
-      `<strong>${p.name}</strong> 선택 ` +
-      `<span class="bubble-card">${card.emoji} ${card.name}</span>`;
-    // AI 카드 사이 살짝 어긋나게 배치 (여러 AI가 있을 때 겹침 방지)
-    const offset = (playerIndex - 1) * 4;
-    bubble.style.top = `${-38 - offset}px`;
+      `<span class="bubble-label"><span class="bubble-emoji">${p.emoji}</span>${esc(p.name)} 선택</span>` +
+      `<span class="bubble-card-art">${artInner}</span>` +
+      `<span class="bubble-card">${card.emoji} ${esc(card.name)}</span>`;
     cardEl.appendChild(bubble);
   }
 
