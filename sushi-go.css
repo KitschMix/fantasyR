@@ -123,12 +123,20 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
   gap: 14px;
   width: min(1880px, 100%);
   margin: 0 auto;
+}
+
+.sushi-zoom-stage {
+  display: grid;
+  gap: 14px;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
   zoom: var(--sushi-ui-zoom, 1);
   transform-origin: top center;
 }
 
 @supports not (zoom: 1) {
-  .sushi-shell {
+  .sushi-zoom-stage {
     transform: scale(var(--sushi-ui-zoom, 1));
   }
 }
@@ -147,11 +155,13 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 
 .sushi-zoom-button {
   min-width: 38px;
-  width: 38px;
+  max-width: 100%;
+  width: 100%;
   min-height: 38px;
   height: 38px;
   font-size: 24px;
   line-height: 1;
+  padding: 0;
 }
 
 .sushi-zoom-label {
@@ -160,6 +170,9 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
   font-weight: 900;
   text-align: center;
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
 }
 
 .sushi-game-top {
