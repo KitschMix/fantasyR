@@ -30,6 +30,7 @@
   const AI_FIRST_REVEAL_VARIANCE_MS = 200;
   const AI_NEXT_REVEAL_MS = 1000;
   const AI_TURN_GAP_MS = 160;
+  const PLAYER_TO_AI_GAP_MS = 1000; // 내 턴 종료 후 첫 AI 공개 전 생각하는 시간
 
   /* ── UI Zoom (gameplay) ── */
   const SUSHI_ZOOM_STORAGE_KEY = "fantasyR.sushiZoomPercent";
@@ -699,6 +700,10 @@
         Promise.all(flights).finally(() => { state.phase = "idle"; });
         return;
       }
+      // 내 카드 비행이 끝나면 잠시 멈춰서 결과를 인지할 시간을 주고,
+      // 그 다음에 첫 AI가 고른 카드를 공개한다.
+      await Promise.all(flights);
+      await wait(PLAYER_TO_AI_GAP_MS);
 
       // Animate passing (remaining hand slides left)
       if (els.hand) {
