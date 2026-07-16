@@ -465,6 +465,7 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 /* --- Center: Hand Area (Fantasy Kingdom table-area style) --- */
 .sushi-center {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -489,12 +490,16 @@ body.sushi-active.sushi-playing .sushi-game-panel { display: block; }
 
 .sushi-hand {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(112px, 140px));
   gap: 12px;
-  justify-items: center;
+  justify-content: center;
   align-items: start;
   padding: 20px;
-  min-height: 220px;
+  width: 100%;
+  max-width: calc(140px * 5 + 12px * 4 + 40px + 8px); /* 한 줄에 최대 5장 → 6장부터 2줄 (padding+border 여유 포함) */
+  margin-left: auto;
+  margin-right: auto;
+  min-height: 240px;
   border-radius: 12px;
   background: var(--surface);
   border: 1px solid var(--line);
