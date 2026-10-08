@@ -460,6 +460,7 @@
 
   function dismissClueEvent() {
     if (!state.eventShowing) return;
+    if (state.eventRevealReadyAt && window.performance.now() < state.eventRevealReadyAt) return;
     const afterDismiss = state.currentEvent?.afterDismiss;
     const layer = ensureClueEventLayer();
     if (state.eventRevealReadyTimer) window.clearTimeout(state.eventRevealReadyTimer);
@@ -1833,9 +1834,24 @@
     showClueGroupSpeech(speakers, (speaker) => finishSpeechKeyForPlayer(speaker, winner, success), 6500);
   }
 
-  function finishGame(player, success, accusation) {
+  function presentFinalAccusation(player, accusation) {
+    // Freeze play while the queued announcement is still revealing its cards.
     state.finished = true;
-    state.phase = "finished";
+    state.phase = "reveal";
+    clearAiTimer();
+    queueClueEvent({
+      title: `${playerDisplayName(player)}의 최종 고발`,
+      message: `${withSubject(accusation.suspect.name)} ${withInstrument(accusation.weapon.name)} ${accusation.room.name}에서 죽였다고 고발합니다.`,
+      actor: player,
+      dialogueKey: "accuse",
+      cards: [accusation.suspect, accusation.weapon, accusation.room],
+      sequentialReveal: true,
+      afterDismiss: () => finishGame(player, isCorrectAccusation(accusation), accusation)
+    });
+    renderClue();
+  }
+
+  function recordClueResult(player, success) {
     if (state.startedAt && window.FANTASY_PLAYER_STATS && player && player.human) {
       const statsApi = window.FANTASY_PLAYER_STATS;
       statsApi.recordGame({
@@ -1848,21 +1864,35 @@
         deckList: null,
       });
     }
+  }
+
+  function finishGame(player, success, accusation) {
+    state.finished = true;
+    state.phase = success ? "reveal" : "finished";
     clearAiTimer();
     if (success) {
-      log(`${playerDisplayName(player)} 승리! 정답은 ${state.solution.suspect.name}, ${state.solution.room.name}, ${state.solution.weapon.name}입니다.`);
       queueClueEvent({
-        title: `${playerDisplayName(player)} 승리`,
-        message: `정답은 ${state.solution.suspect.name}, ${state.solution.weapon.name}, ${state.solution.room.name}입니다.`,
-        actor: player,
-        dialogueKey: "win",
+        title: "사건 봉투 공개",
+        message: "봉투에 담긴 범인, 도구, 장소를 확인합니다.",
         cards: [state.solution.suspect, state.solution.weapon, state.solution.room],
         sequentialReveal: true,
-        afterDismiss: () => showFinishSpeeches(player, true)
+        afterDismiss: () => {
+          state.phase = "finished";
+          log(`${playerDisplayName(player)} 승리! 정답은 ${state.solution.suspect.name}, ${state.solution.room.name}, ${state.solution.weapon.name}입니다.`);
+          recordClueResult(player, true);
+          queueClueEvent({
+            title: `${playerDisplayName(player)} 승리`,
+            message: "사건이 해결되었습니다.",
+            actor: player,
+            dialogueKey: "win",
+            afterDismiss: () => showFinishSpeeches(player, true)
+          });
+          if (typeof window.showCenterToast === "function") {
+            window.showCenterToast(`${playerDisplayName(player)} 승리`, 1800, { mode: "clue-finish" });
+          }
+          renderClue();
+        }
       });
-      if (typeof window.showCenterToast === "function") {
-        window.showCenterToast(`${playerDisplayName(player)} 승리`, 1800, { mode: "clue-finish" });
-      }
     } else {
       player.eliminated = true;
       clearPlayerSpeech(player);
@@ -1875,13 +1905,16 @@
           actor: player,
           dialogueKey: "lose",
           cards: revealSolution ? [state.solution.suspect, state.solution.weapon, state.solution.room] : [accusation.suspect, accusation.weapon, accusation.room],
-          afterDismiss: player.human ? () => showFinishSpeeches(player, false) : null
+          afterDismiss: player.human ? () => {
+            recordClueResult(player, false);
+            if (typeof window.showCenterToast === "function") {
+              window.showCenterToast("고발 실패", 1800, { mode: "clue-finish" });
+            }
+            showFinishSpeeches(player, false);
+          } : null
         });
       if (player.human) {
         log(`정답은 ${state.solution.suspect.name}, ${state.solution.room.name}, ${state.solution.weapon.name}입니다.`);
-        if (typeof window.showCenterToast === "function") {
-          window.showCenterToast("고발 실패", 1800, { mode: "clue-finish" });
-        }
       } else {
         const activePlayers = state.players.filter((entry) => !entry.eliminated);
         if (activePlayers.length <= 1) {
@@ -2133,15 +2166,7 @@
       weapon: card("weapon", els.accuseWeapon?.value || WEAPONS[0])
     };
     closeAccusationDialog();
-    queueClueEvent({
-      title: `${playerDisplayName(activePlayer())}의 최종 고발`,
-      message: `${withSubject(accusation.suspect.name)} ${withInstrument(accusation.weapon.name)} ${accusation.room.name}에서 죽였다고 고발합니다.`,
-      actor: activePlayer(),
-      dialogueKey: "accuse",
-      cards: [accusation.suspect, accusation.weapon, accusation.room],
-      sequentialReveal: true
-    });
-    finishGame(activePlayer(), isCorrectAccusation(accusation), accusation);
+    presentFinalAccusation(activePlayer(), accusation);
   }
 
   function endHumanTurn(event = null) {
@@ -2201,15 +2226,7 @@
       state.forceNextAiRandomAccusation = false;
       const accusation = buildRandomAccusation();
       log(`${playerDisplayWithSubject(player)} 치트 효과로 즉시 고발합니다.`);
-      queueClueEvent({
-        title: `${playerDisplayName(player)}의 최종 고발`,
-        message: `${withSubject(accusation.suspect.name)} ${withInstrument(accusation.weapon.name)} ${accusation.room.name}에서 죽였다고 고발합니다.`,
-        actor: player,
-        dialogueKey: "accuse",
-        cards: [accusation.suspect, accusation.weapon, accusation.room],
-        sequentialReveal: true
-      });
-      finishGame(player, isCorrectAccusation(accusation), accusation);
+      presentFinalAccusation(player, accusation);
       return;
     }
     const finalDice = rollDice();
@@ -2229,15 +2246,7 @@
       log(`${playerDisplayName(player)}: ${state.dice.join(" + ")} = ${total}, ${CLUE_ZONE.name} 이동`);
       if (!await showAiMoveAndThink(player, CLUE_ZONE.name)) return;
       log(`${playerDisplayWithSubject(player)} 최종 추리를 선언했습니다.`);
-      queueClueEvent({
-        title: `${playerDisplayName(player)}의 최종 고발`,
-        message: `${withSubject(accusation.suspect.name)} ${withInstrument(accusation.weapon.name)} ${accusation.room.name}에서 죽였다고 고발합니다.`,
-        actor: player,
-        dialogueKey: "accuse",
-        cards: [accusation.suspect, accusation.weapon, accusation.room],
-        sequentialReveal: true
-      });
-      finishGame(player, isCorrectAccusation(accusation), accusation);
+      presentFinalAccusation(player, accusation);
       return;
     }
     const room = chooseAiDestination(player, reachable);
@@ -2629,7 +2638,7 @@
     const player = activePlayer();
     const humanTurn = Boolean(player?.human && !state.finished);
     if (els.turnLabel) {
-      els.turnLabel.textContent = state.finished ? "게임 종료" : `${player ? playerDisplayName(player) : "-"} 차례`;
+      els.turnLabel.textContent = state.phase === "reveal" ? "최종 고발 확인 중" : state.finished ? "게임 종료" : `${player ? playerDisplayName(player) : "-"} 차례`;
     }
     if (els.phaseLabel) {
       const phaseText = {
@@ -2639,6 +2648,7 @@
         chooseRefute: "보여줄 카드를 선택하세요.",
         accuse: "CLUE 존에서 최종 추리를 할 수 있습니다.",
         waitEnd: "턴을 종료하세요.",
+        reveal: "카드 공개가 끝나면 팝업을 클릭해 다음 발표를 확인하세요.",
         finished: "사건이 끝났습니다."
       };
       els.phaseLabel.textContent = state.corridorResting ? "복도에서 ? 카드를 받고 한턴 쉽니다. 턴을 종료하세요." : (phaseText[state.phase] || "-");

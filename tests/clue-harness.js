@@ -5,6 +5,23 @@ const vm = require('vm');
 const read = (file) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 
 function loadClue() {
+  let now = 0;
+  let nextTimer = 1;
+  const timers = new Map();
+  const clock = {
+    advance(ms) {
+      const end = now + ms;
+      for (;;) {
+        const next = [...timers.entries()].filter(([, timer]) => timer.at <= end).sort((a, b) => a[1].at - b[1].at)[0];
+        if (!next) break;
+        const [id, timer] = next;
+        timers.delete(id);
+        now = timer.at;
+        timer.callback();
+      }
+      now = end;
+    }
+  };
   const element = () => ({
     innerHTML: '',
     classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
@@ -22,8 +39,13 @@ function loadClue() {
   const sandbox = {
     window: {
       localStorage: { getItem() { return null; } },
-      setTimeout() { return 1; }, clearTimeout() {}, clearInterval() {},
-      performance: { now() { return 0; } }
+      setTimeout(callback, delay = 0) {
+        const id = nextTimer++;
+        timers.set(id, { at: now + delay, callback });
+        return id;
+      },
+      clearTimeout(id) { timers.delete(id); }, clearInterval(id) { timers.delete(id); },
+      performance: { now() { return now; } }
     },
     document: {
       body: element(), documentElement: {},
@@ -52,8 +74,8 @@ function loadClue() {
   vm.runInContext(read('clue-ai.js'), sandbox);
   // Expose state for assertions without replacing the real startup/selection logic.
   vm.runInContext(read('clue.js').replace('  window.ClueGame = {',
-    '  window.clueTest = { state, aiDifficultyKey, aiEvidenceView, aiDeductions, aiResearchPlan, buildAiAccusation, resolveSuggestion, chooseHumanRefute, announceShownCard, rememberObservedCard, aiSuggestion, chooseAiDestination };\n  window.ClueGame = {'), sandbox);
-  return { ...sandbox.window, difficultySelect, playerCountSelect, renderedPlayers };
+    '  window.clueTest = { state, aiDifficultyKey, aiEvidenceView, aiDeductions, aiResearchPlan, buildAiAccusation, resolveSuggestion, chooseHumanRefute, announceShownCard, rememberObservedCard, aiSuggestion, chooseAiDestination, presentFinalAccusation, dismissClueEvent, queueClueEvent };\n  window.ClueGame = {'), sandbox);
+  return { ...sandbox.window, window: sandbox.window, clock, difficultySelect, playerCountSelect, renderedPlayers };
 }
 
 
