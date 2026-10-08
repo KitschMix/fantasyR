@@ -139,6 +139,7 @@
     gamePanel: document.querySelector("#clueGamePanel"),
     startButton: document.querySelector("#startClueButton"),
     playerCountSelect: document.querySelector("#cluePlayerCountSelect"),
+    difficultySelect: document.querySelector("#clueDifficultySelect"),
     exitButton: document.querySelector("#clueExitGameButton"),
     backButton: document.querySelector("#clueBackButton"),
     newGameButton: document.querySelector("#clueNewGameButton"),
@@ -191,6 +192,7 @@
     finished: false,
     currentPlayer: 0,
     phase: "setup",
+    aiDifficulty: "normal",
     players: [],
     solution: null,
     deck: [],
@@ -755,27 +757,17 @@
       return AI_PROFILE_DIFFICULTY_KEYS.flatMap((key) => {
         return (groups[key] || []).map((profile) => ({
           ...profile,
-          difficulty: key
+          difficulty: key,
+          difficultyLabel: AI_DIFFICULTY_LABELS[key] || key
         }));
       });
     }
     const group = groups[difficulty] || groups.normal || [];
     return group.map((profile) => ({
       ...profile,
-      difficulty: difficulty
+      difficulty: difficulty,
+      difficultyLabel: AI_DIFFICULTY_LABELS[difficulty] || difficulty
     }));
-  }
-
-  // Legacy
-  function _aiProfilesLegacy() {
-    const groups = SHARED_PROFILES.groups || {};
-    return AI_PROFILE_DIFFICULTY_KEYS.flatMap((key) => {
-      return (groups[key] || []).map((profile) => ({
-        ...profile,
-        difficulty: key,
-        difficultyLabel: AI_DIFFICULTY_LABELS[key] || key
-      }));
-    });
   }
 
   function buildPlayers(count) {
@@ -803,7 +795,7 @@
           eliminated: false
         };
       }
-      const profile = pool[index - 1] || { name: `AI ${index}`, avatarUrl: profileImageUrl("보통-건일.jpg") };
+      const profile = pool[(index - 1) % pool.length] || { name: `AI ${index}`, avatarUrl: profileImageUrl("보통-건일.jpg") };
       return {
         id: `ai${index}`,
         human: false,
@@ -1356,7 +1348,9 @@
 
   function aiDifficultyKey(player) {
     const key = String(player?.difficulty || "normal");
-    return AI_PROFILE_DIFFICULTY_KEYS.includes(key) ? key : "normal";
+    // Random mode includes shared easy/boss profiles; use Clue's supported strategies.
+    if (key === "boss") return "expert";
+    return Object.hasOwn(AI_ACCUSATION_RULES, key) ? key : "normal";
   }
 
   function chooseAiRefuteCard(target, suggester, matches) {
@@ -1946,7 +1940,7 @@
 
   function startClueGame() {
     state.startedAt = Date.now();
-    state.aiDifficulty = els.difficultySelect?.value || els.aiDifficultySelect?.value || "normal";
+    state.aiDifficulty = els.difficultySelect?.value || "normal";
     clearAiTimer();
     clearDiceRollTimer();
     clearIdleSpeechTimer();
@@ -2342,6 +2336,7 @@
         </span>
         <span class="clue-player-info">
           <strong>${escapeHtml(playerDisplayName(player))}</strong>
+          ${!player.human ? `<small>${escapeHtml(player.difficultyLabel)}</small>` : ""}
           <small>${player.eliminated ? "추리 게임 탈락" : `${escapeHtml(player.suspect)} · ${escapeHtml(roomName(player.location))}`}</small>
         </span>
         <b>${player.hand.length}장</b>
