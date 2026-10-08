@@ -1500,6 +1500,10 @@ body.clue-active.clue-playing .clue-game-panel {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
+.clue-note-cell.confirmed:not(.automatic) {
+  color: #ff9f43;
+}
+
 .clue-note-cell.automatic {
   cursor: default;
 }
