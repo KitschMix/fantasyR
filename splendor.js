@@ -1512,7 +1512,7 @@
     const sorted = [...state.players].sort((a, b) => b.points - a.points || a.cards.length - b.cards.length);
     const winnerNames = winners.map(w => w.name).join(", ");
     addLog(`🏆 ${winnerNames} 승리! (${maxPoints}점)`);
-    recordGameResult({ winners, sorted, maxPoints });
+    recordGameResult({ winners, sorted });
     renderAll();
     DIALOGUE.stopIdleLoop();
     // Dialogue: win/loss (everyone speaks)
@@ -1522,6 +1522,29 @@
       setTimeout(() => DIALOGUE.speak(i, section), Math.random() * 1000);
     });
     setTimeout(() => showResultModal(sorted, winners), 2000);
+  }
+
+  function recordGameResult({ winners, sorted }) {
+    const statsApi = window.FANTASY_PLAYER_STATS;
+    if (!statsApi || typeof statsApi.recordGame !== "function") return;
+    const humanEntry = sorted.find((player) => player?.human);
+    if (!humanEntry) return;
+    const entry = {
+      gameType: "splendor",
+      result: winners.some((player) => player.human) ? "win" : "loss",
+      score: humanEntry.points || 0,
+      durationSec: state.startedAt ? Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)) : 0,
+      playerCount: sorted.length,
+      deckList: null
+    };
+    // Recording is optional: a storage failure must not interrupt the result UI.
+    try {
+      Promise.resolve(statsApi.recordGame(entry)).catch((error) => {
+        console.warn("스플렌더 전적 저장 실패", error);
+      });
+    } catch (error) {
+      console.warn("스플렌더 전적 저장 실패", error);
+    }
   }
 
   function showResultModal(sorted, winners) {
@@ -1988,21 +2011,3 @@
   init();
   window.SplendorGame = { start: startGame, leave: leaveGame };
 })();
-
-function recordGameResult({ winners, sorted, maxPoints }) {
-  const statsApi = window.FANTASY_PLAYER_STATS;
-  if (!statsApi || typeof statsApi.recordGame !== "function") return;
-  const humanEntry = sorted.find((p) => p && p.human);
-  if (!humanEntry) return;
-  const isWin = Array.isArray(winners) && winners.some((w) => w && w.human);
-  const result = isWin ? "win" : "loss";
-  const durationSec = state.startedAt ? Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)) : 0;
-  statsApi.recordGame({
-    gameType: "splendor",
-    result,
-    score: maxPoints || humanEntry.points || 0,
-    durationSec,
-    playerCount: sorted.length,
-    deckList: null,
-  });
-}
