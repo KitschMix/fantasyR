@@ -640,6 +640,8 @@
     player.bonuses[card.bonus] = (player.bonuses[card.bonus] || 0) + 1;
     player.points += card.points;
     player.cards.push(card);
+    if (player.human) DIALOGUE.react("userBuy");
+    else DIALOGUE.speak(player.index, "aiBuy");
   }
 
   /* ── Noble Check ── */
@@ -813,10 +815,7 @@
     const labels = gems.map(g => GEM_LABELS[g]).join(", ");
     addLog(`${p.name}: 보석 ${labels} 획득`);
     // Dialogue: user gem reaction (random AI)
-    if (p.human) {
-      const ais = state.players.map((_, i) => i).filter(i => !state.players[i].human);
-      if (ais.length) DIALOGUE.speak(ais[Math.floor(Math.random() * ais.length)], "userGem");
-    }
+    if (p.human) DIALOGUE.react("userGem");
     state.selectedTokens = [];
     if (!p.human) state.phase = "done";
     // Delay render slightly so bubbles are visible
@@ -892,11 +891,6 @@
     }
     showBuyAnimation(tier, index, p.name);
     payForCard(card, p);
-    // Dialogue: user buy reaction
-    if (p.human) {
-      const ais = state.players.map((_, i) => i).filter(i => !state.players[i].human);
-      if (ais.length) DIALOGUE.speak(ais[Math.floor(Math.random() * ais.length)], "userBuy");
-    }
     // Delay card replacement so animation plays
     setTimeout(() => {
       state.visibleCards[tier][index] = drawCard(tier);
@@ -1019,6 +1013,7 @@
       p.gems.gold++;
       state.tokenBank.gold--;
     }
+    DIALOGUE.react("userReserve");
     // Delay for animation
     setTimeout(() => {
       state.phase = "done";
@@ -1289,7 +1284,6 @@
         state.visibleCards[bestPick.tier][bestPick.i] = drawCard(bestPick.tier);
         addLog(`${player.name}: 카드 구매 (${bestPick.card.points}점)`);
         checkNobles(player);
-        DIALOGUE.speak(player.index, "aiBuy");
         return;
       }
     }
@@ -1327,6 +1321,7 @@
           player.reserved.push(tier3Card);
           state.visibleCards[3][0] = drawCard(3);
           if (state.tokenBank.gold > 0) { player.gems.gold++; state.tokenBank.gold--; }
+          DIALOGUE.speak(player.index, "aiReserve");
           addLog(`${player.name}: 카드 예약 (전략)`);
           return;
         }
@@ -1397,6 +1392,7 @@
         player.reserved.push(target);
         state.visibleCards[ti][idx] = drawCard(ti);
         if (state.tokenBank.gold > 0) { player.gems.gold++; state.tokenBank.gold--; }
+        DIALOGUE.speak(player.index, "aiReserve");
         addLog(`${player.name}: 카드 예약 (${target.points}점)`);
         return;
       }
@@ -1413,19 +1409,18 @@
 
   /* ── Turn Flow ── */
   function showThinking(playerIndex) {
-    // Remove existing bubbles
-    document.querySelectorAll(".splendor-speech-bubble").forEach(b => b.remove());
+    hideThinking();
     const playerCard = els.playersList?.querySelector(`[data-player-index="${playerIndex}"]`);
-    if (!playerCard) return;
+    if (!playerCard || playerCard.querySelector(".splendor-dialogue-bubble")) return;
     const bubble = document.createElement("div");
-    bubble.className = "splendor-speech-bubble";
+    bubble.className = "splendor-speech-bubble splendor-thinking-bubble";
     bubble.textContent = "생각중..";
     playerCard.style.position = "relative";
     playerCard.appendChild(bubble);
   }
 
   function hideThinking() {
-    document.querySelectorAll(".splendor-speech-bubble").forEach(b => b.remove());
+    document.querySelectorAll(".splendor-thinking-bubble").forEach(b => b.remove());
   }
 
   function endTurn() {
@@ -1514,13 +1509,8 @@
     addLog(`🏆 ${winnerNames} 승리! (${maxPoints}점)`);
     recordGameResult({ winners, sorted });
     renderAll();
-    DIALOGUE.stopIdleLoop();
-    // Dialogue: win/loss (everyone speaks)
-    state.players.forEach((p, i) => {
-      if (p.human) return;
-      const section = winners.includes(p) ? "aiWin" : "aiLoss";
-      setTimeout(() => DIALOGUE.speak(i, section), Math.random() * 1000);
-    });
+    DIALOGUE.reset();
+    DIALOGUE.speakAll((player) => winners.includes(player) ? "aiWin" : "aiLoss");
     setTimeout(() => showResultModal(sorted, winners), 2000);
   }
 
@@ -1599,6 +1589,7 @@
 
   /* ── Game Start ── */
   function startGame() {
+    DIALOGUE.reset();
     state.startedAt = Date.now();
     state.aiDifficulty = els.difficultySelect?.value || els.aiDifficultySelect?.value || "normal";
     const count = Math.min(4, Math.max(2, Number(els.playerCount?.value || 3)));
@@ -1635,6 +1626,7 @@
   }
 
   function resetToSetup() {
+    DIALOGUE.reset();
     document.body.classList.remove("splendor-playing");
     document.body.classList.add("splendor-active");
     els.gamePanel?.classList.add("hidden");
@@ -1657,7 +1649,7 @@
       });
       if (!ok) return;
     }
-    DIALOGUE.stopIdleLoop();
+    DIALOGUE.reset();
     window.location.href = "./index.html";
   }
 
@@ -1792,76 +1784,77 @@
     idleChance: 0.15,
     _queue: [],
     _busy: false,
-    _lastSpeakers: [],  // track last 2 speakers
-    _usedLines: {},     // per-section used indices
+    _usedLines: {},
+    _activeBubbles: new Map(),
+    _timers: new Set(),
+    _idleTimer: null,
+    _lastReactionSpeaker: null,
+
+    _later(callback, delay) {
+      const timer = setTimeout(() => {
+        this._timers.delete(timer);
+        callback();
+      }, delay);
+      this._timers.add(timer);
+      return timer;
+    },
 
     _getTone(characterName) {
-      const dlg = window.SPLENDOR_DIALOGUES;
-      if (!dlg) return null;
-      for (const [tone, info] of Object.entries(dlg)) {
-        if (info.characters.includes(characterName)) return tone;
+      const name = characterName === "채호" ? "재호" : characterName;
+      for (const [tone, info] of Object.entries(window.SPLENDOR_DIALOGUES || {})) {
+        if (info.characters.includes(name)) return tone;
       }
       return null;
     },
 
     _pick(tone, section) {
-      const dlg = window.SPLENDOR_DIALOGUES?.[tone]?.dialogues?.[section];
-      if (!dlg || !dlg.length) return null;
+      const lines = window.SPLENDOR_DIALOGUES?.[tone]?.dialogues?.[section];
+      if (!lines?.length) return null;
       const key = `${tone}:${section}`;
-      if (!this._usedLines[key] || this._usedLines[key].length >= dlg.length) {
-        this._usedLines[key] = [];
-      }
-      // Pick random unused line
-      let idx;
-      let attempts = 0;
-      do {
-        idx = Math.floor(Math.random() * dlg.length);
-        attempts++;
-      } while (this._usedLines[key].includes(idx) && attempts < 20);
-      this._usedLines[key].push(idx);
-      return dlg[idx];
+      let used = this._usedLines[key] || [];
+      if (used.length >= lines.length) used = [];
+      const available = lines.map((_, i) => i).filter((i) => !used.includes(i));
+      const index = available[Math.floor(Math.random() * available.length)];
+      this._usedLines[key] = [...used, index];
+      return lines[index];
     },
 
-    _activeBubble: null,  // { playerIndex, text, removeTimer }
+    _removeBubble(playerIndex) {
+      const active = this._activeBubbles.get(playerIndex);
+      if (!active) return;
+      active.bubble.remove();
+      clearTimeout(active.timer);
+      this._timers.delete(active.timer);
+      this._activeBubbles.delete(playerIndex);
+    },
+
     _showOnCard(playerIndex, text) {
       const playerCard = els.playersList?.querySelector(`[data-player-index="${playerIndex}"]`);
       if (!playerCard) return;
-      // Remove existing bubble on this card
-      playerCard.querySelectorAll(".splendor-speech-bubble").forEach(b => b.remove());
+      this._removeBubble(playerIndex);
+      playerCard.querySelectorAll(".splendor-thinking-bubble").forEach((b) => b.remove());
       const bubble = document.createElement("div");
-      bubble.className = "splendor-speech-bubble";
+      bubble.className = "splendor-speech-bubble splendor-dialogue-bubble";
       bubble.textContent = text;
       playerCard.appendChild(bubble);
-      const removeTimer = setTimeout(() => {
-        if (this._activeBubble && this._activeBubble.bubble === bubble) {
-          this._activeBubble = null;
-        }
-        bubble.remove();
-      }, this.displayMs);
-      this._activeBubble = { playerIndex, text, bubble, removeTimer };
+      const active = { playerIndex, text, bubble, expiresAt: Date.now() + this.displayMs };
+      active.timer = this._later(() => this._removeBubble(playerIndex), this.displayMs);
+      this._activeBubbles.set(playerIndex, active);
     },
-    /** Re-attach the currently-displayed bubble if renderPlayers wiped it out. */
+
     _reapplyActiveBubble() {
-      if (!this._activeBubble) return;
-      const { playerIndex, text, bubble, removeTimer } = this._activeBubble;
-      // If the original bubble node is still in the DOM, leave it alone.
-      if (bubble.isConnected) return;
-      // Otherwise re-create it without resetting the timer.
-      const playerCard = els.playersList?.querySelector(`[data-player-index="${playerIndex}"]`);
-      if (!playerCard) return;
-      const fresh = document.createElement("div");
-      fresh.className = "splendor-speech-bubble";
-      fresh.textContent = text;
-      playerCard.appendChild(fresh);
-      this._activeBubble.bubble = fresh;
-      // The existing removeTimer will clear the original reference; nothing to change.
-      clearTimeout(removeTimer);
-      this._activeBubble.removeTimer = setTimeout(() => {
-        if (this._activeBubble && this._activeBubble.bubble === fresh) {
-          this._activeBubble = null;
-        }
-        fresh.remove();
-      }, this.displayMs);
+      // Re-rendering the board must neither erase speech nor restart its lifetime.
+      for (const [playerIndex, active] of this._activeBubbles) {
+        if (Date.now() >= active.expiresAt) { this._removeBubble(playerIndex); continue; }
+        if (active.bubble.isConnected) continue;
+        const playerCard = els.playersList?.querySelector(`[data-player-index="${playerIndex}"]`);
+        if (!playerCard) continue;
+        const bubble = document.createElement("div");
+        bubble.className = "splendor-speech-bubble splendor-dialogue-bubble";
+        bubble.textContent = active.text;
+        playerCard.appendChild(bubble);
+        active.bubble = bubble;
+      }
     },
 
     _processQueue() {
@@ -1869,65 +1862,69 @@
       this._busy = true;
       const { playerIndex, text } = this._queue.shift();
       this._showOnCard(playerIndex, text);
-      setTimeout(() => {
+      this._later(() => {
         this._busy = false;
         this._processQueue();
       }, this.displayMs);
     },
 
     speak(playerIndex, section) {
-      const p = state.players[playerIndex];
-      if (!p || p.human) return;
-      const tone = this._getTone(p.name);
-      if (!tone) return;
-
-      // Rule 3: No same character 3 times in a row
-      const last2 = this._lastSpeakers.slice(-2);
-      if (last2.length === 2 && last2[0] === playerIndex && last2[1] === playerIndex) return;
-
-      // Rule 2: Don't speak if busy (another dialogue is showing)
-      // Rule 4: Queue it
-      const text = this._pick(tone, section);
+      const player = state.players[playerIndex];
+      if (!player || player.human || state.phase === "idle") return;
+      const text = this._pick(this._getTone(player.name), section);
       if (!text) return;
-
-      this._lastSpeakers.push(playerIndex);
-      if (this._lastSpeakers.length > 3) this._lastSpeakers.shift();
-
       this._queue.push({ playerIndex, text });
       this._processQueue();
     },
 
-    // Rule 1: Everyone speaks simultaneously for game start/end
-    speakAll(section) {
-      if (!window.SPLENDOR_DIALOGUES) return;
-      state.players.forEach((p, i) => {
-        if (p.human) return;
-        const tone = this._getTone(p.name);
-        if (!tone) return;
-        const text = this._pick(tone, section);
-        if (text) {
-          setTimeout(() => this._showOnCard(i, text), Math.random() * 500);
-        }
-      });
+    react(section) {
+      const ais = state.players.map((player, index) => ({ player, index }))
+        .filter(({ player }) => !player.human && this._getTone(player.name));
+      // Vary optional reactions without silencing the only AI in a two-player game.
+      const others = ais.filter(({ index }) => index !== this._lastReactionSpeaker);
+      const candidates = others.length ? others : ais;
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      if (!pick) return;
+      this._lastReactionSpeaker = pick.index;
+      this.speak(pick.index, section);
     },
 
-    // Idle dialogue timer
-    _idleTimer: null,
+    speakAll(section) {
+      this._busy = true;
+      state.players.forEach((player, index) => {
+        if (player.human) return;
+        const event = typeof section === "function" ? section(player) : section;
+        const text = this._pick(this._getTone(player.name), event);
+        if (text) this._later(() => this._showOnCard(index, text), Math.random() * 500);
+      });
+      this._later(() => {
+        this._busy = false;
+        this._processQueue();
+      }, this.displayMs + 500);
+    },
+
     startIdleLoop() {
       this.stopIdleLoop();
       this._idleTimer = setInterval(() => {
-        if (state.phase !== "action" || !activePlayer()?.human) return;
-        // Pick a random AI player
-        const ais = state.players.map((p, i) => ({ p, i })).filter(x => !x.p.human);
-        if (!ais.length) return;
-        const pick = ais[Math.floor(Math.random() * ais.length)];
-        if (Math.random() < this.idleChance) {
-          this.speak(pick.i, "idle");
-        }
+        if (state.phase !== "action" || !activePlayer()?.human || this._busy) return;
+        if (Math.random() < this.idleChance) this.react("idle");
       }, 8000);
     },
     stopIdleLoop() {
-      if (this._idleTimer) { clearInterval(this._idleTimer); this._idleTimer = null; }
+      if (this._idleTimer) clearInterval(this._idleTimer);
+      this._idleTimer = null;
+    },
+    reset() {
+      this.stopIdleLoop();
+      for (const timer of this._timers) clearTimeout(timer);
+      this._timers.clear();
+      for (const active of this._activeBubbles.values()) active.bubble.remove();
+      this._activeBubbles.clear();
+      this._queue = [];
+      this._busy = false;
+      this._usedLines = {};
+      this._lastReactionSpeaker = null;
+      hideThinking();
     }
   };
 
