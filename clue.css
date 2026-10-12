@@ -1527,7 +1527,7 @@ body.clue-active.clue-playing .clue-game-panel {
 }
 
 .clue-log li::marker {
-  color: rgba(216, 47, 40, 0.9);
+  color: #5fa8e8;
 }
 
 .clue-rules-dialog {
