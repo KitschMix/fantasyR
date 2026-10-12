@@ -1501,7 +1501,7 @@ body.clue-active.clue-playing .clue-game-panel {
 }
 
 .clue-note-cell.confirmed:not(.automatic) {
-  color: #ff9f43;
+  color: #5fa8e8;
 }
 
 .clue-note-cell.automatic {
@@ -1527,7 +1527,7 @@ body.clue-active.clue-playing .clue-game-panel {
 }
 
 .clue-log li::marker {
-  color: #5fa8e8;
+  color: rgba(216, 47, 40, 0.9);
 }
 
 .clue-rules-dialog {
