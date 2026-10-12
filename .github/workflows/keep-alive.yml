@@ -1,48 +1,45 @@
 # .github/workflows/keep-alive.yml
-# 6시간마다 keep-alive endpoint 호출
-# Vercel Hobby Cron = 일 2회 한도 → GitHub Actions 무료 cron 으로 우회
+# 6시간마다 Supabase에 가벼운 ping → free plan 7일 inactive 자동 paused 방지
 #
-# Actions Secrets 에서 VERCEL_KEEPALIVE_URL 등록 필요
-#   → https://<your-project>.vercel.app/api/keep-alive
+# GitHub Actions 자체에서 supabase REST 직접 호출.
+# Vercel/외부 서비스 의존 없음.
+#
+# GitHub repo Secrets 에서 등록 필요:
+#   - SUPABASE_URL          예: https://xjxtherciihqhtgvmdhz.supabase.co
+#   - SUPABASE_PUBLISHABLE_KEY   예: sb_publishable_xxxx (anon public)
 
 name: Keep-Alive
 
 on:
-  # 6시간마다 (=00, 06, 12, 18시)
-  # 00분 정시 4개 동시 트리거 피하려고 17분 오프셋
+  # 6시간마다 (정각 동시 트래픽 분산 위해 17분 오프셋)
   schedule:
     - cron: "17 */6 * * *"
   # 수동 트리거 (디버깅 / 즉시 워밍업)
   workflow_dispatch:
-    inputs:
-      url:
-        description: "keep-alive URL (기본: secrets 사용)"
-        required: false
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
     steps:
-      - name: Resolve URL
-        id: resolve
+      - name: 가벼운 read 1회로 active 신호
         run: |
-          URL="${{ secrets.VERCEL_KEEPALIVE_URL }}"
-          if [ -n "${{ inputs.url }}" ]; then
-            URL="${{ inputs.url }}"
-          fi
-          if [ -z "$URL" ]; then
-            echo "::error::VERCEL_KEEPALIVE_URL secret is not set"
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "::error::SUPABASE_URL 또는 SUPABASE_PUBLISHABLE_KEY 시크릿이 설정되지 않았습니다"
             exit 1
           fi
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
-          echo "Pinging: $URL"
-
-      - name: Ping keep-alive
-        run: |
-          URL="${{ steps.resolve.outputs.url }}"
-          curl --fail --show-error --silent --retry 3 --retry-all-errors \
-               --retry-delay 5 --max-time 20 \
-               -A "github-actions-keep-alive" \
-               "$URL"
-          echo "OK: $URL returned 2xx"
+          STATUS=$(curl --silent --show-error --retry 3 --retry-all-errors \
+                        --retry-delay 5 --max-time 20 \
+                        -H "apikey: $SUPABASE_KEY" \
+                        -H "Authorization: Bearer $SUPABASE_KEY" \
+                        -o /dev/null -w "%{http_code}" \
+                        "$SUPABASE_URL/rest/v1/fantasy_player_summary?select=nickname&limit=1")
+          echo "HTTP $STATUS"
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 300 ]; then
+            echo "::warning::supabase 응답 비정상: $STATUS"
+            exit 0  # Actions cron은 절대 실패 처리하지 않음 (사용량 카운터 보호)
+          fi
+          echo "OK: supabase active"
