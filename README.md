@@ -25,19 +25,20 @@
 
 Supabase 무료 플랜은 **7일간 비활성 시 자동 paused** 되어 DB endpoint가 응답을 멈춥니다. 이를 막기 위해 6시간마다 가벼운 read 쿼리를 보내는 keep-alive 파이프라인:
 
-- **스케줄러** (`.github/workflows/keep-alive.yml`) — 6시간마다 (`17 */6 * * *`, 정시 트래픽 분산)
-- **워밍업 엔드포인트** (`api/keep-alive.js`) — Vercel Serverless Function. supabase `fantasy_player_summary` 1행 read. 외부 실패해도 200 응답 (재시도 부담 ↓)
-- **왜 이렇게 분리?** — Vercel Hobby Cron = 일 2회 한도 → 6시간(4회) 유지 불가. GitHub Actions 무료 cron + Vercel 함수 wake-up 조합.
+- **워크플로** (`.github/workflows/keep-alive.yml`) — 6시간마다 (`17 */6 * * *`, 정시 트래픽 분산). Actions 자체에서 supabase REST 직접 호출 — 외부 서비스 의존 없음.
+- **왜 GitHub Actions?** — 이 프로젝트는 GitHub Pages로 호스팅 중. Vercel Serverless Function(`api/keep-alive.js`)은 Vercel 이전 시 쓸 수 있도록 보존만 해 둠.
+- **왜 6시간?** — Supabase free plan은 7일 inactive 시 자동 paused. 6시간 간격이면 여유 있게 active 유지.
 
 ### 첫 배포 시 1회 세팅
 
-1. **Vercel** 대시보드 → 프로젝트 → Settings → Environment Variables:
+1. **GitHub** repo → Settings → Secrets and variables → Actions → New repository secret:
    - `SUPABASE_URL` = `https://<project-ref>.supabase.co`
-   - `SUPABASE_KEY` = `sb_publishable_…` (anon public)
+   - `SUPABASE_PUBLISHABLE_KEY` = `sb_publishable_…` (anon public 키)
 
-2. **GitHub** repo → Settings → Secrets and variables → Actions:
-   - `VERCEL_KEEPALIVE_URL` = `https://<your-project>.vercel.app/api/keep-alive`
+2. **수동 1회 워밍업**: GitHub repo → Actions → "Keep-Alive" → Run workflow.
+   - 첫 실행으로 시크릿/워크플로 검증
+   - 이후 6시간마다 cron 자동 실행
 
-3. **테스트**: `curl https://<your-project>.vercel.app/api/keep-alive` → 200 OK.
+3. **검증**: Actions 로그에서 `HTTP 200` + `OK: supabase active` 확인.
 
 이후 GitHub Actions cron이 6시간마다 자동 호출 → Supabase 활성 유지.
