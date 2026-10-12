@@ -108,7 +108,18 @@
       { cost: { emerald: 3, sapphire: 3, ruby: 2 }, bonus: "onyx", points: 3 },
       { cost: { ruby: 3, onyx: 3, diamond: 2 }, bonus: "emerald", points: 3 },
       { cost: { sapphire: 3, emerald: 3, onyx: 2 }, bonus: "diamond", points: 3 },
-      { cost: { diamond: 3, ruby: 3, sapphire: 2 }, bonus: "emerald", points: 3 }
+      { cost: { diamond: 3, ruby: 3, sapphire: 2 }, bonus: "emerald", points: 3 },
+      // ── 추가 10장: 4색 3-3-2-1 (3점, 고가치 4색 조합) + 3-2-2-2 (2점, 4색 풀커버) ──
+      { cost: { sapphire: 3, ruby: 3, emerald: 2, onyx: 1 }, bonus: "diamond", points: 3 },
+      { cost: { sapphire: 3, onyx: 3, diamond: 2, emerald: 1 }, bonus: "ruby", points: 3 },
+      { cost: { ruby: 3, emerald: 3, onyx: 2, sapphire: 1 }, bonus: "diamond", points: 3 },
+      { cost: { emerald: 3, onyx: 3, ruby: 2, diamond: 1 }, bonus: "sapphire", points: 3 },
+      { cost: { onyx: 3, diamond: 3, sapphire: 2, ruby: 1 }, bonus: "emerald", points: 3 },
+      { cost: { diamond: 3, ruby: 2, sapphire: 2, emerald: 2 }, bonus: "onyx", points: 2 },
+      { cost: { sapphire: 3, onyx: 2, ruby: 2, emerald: 2 }, bonus: "diamond", points: 2 },
+      { cost: { emerald: 3, diamond: 2, sapphire: 2, ruby: 2 }, bonus: "onyx", points: 2 },
+      { cost: { ruby: 3, sapphire: 2, onyx: 2, emerald: 2 }, bonus: "diamond", points: 2 },
+      { cost: { onyx: 3, ruby: 2, emerald: 2, sapphire: 2 }, bonus: "diamond", points: 2 }
     ]);
   }
 
@@ -211,6 +222,8 @@
   function addLog(msg) { state.log.unshift(msg); state.log = state.log.slice(0, 40); }
   function activePlayer() { return state.players[state.currentPlayer]; }
   function tokenCount(playerCount) { return playerCount === 2 ? 4 : playerCount === 3 ? 5 : 7; }
+  // 공식 룰: 2인=3개, 3인=4개, 4인=5개
+  function goldTokenCount(playerCount) { return playerCount === 2 ? 3 : playerCount === 3 ? 4 : 5; }
 
   /* ── Gem Color Helpers ── */
   const GEM_ICONS = { diamond: "💎", sapphire: "🔷", emerald: "🟢", ruby: "🔴", onyx: "⬛", gold: "⭐" };
@@ -749,11 +762,11 @@
       state.selectedTokens.push(gem);
     } else if (state.selectedTokens.length === 1) {
       if (state.selectedTokens[0] === gem) {
-        // Same gem - need 4+ in bank
-        if (bankCount >= 4 && selCount < 2) {
+        // 같은 색 2개: 가져간 후에도 그 색이 4개 이상 남아 있어야 함 → pre-take ≥ 6
+        if (bankCount >= 6 && selCount < 2) {
           state.selectedTokens.push(gem);
         } else {
-          showTokenBubble(gem, "4개 미만은 2개 가져갈 수 없습니다");
+          showTokenBubble(gem, "같은 색은 가져간 뒤 4개 남아야 (사전 6개↑) 가져갈 수 있습니다");
           return;
         }
       } else {
@@ -1223,6 +1236,25 @@
     return scarceColors.length >= 3;
   }
 
+  // 헬퍼: 카드가 상대 진행에 얼마나 위협적인지 평가 (denial 전략용, 0~1)
+  function threatToOpponents(card, self) {
+    const opponents = state.players.filter(p => p !== self && !p.human || (state.players.length > 1 && p !== self));
+    if (!opponents.length) return 0;
+    let maxThreat = 0;
+    for (const opp of opponents) {
+      // 상대 보너스가 카드 비용의 일부를 덮을수록 위협적
+      let gap = 0;
+      for (const [g, n] of Object.entries(card.cost)) {
+        const covered = opp.bonuses[g] || 0;
+        gap += Math.max(0, n - covered) <= 2 ? 1 : 0;
+      }
+      const th = card.points >= 3 ? 0.6 + card.points * 0.06 : 0.3;
+      const oppReach = gap / Math.max(1, Object.keys(card.cost).length);
+      maxThreat = Math.max(maxThreat, th + oppReach * 0.3);
+    }
+    return Math.min(1, maxThreat);
+  }
+
   /* ── AI Decision ── */
   function aiChooseAction(player) {
     const diff = player.difficulty || "normal";
@@ -1338,7 +1370,7 @@
       // Easy 또는 실수 시: 무작위
       picks = shuffle(availableBankGems).slice(0, 3);
     } else {
-      // 필요한 토큰 계산
+      // 1) 공통: 보이는 카드 비용 중 부족분 가중치
       const needScore = {};
       for (const tier of [1, 2, 3]) {
         state.visibleCards[tier].forEach(card => {
@@ -1350,13 +1382,25 @@
           }
         });
       }
-      // Hard+: 보너스 효율성 가중치
-      if (config.considerBonus || config.considerNoble) {
+      // 2) hard+"needed": 보너스 효율 가중치
+      //    expert "needed_bonus": 보너스 + 귀족 매칭 가중치
+      //    boss   "smart":      보너스 + 귀족 + 자원 고갈 회피
+      const wantBonus = config.tokenStrategy === "needed" ? config.considerBonus : true;
+      if (wantBonus) {
         for (const gem of GEMS) {
           if (gem === 'gold') continue;
           needScore[gem] = (needScore[gem] || 0) + aiScoreGemForBonus(player, gem);
         }
       }
+      // 3) boss 추가: 뱅크에 2개 미만 남은 희소 색은 가져가지 않도록 점수 깎기
+      if (config.tokenStrategy === "smart") {
+        for (const gem of GEMS) {
+          if (gem === 'gold') continue;
+          const left = state.tokenBank[gem] || 0;
+          if (left > 0 && left < 2) needScore[gem] -= 50;
+        }
+      }
+
       // 부족한 순으로 정렬
       const sortedGems = Object.entries(needScore)
         .filter(([g]) => state.tokenBank[g] > 0)
@@ -1371,29 +1415,64 @@
     }
 
     // ── 5) 2개 같은 색 전략 (Expert/Boss만) ──
-    // 자원 고갈 방지 차원에서 4+개 남아있는 같은 색 2개 가져오기
+    // 같은 색 2개: 사전에 6개 이상 (= 가져간 후 4개 이상) 남아있을 때만
     if (config.preferDoubles && Math.random() < 0.4 && !makeMistake()) {
       for (const gem of GEMS) {
-        if (state.tokenBank[gem] >= 4 && (player.gems[gem] || 0) < 3) {
+        if (state.tokenBank[gem] >= 6 && (player.gems[gem] || 0) < 3) {
           picks = [gem, gem];
           break;
         }
       }
     }
 
-    // ── 6) 카드 예약 (Expert/Boss: 고가치 카드 전략적 확보) ──
+    // ── 6) 카드 예약 (전략별 차별화) ──
     if (allAffordable.length === 0 && config.reserveStrategy !== "rare" && player.reserved.length < 3 && !makeMistake()) {
-      // 4+점 카드 우선 예약
-      let target = state.visibleCards[3]?.find(c => c && c.points >= 3);
-      let ti = 3;
-      if (!target) { target = state.visibleCards[2]?.find(c => c && c.points >= 3); ti = 2; }
+      const cardStrat = config.reserveStrategy; // "tier3" | "tier3_strategic" | "high_value" | "denial"
+      const pickReserveTarget = () => {
+        if (cardStrat === "denial") {
+          // 최종보스: 상대 진행 위협 + 점수 합산으로 차단 가치 평가
+          const all = [];
+          for (const t of [1, 2, 3]) state.visibleCards[t]?.forEach((c, idx) => {
+            if (!c) return;
+            const threat = threatToOpponents(c, player);
+            const value = c.points * 10 + c.cost ? Object.values(c.cost).reduce((s, n) => s + n, 0) : 0;
+            all.push({ tier: t, idx, card: c, score: value + threat * 12 });
+          });
+          all.sort((a, b) => b.score - a.score);
+          return all[0];
+        }
+        // 우선 후보: 4+점 tier-3
+        const tier3 = state.visibleCards[3]?.find(c => c && c.points >= 4);
+        if (tier3) return { tier: 3, idx: state.visibleCards[3].indexOf(tier3), card: tier3 };
+        // 5점 tier-3 (tier3_strategic: 더 까다로움, 5점만)
+        if (cardStrat === "tier3_strategic") {
+          const tier3Only5 = state.visibleCards[3]?.find(c => c && c.points >= 5);
+          if (tier3Only5) return { tier: 3, idx: state.visibleCards[3].indexOf(tier3Only5), card: tier3Only5 };
+        }
+        // 3+점 tier-3 (그 외 전략)
+        const tier3at3 = state.visibleCards[3]?.find(c => c && c.points >= 3);
+        if (tier3at3) return { tier: 3, idx: state.visibleCards[3].indexOf(tier3at3), card: tier3at3 };
+        // high_value: 귀족 진행도가 큰 tier-2도 예약 후보
+        if (cardStrat === "high_value" || cardStrat === "tier3_strategic") {
+          const t2 = state.visibleCards[2]?.filter(c => c).slice().sort((a, b) => b.points - a.points)[0];
+          if (t2 && t2.points >= 2) {
+            const nobleProgress = aiFindClosestNoble(player).progress;
+            if (nobleProgress >= 0.5) return { tier: 2, idx: state.visibleCards[2].indexOf(t2), card: t2 };
+          }
+        }
+        // 3+점 tier-2 fallback (tier3, high_value 모두)
+        const tier2at3 = state.visibleCards[2]?.find(c => c && c.points >= 3);
+        if (tier2at3 && cardStrat !== "tier3_strategic") return { tier: 2, idx: state.visibleCards[2].indexOf(tier2at3), card: tier2at3 };
+        return null;
+      };
+
+      const target = pickReserveTarget();
       if (target) {
-        const idx = state.visibleCards[ti].indexOf(target);
-        player.reserved.push(target);
-        state.visibleCards[ti][idx] = drawCard(ti);
+        player.reserved.push(target.card);
+        state.visibleCards[target.tier][target.idx] = drawCard(target.tier);
         if (state.tokenBank.gold > 0) { player.gems.gold++; state.tokenBank.gold--; }
+        addLog(`${player.name}: 카드 예약 (${target.card.points}점, ${cardStrat})`);
         DIALOGUE.speak(player.index, "aiReserve");
-        addLog(`${player.name}: 카드 예약 (${target.points}점)`);
         return;
       }
     }
@@ -1597,7 +1676,7 @@
     state.players = buildPlayers(count);
     state.tokenBank = {};
     GEMS.forEach(g => state.tokenBank[g] = tc);
-    state.tokenBank.gold = 5;
+    state.tokenBank.gold = goldTokenCount(count);
     state.tiers = { 1: generateTier1(), 2: generateTier2(), 3: generateTier3() };
     state.visibleCards = { 1: [], 2: [], 3: [] };
     for (let t = 1; t <= 3; t++) {

@@ -343,6 +343,8 @@ const state = {
   turnNumber: 1,
   finished: false,
   pendingFinish: false,
+  triggerPlayerIndex: -1,
+  roundOutTurnsLeft: 0,
   playerCount: 2,
   aiDifficulty: "normal",
   includeExpansion: false,
@@ -912,6 +914,8 @@ function startGame() {
   state.turnNumber = 1;
   state.finished = false;
   state.pendingFinish = false;
+  state.triggerPlayerIndex = -1;
+  state.roundOutTurnsLeft = 0;
   state.animating = false;
   state.cardActions = {};
   state.confirmedActions = {};
@@ -4100,8 +4104,34 @@ function advanceFinalActions(reason = "final-actions") {
 }
 
 function endTurn() {
-  if (state.discard.length >= discardLimit() || state.deck.length === 0) {
-    requestFinishGame();
+  // 공식 FR 룰: 게임 종료 조건 충족 시, 즉시 끝내지 않고 그 라운드(=남은 턴)를 마저 진행한다.
+  // 트리거한 플레이어는 이미 직전 턴을 마쳤으므로, "나머지 N-1명"이 각 1턴씩 더 한 뒤 점수 계산.
+  const triggerNow = state.discard.length >= discardLimit() || state.deck.length === 0;
+
+  if (triggerNow && !state.pendingFinish) {
+    state.pendingFinish = true;
+    state.triggerPlayerIndex = state.activePlayer;
+    state.roundOutTurnsLeft = Math.max(0, state.players.length - 1);
+    // 첫 종료 트리거는 단 한 번만 발화시키기 위해 markAllActionsResolved로 막는 대신
+    // 위 가드(state.pendingFinish && triggerNow)가 다음 진입을 막아준다.
+  }
+
+  if (state.pendingFinish) {
+    // 라운드-아웃 차례가 모두 소진되면 최종 점수 + 미해결 선택 정리
+    if (state.roundOutTurnsLeft <= 0) {
+      finishGame();
+      return;
+    }
+    state.roundOutTurnsLeft -= 1;
+    state.drawnCardId = null;
+    state.phase = "draw";
+    advanceActivePlayerBySeatOrder();
+    render();
+    saveOnlineGameState("round-out-end-turn");
+    syncIdleDialogueTimer();
+    if (currentPlayer().ai) {
+      window.setTimeout(runAiTurn, 550);
+    }
     return;
   }
 
@@ -4342,10 +4372,11 @@ function finishGame() {
   const ranked = [...state.players]
     .map((player) => {
       const score = scorePlayer(player);
-      return { player, score: score.total, scoreDetails: score };
+      return { player, score: score.total, scoreDetails: score, handSize: player.hand.length };
     })
-    .sort((a, b) => b.score - a.score);
-  log(`게임 종료. 승자: ${ranked[0].player.name} (${ranked[0].score}점)`);
+    // 1순위: 점수 (높을수록 좋음), 2순위: 손패 카드 수 (적을수록 좋음, FR 공식 룰), 3순위: 안정 정렬
+    .sort((a, b) => b.score - a.score || a.handSize - b.handSize);
+  log(`게임 종료. 승자: ${ranked[0].player.name} (${ranked[0].score}점, 손패 ${ranked[0].handSize}장)`);
   stopIdleDialogueTimer();
   render();
   saveOnlineGameState("finish");

@@ -55,3 +55,5 @@ tools/optimize-cover-art-v2.ps1
 # handoff backup snapshots (kept locally per the convention in §7 of handoff.md)
 _handoff-*.md
 _handoff-*.markdown
+# 진단 / 일회용 파일
+_diag_rank.html

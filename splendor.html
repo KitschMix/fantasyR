@@ -57,12 +57,14 @@
                     <option value="4">4명</option>
                   </select>
                 </label>
-                <label class="setup-tooltip" data-tooltip="보통: 가벼운 점수 판단. 어려움: 가져오기/버리기 후 예상 점수 비교. 매우어려움: 보너스·패널티·특수 선택까지 더 깊게 평가. 완전랜덤: 프로필과 실제 난이도가 섞입니다.">
+                <label class="setup-tooltip" data-tooltip="쉬움: 가장 저렴한 카드 우선, 무작위 토큰 가져가기. 보통: 점수 우선, 필요한 토큰. 어려움: 보너스 효율성 가중치. 매우어려움: 보너스 + 귀족 매칭 + 자원 보존. 최종보스: 모든 평가 + 상위 카드 차단 예약. 완전랜덤: 다 섞음.">
                   AI 난이도
                   <select id="splendorDifficultySelect">
+                    <option value="easy">쉬움</option>
                     <option value="normal">보통</option>
                     <option value="hard">어려움</option>
                     <option value="expert">매우어려움</option>
+                    <option value="boss">최종보스</option>
                     <option value="random">완전랜덤</option>
                   </select>
                 </label>
@@ -190,7 +192,7 @@
           <h2>💎 스플렌더 규칙</h2>
           <ul>
             <li><strong>목표:</strong> 15 프레스티지 포인트를 먼저 달성하세요.</li>
-            <li><strong>보석 가져오기:</strong> 서로 다른 색 3개 또는 같은 색 2개 (4개 이상 남아있을 때)</li>
+            <li><strong>보석 가져오기:</strong> 서로 다른 색 3개, 또는 같은 색 2개 (가져간 후 그 색이 4개 이상 남아 있어야 함 = 사전 6개 이상)</li>
             <li><strong>카드 구매:</strong> 보석 + 보너스로 비용을 지불합니다. 카드는 영구 보석 보너스를 줍니다.</li>
             <li><strong>카드 예약:</strong> 앞면 카드 또는 덱을 2초간 꾹 눌러 예약합니다. 골드 와일드 토큰 1개를 받고, 예약도 한 턴의 행동 1회이며 보유 예약 카드는 총 3장까지입니다.</li>
             <li><strong>귀족:</strong> 보석 보너스 조건을 만족하면 자동으로 귀족 타일을 획득합니다 (3점).</li>

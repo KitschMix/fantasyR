@@ -210,6 +210,32 @@
       </div>
     </dialog>
 
+    <!-- Tally Ho 게임 종료 다이얼로그 (승/패/무승부 공통) -->
+    <dialog id="tallyEndDialog" class="tally-end-dialog">
+      <form method="dialog" class="tally-end-form">
+        <div class="tally-end-header">
+          <h2 id="tallyEndTitle">게임 종료</h2>
+          <button class="icon-button" type="submit" value="close" title="닫기" aria-label="닫기">×</button>
+        </div>
+        <div id="tallyEndSubtitle" class="tally-end-subtitle"></div>
+        <div class="tally-end-scores">
+          <div class="tally-end-score tally-end-score-blue">
+            <span class="tally-end-team-label" id="tallyEndBlueLabel">동물</span>
+            <strong class="tally-end-team-points" id="tallyEndBluePoints">0</strong>
+          </div>
+          <div class="tally-end-score tally-end-score-brown">
+            <span class="tally-end-team-label" id="tallyEndBrownLabel">사냥꾼</span>
+            <strong class="tally-end-team-points" id="tallyEndBrownPoints">0</strong>
+          </div>
+        </div>
+        <div id="tallyEndReason" class="tally-end-reason"></div>
+        <div class="tally-end-actions">
+          <button id="tallyEndLeaveButton" class="secondary-button" type="button">나가기</button>
+          <button id="tallyEndRestartButton" class="primary-button" type="button">다시 하기</button>
+        </div>
+      </form>
+    </dialog>
+
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=20260618-multiplayer-lobby"></script>
     <script src="shared-ui.js?v=20260706-split-pages"></script>

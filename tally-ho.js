@@ -98,6 +98,16 @@
     newGameButton: document.querySelector("#tallyNewGameButton"),
     rulesButton: document.querySelector("#tallyRulesButton"),
     rulesDialog: document.querySelector("#tallyRulesDialog"),
+    endDialog: document.querySelector("#tallyEndDialog"),
+    endTitle: document.querySelector("#tallyEndTitle"),
+    endSubtitle: document.querySelector("#tallyEndSubtitle"),
+    endReason: document.querySelector("#tallyEndReason"),
+    endBlueLabel: document.querySelector("#tallyEndBlueLabel"),
+    endBrownLabel: document.querySelector("#tallyEndBrownLabel"),
+    endBluePoints: document.querySelector("#tallyEndBluePoints"),
+    endBrownPoints: document.querySelector("#tallyEndBrownPoints"),
+    endLeaveButton: document.querySelector("#tallyEndLeaveButton"),
+    endRestartButton: document.querySelector("#tallyEndRestartButton"),
     startButton: document.querySelector("#tallyStartButton"),
     difficultySelect: document.querySelector("#tallyDifficultySelect"),
     onlineNameInput: document.querySelector("#tallyOnlineNameInput"),
@@ -1157,7 +1167,74 @@
     log(`${winner}. ${blue}:${brown}${reason ? ` · ${reason}` : ""}`);
     toast(winner, 1800);
     renderTally();
+    showTallyEndDialog(reason);
     submitTallyLeaderboardScore(winnerSide);
+  }
+
+  // ── 종료 다이얼로그 표시 (승/패/무승부 모두 분기) ──
+  function showTallyEndDialog(reason = "") {
+    if (!els.endDialog) return;
+    const blue = state.scores.blue || 0;
+    const brown = state.scores.brown || 0;
+    const winnerSide = blue === brown ? "" : blue > brown ? "blue" : "brown";
+    const assigned = sidesAssigned();
+    const humanSide = assigned ? state.actorSides.human : null;
+
+    let outcome = "draw"; // "win" | "loss" | "draw" | "unscored"
+    if (!assigned) outcome = "unscored";
+    else if (!winnerSide) outcome = "draw";
+    else if (winnerSide === humanSide) outcome = "win";
+    else outcome = "loss";
+
+    // 제목
+    const titleEl = els.endTitle;
+    titleEl.classList.remove("is-win", "is-loss", "is-draw");
+    let titleText, subText;
+    if (outcome === "win") {
+      titleEl.classList.add("is-win");
+      titleText = "🏆 승리";
+      subText = `${SIDES[humanSide].label} 팀이 이겼습니다.`;
+    } else if (outcome === "loss") {
+      titleEl.classList.add("is-loss");
+      const oppSide = opponent(humanSide);
+      titleText = "패배";
+      subText = `${SIDES[oppSide].label} 팀이 이겼습니다.`;
+    } else if (outcome === "draw") {
+      titleEl.classList.add("is-draw");
+      titleText = "🤝 무승부";
+      subText = "양 팀 점수가 같습니다.";
+    } else {
+      titleEl.classList.add("is-draw");
+      titleText = "게임 종료";
+      subText = "사이드가 정해지지 않아 무승부로 처리합니다.";
+    }
+    titleEl.textContent = titleText;
+    els.endSubtitle.textContent = subText;
+    els.endSubtitle.classList.remove("is-win", "is-loss");
+    if (outcome === "win") els.endSubtitle.classList.add("is-win");
+    if (outcome === "loss") els.endSubtitle.classList.add("is-loss");
+
+    // 점수 카드
+    els.endBlueLabel.textContent = SIDES.blue.label;
+    els.endBrownLabel.textContent = SIDES.brown.label;
+    els.endBluePoints.textContent = blue;
+    els.endBrownPoints.textContent = brown;
+    els.endBluePoints.parentElement?.classList.remove("is-winner");
+    els.endBrownPoints.parentElement?.classList.remove("is-winner");
+    if (winnerSide === "blue") els.endBluePoints.parentElement?.classList.add("is-winner");
+    else if (winnerSide === "brown") els.endBrownPoints.parentElement?.classList.add("is-winner");
+
+    els.endReason.textContent = reason || "";
+
+    if (typeof els.endDialog.showModal === "function" && !els.endDialog.open) {
+      els.endDialog.showModal();
+    }
+  }
+
+  function hideTallyEndDialog() {
+    if (typeof els.endDialog?.close === "function" && els.endDialog.open) {
+      els.endDialog.close();
+    }
   }
 
   function checkEndAfterAction() {
@@ -1482,6 +1559,14 @@
   els.backButton?.addEventListener("click", leaveTallyHo);
   els.newGameButton?.addEventListener("click", startTallyGame);
   els.startButton?.addEventListener("click", startTallyGame);
+  els.endRestartButton?.addEventListener("click", () => {
+    hideTallyEndDialog();
+    startTallyGame();
+  });
+  els.endLeaveButton?.addEventListener("click", () => {
+    hideTallyEndDialog();
+    if (typeof leaveTallyHo === "function") leaveTallyHo();
+  });
   els.difficultySelect?.addEventListener("change", () => {
     renderTallySetup();
   });

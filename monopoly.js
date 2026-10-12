@@ -79,7 +79,7 @@
   const GO_SALARY = 200 * SCALE_FACTOR;
   const JAIL_FINE = 50 * SCALE_FACTOR;
   const JAIL_TURNS = 3;
-  const SOCIAL_FUND_FEE = 150 * SCALE_FACTOR;
+  const SOCIAL_FUND_FEE = 50 * SCALE_FACTOR;
   const SPACE_TRAVEL_FEE = 200 * SCALE_FACTOR;
   const DEFAULT_UTILITY_DICE_TOTAL = 7;
   const MAX_BUILDING_LEVEL = 4;
@@ -1170,6 +1170,22 @@
     const level = buildingLevel(player, tile.id);
     if (level >= MAX_BUILDING_LEVEL) return "이미 최대 단계(호텔)입니다.";
 
+    // 균등 건축 규칙: 색 그룹의 다른 모든 땅은 (target - 1) 이상의 건물을 가지고 있어야 함
+    // (예: 타이베이에 3번째 집 → 다른 노란색은 최소 2집씩)
+    const nextLevel = level + 1;
+    if (tile.group) {
+      const groupTiles = COLOR_GROUPS[tile.group] || [];
+      for (const otherId of groupTiles) {
+        if (otherId === tile.id) continue;
+        if (!player.properties.includes(otherId)) {
+          return "색 그룹 전체를 소유해야 건물을 지을 수 있습니다.";
+        }
+        if (buildingLevel(player, otherId) < nextLevel - 1) {
+          return "색 그룹의 다른 땅도 최소 " + (nextLevel - 1) + "개 건물은 있어야 합니다.";
+        }
+      }
+    }
+
     const cost = getBuildCost(tile, level + 1);
     if (player.money < cost) return "잔액이 부족합니다.";
     return "";
@@ -1312,12 +1328,48 @@
       });
       creditor.properties.push(...player.properties);
       creditor.properties.sort((a, b) => a - b);
+      // 공식 Monopoly 룰: 채권자가 받은 그룹의 건물이 균형을 벗어나면, 초과분을 균형에 맞게 팔아야 함
+      balanceGroupBuildings(creditor, /*silent*/ true);
     }
     player.properties = [];
     player.buildings = {};
     player.inJail = false;
     player.spaceTravelReady = false;
     addLog(`💀 ${playerDisplayName(player)} 파산!`);
+  }
+
+  // 색 그룹 안에서 max-min ≤ 1 이 되도록 초과 건물을 균등하게 매각 (공식 Monopoly 룰)
+  function balanceGroupBuildings(player, silent = false) {
+    if (!player?.buildings || !player?.properties?.length) return;
+    const ownedGroups = new Set();
+    for (const id of player.properties) {
+      const t = tileAt(id);
+      if (t?.group) ownedGroups.add(t.group);
+    }
+    for (const groupId of ownedGroups) {
+      // 그룹의 모든 타일 id
+      const tiles = (COLOR_GROUPS[groupId] || []).filter((id) => player.properties.includes(id));
+      if (tiles.length < 2) continue;
+      // 한 번 균형 잡힐 때까지 반복
+      while (true) {
+        const levels = tiles.map((id) => buildingLevel(player, id));
+        const maxL = Math.max(...levels);
+        const minL = Math.min(...levels);
+        if (maxL - minL <= 1) break;
+        // 가장 높은 타일을 찾고, 만약 그 타일이 둘 이상 max를 가지고 있으면, 건물 수 같은 게 있으면 그 중 min ID 우선 매각
+        // 매각 후보 = max를 가진 타일들
+        const sellCandidates = tiles.filter((id) => buildingLevel(player, id) === maxL);
+        if (!sellCandidates.length) break;
+        const toSell = sellCandidates[0];
+        const before = buildingLevel(player, toSell);
+        sellBuildingForCash(player, toSell, silent);
+        // 안전: 매각이 안 됐으면 무한루프 방지
+        if (buildingLevel(player, toSell) === before) {
+          delete player.buildings[toSell];
+          break;
+        }
+      }
+    }
   }
 
   /* ── Movement ── */
@@ -1705,19 +1757,6 @@
       if (player.money <= 0) goBankrupt(player, null);
       state.phase = "buyDecision";
       renderAll();
-      renderControls();
-      return;
-    } else if (tile.event === "tax") {
-      const tax = tile.amount ?? (100 * SCALE_FACTOR);
-      if (tile.id === 38) {
-        paySocialFund(player, tax);
-        addLog(`💸 ${playerDisplayName(player)} 특별여행세 ₩${tax.toLocaleString()} 지불 (사회복지기금 적립)`);
-      } else {
-        payBank(player, tax);
-        addLog(`💸 ${playerDisplayName(player)} 세금 ₩${tax.toLocaleString()} 지불`);
-      }
-      if (player.money <= 0) goBankrupt(player, null);
-      state.phase = "buyDecision";
       renderControls();
       return;
     }
