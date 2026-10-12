@@ -1603,6 +1603,7 @@
       result: winners.some((player) => player.human) ? "win" : "loss",
       score: humanEntry.points || 0,
       durationSec: state.startedAt ? Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)) : 0,
+      difficulty: state.aiDifficulty || "normal",
       playerCount: sorted.length,
       deckList: null
     };

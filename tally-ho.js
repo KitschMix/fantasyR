@@ -1153,6 +1153,7 @@
         score: state.scores.blue || 0,
         durationSec: Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)),
         playerCount: 2,
+        difficulty: state.aiProfile?.difficulty || state.aiDifficulty || "normal",
         deckList: null,
       });
     }

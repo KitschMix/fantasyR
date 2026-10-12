@@ -4399,6 +4399,7 @@ function recordPlayerGameStats(ranked) {
   if (!humanEntry) return;
   const humanWon = ranked[0]?.player.id === humanEntry.player.id;
   const result = humanWon ? "win" : "loss";
+  const difficulty = state.aiDifficulty || "normal";
   const durationSec = state.startedAt
     ? Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000))
     : 0;
@@ -4411,6 +4412,7 @@ function recordPlayerGameStats(ranked) {
     score: humanEntry.score,
     durationSec,
     playerCount: state.playerCount,
+    difficulty,
     deckList,
   });
 }

@@ -1861,6 +1861,7 @@
         durationSec: Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000)),
         turns: Math.max(0, Math.floor(state.turnSerial || 0)),
         playerCount: (state.players || []).length,
+        difficulty: state.aiDifficulty || "normal",
         deckList: null,
       });
     }

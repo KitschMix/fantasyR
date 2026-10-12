@@ -12,6 +12,9 @@
   const STATS_TABLE = "fantasy_player_stats";
   const SUMMARY_VIEW = "fantasy_player_summary";
   const GAME_TYPES = ["fantasy", "splendor", "monopoly", "clue", "cant-stop", "tally-ho", "sushi-go", "dominion"];
+  // 난이도 1순위 정렬을 위한 가중치 (높을수록 어려움)
+  const DIFFICULTY_RANK = { boss: 4, expert: 3, hard: 2, normal: 1 };
+  const VALID_DIFFICULTIES = Object.keys(DIFFICULTY_RANK);
 
   let cachedClient = null;
 
@@ -69,6 +72,7 @@
     const client = await getClient();
     if (!client) return { ok: false, error: "Supabase 클라이언트 초기화 실패" };
 
+    const difficulty = VALID_DIFFICULTIES.includes(entry?.difficulty) ? entry.difficulty : "normal";
     const row = {
       nickname,
       game_type: entry.gameType,
@@ -77,6 +81,7 @@
       duration_sec: Math.max(0, Math.floor(entry.durationSec || 0)),
       turns: Math.max(0, Math.floor(entry.turns || 0)),
       player_count: Math.max(2, Math.min(4, Math.floor(entry.playerCount || 2))),
+      difficulty,
       deck_list: Array.isArray(entry.deckList) ? entry.deckList : null,
     };
 
@@ -256,22 +261,34 @@
         .limit(100);
       if (error) return [];
       const filtered = (data || []).filter((row) => {
-        // 한 번이라도 해당 game_type을 플레이한 적이 있어야 함
-        // fantasy_player_summary 뷰는 닉네임별 합계이므로 game_type 필터는 클라이언트에서 처리 불가
-        // → 별도 쿼리: 해당 닉네임들이 game_type을 플레이했는지 확인
         return row && row.nickname;
       });
-      // game_type을 플레이한 닉네임만 필터링 (2차 쿼리)
       const playerCheckPromises = filtered.map(async (row) => {
-        const { count } = await client
+        // game_type + best_difficulty 1회 쿼리로 (2차 쿼리 → 1차 쿼리)
+        const { data: plays } = await client
           .from(STATS_TABLE)
-          .select("id", { count: "exact", head: true })
+          .select("difficulty, turns, duration_sec")
           .eq("nickname", row.nickname)
-          .eq("game_type", gameType);
-        return { row, played: count > 0 };
+          .eq("game_type", gameType)
+          .eq("result", "win")
+          .order("difficulty_rank", { ascending: false })
+          .order("turns", { ascending: true })
+          .order("duration_sec", { ascending: true })
+          .limit(1);
+        const best = (plays || [])[0];
+        return { row, best };
       });
       const results = await Promise.all(playerCheckPromises);
-      return results.filter((r) => r.played).slice(0, limit).map((r) => r.row);
+      return results
+        .filter((r) => r.best)
+        .map((r) => ({ ...r.row, best_difficulty: r.best.difficulty, best_turns: r.best.turns }))
+        .sort((a, b) => {
+          // 누적 점수가 같으면 best_difficulty 우선 (desc), 그 다음 turns asc
+          if (b.total_score !== a.total_score) return b.total_score - a.total_score;
+          return (DIFFICULTY_RANK[b.best_difficulty] || 0) - (DIFFICULTY_RANK[a.best_difficulty] || 0)
+            || a.best_turns - b.best_turns;
+        })
+        .slice(0, limit);
     } catch {
       return [];
     }
@@ -279,6 +296,7 @@
 
   /**
    * 게임별 단일 게임 최고 점수 랭킹 조회 (닉네임별 MAX(score))
+   * 1순위: score desc / 2순위: difficulty desc (어려울수록 위) / 3순위: turns asc
    * @param {string} gameType
    * @param {number} [limit=10]
    * @returns {Promise<Array<{nickname, best_score, player_count, played_at}>>}
@@ -290,7 +308,7 @@
       // 닉네임별 최고 점수 1건씩만 가져오기 위해 전체 row를 닉네임 기준 그룹핑
       const { data, error } = await client
         .from(STATS_TABLE)
-        .select("nickname, score, duration_sec, player_count, played_at")
+        .select("nickname, score, duration_sec, player_count, played_at, difficulty, turns")
         .eq("game_type", gameType)
         .gt("score", 0)
         .order("score", { ascending: false })
@@ -300,12 +318,27 @@
       (data || []).forEach((row) => {
         if (!row?.nickname) return;
         const prev = bestByNick.get(row.nickname);
-        if (!prev || row.score > prev.score) {
+        if (!prev) {
           bestByNick.set(row.nickname, row);
+          return;
+        }
+        if (row.score > prev.score) {
+          bestByNick.set(row.nickname, row);
+          return;
+        }
+        if (row.score === prev.score) {
+          // 같은 점수면 difficulty desc, 그 다음 turns asc
+          const dr = (DIFFICULTY_RANK[row.difficulty] || 0) - (DIFFICULTY_RANK[prev.difficulty] || 0);
+          if (dr > 0 || (dr === 0 && (row.turns || 0) < (prev.turns || 0))) {
+            bestByNick.set(row.nickname, row);
+          }
         }
       });
       return Array.from(bestByNick.values())
-        .sort((a, b) => (b.score - a.score) || (a.duration_sec - b.duration_sec))
+        .sort((a, b) => (b.score - a.score)
+          || ((DIFFICULTY_RANK[b.difficulty] || 0) - (DIFFICULTY_RANK[a.difficulty] || 0))
+          || (a.turns - b.turns)
+          || (a.duration_sec - b.duration_sec))
         .slice(0, limit);
     } catch {
       return [];
@@ -314,6 +347,7 @@
 
   /**
    * 게임별 최단 시간 랭킹 조회 (승리 게임 중 닉네임별 MIN(duration_sec))
+   * 1순위: difficulty desc (어려울수록 위) / 2순위: duration_sec asc
    * @param {string} gameType
    * @param {number} [limit=10]
    * @returns {Promise<Array<{nickname, duration_sec, score, player_count, played_at}>>}
@@ -324,7 +358,7 @@
     try {
       const { data, error } = await client
         .from(STATS_TABLE)
-        .select("nickname, score, duration_sec, player_count, played_at, result")
+        .select("nickname, score, duration_sec, player_count, played_at, result, difficulty")
         .eq("game_type", gameType)
         .eq("result", "win")
         .gt("duration_sec", 0)
@@ -340,7 +374,10 @@
         }
       });
       return Array.from(bestByNick.values())
-        .sort((a, b) => (a.duration_sec - b.duration_sec) || (b.score - a.score))
+        // 1순위: duration asc (최단 시간) / 2순위: difficulty desc / 3순위: score desc
+        .sort((a, b) => (a.duration_sec - b.duration_sec)
+          || ((DIFFICULTY_RANK[b.difficulty] || 0) - (DIFFICULTY_RANK[a.difficulty] || 0))
+          || (b.score - a.score))
         .slice(0, limit);
     } catch {
       return [];
@@ -360,7 +397,7 @@
     try {
       const { data, error } = await client
         .from(STATS_TABLE)
-        .select("nickname, turns, score, duration_sec, player_count, played_at, result")
+        .select("nickname, turns, score, duration_sec, player_count, played_at, result, difficulty")
         .eq("game_type", gameType)
         .eq("result", "win")
         .gt("turns", 0)
@@ -372,12 +409,19 @@
       (data || []).forEach((row) => {
         if (!row?.nickname) return;
         const prev = bestByNick.get(row.nickname);
-        if (!prev || row.turns < prev.turns || (row.turns === prev.turns && row.duration_sec < prev.duration_sec)) {
+        if (!prev) { bestByNick.set(row.nickname, row); return; }
+        if (row.turns < prev.turns ||
+            (row.turns === prev.turns && row.duration_sec < prev.duration_sec) ||
+            (row.turns === prev.turns && row.duration_sec === prev.duration_sec &&
+             (DIFFICULTY_RANK[row.difficulty] || 0) > (DIFFICULTY_RANK[prev.difficulty] || 0))) {
           bestByNick.set(row.nickname, row);
         }
       });
       return Array.from(bestByNick.values())
-        .sort((a, b) => (a.turns - b.turns) || (a.duration_sec - b.duration_sec))
+        // 1순위: difficulty desc (어려울수록 위) / 2순위: turns asc / 3순위: duration asc
+        .sort((a, b) => ((DIFFICULTY_RANK[b.difficulty] || 0) - (DIFFICULTY_RANK[a.difficulty] || 0))
+          || (a.turns - b.turns)
+          || (a.duration_sec - b.duration_sec))
         .slice(0, limit);
     } catch {
       return [];
