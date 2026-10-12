@@ -1002,7 +1002,9 @@
     if (!activeHumanCanUseHint()) return false;
     const baseId = hintBaseId(hintCard);
     if (state.corridorResting) {
-      return ["extra-turn", "reveal-card", "peek-card", "dud"].includes(baseId);
+      // 복도 휴식 중에는 정보 카드만 사용 가능. 액션 카드(extra-turn, add-six, move-anywhere, extra-suggestion)는
+      // corridorResting의 "이번 턴 쉬기" 컨텍스트와 어긋나므로 차단.
+      return ["reveal-card", "peek-card", "dud"].includes(baseId);
     }
     if (baseId === "add-six") return state.phase === "chooseMove";
     if (baseId === "extra-suggestion") return Boolean(ROOM_BY_ID[activePlayer()?.location]);

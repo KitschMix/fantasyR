@@ -1720,3 +1720,31 @@ body.clue-active.clue-playing .clue-game-panel {
     font-size: 11px;
   }
 }
+
+/* ── 액션 버튼 살짝 빛나는 연출 (인간 차례 + enabled 일 때) ── */
+@keyframes clue-action-button-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(255, 215, 130, 0.0),
+      0 0 12px 0 rgba(255, 215, 130, 0.0);
+  }
+  50% {
+    box-shadow:
+      0 0 0 0 rgba(255, 215, 130, 0.0),
+      0 0 18px 4px rgba(255, 215, 130, 0.55);
+  }
+}
+
+#clueRollButton:not(:disabled):not(.is-rolling),
+#clueMakeSuggestionButton:not(:disabled),
+#clueEndTurnButton:not(:disabled) {
+  animation: clue-action-button-glow 1.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #clueRollButton:not(:disabled):not(.is-rolling),
+  #clueMakeSuggestionButton:not(:disabled),
+  #clueEndTurnButton:not(:disabled) {
+    animation: none;
+  }
+}
