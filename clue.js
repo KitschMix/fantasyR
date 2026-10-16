@@ -2150,7 +2150,8 @@
   function confirmSuggestionDialog() {
     if (state.finished || !activePlayer()?.human || !state.suggestionDialogOpen) return;
     const currentRoom = ROOM_BY_ID[activePlayer().location];
-    if (!state.suggestionAllowRoomPick && (!["awaitRoll", "suggest"].includes(state.phase) || !currentRoom)) return;
+    if (!state.suggestionAllowRoomPick
+        && (!["awaitRoll", "suggest", "waitEnd"].includes(state.phase) || !currentRoom)) return;
     const suggestion = {
       suspect: card("suspect", els.suggestSuspect?.value || SUSPECTS[0]),
       weapon: card("weapon", els.suggestWeapon?.value || WEAPONS[0]),
